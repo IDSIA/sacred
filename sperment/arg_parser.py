@@ -6,6 +6,7 @@ from __future__ import division, print_function, unicode_literals
 import argparse
 import collections
 import json
+from sperment.observers import MongoDBReporter
 
 
 def recursive_update(d, u):
@@ -65,7 +66,6 @@ def parse_arguments():
     observers = []
 
     if args.mongo_url:
-        from mlite.observers.mongodb import MongoDBReporter
         mongo = MongoDBReporter(db_name=args.mongo_database,
                                 url=args.mongo_url)
         observers.append(mongo)
