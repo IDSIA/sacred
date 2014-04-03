@@ -50,7 +50,6 @@ class ConfigScope(dict):
         #TODO: do more sophisticated body extraction than just skipping 2 lines
         body = inspect.cleandoc(''.join(func_code[2:]))
         self._body_code = compile(body, "<string>", "exec")
-        self.execute()
 
     def execute(self, fixed=None):
         self.clear()

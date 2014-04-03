@@ -20,15 +20,17 @@ def recursive_update(d, u):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-O", "--option_file",
-                        help="JSON file to overwrite default options")
 
-    parser.add_argument("-U", "--update", nargs='+',
+    parser.add_argument("update", nargs='*',
                         help='updates to the default options of the form '
                              'foo.bar=baz')
 
+    parser.add_argument("-O", "--config_file",
+                        help="JSON file to overwrite default configuration")
+
     parser.add_argument("-M", "--mongo_url", nargs='?',
-                        help='the url for the mongoDB observer',
+                        help='activate the mongoDB obeserver and optionally '
+                             'pass an url',
                         const="localhost:27017")
 
     parser.add_argument("-m", "--mongo_database",
@@ -37,19 +39,18 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    if args.option_file:
-        with open(args.option_file, 'r') as f:
-            option_updates = json.load(f)
-    else:
-        option_updates = {
-        }
+    config_updates = {}
+
+    if args.config_file:
+        with open(args.config_file, 'r') as f:
+            config_updates = json.load(f)
 
     if args.update:
         for upd in args.update:
             split_update = upd.split('=')
             assert len(split_update) == 2
             path, value = split_update
-            current_option = option_updates
+            current_option = config_updates
             for p in path.split('.')[:-1]:
                 if p not in current_option:
                     current_option[p] = dict()
@@ -65,8 +66,8 @@ def parse_arguments():
 
     if args.mongo_url:
         from mlite.observers.mongodb import MongoDBReporter
-        mongo = MongoDBReporter(db_name=args.mongo_collection,
+        mongo = MongoDBReporter(db_name=args.mongo_database,
                                 url=args.mongo_url)
         observers.append(mongo)
 
-    return option_updates, observers
+    return config_updates, observers

@@ -18,4 +18,4 @@ class CapturedFunction(object):
         return result
 
     def __call__(self, *args, **kwargs):
-        return self.execute(args, kwargs, self._parent_experiment.config)
+        return self.execute(args, kwargs, self._parent_experiment.cfg)

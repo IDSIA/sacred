@@ -14,7 +14,7 @@ class Experiment(object):
     INITIALIZING, RUNNING, COMPLETED, INTERRUPTED, FAILED = range(5)
 
     def __init__(self, name=None, config=None):
-        self.config = config if config is not None else dict()
+        self.cfg = config if config is not None else dict()
         self._status = Experiment.INITIALIZING
         self._main_function = None
         self._captured_functions = []
@@ -33,8 +33,8 @@ class Experiment(object):
     ############################## Decorators ##################################
 
     def config(self, f):
-        self.config = ConfigScope(f)
-        return self.config
+        self.cfg = ConfigScope(f)
+        return self.cfg
 
     def capture(self, f):
         captured_function = CapturedFunction(f, self)
@@ -56,12 +56,14 @@ class Experiment(object):
 
     ############################## public interface ############################
     def run(self, use_args=True):
+        config_updates = {}
         if use_args:
             config_updates, observers = parse_arguments()
-            if isinstance(self.config, ConfigScope):
-                self.config.execute(config_updates)
             for obs in observers:
                 self.add_observer(obs)
+
+        if isinstance(self.cfg, ConfigScope):
+            self.cfg.execute(config_updates)
 
         self._status = Experiment.RUNNING
         self._emit_started()
@@ -97,7 +99,7 @@ class Experiment(object):
                     mainfile=self.description['mainfile'],
                     doc=self.description['doc'],
                     start_time=self.description['start_time'],
-                    config=self.config,
+                    config=self.cfg,
                     info=self.description['info'])
             except AttributeError:
                 pass
