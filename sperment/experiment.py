@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import inspect
 import os.path
 import time
+from sperment.arg_parser import parse_arguments
 from sperment.captured_function import CapturedFunction
 from sperment.config_scope import ConfigScope
 
@@ -54,7 +55,14 @@ class Experiment(object):
         return self._main_function
 
     ############################## public interface ############################
-    def run(self):
+    def run(self, use_args=True):
+        if use_args:
+            config_updates, observers = parse_arguments()
+            if isinstance(self.config, ConfigScope):
+                self.config.execute(config_updates)
+            for obs in observers:
+                self.add_observer(obs)
+
         self._status = Experiment.RUNNING
         self._emit_started()
         try:
