@@ -33,6 +33,7 @@ setup(
     description='Facilitates reproducible research.',
     long_description=open('README.md').read(),
     install_requires=[
-        "bunch >= 1.0"
+        "numpy >= 1.6",
+        "pymongo >= 2.0",
     ],
 )

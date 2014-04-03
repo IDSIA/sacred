@@ -112,16 +112,6 @@ class Experiment(object):
             except AttributeError:
                 pass
 
-    def _emit_failed(self):
-        fail_time = time.time()
-        self.description['stop_time'] = fail_time
-        for o in self._observers:
-            try:
-                o.experiment_failed_event(fail_time=fail_time,
-                                          info=self.description['info'])
-            except AttributeError:
-                pass
-
     def _emit_interrupted(self):
         interrupt_time = time.time()
         self.description['stop_time'] = interrupt_time
@@ -129,5 +119,15 @@ class Experiment(object):
             try:
                 o.experiment_interrupted_event(interrupt_time=interrupt_time,
                                                info=self.description['info'])
+            except AttributeError:
+                pass
+
+    def _emit_failed(self):
+        fail_time = time.time()
+        self.description['stop_time'] = fail_time
+        for o in self._observers:
+            try:
+                o.experiment_failed_event(fail_time=fail_time,
+                                          info=self.description['info'])
             except AttributeError:
                 pass
