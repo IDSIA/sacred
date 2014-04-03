@@ -5,7 +5,7 @@ This is an example experiment of how you might use sperment together with
 pylstm.
 """
 from __future__ import division, print_function, unicode_literals
-from sperment import Experiment
+from sperment import Experiment, InfoUpdater
 from pylstm import *
 
 ex = Experiment("Example1")
@@ -45,6 +45,8 @@ def main(network, trainer, dataset, verbose):
     tr = create_from_description(trainer)
     ds = load_dataset(*dataset)
 
+    tr.monitor['class_err'] = MonitorClassificationError(Online(*ds['test'], verbose=False))
+    tr.monitor['info'] = InfoUpdater(ex, tr.monitor)
     tr.train(net,
              Online(*ds['training'], verbose=verbose),
              Online(*ds['test'], verbose=verbose))
