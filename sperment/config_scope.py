@@ -6,6 +6,15 @@ import inspect
 import json
 
 
+def blocking_dictify(x):
+    if isinstance(x, dict):
+        return BlockingDict({k: blocking_dictify(v) for k, v in x.iteritems()})
+    elif isinstance(x, (list, tuple)):
+        return type(x)(blocking_dictify(v) for v in x)
+    else:
+        return x
+
+
 class BlockingDict(dict):
     def __init__(self, fixed=None):
         super(BlockingDict, self).__init__()
@@ -18,6 +27,11 @@ class BlockingDict(dict):
     def __setitem__(self, key, value):
         if key not in self._fixed:
             super(BlockingDict, self).__setitem__(key, value)
+        elif isinstance(self[key], BlockingDict) and isinstance(value, dict):
+            #recursive update
+            bd = self[key]
+            for k, v in value.items():
+                bd[k] = v
 
 
 class ConfigScope(dict):
@@ -36,11 +50,11 @@ class ConfigScope(dict):
         #TODO: do more sophisticated body extraction than just skipping 2 lines
         body = inspect.cleandoc(''.join(func_code[2:]))
         self._body_code = compile(body, "<string>", "exec")
-        self._execute_func()
+        self.execute()
 
-    def _execute_func(self, fixed=None):
+    def execute(self, fixed=None):
         self.clear()
-        l = BlockingDict(fixed)
+        l = blocking_dictify(fixed) if fixed is not None else {}
         eval(self._body_code, copy(self._func.func_globals), l)
         for k, v in l.items():
             if k.startswith('_'):
@@ -65,33 +79,3 @@ class ConfigScope(dict):
                 return self[k]
             except KeyError:
                 raise AttributeError(k)
-
-    def __setattr__(self, k, v):
-        """
-        Sets attribute k if it exists, otherwise sets key k. Any error
-        raised by set-item will propagate as an AttributeError instead.
-        """
-        try:
-            # Throws exception if not in prototype chain
-            object.__getattribute__(self, k)
-        except AttributeError:
-            self[k] = v
-        else:
-            object.__setattr__(self, k, v)
-
-    def __delattr__(self, k):
-        """
-        Deletes attribute k if it exists, otherwise deletes key k. A KeyError
-        raised by deleting the key--such as when the key is missing--will
-        propagate as an AttributeError instead.
-        """
-        try:
-            # Throws exception if not in prototype chain
-            object.__getattribute__(self, k)
-        except AttributeError:
-            try:
-                del self[k]
-            except KeyError:
-                raise AttributeError(k)
-        else:
-            object.__delattr__(self, k)
