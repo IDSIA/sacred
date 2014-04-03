@@ -106,3 +106,11 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'FAILED'
         self.save()
+
+    def __eq__(self, other):
+        if not isinstance(other, MongoDBReporter):
+            return False
+        return self.collection == other.collection
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
