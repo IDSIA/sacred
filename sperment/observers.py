@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+import inspect
 import pickle
 import time
 
@@ -77,6 +78,8 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
+        with open(mainfile, 'r') as f:
+            self.experiment_entry['source'] = f.readall()
         self.experiment_entry['doc'] = doc
         self.experiment_entry['start_time'] = start_time
         self.experiment_entry['config'] = config
