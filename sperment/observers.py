@@ -9,6 +9,7 @@ import numpy as np
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
+from sperment.host_info import get_host_info
 
 
 class ExperimentObserver(object):
@@ -81,6 +82,7 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['config'] = config
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'RUNNING'
+        self.experiment_entry['metainfo'] = get_host_info()
         self.save()
 
     def experiment_info_updated(self, info):
