@@ -2,23 +2,26 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from datetime import timedelta
 import inspect
 import os.path
 import time
 from sperment.arg_parser import parse_arguments
 from sperment.captured_function import CapturedFunction
 from sperment.config_scope import ConfigScope
+from sperment.utils import create_basic_stream_logger
 
 
 class Experiment(object):
     INITIALIZING, RUNNING, COMPLETED, INTERRUPTED, FAILED = range(5)
 
-    def __init__(self, name=None, config=None):
+    def __init__(self, name=None, config=None, logger=None):
         self.cfg = config if config is not None else dict()
         self._status = Experiment.INITIALIZING
         self._main_function = None
         self._captured_functions = []
         self._observers = []
+        self.logger = logger
 
         self.description = {
             'name': name,
@@ -65,6 +68,8 @@ class Experiment(object):
         if isinstance(self.cfg, ConfigScope):
             self.cfg.execute(config_updates)
 
+        self._set_up_logging()
+
         self._status = Experiment.RUNNING
         self._emit_started()
         try:
@@ -91,6 +96,7 @@ class Experiment(object):
             self._observers.remove(obs)
 
     def _emit_started(self):
+        self.logger.info("Experiment started.")
         self.description['start_time'] = time.time()
         for o in self._observers:
             try:
@@ -111,9 +117,17 @@ class Experiment(object):
             except AttributeError:
                 pass
 
-    def _emit_completed(self, result):
+    def _stop_time(self):
         stop_time = time.time()
         self.description['stop_time'] = stop_time
+        elapsed_seconds = round(stop_time - self.description['start_time'])
+        elapsed_time = timedelta(seconds=elapsed_seconds)
+        self.logger.info("Total time elapsed = %s", elapsed_time)
+        return stop_time
+
+    def _emit_completed(self, result):
+        self.logger.info("Experiment completed.")
+        stop_time = self._stop_time()
         for o in self._observers:
             try:
                 o.experiment_completed_event(stop_time=stop_time,
@@ -123,8 +137,8 @@ class Experiment(object):
                 pass
 
     def _emit_interrupted(self):
-        interrupt_time = time.time()
-        self.description['stop_time'] = interrupt_time
+        self.logger.warning("Experiment aborted!")
+        interrupt_time = self._stop_time()
         for o in self._observers:
             try:
                 o.experiment_interrupted_event(interrupt_time=interrupt_time,
@@ -133,11 +147,18 @@ class Experiment(object):
                 pass
 
     def _emit_failed(self):
-        fail_time = time.time()
-        self.description['stop_time'] = fail_time
+        self.logger.warning("Experiment failed!")
+        fail_time = self._stop_time()
         for o in self._observers:
             try:
                 o.experiment_failed_event(fail_time=fail_time,
                                           info=self.description['info'])
             except AttributeError:
                 pass
+
+    def _set_up_logging(self):
+        if self.logger is None:
+            self.logger = create_basic_stream_logger(self.description['name'])
+            self.logger.debug("No logger given. Created basic stream logger.")
+        for cf in self._captured_functions:
+            cf.logger = self.logger.getChild(cf.__name__)

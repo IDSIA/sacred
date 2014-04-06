@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+import logging
 
 
 class InfoUpdater(object):
@@ -33,3 +34,18 @@ class InfoUpdater(object):
             info['monitor'] = monitors
 
         self.ex._emit_info_updated()
+
+
+def create_basic_stream_logger(name, level=logging.INFO):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.handlers = []
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
+
+NO_LOGGER = logging.getLogger('ignore')
+NO_LOGGER.disabled = 1
