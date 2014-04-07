@@ -51,9 +51,11 @@ class ConfigScope(dict):
         body = inspect.cleandoc(''.join(func_code[2:]))
         self._body_code = compile(body, "<string>", "exec")
 
-    def execute(self, fixed=None):
+    def execute(self, fixed=None, preset=None):
         self.clear()
         l = blocking_dictify(fixed) if fixed is not None else {}
+        if preset is not None:
+            l.update(preset)
         eval(self._body_code, copy(self._func.func_globals), l)
         for k, v in l.items():
             if k.startswith('_'):

@@ -16,7 +16,8 @@ class Experiment(object):
     INITIALIZING, RUNNING, COMPLETED, INTERRUPTED, FAILED = range(5)
 
     def __init__(self, name=None, config=None, logger=None):
-        self.cfg = config if config is not None else dict()
+        self.cfg = config
+        self.cfgs = []
         self._status = Experiment.INITIALIZING
         self._main_function = None
         self._captured_functions = []
@@ -24,9 +25,9 @@ class Experiment(object):
         self.logger = logger
 
         self.description = {
-            'name': name,
-            'doc': None,
-            'mainfile': None,
+            'name': name,       #
+            'doc': None,        # FIXME: move out of description
+            'mainfile': None,   #
             'info': {},
             'seed': None,
             'start_time': None,
@@ -36,8 +37,8 @@ class Experiment(object):
     ############################## Decorators ##################################
 
     def config(self, f):
-        self.cfg = ConfigScope(f)
-        return self.cfg
+        self.cfgs.append(ConfigScope(f))
+        return self.cfgs[-1]
 
     def capture(self, f):
         captured_function = CapturedFunction(f, self)
@@ -64,15 +65,21 @@ class Experiment(object):
         return captured
 
     ############################## public interface ############################
-    def run(self, use_args=True):
-        config_updates = {}
+    def run(self, use_args=True, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
         if use_args:
+            assert not config_updates
             config_updates, observers = parse_arguments()
             for obs in observers:
                 self.add_observer(obs)
 
-        if isinstance(self.cfg, ConfigScope):
-            self.cfg.execute(config_updates)
+        if self.cfgs:
+            assert self.cfg is None
+            current_cfg = {}
+            for c in self.cfgs:
+                c.execute(config_updates, preset=current_cfg)
+                current_cfg.update(c)
+            self.cfg = current_cfg
 
         self._set_up_logging()
 
@@ -91,6 +98,14 @@ class Experiment(object):
             self._status = Experiment.FAILED
             self._emit_failed()
             raise
+
+    def reset(self):
+        self.description['info'] = {}
+        self.description['seed'] = None
+        self.description['start_time'] = None
+        self.description['stop_time'] = None
+        self.cfg = None
+        self._status = Experiment.INITIALIZING
 
     ################### Observable interface ###################################
     def add_observer(self, obs):
