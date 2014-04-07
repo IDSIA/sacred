@@ -23,11 +23,11 @@ class Experiment(object):
         self._captured_functions = []
         self._observers = []
         self.logger = logger
+        self.name = name
+        self.doc = None
+        self.mainfile = None
 
         self.description = {
-            'name': name,       #
-            'doc': None,        # FIXME: move out of description
-            'mainfile': None,   #
             'info': {},
             'seed': None,
             'start_time': None,
@@ -47,27 +47,28 @@ class Experiment(object):
 
     def main(self, f):
         self._main_function = self.capture(f)
-        mainfile = inspect.getabsfile(f)
-        self.description['mainfile'] = mainfile
+        self.mainfile = inspect.getabsfile(f)
 
-        if self.description['name'] is None:
-            filename = os.path.basename(mainfile)
-            self.description['name'] = filename.rsplit('.', 1)[0]
+        if self.name is None:
+            filename = os.path.basename(self.mainfile)
+            self.name = filename.rsplit('.', 1)[0]
 
-        self.description['doc'] = inspect.getmodule(f).__doc__
+        self.doc = inspect.getmodule(f).__doc__
 
         return self._main_function
 
     def automain(self, f):
         captured = self.main(f)
         if f.__module__ == '__main__':
-            self.run()
+            self.run(use_argv=True)
         return captured
 
     ############################## public interface ############################
-    def run(self, use_args=True, config_updates=None):
+    def run(self, use_argv=False, config_updates=None):
+        self.reset()
+
         config_updates = {} if config_updates is None else config_updates
-        if use_args:
+        if use_argv:
             assert not config_updates
             config_updates, observers = parse_arguments()
             for obs in observers:
@@ -122,9 +123,9 @@ class Experiment(object):
         for o in self._observers:
             try:
                 o.experiment_started_event(
-                    name=self.description['name'],
-                    mainfile=self.description['mainfile'],
-                    doc=self.description['doc'],
+                    name=self.name,
+                    mainfile=self.mainfile,
+                    doc=self.doc,
                     start_time=self.description['start_time'],
                     config=self.cfg,
                     info=self.description['info'])
@@ -179,7 +180,7 @@ class Experiment(object):
 
     def _set_up_logging(self):
         if self.logger is None:
-            self.logger = create_basic_stream_logger(self.description['name'])
+            self.logger = create_basic_stream_logger(self.name)
             self.logger.debug("No logger given. Created basic stream logger.")
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
