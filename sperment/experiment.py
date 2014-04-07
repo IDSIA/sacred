@@ -57,6 +57,12 @@ class Experiment(object):
 
         return self._main_function
 
+    def automain(self, f):
+        captured = self.main(f)
+        if f.__module__ == '__main__':
+            self.run()
+        return captured
+
     ############################## public interface ############################
     def run(self, use_args=True):
         config_updates = {}
