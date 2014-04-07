@@ -82,6 +82,7 @@ class Experiment(object):
             result = self._main_function()
             self._status = Experiment.COMPLETED
             self._emit_completed(result)
+            print(result)
             return result
         except KeyboardInterrupt:
             self._status = Experiment.INTERRUPTED
