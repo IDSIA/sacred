@@ -25,9 +25,9 @@ class Experiment(object):
         self.logger = logger
 
         self.description = {
-            'name': name,
-            'doc': None,
-            'mainfile': None,
+            'name': name,       #
+            'doc': None,        # FIXME: move out of description
+            'mainfile': None,   #
             'info': {},
             'seed': None,
             'start_time': None,
@@ -65,9 +65,10 @@ class Experiment(object):
         return captured
 
     ############################## public interface ############################
-    def run(self, use_args=True):
-        config_updates = {}
+    def run(self, use_args=True, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
         if use_args:
+            assert not config_updates
             config_updates, observers = parse_arguments()
             for obs in observers:
                 self.add_observer(obs)
@@ -97,6 +98,14 @@ class Experiment(object):
             self._status = Experiment.FAILED
             self._emit_failed()
             raise
+
+    def reset(self):
+        self.description['info'] = {}
+        self.description['seed'] = None
+        self.description['start_time'] = None
+        self.description['stop_time'] = None
+        self.cfg = None
+        self._status = Experiment.INITIALIZING
 
     ################### Observable interface ###################################
     def add_observer(self, obs):
