@@ -16,7 +16,8 @@ class Experiment(object):
     INITIALIZING, RUNNING, COMPLETED, INTERRUPTED, FAILED = range(5)
 
     def __init__(self, name=None, config=None, logger=None):
-        self.cfg = config if config is not None else dict()
+        self.cfg = config
+        self.cfgs = []
         self._status = Experiment.INITIALIZING
         self._main_function = None
         self._captured_functions = []
@@ -36,8 +37,8 @@ class Experiment(object):
     ############################## Decorators ##################################
 
     def config(self, f):
-        self.cfg = ConfigScope(f)
-        return self.cfg
+        self.cfgs.append(ConfigScope(f))
+        return self.cfgs[-1]
 
     def capture(self, f):
         captured_function = CapturedFunction(f, self)
@@ -71,8 +72,13 @@ class Experiment(object):
             for obs in observers:
                 self.add_observer(obs)
 
-        if isinstance(self.cfg, ConfigScope):
-            self.cfg.execute(config_updates)
+        if self.cfgs:
+            assert self.cfg is None
+            current_cfg = {}
+            for c in self.cfgs:
+                c.execute(config_updates, preset=current_cfg)
+                current_cfg.update(c)
+            self.cfg = current_cfg
 
         self._set_up_logging()
 
