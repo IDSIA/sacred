@@ -2,7 +2,6 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-import inspect
 import pickle
 import time
 
@@ -30,7 +29,7 @@ class ExperimentObserver(object):
     def experiment_interrupted_event(self, interrupt_time, info):
         pass
 
-    def experiment_failed_event(self, fail_time, info):
+    def experiment_failed_event(self, fail_time, fail_trace, info):
         pass
 
 
@@ -106,10 +105,11 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
-    def experiment_failed_event(self, fail_time, info):
+    def experiment_failed_event(self, fail_time, fail_trace, info):
         self.experiment_entry['stop_time'] = fail_time
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'FAILED'
+        self.experiment_entry['fail_trace'] = fail_trace
         self.save()
 
     def __eq__(self, other):

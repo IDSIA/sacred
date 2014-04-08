@@ -5,7 +5,9 @@ from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
 import inspect
 import os.path
+import sys
 import time
+import traceback
 from sperment.arg_parser import parse_arguments
 from sperment.captured_function import CapturedFunction
 from sperment.config_scope import ConfigScope
@@ -88,17 +90,19 @@ class Experiment(object):
         self._emit_started()
         try:
             result = self._main_function()
-            self._status = Experiment.COMPLETED
-            self._emit_completed(result)
-            return result
         except KeyboardInterrupt:
             self._status = Experiment.INTERRUPTED
             self._emit_interrupted()
             raise
         except:
             self._status = Experiment.FAILED
-            self._emit_failed()
-            raise
+            t, v, trace = sys.exc_info()
+            self._emit_failed(t, v, trace.tb_next)
+            raise t, v, trace.tb_next
+
+        self._status = Experiment.COMPLETED
+        self._emit_completed(result)
+        return result
 
     def reset(self):
         self.description['info'] = {}
@@ -168,14 +172,16 @@ class Experiment(object):
             except AttributeError:
                 pass
 
-    def _emit_failed(self):
+    def _emit_failed(self, etype, value, tb):
         self.logger.warning("Experiment failed!")
         fail_time = self._stop_time()
+        fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:
             try:
                 o.experiment_failed_event(fail_time=fail_time,
+                                          fail_trace=fail_trace,
                                           info=self.description['info'])
-            except AttributeError:
+            except:  # _emit_failed should never throw
                 pass
 
     def _set_up_logging(self):

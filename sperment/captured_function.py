@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
+import sys
 import time
 from .signature import Signature
 
@@ -15,15 +16,19 @@ class CapturedFunction(object):
         self._signature = Signature(f)
         self.logger = None
 
-    def execute(self, args, kwargs, options):
-        opt = dict(options)
+    def execute(self, args, kwargs, options=None):
+        opt = dict(options) if options is not None else dict()
         if 'log' in self._signature.arguments:
             opt['log'] = self.logger
         args, kwargs = self._signature.construct_arguments(args, kwargs, opt)
         self.logger.info("started")
         start_time = time.time()
         ####################### run actual function ############################
-        result = self._wrapped_function(*args, **kwargs)
+        try:
+            result = self._wrapped_function(*args, **kwargs)
+        except:
+            t, v, trace = sys.exc_info()
+            raise t, v, trace.tb_next
         ########################################################################
         stop_time = time.time()
         elapsed_time = timedelta(seconds=round(stop_time - start_time))
@@ -31,4 +36,8 @@ class CapturedFunction(object):
         return result
 
     def __call__(self, *args, **kwargs):
-        return self.execute(args, kwargs, self._parent_experiment.cfg)
+        try:
+            return self.execute(args, kwargs, self._parent_experiment.cfg)
+        except:
+            t, v, trace = sys.exc_info()
+            raise t, v, trace.tb_next
