@@ -8,7 +8,14 @@ import logging
 class InfoUpdater(object):
     def __init__(self, experiment, monitors=None):
         self.ex = experiment
-        self.monitors = monitors if monitors is not None else dict()
+
+        self.monitors = dict()
+        if isinstance(monitors, dict):
+            self.monitors = monitors
+        elif isinstance(monitors, (list, set)):
+            self.monitors = {str(i): m for i, m in enumerate(monitors)}
+        else:
+            self.monitors[''] = monitors
 
     def __call__(self, epoch, net, training_errors, validation_errors, **_):
         info = self.ex.description['info']
