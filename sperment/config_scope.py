@@ -44,11 +44,11 @@ class ConfigScope(dict):
         assert arg_spec.keywords is None
 
         func_code = inspect.getsourcelines(func)[0]
-        assert func_code[0].strip().startswith('@')
-        assert func_code[1].strip().startswith('def ')
-        assert func_code[1].strip().endswith(':')
-        #TODO: do more sophisticated body extraction than just skipping 2 lines
-        body = inspect.cleandoc(''.join(func_code[2:]))
+        i = 0
+        while func_code[i].find("def ") == -1 and not func_code[i].endswith(":"):
+            i += 1
+
+        body = inspect.cleandoc(''.join(func_code[i+1:]))
         self._body_code = compile(body, "<string>", "exec")
 
     def execute(self, fixed=None, preset=None):
