@@ -70,9 +70,12 @@ class Experiment(object):
         self.reset()
 
         config_updates = {} if config_updates is None else config_updates
+        args = None
+
         if use_argv:
             assert not config_updates
-            config_updates, observers = parse_arguments()
+            config_updates, observers, args = parse_arguments()
+
             for obs in observers:
                 self.add_observer(obs)
 
@@ -83,6 +86,11 @@ class Experiment(object):
                 c.execute(config_updates, preset=current_cfg)
                 current_cfg.update(c)
             self.cfg = current_cfg
+
+        if args and args.print_cfg_only:
+            import json
+            print(json.dumps(self.cfg, indent=2, ))
+            return
 
         self._set_up_logging()
 

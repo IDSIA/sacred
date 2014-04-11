@@ -38,6 +38,10 @@ def parse_arguments():
                         help='name of the MongoDB database to use',
                         default='sperment')
 
+    parser.add_argument("-P", "--print_cfg_only",
+                        help='print the configuration and exit',
+                        action='store_true')
+
     args = parser.parse_args()
 
     config_updates = {}
@@ -70,4 +74,4 @@ def parse_arguments():
                                 url=args.mongo_url)
         observers.append(mongo)
 
-    return config_updates, observers
+    return config_updates, observers, args
