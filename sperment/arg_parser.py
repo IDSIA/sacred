@@ -10,21 +10,17 @@ import re
 from sperment.observers import MongoDBReporter
 
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
+HOSTNAME_PATTERN = \
+    r"(?=.{1,255}$)"\
+         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
+    r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
+    r"\.?"
+URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
+
 DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
-HOSTNAME = re.compile(
-    r"(?=.{1,255}$)"   # make sure it's between 1 and 255 long
-         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
-    r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"
-    r"\.?")
-PORT_NR = re.compile(r"[0-9]{1,5}")
-
-URL_PATTERN = "(?:" + HOSTNAME.pattern + ")" + ":" + \
-              "(?:" + PORT_NR.pattern + ")"
-
 URL = re.compile("^" + URL_PATTERN + "$")
-
-URL_DB_NAME = re.compile("(?P<url>" + URL_PATTERN + ")" + ":" +
-                         "(?P<db_name>" + DB_NAME_PATTERN + ")")
+URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
+                         "(?P<db_name>" + DB_NAME_PATTERN + ")$")
 
 
 def recursive_update(d, u):
