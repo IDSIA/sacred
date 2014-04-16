@@ -6,7 +6,25 @@ from __future__ import division, print_function, unicode_literals
 import argparse
 import collections
 import json
+import re
 from sperment.observers import MongoDBReporter
+
+DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
+DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
+HOSTNAME = re.compile(
+    r"(?=.{1,255}$)"   # make sure it's between 1 and 255 long
+         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
+    r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"
+    r"\.?")
+PORT_NR = re.compile(r"[0-9]{1,5}")
+
+URL_PATTERN = "(?:" + HOSTNAME.pattern + ")" + ":" + \
+              "(?:" + PORT_NR.pattern + ")"
+
+URL = re.compile("^" + URL_PATTERN + "$")
+
+URL_DB_NAME = re.compile("(?P<url>" + URL_PATTERN + ")" + ":" +
+                         "(?P<db_name>" + DB_NAME_PATTERN + ")")
 
 
 def recursive_update(d, u):
@@ -19,6 +37,19 @@ def recursive_update(d, u):
     return d
 
 
+def parse_mongo_db_arg(mongo_db):
+    if DB_NAME.match(mongo_db):
+        return 'localhost:27017', mongo_db
+    elif URL.match(mongo_db):
+        return mongo_db, 'sperment'
+    elif URL_DB_NAME.match(mongo_db):
+        m = URL_DB_NAME.match(mongo_db)
+        return m.group('url'), m.group('db_name')
+    else:
+        raise ValueError('mongo_db argument must have the form "db_name" or '
+                         '"host:port[:db_name]" but was %s' % mongo_db)
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
@@ -26,19 +57,15 @@ def parse_arguments():
                         help='updates to the default options of the form '
                              'foo.bar=baz')
 
-    parser.add_argument("-O", "--config_file",
+    parser.add_argument("-c", "--config_file",
                         help="JSON file to overwrite default configuration")
 
-    parser.add_argument("-M", "--mongo_url", nargs='?',
-                        help='activate the mongoDB obeserver and optionally '
-                             'pass an url',
-                        const="localhost:27017")
-
-    parser.add_argument("-m", "--mongo_database",
-                        help='name of the MongoDB database to use',
+    parser.add_argument("-m", "--mongo_db", nargs='?',
+                        help='Use MongoDB. Optionally specify "db_name" or '
+                             '"host:port[:db_name]"',
                         default='sperment')
 
-    parser.add_argument("-P", "--print_cfg_only",
+    parser.add_argument("-p", "--print_cfg_only",
                         help='print the configuration and exit',
                         action='store_true')
 
@@ -69,9 +96,9 @@ def parse_arguments():
 
     observers = []
 
-    if args.mongo_url:
-        mongo = MongoDBReporter(db_name=args.mongo_database,
-                                url=args.mongo_url)
+    if args.mongo_db:
+        url, db_name = parse_mongo_db_arg(args.mongo_db)
+        mongo = MongoDBReporter(db_name=db_name, url=url)
         observers.append(mongo)
 
     return config_updates, observers, args
