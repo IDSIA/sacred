@@ -34,7 +34,7 @@ class InfoUpdater(object):
 
                 if len(mon.log) == 1:
                     log_name = mon.log.keys()[0]
-                    monitors[mon_name + '.' + log_name] = mon.log[log_name]
+                    monitors[mon_name + '/' + log_name] = mon.log[log_name]
                 else:
                     monitors[mon_name] = mon.log
 
