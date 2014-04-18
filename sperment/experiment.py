@@ -82,9 +82,9 @@ class Experiment(object):
         if self.cfgs:
             assert self.cfg is None
             current_cfg = {}
-            for c in self.cfgs:
-                c.execute(config_updates, preset=current_cfg)
-                current_cfg.update(c)
+            for config in self.cfgs:
+                config(config_updates, preset=current_cfg)
+                current_cfg.update(config)
             self.cfg = current_cfg
 
         if args and args.print_cfg_only:

@@ -2,8 +2,10 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from copy import copy
+from functools import update_wrapper
 import inspect
 import json
+import re
 
 
 def blocking_dictify(x):
@@ -34,24 +36,35 @@ class BlockingDict(dict):
                 bd[k] = v
 
 
+def is_zero_argument_function(func):
+    arg_spec = inspect.getargspec(func)
+    return (arg_spec.args == [] and
+            arg_spec.varargs is None and
+            arg_spec.keywords is None)
+
+
+def get_function_body_source(func):
+    func_code_lines, start_idx = inspect.getsourcelines(func)
+    func_code = ''.join(func_code_lines)
+    func_def = re.compile(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n".format(func.__name__),
+        flags=re.MULTILINE)
+    defs = list(re.finditer(func_def, func_code))
+    assert defs
+    func_body = func_code[defs[0].end():]
+    return inspect.cleandoc(func_body)
+
+
 class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
+        assert is_zero_argument_function(func)
         self._func = func
-        arg_spec = inspect.getargspec(func)
-        assert arg_spec.args == []
-        assert arg_spec.varargs is None
-        assert arg_spec.keywords is None
+        update_wrapper(self, func)
+        func_body = get_function_body_source(func)
+        self._body_code = compile(func_body, "<string>", "exec")
 
-        func_code = inspect.getsourcelines(func)[0]
-        i = 0
-        while func_code[i].find("def ") == -1 and not func_code[i].endswith(":"):
-            i += 1
-
-        body = inspect.cleandoc(''.join(func_code[i+1:]))
-        self._body_code = compile(body, "<string>", "exec")
-
-    def execute(self, fixed=None, preset=None):
+    def __call__(self, fixed=None, preset=None):
         self.clear()
         l = blocking_dictify(fixed) if fixed is not None else {}
         if preset is not None:
@@ -60,8 +73,6 @@ class ConfigScope(dict):
         for k, v in l.items():
             if k.startswith('_'):
                 continue
-            if hasattr(v, '__nested_func__'):
-                print('nested:', v)
             try:
                 json.dumps(v)
                 self[k] = v
