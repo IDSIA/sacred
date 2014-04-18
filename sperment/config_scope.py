@@ -21,19 +21,21 @@ class BlockingDict(dict):
     def __init__(self, fixed=None):
         super(BlockingDict, self).__init__()
         if fixed is not None:
-            self.update(fixed)
             self._fixed = fixed
         else:
             self._fixed = ()
 
     def __setitem__(self, key, value):
         if key not in self._fixed:
-            super(BlockingDict, self).__setitem__(key, value)
-        elif isinstance(self[key], BlockingDict) and isinstance(value, dict):
-            #recursive update
-            bd = self[key]
-            for k, v in value.items():
-                bd[k] = v
+            dict.__setitem__(self, key, value)
+        else:
+            fixed_val = self._fixed[key]
+            dict.__setitem__(self, key, fixed_val)
+            if isinstance(fixed_val, BlockingDict) and isinstance(value, dict):
+                #recursive update
+                bd = self[key]
+                for k, v in value.items():
+                    bd[k] = v
 
 
 def is_zero_argument_function(func):

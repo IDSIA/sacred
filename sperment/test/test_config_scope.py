@@ -57,9 +57,8 @@ class ConfigScopeTest(unittest.TestCase):
         self.assertEqual(self.cfg['composit1'], 102.0)
 
     def test_fixing_nested_dicts(self):
-        self.cfg({'f': {'b': 'ZZ', 'c': 't'}})
+        self.cfg({'f': {'c': 't'}})
         self.assertEqual(self.cfg['f']['a'], 'b')
-        self.assertEqual(self.cfg['f']['b'], 'ZZ')
         self.assertEqual(self.cfg['f']['c'], 't')
         self.assertEqual(self.cfg['composit2'], 'tada')
 
