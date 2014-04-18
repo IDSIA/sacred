@@ -58,13 +58,16 @@ def get_function_body_source(func):
 class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
-        assert is_zero_argument_function(func)
+        assert is_zero_argument_function(func), \
+            "only zero-argument function can be ConfigScopes"
         self._func = func
         update_wrapper(self, func)
         func_body = get_function_body_source(func)
         self._body_code = compile(func_body, "<string>", "exec")
+        self._initialized = False
 
     def __call__(self, fixed=None, preset=None):
+        self._initialized = True
         self.clear()
         l = blocking_dictify(fixed) if fixed is not None else {}
         if preset is not None:
@@ -91,3 +94,7 @@ class ConfigScope(dict):
                 return self[k]
             except KeyError:
                 raise AttributeError(k)
+
+    def __getitem__(self, item):
+        assert self._initialized, "ConfigScope has to be executed before access"
+        return dict.__getitem__(self, item)
