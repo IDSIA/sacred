@@ -10,16 +10,16 @@ import re
 
 def blocking_dictify(x):
     if isinstance(x, dict):
-        return BlockingDict({k: blocking_dictify(v) for k, v in x.iteritems()})
+        return DogmaticDict({k: blocking_dictify(v) for k, v in x.iteritems()})
     elif isinstance(x, (list, tuple)):
         return type(x)(blocking_dictify(v) for v in x)
     else:
         return x
 
 
-class BlockingDict(dict):
+class DogmaticDict(dict):
     def __init__(self, fixed=None):
-        super(BlockingDict, self).__init__()
+        super(DogmaticDict, self).__init__()
         if fixed is not None:
             self._fixed = fixed
         else:
@@ -31,11 +31,32 @@ class BlockingDict(dict):
         else:
             fixed_val = self._fixed[key]
             dict.__setitem__(self, key, fixed_val)
-            if isinstance(fixed_val, BlockingDict) and isinstance(value, dict):
+            if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 #recursive update
                 bd = self[key]
                 for k, v in value.items():
                     bd[k] = v
+
+    def update(self, E=None, **F):
+        if E is not None:
+            if hasattr(E, 'keys'):
+                for k in E:
+                    self[k] = E[k]
+            else:
+                for (k, v) in E:
+                    self[k] = v
+        for k in E:
+            self[k] = E[k]
+
+    def revelation(self):
+        missing = []
+        for key in self._fixed:
+            if not key in self:
+                self[key] = self._fixed[key]
+                missing.append(key)
+            elif isinstance(self[key], DogmaticDict):
+                missing += [key + "." + k for k in self[key].revelation()]
+        return missing
 
 
 def is_zero_argument_function(func):
