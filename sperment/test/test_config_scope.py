@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import unittest
-from sperment.config_scope import ConfigScope
+from sperment.config_scope import ConfigScope, DogmaticDict
 
 
 ########################  Tests  ###############################################
@@ -62,3 +62,70 @@ class ConfigScopeTest(unittest.TestCase):
         self.assertEqual(self.cfg['f']['c'], 't')
         self.assertEqual(self.cfg['composit2'], 'tada')
 
+
+class DogmaticDictTests(unittest.TestCase):
+    def test_isinstance_of_dict(self):
+        self.assertIsInstance(DogmaticDict(), dict)
+
+    def test_dict_interface(self):
+        d = DogmaticDict()
+        d['a'] = 12
+        d['b'] = 'foo'
+        self.assertIn('a', d)
+        self.assertIn('b', d)
+        self.assertEqual(d['a'], 12)
+        self.assertEqual(d['b'], 'foo')
+        self.assertSetEqual(set(d.keys()), {'a', 'b'})
+        self.assertSetEqual(set(d.values()), {12, 'foo'})
+        self.assertSetEqual(set(d.items()), {('a', 12), ('b', 'foo')})
+
+        del d['a']
+        self.assertNotIn('a', d)
+
+        d['b'] = 'bar'
+        self.assertEqual(d['b'], 'bar')
+
+        d.update({'a': 1, 'c': 2})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 'bar')
+        self.assertEqual(d['c'], 2)
+
+        d.update(a=2, b=3)
+        self.assertEqual(d['a'], 2)
+        self.assertEqual(d['b'], 3)
+        self.assertEqual(d['c'], 2)
+
+        d.update([('b', 9), ('c', 7)])
+        self.assertEqual(d['a'], 2)
+        self.assertEqual(d['b'], 9)
+        self.assertEqual(d['c'], 7)
+
+    def test_fixed_value_not_initialized(self):
+        d = DogmaticDict({'a': 7})
+        self.assertNotIn('a', d)
+
+    def test_fixed_value_fixed(self):
+        d = DogmaticDict({'a': 7})
+        d['a'] = 8
+        self.assertEqual(d['a'], 7)
+
+        del d['a']
+        self.assertIn('a', d)
+        self.assertEqual(d['a'], 7)
+
+        d.update([('a', 9), ('b', 12)])
+        self.assertEqual(d['a'], 7)
+
+        d.update({'a': 9, 'b': 12})
+        self.assertEqual(d['a'], 7)
+
+        d.update(a=10, b=13)
+        self.assertEqual(d['a'], 7)
+
+    def test_revelation(self):
+        d = DogmaticDict({'a': 7, 'b': 12})
+        d['b'] = 23
+        self.assertNotIn('a', d)
+        m = d.revelation()
+        self.assertSetEqual(set(m), {'a'})
+        self.assertIn('a', d)
