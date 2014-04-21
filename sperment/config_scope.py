@@ -8,11 +8,13 @@ import json
 import re
 
 
-def blocking_dictify(x):
+def dogmatize(x):
     if isinstance(x, dict):
-        return DogmaticDict({k: blocking_dictify(v) for k, v in x.iteritems()})
-    elif isinstance(x, (list, tuple)):
-        return type(x)(blocking_dictify(v) for v in x)
+        return DogmaticDict({k: dogmatize(v) for k, v in x.iteritems()})
+    elif isinstance(x, list):
+        return DogmaticList([dogmatize(v) for v in x])
+    elif isinstance(x, tuple):
+        return tuple(dogmatize(v) for v in x)
     else:
         return x
 
@@ -136,7 +138,7 @@ class ConfigScope(dict):
     def __call__(self, fixed=None, preset=None):
         self._initialized = True
         self.clear()
-        l = blocking_dictify(fixed) if fixed is not None else {}
+        l = dogmatize(fixed) if fixed is not None else {}
         if preset is not None:
             l.update(preset)
         eval(self._body_code, copy(self._func.func_globals), l)
