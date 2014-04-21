@@ -37,16 +37,20 @@ class DogmaticDict(dict):
                 for k, v in value.items():
                     bd[k] = v
 
-    def update(self, E=None, **F):
-        if E is not None:
-            if hasattr(E, 'keys'):
-                for k in E:
-                    self[k] = E[k]
+    def __delitem__(self, key):
+        if key not in self._fixed:
+            dict.__delitem__(self, key)
+
+    def update(self, iterable=None, **kwargs):
+        if iterable is not None:
+            if hasattr(iterable, 'keys'):
+                for k in iterable:
+                    self[k] = iterable[k]
             else:
-                for (k, v) in E:
+                for (k, v) in iterable:
                     self[k] = v
-        for k in E:
-            self[k] = E[k]
+        for k in kwargs:
+            self[k] = kwargs[k]
 
     def revelation(self):
         missing = []
@@ -57,6 +61,46 @@ class DogmaticDict(dict):
             elif isinstance(self[key], DogmaticDict):
                 missing += [key + "." + k for k in self[key].revelation()]
         return missing
+
+
+class DogmaticList(list):
+    def __init__(self, fixed=None):
+        if fixed is not None:
+            self._fixed = fixed
+        else:
+            self._fixed = ()
+        super(DogmaticList, self).__init__(self._fixed)
+
+    def _is_fixed(self, value):
+        return (value not in self._fixed or
+                self.count(value) > self._fixed.count(value))
+
+    def pop(self, index=None):
+        index = index or -1
+        value = self[index]
+        if not self._is_fixed(value):
+            list.pop(self, index)
+
+    def remove(self, value):
+        if not self._is_fixed(value):
+            list.remove(self, value)
+
+    def __delitem__(self, key):
+        value = self[key]
+        if not self._is_fixed(value):
+            list.__delitem__(self, key)
+
+    def __delslice__(self, i, j):
+        assert 0 <= i <= j
+        for idx in reversed(range(i, j)):
+            value = self[idx]
+            if not self._is_fixed(value):
+                list.__delitem__(self, idx)
+
+    def __setitem__(self, i, y):
+        value = self[i]
+        if not self._is_fixed(value):
+            list.__setitem__(self, i, y)
 
 
 def is_zero_argument_function(func):
