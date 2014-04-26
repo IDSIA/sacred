@@ -66,43 +66,44 @@ class DogmaticDict(dict):
 
 
 class DogmaticList(list):
-    def __init__(self, fixed=None):
-        if fixed is not None:
-            self._fixed = fixed
-        else:
-            self._fixed = ()
-        super(DogmaticList, self).__init__(self._fixed)
+    def append(self, p_object):
+        pass
 
-    def _is_fixed(self, value):
-        return (value not in self._fixed or
-                self.count(value) > self._fixed.count(value))
+    def extend(self, iterable):
+        pass
 
-    def pop(self, index=None):
-        index = index or -1
-        value = self[index]
-        if not self._is_fixed(value):
-            list.pop(self, index)
+    def insert(self, index, p_object):
+        pass
 
-    def remove(self, value):
-        if not self._is_fixed(value):
-            list.remove(self, value)
+    def reverse(self):
+        pass
+
+    def sort(self, cmp=None, key=None, reverse=False):
+        pass
+
+    def __iadd__(self, other):
+        return self
+
+    def __imul__(self, other):
+        return self
+
+    def __setitem__(self, key, value):
+        pass
+
+    def __setslice__(self, i, j, sequence):
+        pass
 
     def __delitem__(self, key):
-        value = self[key]
-        if not self._is_fixed(value):
-            list.__delitem__(self, key)
+        pass
 
     def __delslice__(self, i, j):
-        assert 0 <= i <= j
-        for idx in reversed(range(i, j)):
-            value = self[idx]
-            if not self._is_fixed(value):
-                list.__delitem__(self, idx)
+        pass
 
-    def __setitem__(self, i, y):
-        value = self[i]
-        if not self._is_fixed(value):
-            list.__setitem__(self, i, y)
+    def pop(self, index=None):
+        raise TypeError('Cannot pop from DogmaticList')
+
+    def remove(self, value):
+        pass
 
 
 def is_zero_argument_function(func):
@@ -150,6 +151,7 @@ class ConfigScope(dict):
                 self[k] = v
             except TypeError:
                 pass
+        return self
 
     def __getattr__(self, k):
         """
