@@ -8,10 +8,10 @@ import os.path
 import sys
 import time
 import traceback
-from sperment.arg_parser import parse_arguments
-from sperment.captured_function import CapturedFunction
-from sperment.config_scope import ConfigScope
-from sperment.utils import create_basic_stream_logger
+from sacred.arg_parser import parse_arguments
+from sacred.captured_function import CapturedFunction
+from sacred.config_scope import ConfigScope
+from sacred.utils import create_basic_stream_logger
 
 
 class Experiment(object):

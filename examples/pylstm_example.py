@@ -5,7 +5,7 @@ This is an example experiment of how you might use sperment together with
 pylstm.
 """
 from __future__ import division, print_function, unicode_literals
-from sperment import Experiment, InfoUpdater
+from sacred import Experiment, InfoUpdater
 from pylstm import *
 
 ex = Experiment("Example1")

@@ -7,7 +7,7 @@ import argparse
 import collections
 import json
 import re
-from sperment.observers import MongoDBReporter
+from sacred.observers import MongoDBReporter
 
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
 HOSTNAME_PATTERN = \

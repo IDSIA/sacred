@@ -9,7 +9,7 @@ import numpy as np
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
-from sperment.host_info import get_host_info
+from sacred.host_info import get_host_info
 
 
 class ExperimentObserver(object):

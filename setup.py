@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from distutils.core import setup
-import sperment
+import sacred
 
 classifiers = """
 Development Status :: 3 - Alpha
@@ -23,7 +23,7 @@ Topic :: Software Development :: Quality Assurance
 
 setup(
     name='sperment',
-    version=sperment.__version__,
+    version=sacred.__version__,
     author='Klaus Greff',
     author_email='qwlouse@gmail.com',
     packages=['sperment', 'sperment.test'],
