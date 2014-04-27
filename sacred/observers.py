@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import pickle
 import time
 
-import numpy as np
+
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
@@ -32,29 +32,37 @@ class ExperimentObserver(object):
     def experiment_failed_event(self, fail_time, fail_trace, info):
         pass
 
+SON_MANIPULATORS = []
 
-class PickleNumpyArrays(SONManipulator):
-    """
-    Helper that makes sure numpy arrays get pickled and stored in the database
-    as binary strings.
-    """
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, np.ndarray):
-                son[key] = {"_type": "ndarray",
-                            "_value": Binary(pickle.dumps(value, protocol=2))}
-            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
+try:
+    import numpy as np
 
-    def transform_outgoing(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, dict):
-                if "_type" in value and value["_type"] == "ndarray":
-                    son[key] = pickle.loads(str(value["_value"]))
-                else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value, collection)
-        return son
+    class PickleNumpyArrays(SONManipulator):
+        """
+        Helper that makes sure numpy arrays get pickled and stored in the database
+        as binary strings.
+        """
+        def transform_incoming(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, np.ndarray):
+                    son[key] = {"_type": "ndarray",
+                                "_value": Binary(pickle.dumps(value, protocol=2))}
+                elif isinstance(value, dict):  # Make sure we recurse into sub-docs
+                    son[key] = self.transform_incoming(value, collection)
+            return son
+
+        def transform_outgoing(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, dict):
+                    if "_type" in value and value["_type"] == "ndarray":
+                        son[key] = pickle.loads(str(value["_value"]))
+                    else:  # Again, make sure to recurse into sub-docs
+                        son[key] = self.transform_outgoing(value, collection)
+            return son
+
+    SON_MANIPULATORS.append(PickleNumpyArrays())
+except ImportError:
+    pass
 
 
 class MongoDBReporter(ExperimentObserver):
@@ -65,7 +73,8 @@ class MongoDBReporter(ExperimentObserver):
         self.save_delay = save_delay
         mongo = MongoClient(url)
         self.db = mongo[db_name]
-        self.db.add_son_manipulator(PickleNumpyArrays())
+        for manipulator in SON_MANIPULATORS:
+            self.db.add_son_manipulator(manipulator)
         self.collection = self.db['experiments']
 
     def save(self):

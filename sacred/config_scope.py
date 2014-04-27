@@ -10,7 +10,7 @@ import re
 
 def dogmatize(x):
     if isinstance(x, dict):
-        return DogmaticDict({k: dogmatize(v) for k, v in x.iteritems()})
+        return DogmaticDict({k: dogmatize(v) for k, v in x.items()})
     elif isinstance(x, list):
         return DogmaticList([dogmatize(v) for v in x])
     elif isinstance(x, tuple):
@@ -142,7 +142,7 @@ class ConfigScope(dict):
         l = dogmatize(fixed) if fixed is not None else {}
         if preset is not None:
             l.update(preset)
-        eval(self._body_code, copy(self._func.func_globals), l)
+        eval(self._body_code, copy(self._func.__globals__), l)
         for k, v in l.items():
             if k.startswith('_'):
                 continue

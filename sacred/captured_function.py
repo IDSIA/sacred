@@ -28,7 +28,7 @@ class CapturedFunction(object):
             result = self._wrapped_function(*args, **kwargs)
         except:
             t, v, trace = sys.exc_info()
-            raise t, v, trace.tb_next
+            raise v.with_traceback(trace.tb_next)
         ########################################################################
         stop_time = time.time()
         elapsed_time = timedelta(seconds=round(stop_time - start_time))
@@ -40,4 +40,4 @@ class CapturedFunction(object):
             return self.execute(args, kwargs, self._parent_experiment.cfg)
         except:
             t, v, trace = sys.exc_info()
-            raise t, v, trace.tb_next
+            raise v.with_traceback(trace.tb_next)

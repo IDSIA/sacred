@@ -106,7 +106,8 @@ class Experiment(object):
             self._status = Experiment.FAILED
             t, v, trace = sys.exc_info()
             self._emit_failed(t, v, trace.tb_next)
-            raise t, v, trace.tb_next
+            raise v.with_traceback(trace.tb_next)
+            #raise t, v, trace.tb_next
 
         self._status = Experiment.COMPLETED
         self._emit_completed(result)
