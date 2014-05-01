@@ -2,14 +2,16 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import unittest
+import pytest
 from sacred.config_scope import ConfigScope, DogmaticDict, DogmaticList
 
 
 ########################  Tests  ###############################################
 
 # noinspection PyUnresolvedReferences
-class ConfigScopeTest(unittest.TestCase):
-    def setUp(self):
+class TestConfigScope:
+    @pytest.fixture(autouse=True)
+    def basic_scope(self):
 
         @ConfigScope
         def cfg():
@@ -34,33 +36,33 @@ class ConfigScopeTest(unittest.TestCase):
         self.cfg = cfg
         self.cfg()
 
-    def test_config_scope_is_config_scope(self):
-        self.assertIsInstance(self.cfg, ConfigScope)
+    def test_config_scope_is_dict(self):
+        assert isinstance(self.cfg, ConfigScope)
+        assert isinstance(self.cfg, dict)
 
     def test_config_scope_contains_keys(self):
-        self.assertSetEqual(set(self.cfg.keys()),
-                            {'a', 'b', 'c', 'd', 'e', 'f', 'composit1', 'composit2', 'deriv'})
+        assert set(self.cfg.keys()) == {'a', 'b', 'c', 'd', 'e', 'f', 'composit1', 'composit2', 'deriv'}
 
-        self.assertEqual(self.cfg['a'], 1)
-        self.assertEqual(self.cfg['b'], 2.0)
-        self.assertEqual(self.cfg['c'], True)
-        self.assertEqual(self.cfg['d'], 'string')
-        self.assertListEqual(self.cfg['e'], [1, 2, 3])
-        self.assertDictEqual(self.cfg['f'], {'a': 'b', 'c': 'd'})
-        self.assertEqual(self.cfg['composit1'], 3.0)
-        self.assertEqual(self.cfg['composit2'], 'dada')
-        self.assertEqual(self.cfg['deriv'], 23)
+        assert self.cfg['a'] == 1
+        assert self.cfg['b'] == 2.0
+        assert self.cfg['c']
+        assert self.cfg['d'] == 'string'
+        assert self.cfg['e'] == [1, 2, 3]
+        assert self.cfg['f'] == {'a': 'b', 'c': 'd'}
+        assert self.cfg['composit1'] == 3.0
+        assert self.cfg['composit2'] == 'dada'
+        assert self.cfg['deriv'] == 23
 
     def test_fixing_values(self):
         self.cfg({'a': 100})
-        self.assertEqual(self.cfg['a'], 100)
-        self.assertEqual(self.cfg['composit1'], 102.0)
+        assert self.cfg['a'] == 100
+        assert self.cfg['composit1'] == 102.0
 
     def test_fixing_nested_dicts(self):
         self.cfg({'f': {'c': 't'}})
-        self.assertEqual(self.cfg['f']['a'], 'b')
-        self.assertEqual(self.cfg['f']['c'], 't')
-        self.assertEqual(self.cfg['composit2'], 'tada')
+        assert self.cfg['f']['a'] == 'b'
+        assert self.cfg['f']['c'] == 't'
+        assert self.cfg['composit2'] == 'tada'
 
 
 class DogmaticDictTests(unittest.TestCase):
