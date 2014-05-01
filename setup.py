@@ -36,7 +36,7 @@ setup(
     test_suite="tests",
     scripts=[],
     install_requires=[
-        "pymongo >= 2.0",
+        "pymongo >= 2.0", 'pytest',
     ],
 
     classifiers=filter(None, classifiers.split('\n')),

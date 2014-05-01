@@ -8,11 +8,10 @@ from sacred.config_scope import ConfigScope, DogmaticDict, DogmaticList
 
 ########################  Tests  ###############################################
 
-# noinspection PyUnresolvedReferences
-class TestConfigScope:
-    @pytest.fixture(autouse=True)
-    def basic_scope(self):
-
+# noinspection PyUnresolvedReferences,PyUnusedLocal,PyMethodMayBeStatic
+class TestConfigScope(object):
+    @pytest.fixture
+    def conf_scope(self):
         @ConfigScope
         def cfg():
             a = 1
@@ -28,110 +27,113 @@ class TestConfigScope:
 
             deriv = ignored1()
 
-            def ignored2(self):
+            def ignored2():
                 pass
 
             ignored3 = int
 
-        self.cfg = cfg
-        self.cfg()
+        cfg()
+        return cfg
 
-    def test_config_scope_is_dict(self):
-        assert isinstance(self.cfg, ConfigScope)
-        assert isinstance(self.cfg, dict)
+    def test_config_scope_is_dict(self, conf_scope):
+        assert isinstance(conf_scope, ConfigScope)
+        assert isinstance(conf_scope, dict)
 
-    def test_config_scope_contains_keys(self):
-        assert set(self.cfg.keys()) == {'a', 'b', 'c', 'd', 'e', 'f', 'composit1', 'composit2', 'deriv'}
+    def test_config_scope_contains_keys(self, conf_scope):
+        assert set(conf_scope.keys()) == {'a', 'b', 'c', 'd', 'e', 'f', 'composit1', 'composit2', 'deriv'}
 
-        assert self.cfg['a'] == 1
-        assert self.cfg['b'] == 2.0
-        assert self.cfg['c']
-        assert self.cfg['d'] == 'string'
-        assert self.cfg['e'] == [1, 2, 3]
-        assert self.cfg['f'] == {'a': 'b', 'c': 'd'}
-        assert self.cfg['composit1'] == 3.0
-        assert self.cfg['composit2'] == 'dada'
-        assert self.cfg['deriv'] == 23
+        assert conf_scope['a'] == 1
+        assert conf_scope['b'] == 2.0
+        assert conf_scope['c']
+        assert conf_scope['d'] == 'string'
+        assert conf_scope['e'] == [1, 2, 3]
+        assert conf_scope['f'] == {'a': 'b', 'c': 'd'}
+        assert conf_scope['composit1'] == 3.0
+        assert conf_scope['composit2'] == 'dada'
+        assert conf_scope['deriv'] == 23
 
-    def test_fixing_values(self):
-        self.cfg({'a': 100})
-        assert self.cfg['a'] == 100
-        assert self.cfg['composit1'] == 102.0
+    def test_fixing_values(self, conf_scope):
+        conf_scope({'a': 100})
+        assert conf_scope['a'] == 100
+        assert conf_scope['composit1'] == 102.0
 
-    def test_fixing_nested_dicts(self):
-        self.cfg({'f': {'c': 't'}})
-        assert self.cfg['f']['a'] == 'b'
-        assert self.cfg['f']['c'] == 't'
-        assert self.cfg['composit2'] == 'tada'
+    def test_fixing_nested_dicts(self, conf_scope):
+        conf_scope({'f': {'c': 't'}})
+        assert conf_scope['f']['a'] == 'b'
+        assert conf_scope['f']['c'] == 't'
+        assert conf_scope['composit2'] == 'tada'
 
 
-class DogmaticDictTests(unittest.TestCase):
+# noinspection PyMethodMayBeStatic
+class TestDogmaticDict(object):
     def test_isinstance_of_dict(self):
-        self.assertIsInstance(DogmaticDict(), dict)
+        assert isinstance(DogmaticDict(), dict)
 
     def test_dict_interface(self):
         d = DogmaticDict()
-        self.assertDictEqual(d, {})
+        assert d == {}
         d['a'] = 12
         d['b'] = 'foo'
-        self.assertIn('a', d)
-        self.assertIn('b', d)
-        self.assertEqual(d['a'], 12)
-        self.assertEqual(d['b'], 'foo')
-        self.assertSetEqual(set(d.keys()), {'a', 'b'})
-        self.assertSetEqual(set(d.values()), {12, 'foo'})
-        self.assertSetEqual(set(d.items()), {('a', 12), ('b', 'foo')})
+        assert 'a' in d
+        assert 'b' in d
+
+        assert d['a'] == 12
+        assert d['b'] == 'foo'
+
+        assert set(d.keys()) == {'a', 'b'}
+        assert set(d.values()) == {12, 'foo'}
+        assert set(d.items()) == {('a', 12), ('b', 'foo')}
 
         del d['a']
-        self.assertNotIn('a', d)
+        assert 'a' not in d
 
         d['b'] = 'bar'
-        self.assertEqual(d['b'], 'bar')
+        assert d['b'] == 'bar'
 
         d.update({'a': 1, 'c': 2})
-        self.assertEqual(d['a'], 1)
-        self.assertEqual(d['b'], 'bar')
-        self.assertEqual(d['c'], 2)
+        assert d['a'] == 1
+        assert d['b'] == 'bar'
+        assert d['c'] == 2
 
         d.update(a=2, b=3)
-        self.assertEqual(d['a'], 2)
-        self.assertEqual(d['b'], 3)
-        self.assertEqual(d['c'], 2)
+        assert d['a'] == 2
+        assert d['b'] == 3
+        assert d['c'] == 2
 
         d.update([('b', 9), ('c', 7)])
-        self.assertEqual(d['a'], 2)
-        self.assertEqual(d['b'], 9)
-        self.assertEqual(d['c'], 7)
+        assert d['a'] == 2
+        assert d['b'] == 9
+        assert d['c'] == 7
 
     def test_fixed_value_not_initialized(self):
         d = DogmaticDict({'a': 7})
-        self.assertNotIn('a', d)
+        assert 'a' not in d
 
     def test_fixed_value_fixed(self):
         d = DogmaticDict({'a': 7})
         d['a'] = 8
-        self.assertEqual(d['a'], 7)
+        assert d['a'] == 7
 
         del d['a']
-        self.assertIn('a', d)
-        self.assertEqual(d['a'], 7)
+        assert 'a' in d
+        assert d['a'] == 7
 
         d.update([('a', 9), ('b', 12)])
-        self.assertEqual(d['a'], 7)
+        assert d['a'] == 7
 
         d.update({'a': 9, 'b': 12})
-        self.assertEqual(d['a'], 7)
+        assert d['a'] == 7
 
         d.update(a=10, b=13)
-        self.assertEqual(d['a'], 7)
+        assert d['a'] == 7
 
     def test_revelation(self):
         d = DogmaticDict({'a': 7, 'b': 12})
         d['b'] = 23
-        self.assertNotIn('a', d)
+        assert 'a' not in d
         m = d.revelation()
-        self.assertSetEqual(set(m), {'a'})
-        self.assertIn('a', d)
+        assert set(m) == {'a'}
+        assert 'a' in d
 
 
 class DogmaticListTests(unittest.TestCase):
