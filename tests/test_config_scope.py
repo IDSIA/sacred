@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import unittest
 import pytest
 from sacred.config_scope import ConfigScope, DogmaticDict, DogmaticList
 
@@ -136,105 +135,106 @@ class TestDogmaticDict(object):
         assert 'a' in d
 
 
-class DogmaticListTests(unittest.TestCase):
+# noinspection PyMethodMayBeStatic
+class TestDogmaticList(object):
     def test_isinstance_of_list(self):
-        self.assertIsInstance(DogmaticList(), list)
+        assert isinstance(DogmaticList(), list)
 
     def test_init(self):
         l = DogmaticList()
-        self.assertListEqual(l, [])
+        assert l == []
 
         l2 = DogmaticList([2, 3, 1])
-        self.assertListEqual(l2, [2, 3, 1])
+        assert l2 == [2, 3, 1]
 
     def test_append(self):
         l = DogmaticList([1, 2])
         l.append(3)
         l.append(4)
-        self.assertListEqual(l, [1, 2])
+        assert l == [1, 2]
 
     def test_extend(self):
         l = DogmaticList([1, 2])
         l.extend([3, 4])
-        self.assertListEqual(l, [1, 2])
+        assert l == [1, 2]
 
     def test_insert(self):
         l = DogmaticList([1, 2])
         l.insert(1, 17)
-        self.assertListEqual(l, [1, 2])
+        assert l == [1, 2]
 
     def test_pop(self):
         l = DogmaticList([1, 2, 3])
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             l.pop()
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_sort(self):
         l = DogmaticList([3, 1, 2])
         l.sort()
-        self.assertListEqual(l, [3, 1, 2])
+        assert l == [3, 1, 2]
 
     def test_reverse(self):
         l = DogmaticList([1, 2, 3])
         l.reverse()
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_setitem(self):
         l = DogmaticList([1, 2, 3])
         l[1] = 23
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_setslice(self):
         l = DogmaticList([1, 2, 3])
         l[1:3] = [4, 5]
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_delitem(self):
         l = DogmaticList([1, 2, 3])
         del l[1]
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_delslice(self):
         l = DogmaticList([1, 2, 3])
         del l[1:]
-        self.assertListEqual(l, [1, 2, 3])
+        assert l == [1, 2, 3]
 
     def test_iadd(self):
         l = DogmaticList([1, 2])
         l += [3, 4]
-        self.assertListEqual(l, [1, 2])
+        assert l == [1, 2]
 
     def test_imul(self):
         l = DogmaticList([1, 2])
         l *= 4
-        self.assertListEqual(l, [1, 2])
+        assert l == [1, 2]
 
     def test_list_interface_getitem(self):
         l = DogmaticList([0, 1, 2])
-        self.assertEqual(l[0], 0)
-        self.assertEqual(l[1], 1)
-        self.assertEqual(l[2], 2)
+        assert l[0] == 0
+        assert l[1] == 1
+        assert l[2] == 2
 
-        self.assertEqual(l[-1], 2)
-        self.assertEqual(l[-2], 1)
-        self.assertEqual(l[-3], 0)
+        assert l[-1] == 2
+        assert l[-2] == 1
+        assert l[-3] == 0
 
     def test_list_interface_len(self):
         l = DogmaticList()
-        self.assertEqual(len(l), 0)
+        assert len(l) == 0
         l = DogmaticList([0, 1, 2])
-        self.assertEqual(len(l), 3)
+        assert len(l) == 3
 
     def test_list_interface_count(self):
         l = DogmaticList([1, 2, 4, 4, 5])
-        self.assertEqual(l.count(1), 1)
-        self.assertEqual(l.count(3), 0)
-        self.assertEqual(l.count(4), 2)
+        assert l.count(1) == 1
+        assert l.count(3) == 0
+        assert l.count(4) == 2
 
     def test_list_interface_index(self):
         l = DogmaticList([1, 2, 4, 4, 5])
-        self.assertEqual(l.index(1), 0)
-        self.assertEqual(l.index(4), 2)
-        self.assertEqual(l.index(5), 4)
-        with self.assertRaises(ValueError):
+        assert l.index(1) == 0
+        assert l.index(4) == 2
+        assert l.index(5) == 4
+        with pytest.raises(ValueError):
             l.index(3)
