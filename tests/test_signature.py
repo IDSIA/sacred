@@ -19,6 +19,7 @@ def complex_function_name(a=1, b='fo', c=9):
     return a, b, c
 
 
+# noinspection PyPep8Naming
 def FunCTIonWithCAPItals(a, b, c=3, **kwargs):
     return a, b, c, kwargs
 
@@ -48,59 +49,68 @@ renamed = old_name
 functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals,
              _name_with_underscore_, __double_underscore__, old_name, renamed]
 
+ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+       '_name_with_underscore_', '__double_underscore__', 'old_name', 'renamed']
+
+names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+         '_name_with_underscore_', '__double_underscore__', 'old_name',
+         'old_name']
+
+arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'],
+             ['fo', 'bar'], ['man', 'o'], ['verylongvariablename'],
+             ['verylongvariablename']]
+
+vararg_names = [None, None, None, None, 'baz', 'men', None, None]
+
+kw_wc_names = [None, None, None, 'kwargs', None, 'oo', None, None]
+
+pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
+                 ['man', 'o'], ['verylongvariablename'],
+                 ['verylongvariablename']]
+
+kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}, {}]
+
 
 ########################  Tests  ###############################################
 
-def test_constructor_extract_function_name():
-    names = ['foo', 'bariza', 'complex_function_name',
-             'FunCTIonWithCAPItals', '_name_with_underscore_',
-             '__double_underscore__', 'old_name', 'old_name']
-    for f, name in zip(functions, names):
-        s = Signature(f)
-        print(f.__name__)
+@pytest.mark.parametrize("function, name", zip(functions, names), ids=ids)
+def test_constructor_extract_function_name(function, name):
+        s = Signature(function)
         assert s.name == name
 
 
-def test_constructor_extracts_all_arguments():
-    arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'],
-                     ['fo', 'bar'], ['man', 'o'], ['verylongvariablename'],
-                     ['verylongvariablename']]
-    for f, args in zip(functions, arguments):
-        s = Signature(f)
-        print(f.__name__)
+@pytest.mark.parametrize("function, args", zip(functions, arguments), ids=ids)
+def test_constructor_extracts_all_arguments(function, args):
+        s = Signature(function)
         assert s.arguments == args
 
 
-def test_constructor_extract_vararg_name():
-    vararg_names = [None, None, None, None, 'baz', 'men', None, None]
-    for f, varg in zip(functions, vararg_names):
-        s = Signature(f)
-        print(f.__name__)
-        assert s.vararg_name == varg
+@pytest.mark.parametrize("function, vararg", zip(functions, vararg_names),
+                         ids=ids)
+def test_constructor_extract_vararg_name(function, vararg):
+        s = Signature(function)
+        assert s.vararg_name == vararg
 
 
-def test_constructor_extract_kwargs_wildcard_name():
-    kw_wc_names = [None, None, None, 'kwargs', None, 'oo', None, None]
-    for f, kw_wc in zip(functions, kw_wc_names):
-        s = Signature(f)
-        print(f.__name__)
+@pytest.mark.parametrize("function, kw_wc", zip(functions, kw_wc_names),
+                         ids=ids)
+def test_constructor_extract_kwargs_wildcard_name(function, kw_wc):
+        s = Signature(function)
         assert s.kw_wildcard_name == kw_wc
 
 
-def test_constructor_extract_positional_arguments():
-    pos_args = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
-                    ['man', 'o'], ['verylongvariablename']]
-    for f, pargs in zip(functions, pos_args):
-        s = Signature(f)
-        print(f.__name__)
-        assert s.positional_args == pargs
+@pytest.mark.parametrize("function, pos_args", zip(functions, pos_arguments),
+                         ids=ids)
+def test_constructor_extract_positional_arguments(function, pos_args):
+        s = Signature(function)
+        assert s.positional_args == pos_args
 
 
-def test_constructor_extract_kwargs():
-    kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}]
-    for f, kwargs in zip(functions, kwarg_list):
-        s = Signature(f)
-        print(f.__name__)
+@pytest.mark.parametrize("function, kwargs",
+                         zip(functions, kwarg_list),
+                         ids=ids)
+def test_constructor_extract_kwargs(function, kwargs):
+        s = Signature(function)
         assert s.kwargs == kwargs
 
 
@@ -314,10 +324,14 @@ def test_construct_arguments_does_not_raise_for_missing_defaults():
 def test_unicode_():
     assert Signature(foo).__unicode__() == "foo()"
     assert Signature(bariza).__unicode__() == "bariza(a, b, c)"
-    assert re.match("complex_function_name\(a=1, b=u?'fo', c=9\)", Signature(complex_function_name).__unicode__())
-    assert Signature(FunCTIonWithCAPItals).__unicode__() == "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"
-    assert Signature(_name_with_underscore_).__unicode__() == "_name_with_underscore_(fo, bar, *baz)"
-    assert Signature(__double_underscore__).__unicode__() == "__double_underscore__(man, o, *men, **oo)"
+    assert re.match("complex_function_name\(a=1, b=u?'fo', c=9\)",
+                    Signature(complex_function_name).__unicode__())
+    assert Signature(FunCTIonWithCAPItals).__unicode__() == \
+        "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"
+    assert Signature(_name_with_underscore_).__unicode__() == \
+        "_name_with_underscore_(fo, bar, *baz)"
+    assert Signature(__double_underscore__).__unicode__() == \
+        "__double_underscore__(man, o, *men, **oo)"
     assert Signature(old_name).__unicode__() == "old_name(verylongvariablename)"
     assert Signature(renamed).__unicode__() == "old_name(verylongvariablename)"
     assert Signature(generic).__unicode__() == "generic(*args, **kwargs)"
@@ -328,10 +342,14 @@ def test_repr_():
     regex = "<Signature at 0x[0-9a-fA-F]+ for '%s'>"
     assert re.match(regex % 'foo', Signature(foo).__repr__())
     assert re.match(regex % 'bariza', Signature(bariza).__repr__())
-    assert re.match(regex % 'complex_function_name', Signature(complex_function_name).__repr__())
-    assert re.match(regex % 'FunCTIonWithCAPItals', Signature(FunCTIonWithCAPItals).__repr__())
-    assert re.match(regex % '_name_with_underscore_', Signature(_name_with_underscore_).__repr__())
-    assert re.match(regex % '__double_underscore__', Signature(__double_underscore__).__repr__())
+    assert re.match(regex % 'complex_function_name',
+                    Signature(complex_function_name).__repr__())
+    assert re.match(regex % 'FunCTIonWithCAPItals',
+                    Signature(FunCTIonWithCAPItals).__repr__())
+    assert re.match(regex % '_name_with_underscore_',
+                    Signature(_name_with_underscore_).__repr__())
+    assert re.match(regex % '__double_underscore__',
+                    Signature(__double_underscore__).__repr__())
     assert re.match(regex % 'old_name', Signature(old_name).__repr__())
     assert re.match(regex % 'old_name', Signature(renamed).__repr__())
     assert re.match(regex % 'generic', Signature(generic).__repr__())
