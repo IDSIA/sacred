@@ -37,7 +37,7 @@ def parse_mongo_db_arg(mongo_db):
     if DB_NAME.match(mongo_db):
         return 'localhost:27017', mongo_db
     elif URL.match(mongo_db):
-        return mongo_db, 'sperment'
+        return mongo_db, 'sacred'
     elif URL_DB_NAME.match(mongo_db):
         m = URL_DB_NAME.match(mongo_db)
         return m.group('url'), m.group('db_name')
@@ -46,10 +46,13 @@ def parse_mongo_db_arg(mongo_db):
                          '"host:port[:db_name]" but was %s' % mongo_db)
 
 
-def parse_arguments():
+def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("update", nargs='*',
+    parser.add_argument("cmd", nargs='*',
+                        help='invoke a specific command +optional arguments')
+
+    parser.add_argument("-u", "--update",
                         help='updates to the default options of the form '
                              'foo.bar=baz')
 
@@ -59,14 +62,17 @@ def parse_arguments():
     parser.add_argument("-m", "--mongo_db", nargs='?',
                         help='Use MongoDB. Optionally specify "db_name" or '
                              '"host:port[:db_name]"',
-                        default='sperment')
+                        const='sacred')
 
     parser.add_argument("-p", "--print_cfg_only",
                         help='print the configuration and exit',
                         action='store_true')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    return args
 
+
+def get_config_updates(args):
     config_updates = {}
 
     if args.config_file:
@@ -89,12 +95,14 @@ def parse_arguments():
                 converted_value = value
 
             current_option[path.split('.')[-1]] = converted_value
+    return config_updates
 
+
+def get_observers(args):
     observers = []
-
     if args.mongo_db:
         url, db_name = parse_mongo_db_arg(args.mongo_db)
         mongo = MongoDBReporter(db_name=db_name, url=url)
         observers.append(mongo)
 
-    return config_updates, observers, args
+    return observers

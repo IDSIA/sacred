@@ -8,7 +8,7 @@ import os.path
 import sys
 import time
 import traceback
-from sacred.arg_parser import parse_arguments
+from sacred.arg_parser import parse_arguments, get_config_updates, get_observers
 from sacred.captured_function import CapturedFunction
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger
@@ -74,7 +74,9 @@ class Experiment(object):
 
         if use_argv:
             assert not config_updates
-            config_updates, observers, args = parse_arguments()
+            args = parse_arguments(sys.argv)
+            config_updates = get_config_updates(args)
+            observers = get_observers(args)
 
             for obs in observers:
                 self.add_observer(obs)
