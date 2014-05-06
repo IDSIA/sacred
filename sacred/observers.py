@@ -86,8 +86,11 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
-        with open(mainfile, 'r') as f:
-            self.experiment_entry['source'] = f.read()
+        try:
+            with open(mainfile, 'r') as f:
+                self.experiment_entry['source'] = f.read()
+        except IOError as e:
+            self.experiment_entry['source'] = e.args[0] 
         self.experiment_entry['doc'] = doc
         self.experiment_entry['start_time'] = start_time
         self.experiment_entry['config'] = config
