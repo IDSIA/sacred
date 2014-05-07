@@ -4,7 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 import pickle
 import time
-
+from datetime import datetime
 
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
@@ -90,9 +90,9 @@ class MongoDBReporter(ExperimentObserver):
             with open(mainfile, 'r') as f:
                 self.experiment_entry['source'] = f.read()
         except IOError as e:
-            self.experiment_entry['source'] = e.args[0] 
+            self.experiment_entry['source'] = str(e)
         self.experiment_entry['doc'] = doc
-        self.experiment_entry['start_time'] = start_time
+        self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'RUNNING'
@@ -105,20 +105,20 @@ class MongoDBReporter(ExperimentObserver):
             self.save()
 
     def experiment_completed_event(self, stop_time, result, info):
-        self.experiment_entry['stop_time'] = stop_time
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)
         self.experiment_entry['result'] = result
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'COMPLETED'
         self.save()
 
     def experiment_interrupted_event(self, interrupt_time, info):
-        self.experiment_entry['stop_time'] = interrupt_time
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(interrupt_time)
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
     def experiment_failed_event(self, fail_time, fail_trace, info):
-        self.experiment_entry['stop_time'] = fail_time
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(fail_time)
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'FAILED'
         self.experiment_entry['fail_trace'] = fail_trace
