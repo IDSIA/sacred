@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, unicode_literals
 import logging
+import sys
 
 
 class InfoUpdater(object):
@@ -56,3 +57,16 @@ def create_basic_stream_logger(name, level=logging.INFO):
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
+
+
+##### Portable way of raising exceptions with traceback #######
+
+if sys.version_info[0] == 2:
+    PYTHON2_RAISE = """
+def raise_with_traceback(exc, traceback):
+    raise exc, None, traceback
+"""
+    exec PYTHON2_RAISE
+else:
+    def raise_with_traceback(exc, traceback):
+        raise exc.with_traceback(traceback)

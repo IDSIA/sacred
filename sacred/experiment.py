@@ -11,7 +11,7 @@ import traceback
 from sacred.arg_parser import parse_arguments, get_config_updates, get_observers
 from sacred.captured_function import CapturedFunction
 from sacred.config_scope import ConfigScope
-from sacred.utils import create_basic_stream_logger
+from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
 
 class Experiment(object):
@@ -108,8 +108,8 @@ class Experiment(object):
             self._status = Experiment.FAILED
             t, v, trace = sys.exc_info()
             self._emit_failed(t, v, trace.tb_next)
-            raise v.with_traceback(trace.tb_next)
-            #raise t, v, trace.tb_next
+            raise_with_traceback(v, trace.tb_next)
+            raise  # to make IDE happy
 
         self._status = Experiment.COMPLETED
         self._emit_completed(result)
