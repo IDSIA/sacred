@@ -80,7 +80,7 @@ def get_config_updates(args):
             config_updates = json.load(f)
 
     if args.update:
-        for upd in args.update:
+        for upd in args.update.split():
             split_update = upd.split('=')
             assert len(split_update) == 2
             path, value = split_update
@@ -92,7 +92,12 @@ def get_config_updates(args):
             try:
                 converted_value = json.loads(value)
             except ValueError:
-                converted_value = value
+                if value == 'True':
+                    converted_value = True
+                elif value == 'False':
+                    converted_value = False
+                else:
+                    converted_value = value
 
             current_option[path.split('.')[-1]] = converted_value
     return config_updates
