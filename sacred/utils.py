@@ -7,9 +7,9 @@ import sys
 
 
 class InfoUpdater(object):
-    def __init__(self, experiment, monitors=None):
+    def __init__(self, experiment, monitors=None, name=None):
         self.ex = experiment
-
+        self.__name__ = self.__class__.__name__ if name is None else name
         self.monitors = dict()
         if isinstance(monitors, dict):
             self.monitors = monitors
