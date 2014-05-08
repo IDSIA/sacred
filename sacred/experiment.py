@@ -62,40 +62,43 @@ class Experiment(object):
     def automain(self, f):
         captured = self.main(f)
         if f.__module__ == '__main__':
-            self.run(use_argv=True)
+            self.run_commandline()
         return captured
 
     ############################## public interface ############################
-    def run(self, use_argv=False, config_updates=None):
-        self.reset()
 
+    def _set_up_config(self, config_updates=None):
         config_updates = {} if config_updates is None else config_updates
-        args = None
+        assert self.cfg is None
+        current_cfg = {}
+        for config in self.cfgs:
+            config(config_updates, preset=current_cfg)
+            current_cfg.update(config)
+        self.cfg = current_cfg
 
-        if use_argv:
-            assert not config_updates
-            args = parse_arguments(sys.argv)
-            config_updates = get_config_updates(args)
-            observers = get_observers(args)
+    def print_config(self, config_updates):
+        self.reset()
+        self._set_up_config(config_updates)
+        import json
+        print(json.dumps(self.cfg, indent=2, ))
 
-            for obs in observers:
-                self.add_observer(obs)
-
-        if self.cfgs:
-            assert self.cfg is None
-            current_cfg = {}
-            for config in self.cfgs:
-                config(config_updates, preset=current_cfg)
-                current_cfg.update(config)
-            self.cfg = current_cfg
+    def run_commandline(self):
+        args = parse_arguments(sys.argv)
+        config_updates = get_config_updates(args)
 
         if args and args.print_cfg_only:
-            import json
-            print(json.dumps(self.cfg, indent=2, ))
+            self.print_config(config_updates)
             return
 
-        self._set_up_logging()
+        for obs in get_observers(args):
+            self.add_observer(obs)
 
+        return self.run(config_updates)
+
+    def run(self, config_updates=None):
+        self.reset()
+        self._set_up_config(config_updates)
+        self._set_up_logging()
         self._status = Experiment.RUNNING
         self._emit_started()
         try:
@@ -110,10 +113,10 @@ class Experiment(object):
             self._emit_failed(t, v, trace.tb_next)
             raise_with_traceback(v, trace.tb_next)
             raise  # to make IDE happy
-
-        self._status = Experiment.COMPLETED
-        self._emit_completed(result)
-        return result
+        else:
+            self._status = Experiment.COMPLETED
+            self._emit_completed(result)
+            return result
 
     def reset(self):
         self.description['info'] = {}
