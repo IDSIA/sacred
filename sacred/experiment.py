@@ -28,6 +28,7 @@ class Experiment(object):
         self.name = name
         self.doc = None
         self.mainfile = None
+        self.cmd = {}
 
         self.description = {
             'info': {},
@@ -37,6 +38,10 @@ class Experiment(object):
         }
 
     ############################## Decorators ##################################
+
+    def command(self, f):
+        self.cmd[f.__name__] = f
+        return f
 
     def config(self, f):
         self.cfgs.append(ConfigScope(f))
@@ -49,6 +54,7 @@ class Experiment(object):
 
     def main(self, f):
         self._main_function = self.capture(f)
+        self.cmd[f.__name__] = f
         self.mainfile = inspect.getabsfile(f)
 
         if self.name is None:
@@ -67,15 +73,6 @@ class Experiment(object):
 
     ############################## public interface ############################
 
-    def _set_up_config(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-        assert self.cfg is None
-        current_cfg = {}
-        for config in self.cfgs:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-        self.cfg = current_cfg
-
     def print_config(self, config_updates):
         self.reset()
         self._set_up_config(config_updates)
@@ -89,6 +86,13 @@ class Experiment(object):
         if args and args.print_cfg_only:
             self.print_config(config_updates)
             return
+
+        if args and args.cmd:
+            command_name = args.cmd[0]
+            command_args = args.cmd[1:]
+            assert command_name in self.cmd
+            self.logger.info("Running command '%s'" % command_name)
+            return self.cmd[command_name](*command_args)
 
         for obs in get_observers(args):
             self.add_observer(obs)
@@ -198,9 +202,19 @@ class Experiment(object):
             except:  # _emit_failed should never throw
                 pass
 
+    ################### protected helpers ###################################
     def _set_up_logging(self):
         if self.logger is None:
             self.logger = create_basic_stream_logger(self.name)
             self.logger.debug("No logger given. Created basic stream logger.")
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
+
+    def _set_up_config(self, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
+        assert self.cfg is None
+        current_cfg = {}
+        for config in self.cfgs:
+            config(config_updates, preset=current_cfg)
+            current_cfg.update(config)
+        self.cfg = current_cfg
