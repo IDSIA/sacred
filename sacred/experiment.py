@@ -87,10 +87,10 @@ class Experiment(object):
             self.print_config(config_updates)
             return
 
-        if args and args.cmd:
-            command_name = args.cmd[0]
-            command_args = args.cmd[1:]
-            assert command_name in self.cmd
+        if args and len(args.cmd) > 1:
+            command_name = args.cmd[1]
+            command_args = args.cmd[2:]
+            assert command_name in self.cmd, "command '%s' not found" % command_name
             self.logger.info("Running command '%s'" % command_name)
             return self.cmd[command_name](*command_args)
 
