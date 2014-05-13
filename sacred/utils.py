@@ -64,9 +64,9 @@ NO_LOGGER.disabled = 1
 if sys.version_info[0] == 2:
     PYTHON2_RAISE = """
 def raise_with_traceback(exc, traceback):
-    raise exc, None, traceback
+    raise exc, None, traceback.tb_next
 """
     exec PYTHON2_RAISE
 else:
     def raise_with_traceback(exc, traceback):
-        raise exc.with_traceback(traceback)
+        raise exc.with_traceback(traceback.tb_next)
