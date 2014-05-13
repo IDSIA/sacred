@@ -30,12 +30,9 @@ def cfg():
 
     # === Set up Trainer ===
     tr = Trainer(SgdStep(learning_rate=0.001), verbose=verbose)
-    tr.stopping_criteria.append(MaxEpochsSeen(10))
-    tr.monitor['err'] = PrintError()
+    tr.add_stopper(MaxEpochsSeen(10))
+    tr.add_monitor(PrintError())
     trainer = get_description(tr)
-
-
-cfg.execute()
 
 
 @ex.main
@@ -45,8 +42,8 @@ def main(network, trainer, dataset, verbose):
     tr = create_from_description(trainer)
     ds = load_dataset(*dataset)
 
-    tr.monitor['class_err'] = MonitorClassificationError(Online(*ds['test'], verbose=False))
-    tr.monitor['info'] = InfoUpdater(ex, tr.monitor)
+    tr.add_monitor(MonitorClassificationError(Online(*ds['test'], verbose=False)))
+    tr.add_monitor(InfoUpdater(ex, tr.monitors))
     tr.train(net,
              Online(*ds['training'], verbose=verbose),
              Online(*ds['test'], verbose=verbose))
