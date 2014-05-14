@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""
+This is a very basic example Experiment using sacred.
+"""
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
@@ -11,14 +14,27 @@ def cfg():
     a = 10
     b = 17
     c = a + b
+    name = "John"
 
 
-@ex.config
-def cfg2():
-    d = c*2
+@ex.command
+@ex.capture
+def greet(name):
+    """
+    Print a nice message.
+    Uses the name set in the config.
+    """
+    print("Hello %s!" % name)
 
+
+@ex.command
+def shout():
+    """
+    Ask loudly 'What is up?'
+    """
+    print("WHAZZZZUUUUUUUUUUUP!")
 
 @ex.automain
-def main(a, b, c, d, log):
-    log.info("a=%d, b=%d, c=%d, d=%d" % (a, b, c, d))
+def main(a, b, c, log):
+    log.info("a=%d, b=%d, c=%d" % (a, b, c))
 

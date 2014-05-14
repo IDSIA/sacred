@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from collections import OrderedDict
 from datetime import timedelta
 import inspect
 import os.path
@@ -28,7 +29,7 @@ class Experiment(object):
         self.name = name
         self.doc = None
         self.mainfile = None
-        self.cmd = {}
+        self.cmd = OrderedDict()
 
         self.description = {
             'info': {},
@@ -54,14 +55,14 @@ class Experiment(object):
 
     def main(self, f):
         self._main_function = self.capture(f)
-        self.cmd[f.__name__] = f
+        #self.cmd[f.__name__] = f
         self.mainfile = inspect.getabsfile(f)
 
         if self.name is None:
             filename = os.path.basename(self.mainfile)
             self.name = filename.rsplit('.', 1)[0]
 
-        self.doc = inspect.getmodule(f).__doc__
+        self.doc = inspect.getmodule(f).__doc__ or ""
 
         return self._main_function
 
@@ -80,17 +81,19 @@ class Experiment(object):
         print(json.dumps(self.cfg, indent=2, ))
 
     def run_commandline(self):
-        parser = get_argparser()
-        args = parser.parse_args(sys.argv)
+        parser = get_argparser(self.doc, self.cmd)
+        args = parser.parse_args()
         config_updates = get_config_updates(args)
 
         if args and args.print_cfg_only:
             self.print_config(config_updates)
             return
 
-        if args and len(args.cmd) > 1:
-            command_name = args.cmd[1]
-            command_args = args.cmd[2:]
+        if args.cmd:
+            self._set_up_logging()
+            self._set_up_config(config_updates)
+            command_name = args.cmd
+            command_args = args.args
             assert command_name in self.cmd, "command '%s' not found" % command_name
             self.logger.info("Running command '%s'" % command_name)
             return self.cmd[command_name](*command_args)

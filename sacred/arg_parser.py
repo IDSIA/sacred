@@ -45,12 +45,13 @@ def parse_mongo_db_arg(mongo_db):
         raise ValueError('mongo_db argument must have the form "db_name" or '
                          '"host:port[:db_name]" but was %s' % mongo_db)
 
+import textwrap
 
-def get_argparser():
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument("cmd", nargs='*',
-                        help='invoke a specific command +optional arguments')
+def get_argparser(description="", commands=None):
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=description)
 
     parser.add_argument("-u", "--update", nargs='+',
                         help='updates to the default options of the form '
@@ -67,6 +68,16 @@ def get_argparser():
     parser.add_argument("-p", "--print_cfg_only",
                         help='print the configuration and exit',
                         action='store_true')
+    if commands:
+        subparsers = parser.add_subparsers(help='invoke a custom subcommand',
+                                           dest='cmd')
+        c_parser = subparsers.add_parser('')
+        c_parser.add_argument('args', nargs='*')
+        for c in commands:
+            help = textwrap.dedent(commands[c].__doc__ or "").strip()
+            helplines = help.split('\n')
+            c_parser = subparsers.add_parser(c, help=helplines[0])
+            c_parser.add_argument('args', nargs='*')
 
     return parser
 
@@ -80,7 +91,6 @@ def get_config_updates(args):
 
     if args.update:
         updates = re.split("[\s;]+", " ".join(args.update))
-        print(updates)
         for upd in updates:
             if upd == '':
                 continue
