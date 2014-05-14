@@ -52,7 +52,7 @@ def parse_arguments(argv):
     parser.add_argument("cmd", nargs='*',
                         help='invoke a specific command +optional arguments')
 
-    parser.add_argument("-u", "--update",
+    parser.add_argument("-u", "--update", nargs='+',
                         help='updates to the default options of the form '
                              'foo.bar=baz')
 
@@ -80,26 +80,32 @@ def get_config_updates(args):
             config_updates = json.load(f)
 
     if args.update:
-        for upd in args.update.split():
+        updates = re.split("[\s;]+", " ".join(args.update))
+        print(updates)
+        for upd in updates:
+            if upd == '':
+                continue
             split_update = upd.split('=')
             assert len(split_update) == 2
             path, value = split_update
             current_option = config_updates
-            for p in path.split('.')[:-1]:
+            split_path = path.split('.')
+            for p in split_path[:-1]:
                 if p not in current_option:
                     current_option[p] = dict()
                 current_option = current_option[p]
-            try:
-                converted_value = json.loads(value)
-            except ValueError:
-                if value == 'True':
-                    converted_value = True
-                elif value == 'False':
-                    converted_value = False
-                else:
-                    converted_value = value
 
-            current_option[path.split('.')[-1]] = converted_value
+            if value == 'True':
+                converted_value = True
+            elif value == 'False':
+                converted_value = False
+            elif value == 'None':
+                converted_value = None
+            elif value[0] == "'" and value[-1] == "'":
+                converted_value = value[1:-1]
+            else:
+                converted_value = json.loads(value)
+            current_option[split_path[-1]] = converted_value
     return config_updates
 
 
