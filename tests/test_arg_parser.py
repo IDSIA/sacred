@@ -3,8 +3,8 @@
 
 from __future__ import division, print_function, unicode_literals
 import pytest
-from sacred.arg_parser import parse_mongo_db_arg, parse_arguments, \
-    get_config_updates
+from sacred.arg_parser import (parse_mongo_db_arg, get_config_updates,
+                               get_argparser)
 
 
 def test_parse_mongo_db_arg():
@@ -33,6 +33,11 @@ def test_parse_mongo_db_arg_hostname_dbname():
         ('123.45.67.89:27017', 'baz')
 
 
+@pytest.fixture
+def parser():
+    return get_argparser()
+
+
 @pytest.mark.parametrize("argv,expected", [
     ([],                                {}),
     (['evaluate'],                      {'cmd': ['evaluate']}),
@@ -50,8 +55,8 @@ def test_parse_mongo_db_arg_hostname_dbname():
     (['-c', 'foo.json'],                {'config_file': 'foo.json'}),
     (['--config_file', 'foo.json'],     {'config_file': 'foo.json'}),
 ])
-def test_parse_individual_arguments(argv, expected):
-    args = parse_arguments(argv)
+def test_parse_individual_arguments(argv, expected, parser):
+    args = parser.parse_args(argv)
     empty = dict(
         update=None,
         config_file=None,
@@ -64,9 +69,9 @@ def test_parse_individual_arguments(argv, expected):
     assert dict(args._get_kwargs()) == empty
 
 
-def test_parse_compound_arglist1():
+def test_parse_compound_arglist1(parser):
     argv = ['eval', '1', '17', '-u', 'a=17', 'b=1', '-m', '-p']
-    args = parse_arguments(argv)
+    args = parser.parse_args(argv)
     expected = dict(
         update=['a=17', 'b=1'],
         config_file=None,
@@ -77,9 +82,9 @@ def test_parse_compound_arglist1():
     assert dict(args._get_kwargs()) == expected
 
 
-def test_parse_compound_arglist2():
+def test_parse_compound_arglist2(parser):
     argv = ['-m', 'localhost:1111', '-u', 'a=foo', '-c', 'foo.json']
-    args = parse_arguments(argv)
+    args = parser.parse_args(argv)
     expected = dict(
         update=['a=foo'],
         config_file='foo.json',

@@ -46,7 +46,7 @@ def parse_mongo_db_arg(mongo_db):
                          '"host:port[:db_name]" but was %s' % mongo_db)
 
 
-def parse_arguments(argv):
+def get_argparser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("cmd", nargs='*',
@@ -68,8 +68,7 @@ def parse_arguments(argv):
                         help='print the configuration and exit',
                         action='store_true')
 
-    args = parser.parse_args(argv)
-    return args
+    return parser
 
 
 def get_config_updates(args):

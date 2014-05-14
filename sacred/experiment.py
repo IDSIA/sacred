@@ -8,7 +8,7 @@ import os.path
 import sys
 import time
 import traceback
-from sacred.arg_parser import parse_arguments, get_config_updates, get_observers
+from sacred.arg_parser import get_config_updates, get_observers, get_argparser
 from sacred.captured_function import CapturedFunction
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
@@ -80,7 +80,8 @@ class Experiment(object):
         print(json.dumps(self.cfg, indent=2, ))
 
     def run_commandline(self):
-        args = parse_arguments(sys.argv)
+        parser = get_argparser()
+        args = parser.parse_args(sys.argv)
         config_updates = get_config_updates(args)
 
         if args and args.print_cfg_only:
