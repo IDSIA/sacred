@@ -1,13 +1,41 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
 
-import argparse
 import collections
 import json
 import re
+from jinja2 import Template
+from docopt import docopt
 from sacred.observers import MongoDBReporter
+
+
+USAGE_TEMPLATE = Template("""
+{{ description }}
+
+Usage:
+  {{ program_name }} [run] [(with <update>...)] [-m <db>] [-c <file>]
+  {{ program_name }} <cmd> [(with <update>...)] [-c <file>]
+  {{ program_name }} (-h | --help)
+  {{ program_name }} help [<cmd>]
+
+Options:
+  -h --help                        Print this help message and exit
+  -m <db> --mongo_db=<db>          Add a MongoDB Observer to the experiment
+  -c <file> --config_file=<file>   Update configuration with JSON file
+
+Arguments:
+  db        Database specification. Can be [host:port:]db_name
+  file      Filename of JSON file
+  update    Configuration assignments of the form foo.bar=17
+  cmd       Custom command to run
+
+{% if commands | length > 0 %}Commands:{% endif %}
+{% for key, value in commands.iteritems() %}
+  {{ key.ljust(cmd_len) }}  {{value}}
+{% endfor %}
+""", trim_blocks=True)
+
 
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
 HOSTNAME_PATTERN = \
@@ -48,38 +76,21 @@ def parse_mongo_db_arg(mongo_db):
 import textwrap
 
 
-def get_argparser(description="", commands=None):
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=description)
+def parse_args(argv, description="", commands=None):
+    if commands is None:
+        commands = {}
+    cmd_len = max(max(len(c) for c in commands), 8)
+    command_doc = {k: textwrap.dedent(v.__doc__ or "").strip().split('\n')[0]
+                   for k, v in commands}
 
-    parser.add_argument("-u", "--update", nargs='+',
-                        help='updates to the default options of the form '
-                             'foo.bar=baz')
+    usage = USAGE_TEMPLATE.render(
+        program_name=argv[0],
+        description=description,
+        commands=command_doc,
+        cmd_len=cmd_len)
 
-    parser.add_argument("-c", "--config_file",
-                        help="JSON file to overwrite default configuration")
+    return docopt(usage, argv[1:])
 
-    parser.add_argument("-m", "--mongo_db", nargs='?',
-                        help='Use MongoDB. Optionally specify "db_name" or '
-                             '"host:port[:db_name]"',
-                        const='sacred')
-
-    parser.add_argument("-p", "--print_cfg_only",
-                        help='print the configuration and exit',
-                        action='store_true')
-    if commands:
-        subparsers = parser.add_subparsers(help='invoke a custom subcommand',
-                                           dest='cmd')
-        c_parser = subparsers.add_parser('')
-        c_parser.add_argument('args', nargs='*')
-        for c in commands:
-            help = textwrap.dedent(commands[c].__doc__ or "").strip()
-            helplines = help.split('\n')
-            c_parser = subparsers.add_parser(c, help=helplines[0])
-            c_parser.add_argument('args', nargs='*')
-
-    return parser
 
 
 def get_config_updates(args):
