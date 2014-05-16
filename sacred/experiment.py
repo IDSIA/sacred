@@ -41,7 +41,7 @@ class Experiment(object):
     ############################## Decorators ##################################
 
     def command(self, f):
-        self.cmd[f.__name__] = f
+        self.cmd[f.__name__] = self.capture(f)
         return f
 
     def config(self, f):
@@ -49,13 +49,14 @@ class Experiment(object):
         return self.cfgs[-1]
 
     def capture(self, f):
+        if f in self._captured_functions:
+            return f
         captured_function = CapturedFunction(f, self)
         self._captured_functions.append(captured_function)
         return captured_function
 
     def main(self, f):
         self._main_function = self.capture(f)
-        #self.cmd[f.__name__] = f
         self.mainfile = inspect.getabsfile(f)
 
         if self.name is None:
@@ -81,23 +82,18 @@ class Experiment(object):
         print(json.dumps(self.cfg, indent=2, ))
 
     def run_commandline(self):
-        args = parse_args(sys.argv, self.name,
+        args = parse_args(sys.argv,
                           description=self.doc,
                           commands=self.cmd)
-        config_updates = get_config_updates(args)
+        config_updates = get_config_updates(args['UPDATE'])
 
-        if args and args.print_cfg_only:
-            self.print_config(config_updates)
-            return
-
-        if args.cmd:
+        if args['COMMAND']:
             self._set_up_logging()
             self._set_up_config(config_updates)
-            command_name = args.cmd
-            command_args = args.args
+            command_name = args['COMMAND']
             assert command_name in self.cmd, "command '%s' not found" % command_name
             self.logger.info("Running command '%s'" % command_name)
-            return self.cmd[command_name](*command_args)
+            return self.cmd[command_name]()
 
         for obs in get_observers(args):
             self.add_observer(obs)

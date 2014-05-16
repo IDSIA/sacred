@@ -44,7 +44,7 @@ def test_parse_mongo_db_arg_hostname_dbname():
     ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
 ])
 def test_parse_individual_arguments(argv, expected):
-    args = parse_args(['test_prog.py'] + str(argv).split(), "test")
+    args = parse_args(['test_prog.py'] + argv.split())
     plain = {
         '--help': False,
         '--mongo_db': None,
@@ -60,8 +60,8 @@ def test_parse_individual_arguments(argv, expected):
 
 
 def test_parse_compound_arglist1():
-    argv = str("run with a=17 b=1 -m localhost:22222").split()
-    args = parse_args(['test_prog.py'] + argv, "test")
+    argv = "run with a=17 b=1 -m localhost:22222".split()
+    args = parse_args(['test_prog.py'] + argv)
     expected = {
         '--help': False,
         '--mongo_db': 'localhost:22222',
@@ -75,8 +75,8 @@ def test_parse_compound_arglist1():
 
 
 def test_parse_compound_arglist2():
-    argv = str("evaluate with a=18 b=2").split()
-    args = parse_args(['test_prog.py'] + argv, "test")
+    argv = "evaluate with a=18 b=2".split()
+    args = parse_args(['test_prog.py'] + argv)
     expected = {
         '--help': False,
         '--mongo_db': None,
@@ -105,7 +105,4 @@ def test_parse_compound_arglist2():
     (["f=False"],       {'f': False}),
 ])
 def test_get_config_updates(update, expected):
-    args = type(str("NamespaceMock"), (object,), {})()
-    args.config_file = None
-    args.update = update
-    assert get_config_updates(args) == expected
+    assert get_config_updates(update) == expected

@@ -11,7 +11,6 @@ from sacred.observers import MongoDBReporter
 
 
 USAGE_TEMPLATE = Template("""
-===== {{ name }} =====
 {{ description }}
 
 Usage:
@@ -31,6 +30,7 @@ Arguments:
   COMMAND   Custom command to run
 
 {% if commands | length > 0 %}Commands:{% endif %}
+
 {% for key, value in commands.iteritems() %}
   {{ key.ljust(cmd_len) }}  {{value}}
 {% endfor %}
@@ -76,58 +76,61 @@ def parse_mongo_db_arg(mongo_db):
 import textwrap
 
 
-def parse_args(argv, name, description="", commands=None):
+def parse_args(argv, description="", commands=None):
     if commands is None:
         commands = {}
     cmd_len = max([len(c) for c in commands] + [8])
     command_doc = {k: textwrap.dedent(v.__doc__ or "").strip().split('\n')[0]
-                   for k, v in commands}
+                   for k, v in commands.items()}
 
     usage = USAGE_TEMPLATE.render(
-        name=name,
         program_name=argv[0],
         description=description,
         commands=command_doc,
         cmd_len=cmd_len)
 
-    return docopt(usage, argv[1:])
+    return docopt(usage, [str(a) for a in argv[1:]])
 
 
-def get_config_updates(args):
+def get_config_updates(updates):
     config_updates = {}
-    if args.update:
-        updates = re.split("[\s;]+", " ".join(args.update))
-        for upd in updates:
-            if upd == '':
-                continue
-            split_update = upd.split('=')
-            assert len(split_update) == 2
-            path, value = split_update
-            current_option = config_updates
-            split_path = path.split('.')
-            for p in split_path[:-1]:
-                if p not in current_option:
-                    current_option[p] = dict()
-                current_option = current_option[p]
+    if not updates:
+        return config_updates
+    updates = re.split("[\s;]+", " ".join(updates))
+    for upd in updates:
+        if upd == '':
+            continue
+        split_update = upd.split('=')
+        assert len(split_update) == 2
+        path, value = split_update
+        current_option = config_updates
+        split_path = path.split('.')
+        for p in split_path[:-1]:
+            if p not in current_option:
+                current_option[p] = dict()
+            current_option = current_option[p]
 
-            if value == 'True':
-                converted_value = True
-            elif value == 'False':
-                converted_value = False
-            elif value == 'None':
-                converted_value = None
-            elif value[0] == "'" and value[-1] == "'":
-                converted_value = value[1:-1]
-            else:
+        if value == 'True':
+            converted_value = True
+        elif value == 'False':
+            converted_value = False
+        elif value == 'None':
+            converted_value = None
+        elif value[0] == "'" and value[-1] == "'":
+            converted_value = value[1:-1]
+        else:
+            try:
                 converted_value = json.loads(value)
-            current_option[split_path[-1]] = converted_value
+            except ValueError:
+                converted_value = value
+        current_option[split_path[-1]] = converted_value
     return config_updates
 
 
 def get_observers(args):
     observers = []
-    if args.mongo_db:
-        url, db_name = parse_mongo_db_arg(args.mongo_db)
+    if args['--mongo_db']:
+        url, db_name = parse_mongo_db_arg(args['--mongo_db'])
         mongo = MongoDBReporter(db_name=db_name, url=url)
         observers.append(mongo)
 

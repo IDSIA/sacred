@@ -18,7 +18,6 @@ def cfg():
 
 
 @ex.command
-@ex.capture
 def greet(name):
     """
     Print a nice message.
