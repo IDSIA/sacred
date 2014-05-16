@@ -96,13 +96,11 @@ def get_config_updates(updates):
     config_updates = {}
     if not updates:
         return config_updates
-    updates = re.split("[\s;]+", " ".join(updates))
     for upd in updates:
         if upd == '':
             continue
-        split_update = upd.split('=')
-        assert len(split_update) == 2
-        path, value = split_update
+        path, sep, value = upd.partition('=')
+        assert sep == '=', "Missing '=' in update '%s'" % upd
         current_option = config_updates
         split_path = path.split('.')
         for p in split_path[:-1]:
