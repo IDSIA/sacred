@@ -135,15 +135,18 @@ class ConfigScope(dict):
         func_body = get_function_body_source(func)
         self._body_code = compile(func_body, "<string>", "exec")
         self._initialized = False
+        self.missing = []
 
     def __call__(self, fixed=None, preset=None):
         self._initialized = True
         self.clear()
-        l = dogmatize(fixed) if fixed is not None else {}
+        cfg_locals = dogmatize(fixed or {})
         if preset is not None:
-            l.update(preset)
-        eval(self._body_code, copy(self._func.__globals__), l)
-        for k, v in l.items():
+            cfg_locals.update(preset)
+        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+        self.missing = cfg_locals.revelation()
+
+        for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue
             try:
