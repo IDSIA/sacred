@@ -11,24 +11,24 @@ from sacred.observers import MongoDBReporter
 
 
 USAGE_TEMPLATE = Template("""
+===== {{ name }} =====
 {{ description }}
 
 Usage:
-  {{ program_name }} [run] [(with <update>...)] [-m <db>] [-c <file>]
-  {{ program_name }} <cmd> [(with <update>...)] [-c <file>]
+  {{ program_name }} [run] [(with UPDATE...)] [-m DB]
+  {{ program_name }} help [COMMAND]
+  {{ program_name }} COMMAND [(with UPDATE...)]
   {{ program_name }} (-h | --help)
-  {{ program_name }} help [<cmd>]
+
 
 Options:
   -h --help                        Print this help message and exit
-  -m <db> --mongo_db=<db>          Add a MongoDB Observer to the experiment
-  -c <file> --config_file=<file>   Update configuration with JSON file
+  -m DB --mongo_db=DB              Add a MongoDB Observer to the experiment
 
 Arguments:
-  db        Database specification. Can be [host:port:]db_name
-  file      Filename of JSON file
-  update    Configuration assignments of the form foo.bar=17
-  cmd       Custom command to run
+  DB        Database specification. Can be [host:port:]db_name
+  UPDATE    Configuration assignments of the form foo.bar=17
+  COMMAND   Custom command to run
 
 {% if commands | length > 0 %}Commands:{% endif %}
 {% for key, value in commands.iteritems() %}
@@ -76,14 +76,15 @@ def parse_mongo_db_arg(mongo_db):
 import textwrap
 
 
-def parse_args(argv, description="", commands=None):
+def parse_args(argv, name, description="", commands=None):
     if commands is None:
         commands = {}
-    cmd_len = max(max(len(c) for c in commands), 8)
+    cmd_len = max([len(c) for c in commands] + [8])
     command_doc = {k: textwrap.dedent(v.__doc__ or "").strip().split('\n')[0]
                    for k, v in commands}
 
     usage = USAGE_TEMPLATE.render(
+        name=name,
         program_name=argv[0],
         description=description,
         commands=command_doc,
@@ -92,14 +93,8 @@ def parse_args(argv, description="", commands=None):
     return docopt(usage, argv[1:])
 
 
-
 def get_config_updates(args):
     config_updates = {}
-
-    if args.config_file:
-        with open(args.config_file, 'r') as f:
-            config_updates = json.load(f)
-
     if args.update:
         updates = re.split("[\s;]+", " ".join(args.update))
         for upd in updates:

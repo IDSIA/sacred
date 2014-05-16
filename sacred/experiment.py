@@ -81,7 +81,9 @@ class Experiment(object):
         print(json.dumps(self.cfg, indent=2, ))
 
     def run_commandline(self):
-        args = parse_args()
+        args = parse_args(sys.argv, self.name,
+                          description=self.doc,
+                          commands=self.cmd)
         config_updates = get_config_updates(args)
 
         if args and args.print_cfg_only:

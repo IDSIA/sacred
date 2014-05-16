@@ -34,60 +34,59 @@ def test_parse_mongo_db_arg_hostname_dbname():
 
 
 @pytest.mark.parametrize("argv,expected", [
-    ([],                                {}),
-    (['evaluate'],                      {'cmd': ['evaluate']}),
-    (['evaluate', '1', '2', '3'],       {'cmd': ['evaluate', '1', '2', '3']}),
-    (['-u', 'a=5', 'b=9'],              {'update': ['a=5', 'b=9']}),
-    (['-u', 'a=5 b=9'],                 {'update': ['a=5 b=9']}),
-    (['--update', 'a=7', 'b=6'],        {'update': ['a=7', 'b=6']}),
-    (['--update', 'a=7 b=6'],           {'update': ['a=7 b=6']}),
-    (['-m'],                            {'mongo_db': 'sacred'}),
-    (['--mongo_db'],                    {'mongo_db': 'sacred'}),
-    (['-m', 'localhost:27018'],         {'mongo_db': 'localhost:27018'}),
-    (['--mongo_db', 'localhost:27018'], {'mongo_db': 'localhost:27018'}),
-    (['-p'],                            {'print_cfg_only': True}),
-    (['--print_cfg_only'],              {'print_cfg_only': True}),
-    (['-c', 'foo.json'],                {'config_file': 'foo.json'}),
-    (['--config_file', 'foo.json'],     {'config_file': 'foo.json'}),
+    ('',                 {}),
+    ('run',              {'run': True}),
+    ('with 1 2',         {'with': True, 'UPDATE': ['1', '2']}),
+    ('evaluate',         {'COMMAND': 'evaluate'}),
+    ('help',             {'help': True}),
+    ('help evaluate',    {'help': True, 'COMMAND': 'evaluate'}),
+    ('-m foo',           {'--mongo_db': 'foo'}),
+    ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
 ])
 def test_parse_individual_arguments(argv, expected):
-    args = parse_args(argv)
-    empty = dict(
-        update=None,
-        config_file=None,
-        cmd=[],
-        mongo_db=None,
-        print_cfg_only=False
-    )
-    empty.update(expected)
+    args = parse_args(['test_prog.py'] + str(argv).split(), "test")
+    plain = {
+        '--help': False,
+        '--mongo_db': None,
+        'COMMAND': None,
+        'UPDATE': [],
+        'help': False,
+        'run': False,
+        'with': False
+    }
+    plain.update(expected)
 
-    assert dict(args._get_kwargs()) == empty
+    assert args == plain
 
 
 def test_parse_compound_arglist1():
-    argv = ['eval', '1', '17', '-u', 'a=17', 'b=1', '-m', '-p']
-    args = parse_args(argv)
-    expected = dict(
-        update=['a=17', 'b=1'],
-        config_file=None,
-        cmd=['eval', '1', '17'],
-        mongo_db='sacred',
-        print_cfg_only=True
-    )
-    assert dict(args._get_kwargs()) == expected
+    argv = str("run with a=17 b=1 -m localhost:22222").split()
+    args = parse_args(['test_prog.py'] + argv, "test")
+    expected = {
+        '--help': False,
+        '--mongo_db': 'localhost:22222',
+        'COMMAND': None,
+        'UPDATE': ['a=17', 'b=1'],
+        'help': False,
+        'run': True,
+        'with': True
+    }
+    assert args == expected
 
 
 def test_parse_compound_arglist2():
-    argv = ['-m', 'localhost:1111', '-u', 'a=foo', '-c', 'foo.json']
-    args = parse_args(argv)
-    expected = dict(
-        update=['a=foo'],
-        config_file='foo.json',
-        cmd=[],
-        mongo_db='localhost:1111',
-        print_cfg_only=False
-    )
-    assert dict(args._get_kwargs()) == expected
+    argv = str("evaluate with a=18 b=2").split()
+    args = parse_args(['test_prog.py'] + argv, "test")
+    expected = {
+        '--help': False,
+        '--mongo_db': None,
+        'COMMAND': 'evaluate',
+        'UPDATE': ['a=18', 'b=2'],
+        'help': False,
+        'run': False,
+        'with': True
+    }
+    assert args == expected
 
 
 @pytest.mark.parametrize("update,expected", [
