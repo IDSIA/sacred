@@ -21,8 +21,8 @@ Usage:
 
 
 Options:
-  -h --help                        Print this help message and exit
-  -m DB --mongo_db=DB              Add a MongoDB Observer to the experiment
+  -h --help             Print this help message and exit
+  -m DB --mongo_db=DB   Add a MongoDB Observer to the experiment
 
 Arguments:
   DB        Database specification. Can be [host:port:]db_name
