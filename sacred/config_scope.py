@@ -19,6 +19,17 @@ def dogmatize(x):
         return x
 
 
+def undogmatize(x):
+    if isinstance(x, DogmaticDict):
+        return dict({k: undogmatize(v) for k, v in x.items()})
+    elif isinstance(x, DogmaticList):
+        return list([undogmatize(v) for v in x])
+    elif isinstance(x, tuple):
+        return tuple(undogmatize(v) for v in x)
+    else:
+        return x
+
+
 def type_changed(a, b):
     if isinstance(a, DogmaticDict) or isinstance(b, DogmaticDict):
         return not (isinstance(a, dict) and isinstance(b, dict))
@@ -162,13 +173,13 @@ class ConfigScope(dict):
             cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
-        self.typechanges = cfg_locals._typechanges
+        self.typechanges = undogmatize(cfg_locals._typechanges)
         for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue
             try:
                 json.dumps(v)
-                self[k] = v
+                self[k] = undogmatize(v)
             except TypeError:
                 pass
         return self

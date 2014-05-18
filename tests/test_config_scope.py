@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import pytest
-from sacred.config_scope import ConfigScope
+from sacred.config_scope import ConfigScope, DogmaticDict, DogmaticList
 
 
 @pytest.fixture
@@ -81,3 +81,17 @@ def test_typechange(conf_scope):
 def test_nested_typechange(conf_scope):
     conf_scope({'f': {'a': 10}})
     assert conf_scope.typechanges == {'f.a': (type('a'), int)}
+
+
+def is_dogmatic(a):
+    if isinstance(a, (DogmaticDict, DogmaticList)):
+        return True
+    elif isinstance(a, dict):
+        return any(is_dogmatic(v) for v in a.values())
+    elif isinstance(a, (list, tuple)):
+        return any(is_dogmatic(v) for v in a)
+
+
+def test_conf_scope_is_not_dogmatic(conf_scope):
+    conf_scope({'e': [1, 1, 1]})
+    assert not is_dogmatic(conf_scope)
