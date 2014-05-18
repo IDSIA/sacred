@@ -62,6 +62,12 @@ class TestConfigScope(object):
         assert conf_scope['f']['c'] == 't'
         assert conf_scope['composit2'] == 'tada'
 
+    def test_adding_values(self, conf_scope):
+        conf_scope({'g': 23, 'h': {'i': 10}})
+        assert conf_scope['g'] == 23
+        assert conf_scope['h'] == {'i': 10}
+        assert conf_scope.added_values == {'g', 'h', 'h.i'}
+
 
 # noinspection PyMethodMayBeStatic
 class TestDogmaticDict(object):

@@ -55,13 +55,14 @@ class DogmaticDict(dict):
             self[k] = kwargs[k]
 
     def revelation(self):
-        missing = []
+        missing = set()
         for key in self._fixed:
             if not key in self:
                 self[key] = self._fixed[key]
-                missing.append(key)
-            elif isinstance(self[key], DogmaticDict):
-                missing += [key + "." + k for k in self[key].revelation()]
+                missing.add(key)
+
+            if isinstance(self[key], DogmaticDict):
+                missing |= {key + "." + k for k in self[key].revelation()}
         return missing
 
 
@@ -135,7 +136,7 @@ class ConfigScope(dict):
         func_body = get_function_body_source(func)
         self._body_code = compile(func_body, "<string>", "exec")
         self._initialized = False
-        self.missing = []
+        self.added_values = set()
 
     def __call__(self, fixed=None, preset=None):
         self._initialized = True
@@ -144,7 +145,7 @@ class ConfigScope(dict):
         if preset is not None:
             cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
-        self.missing = cfg_locals.revelation()
+        self.added_values = cfg_locals.revelation()
 
         for k, v in cfg_locals.items():
             if k.startswith('_'):
