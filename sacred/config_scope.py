@@ -164,6 +164,7 @@ class ConfigScope(dict):
         self._body_code = compile(func_body, "<string>", "exec")
         self._initialized = False
         self.added_values = set()
+        self.typechanges = {}
 
     def __call__(self, fixed=None, preset=None):
         self._initialized = True

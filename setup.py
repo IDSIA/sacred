@@ -36,7 +36,7 @@ setup(
     test_suite="tests",
     scripts=[],
     install_requires=[
-        "pymongo >= 2.0", 'pytest', 'jinja2', 'docopt',
+        "pymongo >= 2.0", 'pytest', 'jinja2', 'docopt', 'blessings',
     ],
 
     classifiers=filter(None, classifiers.split('\n')),

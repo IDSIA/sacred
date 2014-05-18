@@ -11,7 +11,7 @@ import time
 import traceback
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
-from sacred.commands import get_commands
+from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
@@ -31,8 +31,7 @@ class Experiment(object):
         self.doc = None
         self.mainfile = None
         self.cmd = OrderedDict()
-        for f in get_commands():
-            self.command(f)
+        self.cmd['print_config'] = print_config
 
         self.description = {
             'info': {},
@@ -91,18 +90,22 @@ class Experiment(object):
         config_updates = get_config_updates(args['UPDATE'])
 
         if args['COMMAND']:
-            return self.run_command(args['COMMAND'],
-                                    config_updates=config_updates)
+            if args['COMMAND'] == 'print_config':
+                self._set_up_logging()
+                self._set_up_config(config_updates)
+                return print_config(self.cfgs, self.cfg, config_updates)
+            else:
+                return self.run_command(args['COMMAND'],
+                                        config_updates=config_updates)
 
         for obs in get_observers(args):
             self.add_observer(obs)
 
         return self.run(config_updates)
 
-    def run_command(self, cmd, config_updates=None):
+    def run_command(self, command_name, config_updates=None):
         self._set_up_logging()
         self._set_up_config(config_updates)
-        command_name = cmd
         assert command_name in self.cmd, "command '%s' not found" % command_name
         self.logger.info("Running command '%s'" % command_name)
         return self.cmd[command_name]()
