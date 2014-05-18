@@ -19,9 +19,18 @@ def dogmatize(x):
         return x
 
 
+def type_changed(a, b):
+    if isinstance(a, DogmaticDict) or isinstance(b, DogmaticDict):
+        return not (isinstance(a, dict) and isinstance(b, dict))
+    if isinstance(a, DogmaticList) or isinstance(b, DogmaticList):
+        return not (isinstance(a, list) and isinstance(b, list))
+    return type(a) != type(b)
+
+
 class DogmaticDict(dict):
     def __init__(self, fixed=None):
         super(DogmaticDict, self).__init__()
+        self._typechanges = {}
         if fixed is not None:
             self._fixed = fixed
         else:
@@ -33,11 +42,18 @@ class DogmaticDict(dict):
         else:
             fixed_val = self._fixed[key]
             dict.__setitem__(self, key, fixed_val)
+            # log typechanges
+            if type_changed(value, fixed_val):
+                self._typechanges[key] = (type(value), type(fixed_val))
+
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 #recursive update
                 bd = self[key]
                 for k, v in value.items():
                     bd[k] = v
+
+                for k, v in bd._typechanges.items():
+                    self._typechanges[key + '.' + k] = v
 
     def __delitem__(self, key):
         if key not in self._fixed:
@@ -146,7 +162,7 @@ class ConfigScope(dict):
             cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
-
+        self.typechanges = cfg_locals._typechanges
         for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue

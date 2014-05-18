@@ -69,3 +69,15 @@ def test_adding_values(conf_scope):
     assert conf_scope['g'] == 23
     assert conf_scope['h'] == {'i': 10}
     assert conf_scope.added_values == {'g', 'h', 'h.i'}
+
+
+def test_typechange(conf_scope):
+    conf_scope({'a': 'bar', 'b': 'foo', 'c': 1})
+    assert conf_scope.typechanges == {'a': (int, type('bar')),
+                                      'b': (float, type('foo')),
+                                      'c': (bool, int)}
+
+
+def test_nested_typechange(conf_scope):
+    conf_scope({'f': {'a': 10}})
+    assert conf_scope.typechanges == {'f.a': (type('a'), int)}
