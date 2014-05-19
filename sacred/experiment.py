@@ -88,15 +88,24 @@ class Experiment(object):
                           description=self.doc,
                           commands=self.cmd)
         config_updates = get_config_updates(args['UPDATE'])
+        if args['help']:
+
+            if args['COMMAND'] is None:
+                # a hack to print the help message
+                parse_args(sys.argv[0:1] + ['-h'],
+                           description=self.doc,
+                           commands=self.cmd)
+                return
+
+            cmd = self.cmd[args['COMMAND']]
+            if isinstance(args['COMMAND'], CapturedFunction):
+                return help_for_command(cmd._wrapped_function)
+            else:
+                return help_for_command(cmd)
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']
-            if args['help']:
-                cmd = self.cmd[cmd_name]
-                if isinstance(cmd, CapturedFunction):
-                    return help_for_command(cmd._wrapped_function)
-                return help_for_command(cmd)
-            elif cmd_name == 'print_config':
+            if cmd_name == 'print_config':
                 self._set_up_logging()
                 self._set_up_config(config_updates)
                 return print_config(self.cfgs, self.cfg, config_updates)

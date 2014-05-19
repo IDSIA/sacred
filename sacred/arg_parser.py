@@ -10,15 +10,13 @@ from docopt import docopt
 from sacred.observers import MongoDBReporter
 
 
-USAGE_TEMPLATE = Template("""
-{{ description }}
-
-Usage:
+USAGE_TEMPLATE = Template("""Usage:
   {{ program_name }} [run] [(with UPDATE...)] [-m DB]
-  {{ program_name }} help COMMAND
-  {{ program_name }} COMMAND [(with UPDATE...)]
+  {{ program_name }} help [COMMAND]
   {{ program_name }} (-h | --help)
+  {{ program_name }} COMMAND [(with UPDATE...)]
 
+{{ description }}
 
 Options:
   -h --help             Print this help message and exit
@@ -85,7 +83,7 @@ def parse_args(argv, description="", commands=None):
 
     usage = USAGE_TEMPLATE.render(
         program_name=argv[0],
-        description=description,
+        description=description.strip(),
         commands=command_doc,
         cmd_len=cmd_len)
 
