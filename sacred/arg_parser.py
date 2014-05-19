@@ -1,13 +1,39 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
 
-import argparse
 import collections
 import json
 import re
+from jinja2 import Template
+from docopt import docopt
 from sacred.observers import MongoDBReporter
+
+
+USAGE_TEMPLATE = Template("""Usage:
+  {{ program_name }} [run] [(with UPDATE...)] [-m DB]
+  {{ program_name }} help [COMMAND]
+  {{ program_name }} (-h | --help)
+  {{ program_name }} COMMAND [(with UPDATE...)]
+
+{{ description }}
+
+Options:
+  -h --help             Print this help message and exit
+  -m DB --mongo_db=DB   Add a MongoDB Observer to the experiment
+
+Arguments:
+  DB        Database specification. Can be [host:port:]db_name
+  UPDATE    Configuration assignments of the form foo.bar=17
+  COMMAND   Custom command to run
+
+{% if commands | length > 0 %}Commands:{% endif %}
+
+{% for key, value in commands.iteritems() %}
+  {{ key.ljust(cmd_len) }}  {{value}}
+{% endfor %}
+""", trim_blocks=True)
+
 
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
 HOSTNAME_PATTERN = \
@@ -45,73 +71,62 @@ def parse_mongo_db_arg(mongo_db):
         raise ValueError('mongo_db argument must have the form "db_name" or '
                          '"host:port[:db_name]" but was %s' % mongo_db)
 
-
-def get_argparser():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("cmd", nargs='*',
-                        help='invoke a specific command +optional arguments')
-
-    parser.add_argument("-u", "--update", nargs='+',
-                        help='updates to the default options of the form '
-                             'foo.bar=baz')
-
-    parser.add_argument("-c", "--config_file",
-                        help="JSON file to overwrite default configuration")
-
-    parser.add_argument("-m", "--mongo_db", nargs='?',
-                        help='Use MongoDB. Optionally specify "db_name" or '
-                             '"host:port[:db_name]"',
-                        const='sacred')
-
-    parser.add_argument("-p", "--print_cfg_only",
-                        help='print the configuration and exit',
-                        action='store_true')
-
-    return parser
+import textwrap
 
 
-def get_config_updates(args):
+def parse_args(argv, description="", commands=None):
+    if commands is None:
+        commands = {}
+    cmd_len = max([len(c) for c in commands] + [8])
+    command_doc = {k: textwrap.dedent(v.__doc__ or "").strip().split('\n')[0]
+                   for k, v in commands.items()}
+
+    usage = USAGE_TEMPLATE.render(
+        program_name=argv[0],
+        description=description.strip(),
+        commands=command_doc,
+        cmd_len=cmd_len)
+
+    return docopt(usage, [str(a) for a in argv[1:]])
+
+
+def get_config_updates(updates):
     config_updates = {}
+    if not updates:
+        return config_updates
+    for upd in updates:
+        if upd == '':
+            continue
+        path, sep, value = upd.partition('=')
+        assert sep == '=', "Missing '=' in update '%s'" % upd
+        current_option = config_updates
+        split_path = path.split('.')
+        for p in split_path[:-1]:
+            if p not in current_option:
+                current_option[p] = dict()
+            current_option = current_option[p]
 
-    if args.config_file:
-        with open(args.config_file, 'r') as f:
-            config_updates = json.load(f)
-
-    if args.update:
-        updates = re.split("[\s;]+", " ".join(args.update))
-        print(updates)
-        for upd in updates:
-            if upd == '':
-                continue
-            split_update = upd.split('=')
-            assert len(split_update) == 2
-            path, value = split_update
-            current_option = config_updates
-            split_path = path.split('.')
-            for p in split_path[:-1]:
-                if p not in current_option:
-                    current_option[p] = dict()
-                current_option = current_option[p]
-
-            if value == 'True':
-                converted_value = True
-            elif value == 'False':
-                converted_value = False
-            elif value == 'None':
-                converted_value = None
-            elif value[0] == "'" and value[-1] == "'":
-                converted_value = value[1:-1]
-            else:
+        if value == 'True':
+            converted_value = True
+        elif value == 'False':
+            converted_value = False
+        elif value == 'None':
+            converted_value = None
+        elif value[0] == "'" and value[-1] == "'":
+            converted_value = value[1:-1]
+        else:
+            try:
                 converted_value = json.loads(value)
-            current_option[split_path[-1]] = converted_value
+            except ValueError:
+                converted_value = value
+        current_option[split_path[-1]] = converted_value
     return config_updates
 
 
 def get_observers(args):
     observers = []
-    if args.mongo_db:
-        url, db_name = parse_mongo_db_arg(args.mongo_db)
+    if args['--mongo_db']:
+        url, db_name = parse_mongo_db_arg(args['--mongo_db'])
         mongo = MongoDBReporter(db_name=db_name, url=url)
         observers.append(mongo)
 

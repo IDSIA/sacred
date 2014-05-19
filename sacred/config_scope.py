@@ -19,9 +19,29 @@ def dogmatize(x):
         return x
 
 
+def undogmatize(x):
+    if isinstance(x, DogmaticDict):
+        return dict({k: undogmatize(v) for k, v in x.items()})
+    elif isinstance(x, DogmaticList):
+        return list([undogmatize(v) for v in x])
+    elif isinstance(x, tuple):
+        return tuple(undogmatize(v) for v in x)
+    else:
+        return x
+
+
+def type_changed(a, b):
+    if isinstance(a, DogmaticDict) or isinstance(b, DogmaticDict):
+        return not (isinstance(a, dict) and isinstance(b, dict))
+    if isinstance(a, DogmaticList) or isinstance(b, DogmaticList):
+        return not (isinstance(a, list) and isinstance(b, list))
+    return type(a) != type(b)
+
+
 class DogmaticDict(dict):
     def __init__(self, fixed=None):
         super(DogmaticDict, self).__init__()
+        self._typechanges = {}
         if fixed is not None:
             self._fixed = fixed
         else:
@@ -33,11 +53,18 @@ class DogmaticDict(dict):
         else:
             fixed_val = self._fixed[key]
             dict.__setitem__(self, key, fixed_val)
+            # log typechanges
+            if type_changed(value, fixed_val):
+                self._typechanges[key] = (type(value), type(fixed_val))
+
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 #recursive update
                 bd = self[key]
                 for k, v in value.items():
                     bd[k] = v
+
+                for k, v in bd._typechanges.items():
+                    self._typechanges[key + '.' + k] = v
 
     def __delitem__(self, key):
         if key not in self._fixed:
@@ -55,13 +82,14 @@ class DogmaticDict(dict):
             self[k] = kwargs[k]
 
     def revelation(self):
-        missing = []
+        missing = set()
         for key in self._fixed:
             if not key in self:
                 self[key] = self._fixed[key]
-                missing.append(key)
-            elif isinstance(self[key], DogmaticDict):
-                missing += [key + "." + k for k in self[key].revelation()]
+                missing.add(key)
+
+            if isinstance(self[key], DogmaticDict):
+                missing |= {key + "." + k for k in self[key].revelation()}
         return missing
 
 
@@ -135,20 +163,24 @@ class ConfigScope(dict):
         func_body = get_function_body_source(func)
         self._body_code = compile(func_body, "<string>", "exec")
         self._initialized = False
+        self.added_values = set()
+        self.typechanges = {}
 
     def __call__(self, fixed=None, preset=None):
         self._initialized = True
         self.clear()
-        l = dogmatize(fixed) if fixed is not None else {}
+        cfg_locals = dogmatize(fixed or {})
         if preset is not None:
-            l.update(preset)
-        eval(self._body_code, copy(self._func.__globals__), l)
-        for k, v in l.items():
+            cfg_locals.update(preset)
+        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+        self.added_values = cfg_locals.revelation()
+        self.typechanges = undogmatize(cfg_locals._typechanges)
+        for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue
             try:
                 json.dumps(v)
-                self[k] = v
+                self[k] = undogmatize(v)
             except TypeError:
                 pass
         return self

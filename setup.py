@@ -7,7 +7,6 @@ import sacred
 classifiers = """
 Development Status :: 3 - Alpha
 Intended Audience :: Science/Research
-License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Natural Language :: English
 Operating System :: OS Independent
 Programming Language :: Python
@@ -36,7 +35,7 @@ setup(
     test_suite="tests",
     scripts=[],
     install_requires=[
-        "pymongo >= 2.0", 'pytest',
+        "pymongo >= 2.0", 'pytest', 'jinja2', 'docopt', 'blessings',
     ],
 
     classifiers=filter(None, classifiers.split('\n')),

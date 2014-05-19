@@ -2,14 +2,16 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from collections import OrderedDict
 from datetime import timedelta
 import inspect
 import os.path
 import sys
 import time
 import traceback
-from sacred.arg_parser import get_config_updates, get_observers, get_argparser
+from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
+from sacred.commands import print_config, help_for_command
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
@@ -28,7 +30,8 @@ class Experiment(object):
         self.name = name
         self.doc = None
         self.mainfile = None
-        self.cmd = {}
+        self.cmd = OrderedDict()
+        self.cmd['print_config'] = print_config
 
         self.description = {
             'info': {},
@@ -40,7 +43,7 @@ class Experiment(object):
     ############################## Decorators ##################################
 
     def command(self, f):
-        self.cmd[f.__name__] = f
+        self.cmd[f.__name__] = self.capture(f)
         return f
 
     def config(self, f):
@@ -48,20 +51,21 @@ class Experiment(object):
         return self.cfgs[-1]
 
     def capture(self, f):
+        if f in self._captured_functions:
+            return f
         captured_function = CapturedFunction(f, self)
         self._captured_functions.append(captured_function)
         return captured_function
 
     def main(self, f):
         self._main_function = self.capture(f)
-        self.cmd[f.__name__] = f
         self.mainfile = inspect.getabsfile(f)
 
         if self.name is None:
             filename = os.path.basename(self.mainfile)
             self.name = filename.rsplit('.', 1)[0]
 
-        self.doc = inspect.getmodule(f).__doc__
+        self.doc = inspect.getmodule(f).__doc__ or ""
 
         return self._main_function
 
@@ -80,25 +84,46 @@ class Experiment(object):
         print(json.dumps(self.cfg, indent=2, ))
 
     def run_commandline(self):
-        parser = get_argparser()
-        args = parser.parse_args(sys.argv)
-        config_updates = get_config_updates(args)
+        args = parse_args(sys.argv,
+                          description=self.doc,
+                          commands=self.cmd)
+        config_updates = get_config_updates(args['UPDATE'])
+        if args['help']:
 
-        if args and args.print_cfg_only:
-            self.print_config(config_updates)
-            return
+            if args['COMMAND'] is None:
+                # a hack to print the help message
+                parse_args(sys.argv[0:1] + ['-h'],
+                           description=self.doc,
+                           commands=self.cmd)
+                return
 
-        if args and len(args.cmd) > 1:
-            command_name = args.cmd[1]
-            command_args = args.cmd[2:]
-            assert command_name in self.cmd, "command '%s' not found" % command_name
-            self.logger.info("Running command '%s'" % command_name)
-            return self.cmd[command_name](*command_args)
+            cmd = self.cmd[args['COMMAND']]
+            if isinstance(args['COMMAND'], CapturedFunction):
+                return help_for_command(cmd._wrapped_function)
+            else:
+                return help_for_command(cmd)
+
+        if args['COMMAND']:
+            cmd_name = args['COMMAND']
+            if cmd_name == 'print_config':
+                self._set_up_logging()
+                self._set_up_config(config_updates)
+                return print_config(self.cfgs, self.cfg, config_updates)
+            else:
+                return self.run_command(cmd_name,
+                                        config_updates=config_updates)
 
         for obs in get_observers(args):
             self.add_observer(obs)
 
         return self.run(config_updates)
+
+    def run_command(self, command_name, config_updates=None):
+        self._set_up_logging()
+        self._set_up_config(config_updates)
+        assert command_name in self.cmd, "command '%s' not found" % command_name
+        self.logger.info("Running command '%s'" % command_name)
+        return self.cmd[command_name]()
 
     def run(self, config_updates=None):
         self.reset()
