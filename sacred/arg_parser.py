@@ -15,7 +15,7 @@ USAGE_TEMPLATE = Template("""
 
 Usage:
   {{ program_name }} [run] [(with UPDATE...)] [-m DB]
-  {{ program_name }} help [COMMAND]
+  {{ program_name }} help COMMAND
   {{ program_name }} COMMAND [(with UPDATE...)]
   {{ program_name }} (-h | --help)
 

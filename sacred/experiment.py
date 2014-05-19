@@ -11,7 +11,7 @@ import time
 import traceback
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
-from sacred.commands import print_config
+from sacred.commands import print_config, help_for_command
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
@@ -90,12 +90,15 @@ class Experiment(object):
         config_updates = get_config_updates(args['UPDATE'])
 
         if args['COMMAND']:
-            if args['COMMAND'] == 'print_config':
+            cmd_name = args['COMMAND']
+            if args['help']:
+                return help_for_command(self.cmd[cmd_name])
+            elif cmd_name == 'print_config':
                 self._set_up_logging()
                 self._set_up_config(config_updates)
                 return print_config(self.cfgs, self.cfg, config_updates)
             else:
-                return self.run_command(args['COMMAND'],
+                return self.run_command(cmd_name,
                                         config_updates=config_updates)
 
         for obs in get_observers(args):

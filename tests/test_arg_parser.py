@@ -38,7 +38,6 @@ def test_parse_mongo_db_arg_hostname_dbname():
     ('run',              {'run': True}),
     ('with 1 2',         {'with': True, 'UPDATE': ['1', '2']}),
     ('evaluate',         {'COMMAND': 'evaluate'}),
-    ('help',             {'help': True}),
     ('help evaluate',    {'help': True, 'COMMAND': 'evaluate'}),
     ('-m foo',           {'--mongo_db': 'foo'}),
     ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
