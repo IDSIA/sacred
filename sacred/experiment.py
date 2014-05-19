@@ -92,7 +92,10 @@ class Experiment(object):
         if args['COMMAND']:
             cmd_name = args['COMMAND']
             if args['help']:
-                return help_for_command(self.cmd[cmd_name])
+                cmd = self.cmd[cmd_name]
+                if isinstance(cmd, CapturedFunction):
+                    return help_for_command(cmd._wrapped_function)
+                return help_for_command(cmd)
             elif cmd_name == 'print_config':
                 self._set_up_logging()
                 self._set_up_config(config_updates)
