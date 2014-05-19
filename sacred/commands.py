@@ -55,7 +55,7 @@ def _flatten_keys(d):
                 yield key + '.' + k
 
 
-def print_config(configs, final_cfg, updates):
+def print_config(final_config, added, updated, typechanges):
     """
     Print the updated configuration and exit.
 
@@ -64,15 +64,8 @@ def print_config(configs, final_cfg, updates):
       blue:   value added
       red:    value updated but type changed
     """
-    added = set()
-    typechanges = {}
-    updated = list(_flatten_keys(updates))
     print('Final Configuration:')
-    for config in configs:
-        added |= config.added_values
-        typechanges.update(config.typechanges)
-
-    _cfgprint(final_cfg, '', added, updated, typechanges)
+    _cfgprint(final_config, '', added, updated, typechanges)
 
 
 def help_for_command(command):
