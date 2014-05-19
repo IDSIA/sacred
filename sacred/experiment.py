@@ -98,7 +98,7 @@ class Experiment(object):
                 return
 
             cmd = self.cmd[args['COMMAND']]
-            if isinstance(args['COMMAND'], CapturedFunction):
+            if isinstance(cmd, CapturedFunction):
                 return help_for_command(cmd._wrapped_function)
             else:
                 return help_for_command(cmd)

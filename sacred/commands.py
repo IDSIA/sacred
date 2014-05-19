@@ -36,9 +36,9 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
 
     last_key = key.split('.')[-1]
     if isinstance(x, dict):
+        if last_key:
+            print(colored('{}{}:'.format(indent, last_key)))
         for k, v in x.items():
-            if last_key:
-                print(colored('{}{}:'.format(indent, last_key)))
             _cfgprint(v, (key + '.' + k).strip('.'), added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
