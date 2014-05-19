@@ -66,7 +66,7 @@ except ImportError:
 
 
 class MongoDBReporter(ExperimentObserver):
-    def __init__(self, url=None, db_name='sperment', save_delay=1):
+    def __init__(self, url=None, db_name='sacred', save_delay=1):
         super(MongoDBReporter, self).__init__()
         self.experiment_entry = None
         self.last_save = 0
