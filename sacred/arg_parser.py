@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-
+import ast
 import collections
-import json
 import re
 from docopt import docopt
 from sacred.observers import MongoDBReporter
@@ -98,31 +97,8 @@ def parse_args(argv, description="", commands=None):
 
 
 def _convert_value(value):
-    if value == 'True':
-        return True
-    elif value == 'False':
-        return False
-    elif value == 'None':
-        return None
-    elif value[0] == "'" and value[-1] == "'":
-        # manually handle strings in single quotes, because json doesn't
-        return value[1:-1]
-
     try:
-        # for hex, oct and binary numbers like 0xff, 0o12, or 0b101010
-        return int(value, 0)
-    except ValueError:
-        pass
-
-    try:
-        # for .1 or 1. which is not handled by json
-        return float(value)
-    except ValueError:
-        pass
-
-    try:
-        # hand over to json
-        return json.loads(value)
+        return ast.literal_eval(value)
     except ValueError:
         # use as string if nothing else worked
         return value
