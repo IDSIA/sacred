@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import ast
 from copy import copy
 from functools import update_wrapper
 import inspect
@@ -141,16 +142,21 @@ def is_zero_argument_function(func):
             arg_spec.keywords is None)
 
 
-def get_function_body_source(func):
+def get_function_body_code(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
+    filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n".format(func.__name__),
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n\s*".format(func.__name__),
         flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
+    line_offset = func_code[:defs[0].end()].count('\n')
     func_body = func_code[defs[0].end():]
-    return inspect.cleandoc(func_body)
+    body_code = compile(inspect.cleandoc(func_body), filename, "exec", ast.PyCF_ONLY_AST)
+    body_code = ast.increment_lineno(body_code, n=start_idx+line_offset-1)
+    body_code = compile(body_code, filename, "exec")
+    return body_code
 
 
 class ConfigScope(dict):
@@ -160,8 +166,7 @@ class ConfigScope(dict):
             "only zero-argument function can be ConfigScopes"
         self._func = func
         update_wrapper(self, func)
-        func_body = get_function_body_source(func)
-        self._body_code = compile(func_body, "<string>", "exec")
+        self._body_code = get_function_body_code(func)
         self._initialized = False
         self.added_values = set()
         self.typechanges = {}
