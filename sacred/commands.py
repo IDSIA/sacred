@@ -3,11 +3,26 @@
 
 from __future__ import division, print_function, unicode_literals
 from blessings import Terminal
+import pprint
+
+term = Terminal()
+
+
+def my_safe_repr(objekt, context, maxlevels, level):
+    """
+    Used to override the pprint format method in order to get rid of unnecessary
+    unicode prefixes. E.g.: 'John' instead of u'John'.
+    """
+    typ = pprint._type(objekt)
+    if typ is unicode:
+        try:
+            objekt = str(objekt)
+        except UnicodeEncodeError:
+            pass
+    return pprint._safe_repr(objekt, context, maxlevels, level)
 
 
 def cfgprint(x, key, added, updated, typechanges, indent=''):
-    term = Terminal()
-
     def colored(text):
         if key in added:
             return term.blue(text)
@@ -25,7 +40,10 @@ def cfgprint(x, key, added, updated, typechanges, indent=''):
                 print(colored('{}{}:'.format(indent, last_key)))
             cfgprint(v, (key + '.' + k).strip('.'), added, updated, typechanges, indent + '  ')
     else:
-        print(colored('{}{} = {}'.format(indent, last_key, x)))
+        printer = pprint.PrettyPrinter(indent=len(indent)+2)
+        printer.format = my_safe_repr
+        print(colored('{}{} = {}'.format(indent, last_key,
+                                         printer.pformat(x))))
 
 
 def flatten_keys(d):
@@ -42,7 +60,7 @@ def print_config(configs, final_cfg, updates):
     """
     added = set()
     typechanges = {}
-    updated = flatten_keys(updates)
+    updated = list(flatten_keys(updates))
     print('Final Configuration:')
     for config in configs:
         added |= config.added_values
