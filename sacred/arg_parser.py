@@ -123,9 +123,12 @@ def get_config_updates(updates):
             converted_value = value[1:-1]
         else:
             try:
-                converted_value = json.loads(value)
+                converted_value = float(value)
             except ValueError:
-                converted_value = value
+                try:
+                    converted_value = json.loads(value)
+                except ValueError:
+                    converted_value = value
         current_option[split_path[-1]] = converted_value
     return config_updates
 
