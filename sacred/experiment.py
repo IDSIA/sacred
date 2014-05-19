@@ -89,7 +89,6 @@ class Experiment(object):
                           commands=self.cmd)
         config_updates = get_config_updates(args['UPDATE'])
         if args['help']:
-
             if args['COMMAND'] is None:
                 # a hack to print the help message
                 parse_args(sys.argv[0:1] + ['-h'],
@@ -98,7 +97,7 @@ class Experiment(object):
                 return
 
             cmd = self.cmd[args['COMMAND']]
-            if isinstance(args['COMMAND'], CapturedFunction):
+            if isinstance(cmd, CapturedFunction):
                 return help_for_command(cmd._wrapped_function)
             else:
                 return help_for_command(cmd)

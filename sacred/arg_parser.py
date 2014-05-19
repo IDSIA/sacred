@@ -5,18 +5,17 @@ from __future__ import division, print_function, unicode_literals
 import collections
 import json
 import re
-from jinja2 import Template
 from docopt import docopt
 from sacred.observers import MongoDBReporter
 
 
-USAGE_TEMPLATE = Template("""Usage:
-  {{ program_name }} [run] [(with UPDATE...)] [-m DB]
-  {{ program_name }} help [COMMAND]
-  {{ program_name }} (-h | --help)
-  {{ program_name }} COMMAND [(with UPDATE...)]
+USAGE_TEMPLATE = """Usage:
+  {program_name} [run] [(with UPDATE...)] [-m DB]
+  {program_name} help [COMMAND]
+  {program_name} (-h | --help)
+  {program_name} COMMAND [(with UPDATE...)]
 
-{{ description }}
+{description}
 
 Options:
   -h --help             Print this help message and exit
@@ -26,13 +25,13 @@ Arguments:
   DB        Database specification. Can be [host:port:]db_name
   UPDATE    Configuration assignments of the form foo.bar=17
   COMMAND   Custom command to run
-
-{% if commands | length > 0 %}Commands:{% endif %}
-
-{% for key, value in commands.iteritems() %}
-  {{ key.ljust(cmd_len) }}  {{value}}
-{% endfor %}
-""", trim_blocks=True)
+"""
+# {% if commands | length > 0 %}Commands:{% endif %}
+#
+# {% for key, value in commands.iteritems() %}
+#   {{ key.ljust(cmd_len) }}  {{value}}
+# {% endfor %}
+# """, trim_blocks=True)
 
 
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
@@ -47,6 +46,25 @@ DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
 URL = re.compile("^" + URL_PATTERN + "$")
 URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
                          "(?P<db_name>" + DB_NAME_PATTERN + ")$")
+
+
+def get_first_line_of_docstring(f):
+    return textwrap.dedent(f.__doc__ or "").strip().split('\n')[0]
+
+
+def format_usage(program_name, description, commands=None):
+    usage = USAGE_TEMPLATE.format(
+        program_name=program_name,
+        description=description.strip())
+
+    if commands:
+        usage += "\nCommands:\n"
+        cmd_len = max([len(c) for c in commands] + [8])
+        command_doc = {k: get_first_line_of_docstring(v)
+                       for k, v in commands.items()}
+        for k, v in command_doc.items():
+            usage += ("  {:%d}  {}\n" % cmd_len).format(k, v)
+    return usage
 
 
 def recursive_update(d, u):
@@ -75,18 +93,7 @@ import textwrap
 
 
 def parse_args(argv, description="", commands=None):
-    if commands is None:
-        commands = {}
-    cmd_len = max([len(c) for c in commands] + [8])
-    command_doc = {k: textwrap.dedent(v.__doc__ or "").strip().split('\n')[0]
-                   for k, v in commands.items()}
-
-    usage = USAGE_TEMPLATE.render(
-        program_name=argv[0],
-        description=description.strip(),
-        commands=command_doc,
-        cmd_len=cmd_len)
-
+    usage = format_usage(argv[0], description, commands)
     return docopt(usage, [str(a) for a in argv[1:]])
 
 
