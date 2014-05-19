@@ -4,7 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 import pytest
 from sacred.arg_parser import (parse_mongo_db_arg, get_config_updates,
-                               parse_args)
+                               parse_args, _convert_value)
 
 
 def test_parse_mongo_db_arg():
@@ -102,3 +102,37 @@ def test_parse_compound_arglist2():
 ])
 def test_get_config_updates(update, expected):
     assert get_config_updates(update) == expected
+
+
+@pytest.mark.parametrize("value,expected", [
+    ('None',          None),
+    ('True',          True),
+    ('true',          True),
+    ('False',         False),
+    ('false',         False),
+    ('246',           246),
+    ('1.0',           1.0),
+    ('1.',            1.0),
+    ('.1',            0.1),
+    ('1e3',           1e3),
+    ('-.4e-12',       -0.4e-12),
+    ('-.4e-12',       -0.4e-12),
+    ('[1,2,3]',       [1, 2, 3]),
+    pytest.mark.xfail(('[1.,.1]', [1., .1])),
+    pytest.mark.xfail(('[True, False]', [True, False])),
+    ('[true, false]', [True, False]),
+    pytest.mark.xfail(('[None, None]', [None, None])),
+    ('[1.0,2.0,3.0]', [1.0, 2.0, 3.0]),
+    ('{"a":1}', {'a': 1}),
+    ('{"foo":1, "bar":2.0}', {'foo': 1, 'bar': 2.0}),
+    pytest.mark.xfail(('{"a":1., "b":.2}', {'a': 1., 'b': .2})),
+    pytest.mark.xfail(('{"a":True, "b":False}', {'a': True, 'b': False})),
+    ('{"a":true, "b":false}', {'a': True, 'b': False}),
+    pytest.mark.xfail(('{"a":none}', {'a': None})),
+    pytest.mark.xfail(('{a:1}', {'a': 1})),
+    ('bob', 'bob'),
+    ('"hello world"', 'hello world'),
+    ("'hello world'", 'hello world'),
+])
+def test_convert_value(value, expected):
+    assert _convert_value(value) == expected

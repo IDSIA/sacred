@@ -97,6 +97,37 @@ def parse_args(argv, description="", commands=None):
     return docopt(usage, [str(a) for a in argv[1:]])
 
 
+def _convert_value(value):
+    if value == 'True':
+        return True
+    elif value == 'False':
+        return False
+    elif value == 'None':
+        return None
+    elif value[0] == "'" and value[-1] == "'":
+        # manually handle strings in single quotes, because json doesn't
+        return value[1:-1]
+
+    try:
+        # for hex, oct and binary numbers like 0xff, 0o12, or 0b101010
+        return int(value, 0)
+    except ValueError:
+        pass
+
+    try:
+        # for .1 or 1. which is not handled by json
+        return float(value)
+    except ValueError:
+        pass
+
+    try:
+        # hand over to json
+        return json.loads(value)
+    except ValueError:
+        # use as string if nothing else worked
+        return value
+
+
 def get_config_updates(updates):
     config_updates = {}
     if not updates:
@@ -112,24 +143,7 @@ def get_config_updates(updates):
             if p not in current_option:
                 current_option[p] = dict()
             current_option = current_option[p]
-
-        if value == 'True':
-            converted_value = True
-        elif value == 'False':
-            converted_value = False
-        elif value == 'None':
-            converted_value = None
-        elif value[0] == "'" and value[-1] == "'":
-            converted_value = value[1:-1]
-        else:
-            try:
-                converted_value = float(value)
-            except ValueError:
-                try:
-                    converted_value = json.loads(value)
-                except ValueError:
-                    converted_value = value
-        current_option[split_path[-1]] = converted_value
+        current_option[split_path[-1]] = _convert_value(value)
     return config_updates
 
 
