@@ -1,16 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-import inspect
 import pickle
 import time
+from datetime import datetime
 
-import numpy as np
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
-from sperment.host_info import get_host_info
+from sacred.host_info import get_host_info
 
 
 class ExperimentObserver(object):
@@ -30,32 +29,40 @@ class ExperimentObserver(object):
     def experiment_interrupted_event(self, interrupt_time, info):
         pass
 
-    def experiment_failed_event(self, fail_time, info):
+    def experiment_failed_event(self, fail_time, fail_trace, info):
         pass
 
+SON_MANIPULATORS = []
 
-class PickleNumpyArrays(SONManipulator):
-    """
-    Helper that makes sure numpy arrays get pickled and stored in the database
-    as binary strings.
-    """
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, np.ndarray):
-                son[key] = {"_type": "ndarray",
-                            "_value": Binary(pickle.dumps(value, protocol=2))}
-            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
+try:
+    import numpy as np
 
-    def transform_outgoing(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, dict):
-                if "_type" in value and value["_type"] == "ndarray":
-                    son[key] = pickle.loads(str(value["_value"]))
-                else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value, collection)
-        return son
+    class PickleNumpyArrays(SONManipulator):
+        """
+        Helper that makes sure numpy arrays get pickled and stored in the database
+        as binary strings.
+        """
+        def transform_incoming(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, np.ndarray):
+                    son[key] = {"_type": "ndarray",
+                                "_value": Binary(pickle.dumps(value, protocol=2))}
+                elif isinstance(value, dict):  # Make sure we recurse into sub-docs
+                    son[key] = self.transform_incoming(value, collection)
+            return son
+
+        def transform_outgoing(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, dict):
+                    if "_type" in value and value["_type"] == "ndarray":
+                        son[key] = pickle.loads(str(value["_value"]))
+                    else:  # Again, make sure to recurse into sub-docs
+                        son[key] = self.transform_outgoing(value, collection)
+            return son
+
+    SON_MANIPULATORS.append(PickleNumpyArrays())
+except ImportError:
+    pass
 
 
 class MongoDBReporter(ExperimentObserver):
@@ -66,7 +73,8 @@ class MongoDBReporter(ExperimentObserver):
         self.save_delay = save_delay
         mongo = MongoClient(url)
         self.db = mongo[db_name]
-        self.db.add_son_manipulator(PickleNumpyArrays())
+        for manipulator in SON_MANIPULATORS:
+            self.db.add_son_manipulator(manipulator)
         self.collection = self.db['experiments']
 
     def save(self):
@@ -78,10 +86,13 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
-        with open(mainfile, 'r') as f:
-            self.experiment_entry['source'] = f.readall()
+        try:
+            with open(mainfile, 'r') as f:
+                self.experiment_entry['source'] = f.read()
+        except IOError as e:
+            self.experiment_entry['source'] = str(e)
         self.experiment_entry['doc'] = doc
-        self.experiment_entry['start_time'] = start_time
+        self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'RUNNING'
@@ -94,22 +105,23 @@ class MongoDBReporter(ExperimentObserver):
             self.save()
 
     def experiment_completed_event(self, stop_time, result, info):
-        self.experiment_entry['stop_time'] = stop_time
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)
         self.experiment_entry['result'] = result
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'COMPLETED'
         self.save()
 
     def experiment_interrupted_event(self, interrupt_time, info):
-        self.experiment_entry['stop_time'] = interrupt_time
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(interrupt_time)
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
-    def experiment_failed_event(self, fail_time, info):
-        self.experiment_entry['stop_time'] = fail_time
+    def experiment_failed_event(self, fail_time, fail_trace, info):
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(fail_time)
         self.experiment_entry['info'] = info
         self.experiment_entry['status'] = 'FAILED'
+        self.experiment_entry['fail_trace'] = fail_trace
         self.save()
 
     def __eq__(self, other):
