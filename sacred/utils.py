@@ -1,14 +1,23 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+import collections
 import logging
+import sys
 
 
 class InfoUpdater(object):
-    def __init__(self, experiment, monitors=None):
+    def __init__(self, experiment, monitors=None, name=None):
         self.ex = experiment
-        self.monitors = monitors if monitors is not None else dict()
+        self.__name__ = self.__class__.__name__ if name is None else name
+        self.monitors = dict()
+        if isinstance(monitors, dict):
+            self.monitors = monitors
+        elif isinstance(monitors, (list, set)):
+            self.monitors = {str(i): m for i, m in enumerate(monitors)}
+        else:
+            self.monitors[''] = monitors
 
     def __call__(self, epoch, net, training_errors, validation_errors, **_):
         info = self.ex.description['info']
@@ -27,7 +36,7 @@ class InfoUpdater(object):
 
                 if len(mon.log) == 1:
                     log_name = mon.log.keys()[0]
-                    monitors[mon_name + '.' + log_name] = mon.log[log_name]
+                    monitors[mon_name + '/' + log_name] = mon.log[log_name]
                 else:
                     monitors[mon_name] = mon.log
 
@@ -49,3 +58,34 @@ def create_basic_stream_logger(name, level=logging.INFO):
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
+
+
+##### Portable way of raising exceptions with traceback #######
+
+if sys.version_info[0] == 2:
+    PYTHON2_RAISE = """
+def raise_with_traceback(exc, traceback):
+    raise exc, None, traceback.tb_next
+"""
+    exec(PYTHON2_RAISE)
+else:
+    def raise_with_traceback(exc, traceback):
+        raise exc.with_traceback(traceback.tb_next)
+
+
+def recursive_update(d, u):
+    """
+    Given two dictionaries d and u, update dict d recursively.
+
+    E.g.:
+    d = {'a': {'b' : 1}}
+    u = {'c': 2, 'a' : {'d': 3}}
+    => {'a': {'b': 1, 'd': 3}, 'c': 2}
+    """
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = recursive_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d

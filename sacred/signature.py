@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict
+from copy import copy
 import inspect
 
 
@@ -43,6 +44,10 @@ class Signature:
         self._assert_no_unexpected_kwargs(kwargs)
         self._assert_no_duplicate_args(args, kwargs)
         args, kwargs = self._fill_in_options(args, kwargs, options)
+        if self.kw_wildcard_name:
+            k = copy(options)
+            k.update(kwargs)
+            kwargs = k
         self._assert_no_missing_args(args, kwargs)
         return args, kwargs
 
