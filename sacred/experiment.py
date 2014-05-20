@@ -11,7 +11,7 @@ import time
 import traceback
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
-from sacred.commands import print_config, help_for_command, _flatten_keys
+from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
@@ -95,21 +95,9 @@ class Experiment(object):
     def run_commandline(self):
         args = parse_args(sys.argv,
                           description=self.doc,
-                          commands=self.cmd)
+                          commands=self.cmd,
+                          print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
-        if args['help']:
-            if args['COMMAND'] is None:
-                # a hack to print the help message
-                parse_args(sys.argv[0:1] + ['-h'],
-                           description=self.doc,
-                           commands=self.cmd)
-                return
-
-            cmd = self.cmd[args['COMMAND']]
-            if isinstance(cmd, CapturedFunction):
-                return help_for_command(cmd._wrapped_function)
-            else:
-                return help_for_command(cmd)
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']

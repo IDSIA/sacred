@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 from blessings import Terminal
+from sacred.captured_function import CapturedFunction
 
 term = Terminal()
 
@@ -69,5 +70,7 @@ def print_config(final_config, added, updated, typechanges):
 
 
 def help_for_command(command):
-    #print('Help for %s' % commandname)
-    print(pydoc.text.document(command))
+    if isinstance(command, CapturedFunction):
+        return pydoc.text.document(command._wrapped_function)
+    else:
+        return pydoc.text.document(command)

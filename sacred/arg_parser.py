@@ -5,6 +5,9 @@ import ast
 import re
 import textwrap
 from docopt import docopt
+import sys
+from commands import help_for_command
+
 from sacred.observers import MongoDBReporter
 
 
@@ -44,9 +47,18 @@ URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
                          "(?P<db_name>" + DB_NAME_PATTERN + ")$")
 
 
-def parse_args(argv, description="", commands=None):
+def parse_args(argv, description="", commands=None, print_help=True):
     usage = _format_usage(argv[0], description, commands)
-    return docopt(usage, [str(a) for a in argv[1:]])
+    args = docopt(usage, [str(a) for a in argv[1:]], help=help)
+    if not args['help'] or not print_help:
+        return args
+
+    if args['COMMAND'] is None:
+        print(usage)
+        sys.exit()
+    else:
+        print(help_for_command(commands[args['COMMAND']]))
+        sys.exit()
 
 
 def get_config_updates(updates):
