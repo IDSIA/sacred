@@ -3,33 +3,33 @@
 
 from __future__ import division, print_function, unicode_literals
 import pytest
-from sacred.arg_parser import (parse_mongo_db_arg, get_config_updates,
-                               parse_args)
+from sacred.arg_parser import (_parse_mongo_db_arg, get_config_updates,
+                               parse_args, _convert_value)
 
 
 def test_parse_mongo_db_arg():
-    assert parse_mongo_db_arg('foo') == ('localhost:27017', 'foo')
+    assert _parse_mongo_db_arg('foo') == ('localhost:27017', 'foo')
 
 
 def test_parse_mongo_db_arg_hostname():
-    assert parse_mongo_db_arg('localhost:28017') == \
+    assert _parse_mongo_db_arg('localhost:28017') == \
         ('localhost:28017', 'sacred')
 
-    assert parse_mongo_db_arg('www.mymongo.db:28017') == \
+    assert _parse_mongo_db_arg('www.mymongo.db:28017') == \
         ('www.mymongo.db:28017', 'sacred')
 
-    assert parse_mongo_db_arg('123.45.67.89:27017') == \
+    assert _parse_mongo_db_arg('123.45.67.89:27017') == \
         ('123.45.67.89:27017', 'sacred')
 
 
 def test_parse_mongo_db_arg_hostname_dbname():
-    assert parse_mongo_db_arg('localhost:28017:foo') == \
+    assert _parse_mongo_db_arg('localhost:28017:foo') == \
         ('localhost:28017', 'foo')
 
-    assert parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
+    assert _parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
         ('www.mymongo.db:28017', 'bar')
 
-    assert parse_mongo_db_arg('123.45.67.89:27017:baz') == \
+    assert _parse_mongo_db_arg('123.45.67.89:27017:baz') == \
         ('123.45.67.89:27017', 'baz')
 
 
@@ -38,12 +38,15 @@ def test_parse_mongo_db_arg_hostname_dbname():
     ('run',              {'run': True}),
     ('with 1 2',         {'with': True, 'UPDATE': ['1', '2']}),
     ('evaluate',         {'COMMAND': 'evaluate'}),
+    ('help',             {'help': True}),
     ('help evaluate',    {'help': True, 'COMMAND': 'evaluate'}),
+    ('-h',               {'--help': True}),
+    ('--help',           {'--help': True}),
     ('-m foo',           {'--mongo_db': 'foo'}),
     ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
 ])
 def test_parse_individual_arguments(argv, expected):
-    args = parse_args(['test_prog.py'] + argv.split())
+    args = parse_args(['test_prog.py'] + argv.split(), print_help=False)
     plain = {
         '--help': False,
         '--mongo_db': None,
@@ -102,3 +105,35 @@ def test_parse_compound_arglist2():
 ])
 def test_get_config_updates(update, expected):
     assert get_config_updates(update) == expected
+
+
+@pytest.mark.parametrize("value,expected", [
+    ('None',          None),
+    ('True',          True),
+    ('False',         False),
+    ('246',           246),
+    ('1.0',           1.0),
+    ('1.',            1.0),
+    ('.1',            0.1),
+    ('1e3',           1e3),
+    ('-.4e-12',       -0.4e-12),
+    ('-.4e-12',       -0.4e-12),
+    ('[1,2,3]',       [1, 2, 3]),
+    ('[1.,.1]', [1., .1]),
+    ('[True, False]', [True, False]),
+    ('[None, None]', [None, None]),
+    ('[1.0,2.0,3.0]', [1.0, 2.0, 3.0]),
+    ('{"a":1}', {'a': 1}),
+    ('{"foo":1, "bar":2.0}', {'foo': 1, 'bar': 2.0}),
+    ('{"a":1., "b":.2}', {'a': 1., 'b': .2}),
+    ('{"a":True, "b":False}', {'a': True, 'b': False}),
+    ('{"a":None}', {'a': None}),
+    ('{"a":[1, 2.0, True, None], "b":"foo"}', {"a": [1, 2.0, True, None],
+                                               "b": "foo"}),
+    pytest.mark.xfail(('{a:1}', {'a': 1})),
+    ('bob', 'bob'),
+    ('"hello world"', 'hello world'),
+    ("'hello world'", 'hello world'),
+])
+def test_convert_value(value, expected):
+    assert _convert_value(value) == expected

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-This is an example experiment of how you might use sperment together with
+This is an example experiment of how you might use sacred together with
 pylstm.
 """
 from __future__ import division, print_function, unicode_literals

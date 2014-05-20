@@ -11,7 +11,7 @@ import time
 import traceback
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
-from sacred.commands import print_config, help_for_command
+from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger, raise_with_traceback
 
@@ -83,32 +83,29 @@ class Experiment(object):
         import json
         print(json.dumps(self.cfg, indent=2, ))
 
+    def get_config_modifications(self, config_updates):
+        added = set()
+        typechanges = {}
+        updated = list(_flatten_keys(config_updates))
+        for config in self.cfgs:
+            added |= config.added_values
+            typechanges.update(config.typechanges)
+        return added, typechanges, updated
+
     def run_commandline(self):
         args = parse_args(sys.argv,
                           description=self.doc,
-                          commands=self.cmd)
+                          commands=self.cmd,
+                          print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
-        if args['help']:
-
-            if args['COMMAND'] is None:
-                # a hack to print the help message
-                parse_args(sys.argv[0:1] + ['-h'],
-                           description=self.doc,
-                           commands=self.cmd)
-                return
-
-            cmd = self.cmd[args['COMMAND']]
-            if isinstance(cmd, CapturedFunction):
-                return help_for_command(cmd._wrapped_function)
-            else:
-                return help_for_command(cmd)
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']
             if cmd_name == 'print_config':
                 self._set_up_logging()
                 self._set_up_config(config_updates)
-                return print_config(self.cfgs, self.cfg, config_updates)
+                add, tch, upd = self.get_config_modifications(config_updates)
+                return print_config(self.cfg, add, tch, upd)
             else:
                 return self.run_command(cmd_name,
                                         config_updates=config_updates)
@@ -129,6 +126,19 @@ class Experiment(object):
         self.reset()
         self._set_up_config(config_updates)
         self._set_up_logging()
+
+        ## warn about some updates
+        add, tch, upd = self.get_config_modifications(config_updates)
+        for a in sorted(add):
+            self.logger.warning('Added new config entry: "%s"' % a)
+        for k, (t1, t2) in tch.items():
+            if (isinstance(t1, type(None)) or
+                    (t1 in (int, float) and t2 in (int, float))):
+                continue
+            self.logger.warning(
+                'Changed type of config entry "%s" from %s to %s' %
+                (k, t1.__name__, t2.__name__))
+
         self._status = Experiment.RUNNING
         self._emit_started()
         try:
