@@ -5,7 +5,6 @@ from datetime import timedelta
 import sys
 import time
 from sacred.signature import Signature
-from sacred.utils import raise_with_traceback
 
 
 class CapturedFunction(object):
@@ -29,8 +28,7 @@ class CapturedFunction(object):
             result = self._wrapped_function(*args, **kwargs)
         except:
             t, v, trace = sys.exc_info()
-            raise_with_traceback(v, trace.tb_next)
-            raise  # to make IDE happy
+            raise v, None, trace.tb_next  # FIXME not python3 compatible
         ########################################################################
         stop_time = time.time()
         elapsed_time = timedelta(seconds=round(stop_time - start_time))
@@ -42,5 +40,4 @@ class CapturedFunction(object):
             return self.execute(args, kwargs, self._parent_experiment.cfg)
         except:
             t, v, trace = sys.exc_info()
-            raise_with_traceback(v, trace.tb_next)
-            raise  # to make IDE happy
+            raise v, None, trace.tb_next  # FIXME not python3 compatible
