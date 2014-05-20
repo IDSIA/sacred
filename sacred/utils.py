@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+import collections
 import logging
 import sys
 
@@ -70,3 +71,21 @@ def raise_with_traceback(exc, traceback):
 else:
     def raise_with_traceback(exc, traceback):
         raise exc.with_traceback(traceback.tb_next)
+
+
+def recursive_update(d, u):
+    """
+    Given two dictionaries d and u, update dict d recursively.
+
+    E.g.:
+    d = {'a': {'b' : 1}}
+    u = {'c': 2, 'a' : {'d': 3}}
+    => {'a': {'b': 1, 'd': 3}, 'c': 2}
+    """
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = recursive_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
