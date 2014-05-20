@@ -90,7 +90,7 @@ class Experiment(object):
         for config in self.cfgs:
             added |= config.added_values
             typechanges.update(config.typechanges)
-        return added, typechanges, updated
+        return added, updated, typechanges
 
     def run_commandline(self):
         args = parse_args(sys.argv,
@@ -104,8 +104,8 @@ class Experiment(object):
             if cmd_name == 'print_config':
                 self._set_up_logging()
                 self._set_up_config(config_updates)
-                add, tch, upd = self.get_config_modifications(config_updates)
-                return print_config(self.cfg, add, tch, upd)
+                add, upd, tch = self.get_config_modifications(config_updates)
+                return print_config(self.cfg, add, upd, tch)
             else:
                 return self.run_command(cmd_name,
                                         config_updates=config_updates)
@@ -128,7 +128,7 @@ class Experiment(object):
         self._set_up_logging()
 
         ## warn about some updates
-        add, tch, upd = self.get_config_modifications(config_updates)
+        add, upd, tch = self.get_config_modifications(config_updates)
         for a in sorted(add):
             self.logger.warning('Added new config entry: "%s"' % a)
         for k, (t1, t2) in tch.items():
