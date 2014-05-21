@@ -17,7 +17,7 @@ class ExperimentObserver(object):
         pass
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info):
+                                 info, dependencies):
         pass
 
     def experiment_info_updated(self, info, captured_out):
@@ -83,7 +83,7 @@ class MongoDBReporter(ExperimentObserver):
         self.collection.save(self.experiment_entry)
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info):
+                                 info, dependencies):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
@@ -99,6 +99,7 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['captured_out'] = ''
         self.experiment_entry['status'] = 'RUNNING'
         self.experiment_entry['metainfo'] = get_host_info()
+        self.experiment_entry['metainfo']['dependencies'] = dependencies
         self.save()
 
     def experiment_info_updated(self, info, captured_out):
@@ -147,7 +148,7 @@ class DebugObserver(ExperimentObserver):
         print('experiment_created_event')
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info):
+                                 info, dependencies):
         print('experiment_started_event')
 
     def experiment_info_updated(self, info, captured_out):

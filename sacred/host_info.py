@@ -5,6 +5,7 @@ import multiprocessing
 import platform
 import re
 import subprocess
+import pkg_resources
 
 
 def get_processor_name():
@@ -34,3 +35,25 @@ def get_host_info():
         "python_version": platform.python_version(),
         "python_compiler": platform.python_compiler()
     }
+
+
+def get_module_versions(globs):
+    module = type(platform)
+    module_candidates = set()
+    for k, g in globs.items():
+        if isinstance(g, module):
+            module_candidates.add(g.__name__)
+        elif hasattr(g, '__module__'):
+            split_m = g.__module__.split('.')
+            module_candidates |= {'.'.join(split_m[:i])
+                                  for i in range(1, len(split_m)+1)}
+
+    version_info = {}
+    for m in module_candidates:
+        try:
+            version = pkg_resources.get_distribution(m).version
+            version_info[m] = version
+        except pkg_resources.DistributionNotFound:
+            pass
+
+    return version_info

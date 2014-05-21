@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import traceback
+from host_info import get_module_versions
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
 from sacred.commands import print_config, _flatten_keys
@@ -35,6 +36,7 @@ class Experiment(object):
         self.cmd['print_config'] = print_config
         self.captured_out = None
         self._heartbeat = None
+        self._dependencies = None
 
         self.description = {
             'info': {},
@@ -63,6 +65,7 @@ class Experiment(object):
     def main(self, f):
         self._main_function = self.capture(f)
         self.mainfile = inspect.getabsfile(f)
+        self._dependencies = get_module_versions(f.__globals__)
 
         if self.name is None:
             filename = os.path.basename(self.mainfile)
@@ -199,7 +202,8 @@ class Experiment(object):
                     doc=self.doc,
                     start_time=self.description['start_time'],
                     config=self.cfg,
-                    info=self.description['info'])
+                    info=self.description['info'],
+                    dependencies=self._dependencies)
             except AttributeError:
                 pass
 
