@@ -15,21 +15,24 @@ __all__ = ['parse_args', 'get_config_updates', 'get_observers']
 
 
 USAGE_TEMPLATE = """Usage:
-  {program_name} [run] [(with UPDATE...)] [-m DB]
+  {program_name} [run] [(with UPDATE...)] [-m DB] [-l LEVEL]
   {program_name} help [COMMAND]
   {program_name} (-h | --help)
-  {program_name} COMMAND [(with UPDATE...)]
+  {program_name} COMMAND [(with UPDATE...)] [-l LEVEL]
 
 {description}
 
 Options:
-  -h --help             Print this help message and exit
-  -m DB --mongo_db=DB   Add a MongoDB Observer to the experiment
+  -h --help                Print this help message and exit
+  -m DB --mongo_db=DB      Add a MongoDB Observer to the experiment
+  -l LEVEL --logging=LEVEL Adjust the loglevel
 
 Arguments:
   DB        Database specification. Can be [host:port:]db_name
   UPDATE    Configuration assignments of the form foo.bar=17
   COMMAND   Custom command to run
+  LEVEL     Loglevel either as 0 - 50 or as string:
+            DEBUG(10), INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
 """
 
 

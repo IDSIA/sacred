@@ -44,12 +44,15 @@ def test_parse_mongo_db_arg_hostname_dbname():
     ('--help',           {'--help': True}),
     ('-m foo',           {'--mongo_db': 'foo'}),
     ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
+    ('-l 10',            {'--logging': '10'}),
+    ('--logging=30',     {'--logging': '30'}),
 ])
 def test_parse_individual_arguments(argv, expected):
     args = parse_args(['test_prog.py'] + argv.split(), print_help=False)
     plain = {
         '--help': False,
         '--mongo_db': None,
+        '--logging': None,
         'COMMAND': None,
         'UPDATE': [],
         'help': False,
@@ -67,6 +70,7 @@ def test_parse_compound_arglist1():
     expected = {
         '--help': False,
         '--mongo_db': 'localhost:22222',
+        '--logging': None,
         'COMMAND': None,
         'UPDATE': ['a=17', 'b=1'],
         'help': False,
@@ -77,11 +81,12 @@ def test_parse_compound_arglist1():
 
 
 def test_parse_compound_arglist2():
-    argv = "evaluate with a=18 b=2".split()
+    argv = "evaluate with a=18 b=2 -l30".split()
     args = parse_args(['test_prog.py'] + argv)
     expected = {
         '--help': False,
         '--mongo_db': None,
+        '--logging': '30',
         'COMMAND': 'evaluate',
         'UPDATE': ['a=18', 'b=2'],
         'help': False,

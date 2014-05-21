@@ -101,6 +101,8 @@ class Experiment(object):
                           commands=self.cmd,
                           print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
+        if args['--logging']:
+            self._set_up_logging(args['--logging'])
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']
@@ -261,9 +263,15 @@ class Experiment(object):
                 pass
 
     ################### protected helpers ###################################
-    def _set_up_logging(self):
+    def _set_up_logging(self, level=None):
+        if level:
+            try:
+                level = int(level)
+            except ValueError:
+                pass
+
         if self.logger is None:
-            self.logger = create_basic_stream_logger(self.name)
+            self.logger = create_basic_stream_logger(self.name, level=level)
             self.logger.debug("No logger given. Created basic stream logger.")
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
