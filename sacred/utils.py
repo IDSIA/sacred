@@ -45,7 +45,8 @@ class InfoUpdater(object):
             info['monitor'] = monitors
 
 
-def create_basic_stream_logger(name, level=logging.INFO):
+def create_basic_stream_logger(name, level=None):
+    level = level if level is not None else logging.INFO
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.handlers = []
