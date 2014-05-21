@@ -7,6 +7,7 @@ from datetime import timedelta
 import inspect
 import os.path
 import sys
+import threading
 import time
 import traceback
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
@@ -141,6 +142,7 @@ class Experiment(object):
         self._warn_about_suspicious_changes(config_updates)
         self._status = Experiment.RUNNING
         self._emit_started()
+        self._emit_info_updated()
         try:
             result = self._main_function()
         except KeyboardInterrupt:
@@ -190,12 +192,16 @@ class Experiment(object):
                 pass
 
     def _emit_info_updated(self):
+        if self._status != Experiment.RUNNING:
+            return
+
         for o in self._observers:
             try:
                 o.experiment_info_updated(
                     info=self.description['info'])
             except AttributeError:
                 pass
+        threading.Timer(30, self._emit_info_updated).start()
 
     def _stop_time(self):
         stop_time = time.time()

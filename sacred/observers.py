@@ -101,6 +101,7 @@ class MongoDBReporter(ExperimentObserver):
 
     def experiment_info_updated(self, info):
         self.experiment_entry['info'] = info
+        self.experiment_entry['heartbeat'] = datetime.now()
         if time.time() >= self.last_save + self.save_delay:
             self.save()
 
