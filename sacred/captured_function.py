@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
-import sys
 import time
 from sacred.signature import Signature
 
@@ -24,11 +23,7 @@ class CapturedFunction(object):
         self.logger.info("started")
         start_time = time.time()
         ####################### run actual function ############################
-        try:
-            result = self._wrapped_function(*args, **kwargs)
-        except:
-            t, v, trace = sys.exc_info()
-            raise v, None, trace.tb_next  # FIXME not python3 compatible
+        result = self._wrapped_function(*args, **kwargs)
         ########################################################################
         stop_time = time.time()
         elapsed_time = timedelta(seconds=round(stop_time - start_time))
@@ -36,8 +31,4 @@ class CapturedFunction(object):
         return result
 
     def __call__(self, *args, **kwargs):
-        try:
-            return self.execute(args, kwargs, self._parent_experiment.cfg)
-        except:
-            t, v, trace = sys.exc_info()
-            raise v, None, trace.tb_next  # FIXME not python3 compatible
+        return self.execute(args, kwargs, self._parent_experiment.cfg)
