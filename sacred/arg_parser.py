@@ -49,7 +49,7 @@ URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
 
 def parse_args(argv, description="", commands=None, print_help=True):
     usage = _format_usage(argv[0], description, commands)
-    args = docopt(usage, [str(a) for a in argv[1:]], help=help)
+    args = docopt(usage, [str(a) for a in argv[1:]], help=print_help)
     if not args['help'] or not print_help:
         return args
 
