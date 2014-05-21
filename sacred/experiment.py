@@ -122,12 +122,7 @@ class Experiment(object):
         self.logger.info("Running command '%s'" % command_name)
         return self.cmd[command_name]()
 
-    def run(self, config_updates=None):
-        self.reset()
-        self._set_up_config(config_updates)
-        self._set_up_logging()
-
-        ## warn about some updates
+    def _warn_about_suspicious_changes(self, config_updates):
         add, upd, tch = self.get_config_modifications(config_updates)
         for a in sorted(add):
             self.logger.warning('Added new config entry: "%s"' % a)
@@ -139,6 +134,11 @@ class Experiment(object):
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
 
+    def run(self, config_updates=None):
+        self.reset()
+        self._set_up_config(config_updates)
+        self._set_up_logging()
+        self._warn_about_suspicious_changes(config_updates)
         self._status = Experiment.RUNNING
         self._emit_started()
         try:
@@ -192,7 +192,8 @@ class Experiment(object):
     def _emit_info_updated(self):
         for o in self._observers:
             try:
-                o.experiment_info_updated(info=self.description['info'])
+                o.experiment_info_updated(
+                    info=self.description['info'])
             except AttributeError:
                 pass
 
