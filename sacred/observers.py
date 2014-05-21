@@ -23,13 +23,14 @@ class ExperimentObserver(object):
     def experiment_info_updated(self, info, captured_out):
         pass
 
-    def experiment_completed_event(self, stop_time, result, info):
+    def experiment_completed_event(self, stop_time, result, info, captured_out):
         pass
 
-    def experiment_interrupted_event(self, interrupt_time, info):
+    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
         pass
 
-    def experiment_failed_event(self, fail_time, fail_trace, info):
+    def experiment_failed_event(self, fail_time, fail_trace, info,
+                                captured_out):
         pass
 
 SON_MANIPULATORS = []
@@ -95,6 +96,7 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
         self.experiment_entry['info'] = info
+        self.experiment_entry['captured_out'] = ''
         self.experiment_entry['status'] = 'RUNNING'
         self.experiment_entry['metainfo'] = get_host_info()
         self.save()
@@ -106,22 +108,27 @@ class MongoDBReporter(ExperimentObserver):
         if time.time() >= self.last_save + self.save_delay:
             self.save()
 
-    def experiment_completed_event(self, stop_time, result, info):
+    def experiment_completed_event(self, stop_time, result, info, captured_out):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)
         self.experiment_entry['result'] = result
         self.experiment_entry['info'] = info
+        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'COMPLETED'
         self.save()
 
-    def experiment_interrupted_event(self, interrupt_time, info):
-        self.experiment_entry['stop_time'] = datetime.fromtimestamp(interrupt_time)
+    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
+        self.experiment_entry['stop_time'] = datetime.fromtimestamp(
+            interrupt_time)
         self.experiment_entry['info'] = info
+        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
-    def experiment_failed_event(self, fail_time, fail_trace, info):
+    def experiment_failed_event(self, fail_time, fail_trace, info,
+                                captured_out):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(fail_time)
         self.experiment_entry['info'] = info
+        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'FAILED'
         self.experiment_entry['fail_trace'] = fail_trace
         self.save()
@@ -133,3 +140,25 @@ class MongoDBReporter(ExperimentObserver):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class DebugObserver(ExperimentObserver):
+    def experiment_created_event(self, name, stages, seed, mainfile, doc):
+        print('experiment_created_event')
+
+    def experiment_started_event(self, name, mainfile, doc, start_time, config,
+                                 info):
+        print('experiment_started_event')
+
+    def experiment_info_updated(self, info, captured_out):
+        print('experiment_info_updated')
+
+    def experiment_completed_event(self, stop_time, result, info, captured_out):
+        print('experiment_completed_event')
+
+    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
+        print('experiment_interrupted_event')
+
+    def experiment_failed_event(self, fail_time, fail_trace, info,
+                                captured_out):
+        print('experiment_failed_event')

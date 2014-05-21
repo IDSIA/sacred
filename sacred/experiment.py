@@ -34,6 +34,7 @@ class Experiment(object):
         self.cmd = OrderedDict()
         self.cmd['print_config'] = print_config
         self.captured_out = None
+        self._heartbeat = None
 
         self.description = {
             'info': {},
@@ -144,7 +145,7 @@ class Experiment(object):
             self._warn_about_suspicious_changes(config_updates)
             self._status = Experiment.RUNNING
             self._emit_started()
-            self._emit_info_updated()
+            self._start_heartbeat()
             try:
                 result = self._main_function()
             except KeyboardInterrupt:
@@ -160,6 +161,8 @@ class Experiment(object):
                 self._status = Experiment.COMPLETED
                 self._emit_completed(result)
                 return result
+            finally:
+                self._heartbeat.cancel()
 
     def reset(self):
         self.description['info'] = {}
@@ -177,6 +180,11 @@ class Experiment(object):
     def remove_observer(self, obs):
         if obs in self._observers:
             self._observers.remove(obs)
+
+    def _start_heartbeat(self):
+        self._emit_info_updated()
+        self._heartbeat = threading.Timer(10, self._start_heartbeat)
+        self._heartbeat.start()
 
     def _emit_started(self):
         self.logger.info("Experiment started.")
@@ -204,7 +212,6 @@ class Experiment(object):
                     captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
-        threading.Timer(30, self._emit_info_updated).start()
 
     def _stop_time(self):
         stop_time = time.time()
@@ -219,9 +226,11 @@ class Experiment(object):
         stop_time = self._stop_time()
         for o in self._observers:
             try:
-                o.experiment_completed_event(stop_time=stop_time,
-                                             result=result,
-                                             info=self.description['info'])
+                o.experiment_completed_event(
+                    stop_time=stop_time,
+                    result=result,
+                    info=self.description['info'],
+                    captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
 
@@ -230,8 +239,10 @@ class Experiment(object):
         interrupt_time = self._stop_time()
         for o in self._observers:
             try:
-                o.experiment_interrupted_event(interrupt_time=interrupt_time,
-                                               info=self.description['info'])
+                o.experiment_interrupted_event(
+                    interrupt_time=interrupt_time,
+                    info=self.description['info'],
+                    captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
 
@@ -241,9 +252,11 @@ class Experiment(object):
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:
             try:
-                o.experiment_failed_event(fail_time=fail_time,
-                                          fail_trace=fail_trace,
-                                          info=self.description['info'])
+                o.experiment_failed_event(
+                    fail_time=fail_time,
+                    fail_trace=fail_trace,
+                    info=self.description['info'],
+                    captured_out=self.captured_out.getvalue())
             except:  # _emit_failed should never throw
                 pass
 
