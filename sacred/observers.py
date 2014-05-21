@@ -20,7 +20,7 @@ class ExperimentObserver(object):
                                  info):
         pass
 
-    def experiment_info_updated(self, info):
+    def experiment_info_updated(self, info, captured_out):
         pass
 
     def experiment_completed_event(self, stop_time, result, info):
@@ -99,8 +99,9 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['metainfo'] = get_host_info()
         self.save()
 
-    def experiment_info_updated(self, info):
+    def experiment_info_updated(self, info, captured_out):
         self.experiment_entry['info'] = info
+        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['heartbeat'] = datetime.now()
         if time.time() >= self.last_save + self.save_delay:
             self.save()

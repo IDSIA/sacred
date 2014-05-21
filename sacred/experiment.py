@@ -14,7 +14,7 @@ from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import CapturedFunction
 from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
-from sacred.utils import create_basic_stream_logger
+from sacred.utils import create_basic_stream_logger, tee_output
 
 
 class Experiment(object):
@@ -33,6 +33,7 @@ class Experiment(object):
         self.mainfile = None
         self.cmd = OrderedDict()
         self.cmd['print_config'] = print_config
+        self.captured_out = None
 
         self.description = {
             'info': {},
@@ -137,27 +138,28 @@ class Experiment(object):
 
     def run(self, config_updates=None):
         self.reset()
-        self._set_up_config(config_updates)
-        self._set_up_logging()
-        self._warn_about_suspicious_changes(config_updates)
-        self._status = Experiment.RUNNING
-        self._emit_started()
-        self._emit_info_updated()
-        try:
-            result = self._main_function()
-        except KeyboardInterrupt:
-            self._status = Experiment.INTERRUPTED
-            self._emit_interrupted()
-            raise
-        except:
-            self._status = Experiment.FAILED
-            t, v, trace = sys.exc_info()
-            self._emit_failed(t, v, trace.tb_next)
-            raise
-        else:
-            self._status = Experiment.COMPLETED
-            self._emit_completed(result)
-            return result
+        with tee_output() as self.captured_out:
+            self._set_up_config(config_updates)
+            self._set_up_logging()
+            self._warn_about_suspicious_changes(config_updates)
+            self._status = Experiment.RUNNING
+            self._emit_started()
+            self._emit_info_updated()
+            try:
+                result = self._main_function()
+            except KeyboardInterrupt:
+                self._status = Experiment.INTERRUPTED
+                self._emit_interrupted()
+                raise
+            except:
+                self._status = Experiment.FAILED
+                t, v, trace = sys.exc_info()
+                self._emit_failed(t, v, trace.tb_next)
+                raise
+            else:
+                self._status = Experiment.COMPLETED
+                self._emit_completed(result)
+                return result
 
     def reset(self):
         self.description['info'] = {}
@@ -198,7 +200,8 @@ class Experiment(object):
         for o in self._observers:
             try:
                 o.experiment_info_updated(
-                    info=self.description['info'])
+                    info=self.description['info'],
+                    captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
         threading.Timer(30, self._emit_info_updated).start()

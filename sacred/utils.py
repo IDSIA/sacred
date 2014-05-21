@@ -3,7 +3,10 @@
 
 from __future__ import division, print_function, unicode_literals
 import collections
+from contextlib import contextmanager
 import logging
+from StringIO import StringIO
+import sys
 
 
 class InfoUpdater(object):
@@ -41,8 +44,6 @@ class InfoUpdater(object):
 
             info['monitor'] = monitors
 
-        self.ex._emit_info_updated()
-
 
 def create_basic_stream_logger(name, level=logging.INFO):
     logger = logging.getLogger(name)
@@ -75,3 +76,31 @@ def recursive_update(d, u):
         else:
             d[k] = u[k]
     return d
+
+
+class Tee(object):
+    def __init__(self, out1, out2):
+        self.out1 = out1
+        self.out2 = out2
+
+    def write(self, data):
+        self.out1.write(data)
+        self.out2.write(data)
+
+    def flush(self):
+        self.out1.flush()
+        self.out2.flush()
+
+
+@contextmanager
+def tee_output():
+    out = StringIO()
+    sys.stdout = Tee(sys.stdout, out)
+    sys.stderr = Tee(sys.stderr, out)
+    yield out
+    sys.stdout = sys.stdout.out1
+    sys.stderr = sys.stderr.out1
+    out.close()
+
+
+
