@@ -179,7 +179,7 @@ class ConfigScope(dict):
             cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
-        self.typechanges = undogmatize(cfg_locals._typechanges)
+        self.typechanges = cfg_locals._typechanges
         for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue
