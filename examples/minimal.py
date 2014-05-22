@@ -8,7 +8,6 @@ from sacred import Experiment
 
 ex = Experiment()
 
-
 @ex.config
 def cfg():
     a = 10

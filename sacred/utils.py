@@ -22,8 +22,7 @@ class InfoUpdater(object):
             self.monitors[''] = monitors
 
     def __call__(self, epoch, net, training_errors, validation_errors, **_):
-        info = self.ex.description['info']
-
+        info = self.ex.info
         info['epochs_needed'] = epoch
         info['training_errors'] = training_errors
         info['validation_errors'] = validation_errors

@@ -37,9 +37,8 @@ class Experiment(object):
         self.captured_out = None
         self._heartbeat = None
         self._dependencies = None
-
+        self.info = {}
         self.description = {
-            'info': {},
             'seed': None,
             'start_time': None,
             'stop_time': None
@@ -170,7 +169,7 @@ class Experiment(object):
                 self._heartbeat.cancel()
 
     def reset(self):
-        self.description['info'] = {}
+        self.info = {}
         self.description['seed'] = None
         self.description['start_time'] = None
         self.description['stop_time'] = None
@@ -202,7 +201,7 @@ class Experiment(object):
                     doc=self.doc,
                     start_time=self.description['start_time'],
                     config=self.cfg,
-                    info=self.description['info'],
+                    info=self.info,
                     dependencies=self._dependencies)
             except AttributeError:
                 pass
@@ -214,7 +213,7 @@ class Experiment(object):
         for o in self._observers:
             try:
                 o.experiment_info_updated(
-                    info=self.description['info'],
+                    info=self.info,
                     captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
@@ -235,7 +234,7 @@ class Experiment(object):
                 o.experiment_completed_event(
                     stop_time=stop_time,
                     result=result,
-                    info=self.description['info'],
+                    info=self.info,
                     captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
@@ -247,7 +246,7 @@ class Experiment(object):
             try:
                 o.experiment_interrupted_event(
                     interrupt_time=interrupt_time,
-                    info=self.description['info'],
+                    info=self.info,
                     captured_out=self.captured_out.getvalue())
             except AttributeError:
                 pass
@@ -261,7 +260,7 @@ class Experiment(object):
                 o.experiment_failed_event(
                     fail_time=fail_time,
                     fail_trace=fail_trace,
-                    info=self.description['info'],
+                    info=self.info,
                     captured_out=self.captured_out.getvalue())
             except:  # _emit_failed should never throw
                 pass
