@@ -17,20 +17,19 @@ class ExperimentObserver(object):
         pass
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info, dependencies):
+                                 dependencies):
         pass
 
     def experiment_info_updated(self, info, captured_out):
         pass
 
-    def experiment_completed_event(self, stop_time, result, info, captured_out):
+    def experiment_completed_event(self, stop_time, result):
         pass
 
-    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
+    def experiment_interrupted_event(self, interrupt_time):
         pass
 
-    def experiment_failed_event(self, fail_time, fail_trace, info,
-                                captured_out):
+    def experiment_failed_event(self, fail_time, fail_trace):
         pass
 
 SON_MANIPULATORS = []
@@ -83,7 +82,7 @@ class MongoDBReporter(ExperimentObserver):
         self.collection.save(self.experiment_entry)
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info, dependencies):
+                                 dependencies):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
@@ -95,7 +94,7 @@ class MongoDBReporter(ExperimentObserver):
         self.experiment_entry['doc'] = doc
         self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
-        self.experiment_entry['info'] = info
+        self.experiment_entry['info'] = {}
         self.experiment_entry['captured_out'] = ''
         self.experiment_entry['status'] = 'RUNNING'
         self.experiment_entry['metainfo'] = get_host_info()
@@ -109,27 +108,20 @@ class MongoDBReporter(ExperimentObserver):
         if time.time() >= self.last_save + self.save_delay:
             self.save()
 
-    def experiment_completed_event(self, stop_time, result, info, captured_out):
+    def experiment_completed_event(self, stop_time, result):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)
         self.experiment_entry['result'] = result
-        self.experiment_entry['info'] = info
-        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'COMPLETED'
         self.save()
 
-    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
+    def experiment_interrupted_event(self, interrupt_time):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(
             interrupt_time)
-        self.experiment_entry['info'] = info
-        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
-    def experiment_failed_event(self, fail_time, fail_trace, info,
-                                captured_out):
+    def experiment_failed_event(self, fail_time, fail_trace):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(fail_time)
-        self.experiment_entry['info'] = info
-        self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['status'] = 'FAILED'
         self.experiment_entry['fail_trace'] = fail_trace
         self.save()
@@ -148,18 +140,17 @@ class DebugObserver(ExperimentObserver):
         print('experiment_created_event')
 
     def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 info, dependencies):
+                                 dependencies):
         print('experiment_started_event')
 
     def experiment_info_updated(self, info, captured_out):
         print('experiment_info_updated')
 
-    def experiment_completed_event(self, stop_time, result, info, captured_out):
+    def experiment_completed_event(self, stop_time, result):
         print('experiment_completed_event')
 
-    def experiment_interrupted_event(self, interrupt_time, info, captured_out):
+    def experiment_interrupted_event(self, interrupt_time):
         print('experiment_interrupted_event')
 
-    def experiment_failed_event(self, fail_time, fail_trace, info,
-                                captured_out):
+    def experiment_failed_event(self, fail_time, fail_trace):
         print('experiment_failed_event')

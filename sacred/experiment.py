@@ -154,19 +154,24 @@ class Experiment(object):
                 result = self._main_function()
             except KeyboardInterrupt:
                 self._status = Experiment.INTERRUPTED
+                self._heartbeat.cancel()
+                self._emit_info_updated()
                 self._emit_interrupted()
                 raise
             except:
                 self._status = Experiment.FAILED
                 t, v, trace = sys.exc_info()
+                self._heartbeat.cancel()
+                self._emit_info_updated()
                 self._emit_failed(t, v, trace.tb_next)
                 raise
             else:
                 self._status = Experiment.COMPLETED
+                self._heartbeat.cancel()
+                self._emit_info_updated()
                 self._emit_completed(result)
                 return result
-            finally:
-                self._heartbeat.cancel()
+
 
     def reset(self):
         self.info = {}
@@ -201,7 +206,6 @@ class Experiment(object):
                     doc=self.doc,
                     start_time=self.description['start_time'],
                     config=self.cfg,
-                    info=self.info,
                     dependencies=self._dependencies)
             except AttributeError:
                 pass
@@ -233,9 +237,7 @@ class Experiment(object):
             try:
                 o.experiment_completed_event(
                     stop_time=stop_time,
-                    result=result,
-                    info=self.info,
-                    captured_out=self.captured_out.getvalue())
+                    result=result)
             except AttributeError:
                 pass
 
@@ -245,9 +247,7 @@ class Experiment(object):
         for o in self._observers:
             try:
                 o.experiment_interrupted_event(
-                    interrupt_time=interrupt_time,
-                    info=self.info,
-                    captured_out=self.captured_out.getvalue())
+                    interrupt_time=interrupt_time)
             except AttributeError:
                 pass
 
@@ -259,9 +259,7 @@ class Experiment(object):
             try:
                 o.experiment_failed_event(
                     fail_time=fail_time,
-                    fail_trace=fail_trace,
-                    info=self.info,
-                    captured_out=self.captured_out.getvalue())
+                    fail_trace=fail_trace)
             except:  # _emit_failed should never throw
                 pass
 
