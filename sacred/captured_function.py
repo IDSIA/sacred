@@ -7,11 +7,11 @@ from sacred.signature import Signature
 
 
 class CapturedFunction(object):
-    def __init__(self, f, parent):
+    def __init__(self, f):
         self._wrapped_function = f
         self.__doc__ = f.__doc__
         self.__name__ = f.__name__
-        self._parent_experiment = parent
+        self.config = {}
         self._signature = Signature(f)
         self.logger = None
 
@@ -31,4 +31,4 @@ class CapturedFunction(object):
         return result
 
     def __call__(self, *args, **kwargs):
-        return self.execute(args, kwargs, self._parent_experiment.cfg)
+        return self.execute(args, kwargs, self.config)

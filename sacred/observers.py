@@ -9,27 +9,25 @@ from datetime import datetime
 from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
-from sacred.host_info import get_host_info
 
 
-class ExperimentObserver(object):
-    def experiment_created_event(self, name, stages, seed, mainfile, doc):
+class RunObserver(object):
+    def created_event(self, name, doc, mainfile, dependencies, host_info):
         pass
 
-    def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 dependencies):
+    def started_event(self, start_time, config):
         pass
 
-    def experiment_info_updated(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out):
         pass
 
-    def experiment_completed_event(self, stop_time, result):
+    def completed_event(self, stop_time, result):
         pass
 
-    def experiment_interrupted_event(self, interrupt_time):
+    def interrupted_event(self, interrupt_time):
         pass
 
-    def experiment_failed_event(self, fail_time, fail_trace):
+    def failed_event(self, fail_time, fail_trace):
         pass
 
 SON_MANIPULATORS = []
@@ -65,7 +63,7 @@ except ImportError:
     pass
 
 
-class MongoDBReporter(ExperimentObserver):
+class MongoDBReporter(RunObserver):
     def __init__(self, url=None, db_name='sacred', save_delay=1):
         super(MongoDBReporter, self).__init__()
         self.experiment_entry = None
@@ -81,8 +79,7 @@ class MongoDBReporter(ExperimentObserver):
         self.last_save = time.time()
         self.collection.save(self.experiment_entry)
 
-    def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 dependencies):
+    def created_event(self, name, doc, mainfile, dependencies, host_info):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
         self.experiment_entry['mainfile'] = mainfile
@@ -92,35 +89,35 @@ class MongoDBReporter(ExperimentObserver):
         except IOError as e:
             self.experiment_entry['source'] = str(e)
         self.experiment_entry['doc'] = doc
+        self.experiment_entry['host_info'] = host_info
+        self.experiment_entry['dependencies'] = dependencies
+
+    def started_event(self, start_time, config):
         self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
-        self.experiment_entry['info'] = {}
-        self.experiment_entry['captured_out'] = ''
         self.experiment_entry['status'] = 'RUNNING'
-        self.experiment_entry['metainfo'] = get_host_info()
-        self.experiment_entry['metainfo']['dependencies'] = dependencies
         self.save()
 
-    def experiment_info_updated(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out):
         self.experiment_entry['info'] = info
         self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['heartbeat'] = datetime.now()
         if time.time() >= self.last_save + self.save_delay:
             self.save()
 
-    def experiment_completed_event(self, stop_time, result):
+    def completed_event(self, stop_time, result):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)
         self.experiment_entry['result'] = result
         self.experiment_entry['status'] = 'COMPLETED'
         self.save()
 
-    def experiment_interrupted_event(self, interrupt_time):
+    def interrupted_event(self, interrupt_time):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(
             interrupt_time)
         self.experiment_entry['status'] = 'INTERRUPTED'
         self.save()
 
-    def experiment_failed_event(self, fail_time, fail_trace):
+    def failed_event(self, fail_time, fail_trace):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(fail_time)
         self.experiment_entry['status'] = 'FAILED'
         self.experiment_entry['fail_trace'] = fail_trace
@@ -135,22 +132,21 @@ class MongoDBReporter(ExperimentObserver):
         return not self.__eq__(other)
 
 
-class DebugObserver(ExperimentObserver):
-    def experiment_created_event(self, name, stages, seed, mainfile, doc):
+class DebugObserver(RunObserver):
+    def created_event(self, name, mainfile, doc, dependencies, host_info):
         print('experiment_created_event')
 
-    def experiment_started_event(self, name, mainfile, doc, start_time, config,
-                                 dependencies):
+    def started_event(self, start_time, config):
         print('experiment_started_event')
 
-    def experiment_info_updated(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out):
         print('experiment_info_updated')
 
-    def experiment_completed_event(self, stop_time, result):
+    def completed_event(self, stop_time, result):
         print('experiment_completed_event')
 
-    def experiment_interrupted_event(self, interrupt_time):
+    def interrupted_event(self, interrupt_time):
         print('experiment_interrupted_event')
 
-    def experiment_failed_event(self, fail_time, fail_trace):
+    def failed_event(self, fail_time, fail_trace):
         print('experiment_failed_event')
