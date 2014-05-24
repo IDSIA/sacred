@@ -13,6 +13,7 @@ from sacred.captured_function import CapturedFunction
 from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger
+from sacred.host_info import get_host_info
 
 
 class Experiment(object):
@@ -64,11 +65,13 @@ class Experiment(object):
         if self.name is None:
             filename = os.path.basename(mainfile)
             self.name = filename.rsplit('.', 1)[0]
+        host_info = get_host_info()
         return dict(
             name=self.name,
             mainfile=mainfile,
             dependencies=dependencies,
-            doc=self.doc
+            doc=self.doc,
+            host_info=host_info
         )
 
     def get_config_modifications(self, config_updates):
@@ -115,9 +118,10 @@ class Experiment(object):
 
     def run(self, config_updates=None):
         cfg = self._set_up(config_updates)
-        self._run = Run(self.main_function, cfg, self.observers, self.logger)
+        run = Run(self.main_function, cfg, self.observers, self.logger)
         self._emit_run_created_event()
-        return self._run()
+        run()
+        return run
 
     ################### protected helpers ###################################
 
