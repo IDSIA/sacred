@@ -17,7 +17,8 @@ def cfg():
 
 
 @ex.automain
-def main(a, b, c):
+def main(a, b, c, log):
     print('a =', a)
     print('b =', b)
     print('c =', c)
+    log.debug('haha!')
