@@ -108,21 +108,10 @@ class Experiment(object):
 
     def run_command(self, command_name, config_updates=None):
         self._set_up(config_updates)
-        assert command_name in self._commands, "command '%s' not found" % command_name
+        assert command_name in self._commands, \
+            "Command '%s' not found" % command_name
         self.logger.info("Running command '%s'" % command_name)
         return self._commands[command_name]()
-
-    def _warn_about_suspicious_changes(self, config_updates):
-        add, upd, tch = self.get_config_modifications(config_updates)
-        for a in sorted(add):
-            self.logger.warning('Added new config entry: "%s"' % a)
-        for k, (t1, t2) in tch.items():
-            if (isinstance(t1, type(None)) or
-                    (t1 in (int, float) and t2 in (int, float))):
-                continue
-            self.logger.warning(
-                'Changed type of config entry "%s" from %s to %s' %
-                (k, t1.__name__, t2.__name__))
 
     def run(self, config_updates=None):
         cfg = self._set_up(config_updates)
@@ -146,6 +135,20 @@ class Experiment(object):
         self._set_up_captured_functions(cfg)
         return cfg
 
+    def _set_up_captured_functions(self, config):
+        assert self.logger is not None
+        for cf in self._captured_functions:
+            cf.logger = self.logger.getChild(cf.__name__)
+            cf.config = config
+
+    def _set_up_config(self, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
+        current_cfg = {}
+        for config in self.cfgs:
+            config(config_updates, preset=current_cfg)
+            current_cfg.update(config)
+        return current_cfg
+
     def _set_up_logging(self, level=None):
         if level:
             try:
@@ -157,16 +160,14 @@ class Experiment(object):
             self.logger = create_basic_stream_logger(self.name, level=level)
             self.logger.debug("No logger given. Created basic stream logger.")
 
-    def _set_up_config(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-        current_cfg = {}
-        for config in self.cfgs:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-        return current_cfg
-
-    def _set_up_captured_functions(self, config):
-        assert self.logger is not None
-        for cf in self._captured_functions:
-            cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = config
+    def _warn_about_suspicious_changes(self, config_updates):
+        add, upd, tch = self.get_config_modifications(config_updates)
+        for a in sorted(add):
+            self.logger.warning('Added new config entry: "%s"' % a)
+        for k, (t1, t2) in tch.items():
+            if (isinstance(t1, type(None)) or
+                    (t1 in (int, float) and t2 in (int, float))):
+                continue
+            self.logger.warning(
+                'Changed type of config entry "%s" from %s to %s' %
+                (k, t1.__name__, t2.__name__))
