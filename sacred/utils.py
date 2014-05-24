@@ -7,6 +7,11 @@ from contextlib import contextmanager
 import logging
 from StringIO import StringIO
 import sys
+import random
+
+NO_LOGGER = logging.getLogger('ignore')
+NO_LOGGER.disabled = 1
+SEEDRANGE = (1, 1e9)
 
 
 class InfoUpdater(object):
@@ -56,9 +61,6 @@ def create_basic_stream_logger(name, level=None):
     logger.addHandler(ch)
     return logger
 
-NO_LOGGER = logging.getLogger('ignore')
-NO_LOGGER.disabled = 1
-
 
 def recursive_update(d, u):
     """
@@ -103,4 +105,11 @@ def tee_output():
     out.close()
 
 
+def get_seed(rnd=None):
+    if rnd is None:
+        return random.randint(*SEEDRANGE)
+    return rnd.randint(*SEEDRANGE)
 
+
+def create_rnd(seed):
+    return random.Random(seed)

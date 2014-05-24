@@ -2,11 +2,12 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from datetime import timedelta
 import sys
 import threading
 import time
-from datetime import timedelta
 import traceback
+from utils import create_rnd, get_seed
 
 
 class Status(object):
@@ -22,13 +23,17 @@ class Run(object):
     Represents a single run of an experiment
     """
 
-    def __init__(self, main_function, config, observers, logger):
+    def __init__(self, main_function, config, observers, logger,
+                 captured_functions):
         self.main_function = main_function
-        self.cfg = config
+        self.config = config
         self._observers = observers
         self.logger = logger
+        self._captured_functions = captured_functions
         self.status = Status.INITIALIZING
         self.info = {}
+        assert 'seed' in config
+        self._rnd = create_rnd(config['seed'])
         self._heartbeat = None
         self.captured_out = None
         self.start_time = None
@@ -38,6 +43,7 @@ class Run(object):
 
     def __call__(self):
         self.status = Status.RUNNING
+        self._set_up_captured_functions()
         self._emit_started()
         self._start_heartbeat()
         try:
@@ -59,6 +65,13 @@ class Run(object):
             self._emit_completed(self.result)
             return self.result
 
+    def _set_up_captured_functions(self):
+        for cf in self._captured_functions:
+            cf.logger = self.logger.getChild(cf.__name__)
+            cf.config = self.config
+            cf.seed = get_seed(self._rnd)
+            cf.rnd = create_rnd(cf.seed)
+
     def _start_heartbeat(self):
         self._emit_heatbeat()
         self._heartbeat = threading.Timer(10, self._start_heartbeat)
@@ -78,7 +91,7 @@ class Run(object):
             try:
                 o.started_event(
                     start_time=self.start_time,
-                    config=self.cfg)
+                    config=self.config)
             except AttributeError:
                 pass
 

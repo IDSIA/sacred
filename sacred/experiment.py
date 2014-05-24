@@ -118,7 +118,8 @@ class Experiment(object):
 
     def run(self, config_updates=None):
         cfg = self._set_up(config_updates)
-        run = Run(self.main_function, cfg, self.observers, self.logger)
+        run = Run(self.main_function, cfg, self.observers, self.logger,
+                  self._captured_functions)
         self._emit_run_created_event()
         run()
         return run
@@ -136,14 +137,7 @@ class Experiment(object):
     def _set_up(self, config_updates):
         self._set_up_logging()
         cfg = self._set_up_config(config_updates)
-        self._set_up_captured_functions(cfg)
         return cfg
-
-    def _set_up_captured_functions(self, config):
-        assert self.logger is not None
-        for cf in self._captured_functions:
-            cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = config
 
     def _set_up_config(self, config_updates=None):
         config_updates = {} if config_updates is None else config_updates

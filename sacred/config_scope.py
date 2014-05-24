@@ -7,6 +7,7 @@ from functools import update_wrapper
 import inspect
 import json
 import re
+from utils import get_seed
 
 
 def dogmatize(x):
@@ -137,7 +138,7 @@ class DogmaticList(list):
 
 def is_zero_argument_function(func):
     arg_spec = inspect.getargspec(func)
-    return (arg_spec.args == [] and
+    return ((arg_spec.args == [] or arg_spec.args == ['seed']) and
             arg_spec.varargs is None and
             arg_spec.keywords is None)
 
@@ -147,7 +148,7 @@ def get_function_body_code(func):
     filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n\s*".format(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*(seed)?\s*\)[ \t]*:[ \t]*\n\s*".format(
             func.__name__), flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
@@ -164,7 +165,7 @@ class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
         assert is_zero_argument_function(func), \
-            "only zero-argument function can be ConfigScopes"
+            "The only allowed argument for ConfigScopes is 'seed'"
         self._func = func
         update_wrapper(self, func)
         self._body_code = get_function_body_code(func)
@@ -176,8 +177,9 @@ class ConfigScope(dict):
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
-        if preset is not None:
-            cfg_locals.update(preset)
+        if preset is None or 'seed' not in preset:
+            preset = {'seed': get_seed()}
+        cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges

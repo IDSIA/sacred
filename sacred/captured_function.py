@@ -5,20 +5,21 @@ from datetime import timedelta
 import time
 from sacred.signature import Signature
 import wrapt
+from utils import get_seed, create_rnd
 
 
-class DictAugementation(dict):
+class FallbackDict(dict):
     """
-    This dictionary either returns the result of *running* the value assigned to
-    a given key or it returns the value for that key from the fallback dict.
+    This dictionary either returns the value assigned to a given key or it
+    returns the value for that key from the fallback dict.
     """
     def __init__(self, fallback, **kwargs):
-        super(DictAugementation, self).__init__(**kwargs)
+        super(FallbackDict, self).__init__(**kwargs)
         self.fallback = fallback
 
     def __getitem__(self, item):
         if dict.__contains__(self, item):
-            return dict.__getitem__(self, item)()
+            return dict.__getitem__(self, item)
         else:
             return self.fallback[item]
 
@@ -84,14 +85,19 @@ def create_captured_function(f):
     f.signature = Signature(f)
     f.logger = None
     f.config = {}
+    f.seed = None
+    f.rnd = None
     return captured_function(f)
 
 
 @wrapt.decorator
 def captured_function(wrapped, instance, args, kwargs):
-    options = DictAugementation(
+    runseed = get_seed(wrapped.rnd)
+    options = FallbackDict(
         wrapped.config,
-        log=lambda: wrapped.logger
+        log=wrapped.logger,
+        seed=runseed,
+        rnd=create_rnd(runseed)
     )
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
     wrapped.logger.info("started")
