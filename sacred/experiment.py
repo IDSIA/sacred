@@ -9,7 +9,7 @@ import sys
 from host_info import get_module_versions
 from run import Run
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
-from sacred.captured_function import CapturedFunction
+from sacred.captured_function import create_captured_function
 from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
 from sacred.utils import create_basic_stream_logger
@@ -41,7 +41,7 @@ class Experiment(object):
     def capture(self, f):
         if f in self._captured_functions:
             return f
-        captured_function = CapturedFunction(f)
+        captured_function = create_captured_function(f)
         self._captured_functions.append(captured_function)
         return captured_function
 
@@ -59,7 +59,7 @@ class Experiment(object):
     ############################## public interface ############################
 
     def get_info(self):
-        f = self.main_function._wrapped_function
+        f = self.main_function
         mainfile = inspect.getabsfile(f)
         dependencies = get_module_versions(f.__globals__)
         if self.name is None:

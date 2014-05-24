@@ -4,31 +4,29 @@ from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
 import time
 from sacred.signature import Signature
+import wrapt
 
 
-class CapturedFunction(object):
-    def __init__(self, f):
-        self._wrapped_function = f
-        self.__doc__ = f.__doc__
-        self.__name__ = f.__name__
-        self.config = {}
-        self._signature = Signature(f)
-        self.logger = None
+def create_captured_function(f):
+    f.signature = Signature(f)
+    f.logger = None
+    f.config = {}
+    return captured_function(f)
 
-    def execute(self, args, kwargs, options=None):
-        opt = dict(options) if options is not None else dict()
-        if 'log' in self._signature.arguments:
-            opt['log'] = self.logger
-        args, kwargs = self._signature.construct_arguments(args, kwargs, opt)
-        self.logger.info("started")
-        start_time = time.time()
-        ####################### run actual function ############################
-        result = self._wrapped_function(*args, **kwargs)
-        ########################################################################
-        stop_time = time.time()
-        elapsed_time = timedelta(seconds=round(stop_time - start_time))
-        self.logger.info("finished after %s." % elapsed_time)
-        return result
 
-    def __call__(self, *args, **kwargs):
-        return self.execute(args, kwargs, self.config)
+@wrapt.decorator
+def captured_function(wrapped, instance, args, kwargs):
+    # if 'log' in wrapped._signature.arguments:
+    #     opt['log'] = wrapped.logger
+    args, kwargs = wrapped.signature.construct_arguments(args, kwargs,
+                                                         wrapped.config)
+    wrapped.logger.info("started")
+    start_time = time.time()
+    ####################### run actual function ############################
+    result = wrapped(*args, **kwargs)
+    ########################################################################
+    stop_time = time.time()
+    elapsed_time = timedelta(seconds=round(stop_time - start_time))
+    wrapped.logger.info("finished after %s." % elapsed_time)
+
+    return result

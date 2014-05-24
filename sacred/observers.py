@@ -37,15 +37,17 @@ try:
 
     class PickleNumpyArrays(SONManipulator):
         """
-        Helper that makes sure numpy arrays get pickled and stored in the database
-        as binary strings.
+        Helper that makes sure numpy arrays get pickled and stored in the
+        database as binary strings.
         """
         def transform_incoming(self, son, collection):
             for (key, value) in son.items():
                 if isinstance(value, np.ndarray):
-                    son[key] = {"_type": "ndarray",
-                                "_value": Binary(pickle.dumps(value, protocol=2))}
-                elif isinstance(value, dict):  # Make sure we recurse into sub-docs
+                    son[key] = {
+                        "_type": "ndarray",
+                        "_value": Binary(pickle.dumps(value, protocol=2))}
+                elif isinstance(value, dict):
+                    # Make sure we recurse into sub-docs
                     son[key] = self.transform_incoming(value, collection)
             return son
 

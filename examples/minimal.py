@@ -8,6 +8,7 @@ from sacred import Experiment
 
 ex = Experiment()
 
+
 @ex.config
 def cfg():
     a = 10
@@ -16,10 +17,7 @@ def cfg():
 
 
 @ex.automain
-def main(a, b, c, log):
+def main(a, b, c):
     print('a =', a)
     print('b =', b)
     print('c =', c)
-    log.debug('HA!')
-
-

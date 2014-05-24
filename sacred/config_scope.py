@@ -42,7 +42,7 @@ def type_changed(a, b):
 class DogmaticDict(dict):
     def __init__(self, fixed=None):
         super(DogmaticDict, self).__init__()
-        self._typechanges = {}
+        self.typechanges = {}
         if fixed is not None:
             self._fixed = fixed
         else:
@@ -56,7 +56,7 @@ class DogmaticDict(dict):
             dict.__setitem__(self, key, fixed_val)
             # log typechanges
             if type_changed(value, fixed_val):
-                self._typechanges[key] = (type(value), type(fixed_val))
+                self.typechanges[key] = (type(value), type(fixed_val))
 
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 #recursive update
@@ -64,8 +64,8 @@ class DogmaticDict(dict):
                 for k, v in value.items():
                     bd[k] = v
 
-                for k, v in bd._typechanges.items():
-                    self._typechanges[key + '.' + k] = v
+                for k, v in bd.typechanges.items():
+                    self.typechanges[key + '.' + k] = v
 
     def __delitem__(self, key):
         if key not in self._fixed:
@@ -107,7 +107,7 @@ class DogmaticList(list):
     def reverse(self):
         pass
 
-    def sort(self, cmp=None, key=None, reverse=False):
+    def sort(self, compare=None, key=None, reverse=False):
         pass
 
     def __iadd__(self, other):
@@ -147,13 +147,14 @@ def get_function_body_code(func):
     filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n\s*".format(func.__name__),
-        flags=re.MULTILINE)
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*\)[ \t]*:[ \t]*\n\s*".format(
+            func.__name__), flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
     line_offset = func_code[:defs[0].end()].count('\n')
     func_body = func_code[defs[0].end():]
-    body_code = compile(inspect.cleandoc(func_body), filename, "exec", ast.PyCF_ONLY_AST)
+    body_code = compile(inspect.cleandoc(func_body), filename, "exec",
+                        ast.PyCF_ONLY_AST)
     body_code = ast.increment_lineno(body_code, n=start_idx+line_offset-1)
     body_code = compile(body_code, filename, "exec")
     return body_code
@@ -179,7 +180,7 @@ class ConfigScope(dict):
             cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
-        self.typechanges = cfg_locals._typechanges
+        self.typechanges = cfg_locals.typechanges
         for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue

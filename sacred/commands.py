@@ -5,7 +5,6 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 from blessings import Terminal
-from sacred.captured_function import CapturedFunction
 
 term = Terminal()
 
@@ -40,7 +39,8 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
         if last_key:
             print(colored('{}{}:'.format(indent, last_key)))
         for k in sorted(x.keys()):
-            _cfgprint(x[k], (key + '.' + k).strip('.'), added, updated, typechanges, indent + '  ')
+            subkey = (key + '.' + k).strip('.')
+            _cfgprint(x[k], subkey, added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
         printer.format = _my_safe_repr
@@ -70,7 +70,4 @@ def print_config(final_config, added, updated, typechanges):
 
 
 def help_for_command(command):
-    if isinstance(command, CapturedFunction):
-        return pydoc.text.document(command._wrapped_function)
-    else:
-        return pydoc.text.document(command)
+    return pydoc.text.document(command)

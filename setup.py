@@ -35,7 +35,7 @@ setup(
     test_suite="tests",
     scripts=[],
     install_requires=[
-        "pymongo >= 2.0", 'pytest', 'docopt', 'blessings', 'enum34'
+        "pymongo >= 2.0", 'pytest', 'docopt', 'blessings', 'wrapt'
     ],
 
     classifiers=filter(None, classifiers.split('\n')),

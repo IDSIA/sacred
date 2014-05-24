@@ -2,7 +2,6 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from enum import Enum
 import sys
 import threading
 import time
@@ -10,7 +9,7 @@ from datetime import timedelta
 import traceback
 
 
-class Status(Enum):
+class Status(object):
     INITIALIZING = 0
     RUNNING = 1
     COMPLETED = 2
