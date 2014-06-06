@@ -169,3 +169,51 @@ class Experiment(object):
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
+
+# TODO: make modules recursive
+# TODO: make experiment a module
+# TODO: submodules should be evaluated topologically
+# TODO: check for and disallow module circles
+# TODO: Configuration of submodules should be available for module
+# TODO: Figure out a good api for calling module commands
+# TODO: figure out a good api for accessing submodules
+# TODO: figure out a good api for adding modules
+# TODO: should the prefix be saved in submodule or in supermodule?
+# TODO: figure out module equivalent of a Run
+# TODO: Is there a way of expressing the logger and the seeder as a module? Do we want that?
+
+
+class Module(object):
+    def __init__(self, prefix):
+        self.prefix = prefix
+        self.cfgs = []
+        self.doc = None
+        self.observers = []
+        self._captured_functions = []
+        self._commands = OrderedDict()
+
+    ############################## Decorators ##################################
+
+    def command(self, f):
+        self._commands[f.__name__] = self.capture(f)
+        return f
+
+    def config(self, f):
+        self.cfgs.append(ConfigScope(f))
+        return self.cfgs[-1]
+
+    def capture(self, f):
+        if f in self._captured_functions:
+            return f
+        captured_function = create_captured_function(f)
+        self._captured_functions.append(captured_function)
+        return captured_function
+
+    ################### protected helpers ###################################
+    def _set_up_config(self, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
+        current_cfg = {}
+        for config in self.cfgs:
+            config(config_updates, preset=current_cfg)
+            current_cfg.update(config)
+        return current_cfg
