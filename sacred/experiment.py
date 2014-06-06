@@ -27,6 +27,7 @@ class Experiment(object):
         self._captured_functions = []
         self._commands = OrderedDict()
         self._commands['print_config'] = print_config
+        self.info = None
 
     ############################## Decorators ##################################
 
@@ -121,7 +122,9 @@ class Experiment(object):
         run = Run(self.main_function, cfg, self.observers, self.logger,
                   self._captured_functions)
         self._emit_run_created_event()
+        self.info = run.info   # FIXME: this is a hack to access the info
         run()
+        del self.info
         return run
 
     ################### protected helpers ###################################
@@ -169,7 +172,7 @@ class Experiment(object):
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
-
+"""
 # TODO: make modules recursive
 # TODO: make experiment a module
 # TODO: submodules should be evaluated topologically
@@ -217,3 +220,4 @@ class Module(object):
             config(config_updates, preset=current_cfg)
             current_cfg.update(config)
         return current_cfg
+"""
