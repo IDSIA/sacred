@@ -146,3 +146,37 @@ class Run(object):
                     fail_trace=fail_trace)
             except:  # _emit_failed should never throw
                 pass
+
+
+class ModRun(object):
+    def __init__(self, main_function, config, logger, captured_functions):
+        self.main_function = main_function
+        self.config = config
+        self.logger = logger
+        self._captured_functions = captured_functions
+        assert 'seed' in config
+        self._rnd = create_rnd(config['seed'])
+
+    def __call__(self):
+        self.status = Status.RUNNING
+        self._set_up_captured_functions()
+
+        try:
+            self.result = self.main_function()
+        except KeyboardInterrupt:
+            self.status = Status.INTERRUPTED
+            raise
+        except:
+            self.status = Status.FAILED
+            t, v, trace = sys.exc_info()
+            raise
+        else:
+            self.status = Status.COMPLETED
+            return self.result
+
+    def _set_up_captured_functions(self):
+        for cf in self._captured_functions:
+            cf.logger = self.logger.getChild(cf.__name__)
+            cf.config = self.config
+            cf.seed = get_seed(self._rnd)
+            cf.rnd = create_rnd(cf.seed)

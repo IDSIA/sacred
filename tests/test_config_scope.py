@@ -37,7 +37,7 @@ def test_config_scope_is_dict(conf_scope):
 
 
 def test_config_scope_contains_keys(conf_scope):
-    assert set(conf_scope.keys()) == {'seed', 'a', 'b', 'c', 'd', 'e', 'f',
+    assert set(conf_scope.keys()) == {'a', 'b', 'c', 'd', 'e', 'f',
                                       'composit1', 'composit2', 'deriv'}
 
     assert conf_scope['a'] == 1

@@ -172,28 +172,26 @@ class Experiment(object):
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
-"""
-# TODO: make modules recursive
+
 # TODO: make experiment a module
-# TODO: submodules should be evaluated topologically
-# TODO: check for and disallow module circles
-# TODO: Configuration of submodules should be available for module
 # TODO: Figure out a good api for calling module commands
 # TODO: figure out a good api for accessing submodules
-# TODO: figure out a good api for adding modules
-# TODO: should the prefix be saved in submodule or in supermodule?
 # TODO: figure out module equivalent of a Run
 # TODO: Is there a way of expressing the logger and the seeder as a module? Do we want that?
 
 
 class Module(object):
-    def __init__(self, prefix):
+    def __init__(self, prefix, modules=()):
         self.prefix = prefix
         self.cfgs = []
         self.doc = None
         self.observers = []
+        self.modules = OrderedDict()
+        for m in modules:
+            self.modules[m.prefix] = m
         self._captured_functions = []
         self._commands = OrderedDict()
+        self._is_setting_up = False
 
     ############################## Decorators ##################################
 
@@ -213,11 +211,25 @@ class Module(object):
         return captured_function
 
     ################### protected helpers ###################################
-    def _set_up_config(self, config_updates=None):
+    def set_up_config(self, config_updates=None):
+        if self._is_setting_up:
+            raise CircularDependencyError()
+        else:
+            self._is_setting_up = True
+
         config_updates = {} if config_updates is None else config_updates
         current_cfg = {}
+        for prefix, mod in self.modules.items():
+            config = mod.set_up_config(config_updates.get(prefix))
+            current_cfg[prefix] = config
+
         for config in self.cfgs:
             config(config_updates, preset=current_cfg)
             current_cfg.update(config)
+
+        self._is_setting_up = False
         return current_cfg
-"""
+
+
+class CircularDependencyError(Exception):
+    pass
