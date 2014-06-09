@@ -177,8 +177,6 @@ class ConfigScope(dict):
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
-        # if preset is None or 'seed' not in preset:
-        #     preset = {'seed': get_seed()}
         cfg_locals.update(preset)
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()

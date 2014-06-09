@@ -32,7 +32,8 @@ class Run(object):
         self._captured_functions = captured_functions
         self.status = Status.INITIALIZING
         self.info = {}
-        assert 'seed' in config
+        if 'seed' not in config:
+            config['seed'] = get_seed()
         self._rnd = create_rnd(config['seed'])
         self._heartbeat = None
         self.captured_out = None

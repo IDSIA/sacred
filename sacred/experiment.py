@@ -16,15 +16,72 @@ from sacred.utils import create_basic_stream_logger
 from sacred.host_info import get_host_info
 
 
-class Experiment(object):
-    def __init__(self, name=None, logger=None):
+class Module(object):
+    def __init__(self, prefix, modules=()):
+        self.prefix = prefix
+        self.cfgs = []
+        self.modules = OrderedDict()
+        for m in modules:
+            self.modules[m.prefix] = m
+        self._captured_functions = []
+        self._is_setting_up_config = False
+
+    ############################## Decorators ##################################
+    # def command(self, f):
+    #     self._commands[f.__name__] = self.capture(f)
+    #     return f
+
+    def config(self, f):
+        self.cfgs.append(ConfigScope(f))
+        return self.cfgs[-1]
+
+    def capture(self, f, as_name=None):
+        if f in self._captured_functions:
+            return f
+        as_name = as_name or f.__name__
+        if hasattr(self, as_name):
+            raise AttributeError("Function name %s is already taken." %
+                                 as_name)
+        captured_function = create_captured_function(f)
+        self._captured_functions.append(captured_function)
+        setattr(self, as_name, captured_function)
+        return captured_function
+
+    ################### protected helpers ###################################
+    def set_up_config(self, config_updates=None):
+        if self._is_setting_up_config:
+            raise CircularDependencyError()
+        else:
+            self._is_setting_up_config = True
+
+        config_updates = {} if config_updates is None else config_updates
+        current_cfg = {}
+        for prefix, mod in self.modules.items():
+            config = mod.set_up_config(config_updates.get(prefix))
+            current_cfg[prefix] = config
+
+        for config in self.cfgs:
+            config(config_updates, preset=current_cfg)
+            current_cfg.update(config)
+
+        self._is_setting_up_config = False
+        return current_cfg
+
+
+
+# TODO: Figure out a good api for calling module commands
+# TODO: figure out module equivalent of a Run
+# TODO: Is there a way of expressing the logger and the seeder as a module? Do we want that?
+
+
+class Experiment(Module):
+    def __init__(self, name=None, logger=None, modules=()):
+        super(Experiment, self).__init__(prefix=name, modules=modules)
         self.name = name
         self.logger = logger
-        self.cfgs = []
         self.main_function = None
         self.doc = None
         self.observers = []
-        self._captured_functions = []
         self._commands = OrderedDict()
         self._commands['print_config'] = print_config
         self.info = None
@@ -35,20 +92,9 @@ class Experiment(object):
         self._commands[f.__name__] = self.capture(f)
         return f
 
-    def config(self, f):
-        self.cfgs.append(ConfigScope(f))
-        return self.cfgs[-1]
-
-    def capture(self, f):
-        if f in self._captured_functions:
-            return f
-        captured_function = create_captured_function(f)
-        self._captured_functions.append(captured_function)
-        return captured_function
-
     def main(self, f):
         self.doc = inspect.getmodule(f).__doc__ or ""
-        self.main_function = self.capture(f)
+        self.main_function = self.capture(f, "__main__")
         return self.main_function
 
     def automain(self, f):
@@ -124,7 +170,6 @@ class Experiment(object):
         self._emit_run_created_event()
         self.info = run.info   # FIXME: this is a hack to access the info
         run()
-        del self.info
         return run
 
     ################### protected helpers ###################################
@@ -139,16 +184,8 @@ class Experiment(object):
 
     def _set_up(self, config_updates):
         self._set_up_logging()
-        cfg = self._set_up_config(config_updates)
+        cfg = self.set_up_config(config_updates)
         return cfg
-
-    def _set_up_config(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-        current_cfg = {}
-        for config in self.cfgs:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-        return current_cfg
 
     def _set_up_logging(self, level=None):
         if level:
@@ -172,63 +209,6 @@ class Experiment(object):
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
-
-# TODO: make experiment a module
-# TODO: Figure out a good api for calling module commands
-# TODO: figure out a good api for accessing submodules
-# TODO: figure out module equivalent of a Run
-# TODO: Is there a way of expressing the logger and the seeder as a module? Do we want that?
-
-
-class Module(object):
-    def __init__(self, prefix, modules=()):
-        self.prefix = prefix
-        self.cfgs = []
-        self.doc = None
-        self.observers = []
-        self.modules = OrderedDict()
-        for m in modules:
-            self.modules[m.prefix] = m
-        self._captured_functions = []
-        self._commands = OrderedDict()
-        self._is_setting_up = False
-
-    ############################## Decorators ##################################
-
-    def command(self, f):
-        self._commands[f.__name__] = self.capture(f)
-        return f
-
-    def config(self, f):
-        self.cfgs.append(ConfigScope(f))
-        return self.cfgs[-1]
-
-    def capture(self, f):
-        if f in self._captured_functions:
-            return f
-        captured_function = create_captured_function(f)
-        self._captured_functions.append(captured_function)
-        return captured_function
-
-    ################### protected helpers ###################################
-    def set_up_config(self, config_updates=None):
-        if self._is_setting_up:
-            raise CircularDependencyError()
-        else:
-            self._is_setting_up = True
-
-        config_updates = {} if config_updates is None else config_updates
-        current_cfg = {}
-        for prefix, mod in self.modules.items():
-            config = mod.set_up_config(config_updates.get(prefix))
-            current_cfg[prefix] = config
-
-        for config in self.cfgs:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-
-        self._is_setting_up = False
-        return current_cfg
 
 
 class CircularDependencyError(Exception):
