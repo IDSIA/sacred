@@ -7,7 +7,7 @@ import inspect
 import os.path
 import sys
 from host_info import get_module_versions
-from run import Run
+from run import Run, ModuleRunner
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config, _flatten_keys
@@ -48,24 +48,10 @@ class Module(object):
         return captured_function
 
     ################### protected helpers ###################################
-    def set_up_config(self, config_updates=None):
-        if self._is_setting_up_config:
-            raise CircularDependencyError()
-        else:
-            self._is_setting_up_config = True
-
-        config_updates = {} if config_updates is None else config_updates
-        current_cfg = {}
-        for prefix, mod in self.modules.items():
-            config = mod.set_up_config(config_updates.get(prefix))
-            current_cfg[prefix] = config
-
-        for config in self.cfgs:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-
-        self._is_setting_up_config = False
-        return current_cfg
+    def _create_run(self):
+        subrunners = {prefix: mod._create_run()
+                      for prefix, mod in self.modules.items()}
+        return ModuleRunner(self.cfgs, subrunners)
 
 
 
@@ -163,6 +149,9 @@ class Experiment(Module):
         self.logger.info("Running command '%s'" % command_name)
         return self._commands[command_name]()
 
+    def _create_runner(self):
+
+
     def run(self, config_updates=None):
         cfg = self._set_up(config_updates)
         run = Run(self.main_function, cfg, self.observers, self.logger,
@@ -210,6 +199,3 @@ class Experiment(Module):
                 'Changed type of config entry "%s" from %s to %s' %
                 (k, t1.__name__, t2.__name__))
 
-
-class CircularDependencyError(Exception):
-    pass
