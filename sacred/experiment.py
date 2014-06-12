@@ -16,6 +16,10 @@ from sacred.utils import create_basic_stream_logger
 from sacred.host_info import get_host_info
 
 
+class CircularDependencyError(Exception):
+    pass
+
+
 class Module(object):
     def __init__(self, prefix, modules=()):
         self.prefix = prefix
@@ -25,6 +29,7 @@ class Module(object):
             self.modules[m.prefix] = m
         self._captured_functions = []
         self._is_setting_up_config = False
+        self._is_traversing = False
 
     ############################## Decorators ##################################
     # def command(self, f):
@@ -48,11 +53,36 @@ class Module(object):
         return captured_function
 
     ################### protected helpers ###################################
-    def _create_run(self):
-        subrunners = {prefix: mod._create_run()
-                      for prefix, mod in self.modules.items()}
-        return ModuleRunner(self.cfgs, subrunners)
+    def traverse_modules(self):
+        if self._is_traversing:
+            raise CircularDependencyError()
+        else:
+            self._is_traversing = True
+        yield self.prefix, self, 0
+        for prefix, module in self.modules.items():
+            for p, sr, depth in module.traverse_modules():
+                yield prefix + '.' + p, sr, depth + 1
+        self._is_traversing = False
 
+    def create_runner(self):
+        submodules = {}
+        for prefix, sm, depth in self.traverse_modules():
+            if sm not in submodules:
+                submodules[sm] = {'prefixes': [prefix], 'depth': depth}
+            else:
+                submodules[sm]['prefixes'].append(prefix)
+                submodules[sm]['depth'] = max(submodules[sm]['depth'], depth)
+
+        sorted_submodules = sorted(submodules,
+                                   key=lambda x: -submodules[x]['depth'])
+        subrunner_cache = {}
+        for sm in sorted_submodules:
+            subrunner_cache[sm] = ModuleRunner.from_module(
+                sm,
+                prefixes=submodules[sm]['prefixes'],
+                subrunner_cache=subrunner_cache)
+
+        return subrunner_cache[self]
 
 
 # TODO: Figure out a good api for calling module commands
@@ -150,9 +180,11 @@ class Experiment(Module):
         return self._commands[command_name]()
 
     def _create_runner(self):
-
+        pass
 
     def run(self, config_updates=None):
+        runner = self.create_runner()
+
         cfg = self._set_up(config_updates)
         run = Run(self.main_function, cfg, self.observers, self.logger,
                   self._captured_functions)

@@ -10,10 +10,6 @@ import traceback
 from utils import create_rnd, get_seed
 
 
-class CircularDependencyError(Exception):
-    pass
-
-
 class Status(object):
     SET_UP = 0
     STARTING = 1
@@ -24,25 +20,22 @@ class Status(object):
 
 
 class ModuleRunner(object):
-    def __init__(self, config_scopes, subrunners):
+    def __init__(self, config_scopes, subrunners, prefixes, captured_functions):
         self.status = Status.SET_UP
         self.config_scopes = config_scopes
         self.subrunners = subrunners
+        self.prefixes = prefixes
         self.config = None
         self.logger = None
-        self._captured_functions = None
-        self._is_traversing = False
+        self._captured_functions = captured_functions
 
-    def get_subrunners_with_depth(self):
-        if self._is_traversing:
-            raise CircularDependencyError()
-        else:
-            self._is_traversing = True
-        yield self, 0
-        for prefix, subrunner in self.subrunners:
-            sr, depth = subrunner.get_subrunners_with_depth()
-            yield sr, depth + 1
-        self._is_traversing = False
+    @staticmethod
+    def from_module(module, prefixes, subrunner_cache=()):
+        r = ModuleRunner(module.cfgs,
+                         [subrunner_cache[m] for m in module.modules],
+                         prefixes=prefixes,
+                         captured_functions=module._captured_functions)
+        return r
 
 
 class Run(object):
@@ -94,12 +87,7 @@ class Run(object):
             self._emit_completed(self.result)
             return self.result
 
-    def gather_subrunners(self):
-        subrunners = {}
-        for sr, depth in self.modrunner.get_subrunners_with_depth():
-            if sr not in subrunners or subrunners[sr] < depth:
-                subrunners[sr] = depth
-        return sorted(subrunners, key=lambda x: -subrunners[x])
+
 
     def set_up_config(self, config_updates=None):
         config_updates = {} if config_updates is None else config_updates
