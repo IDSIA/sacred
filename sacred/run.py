@@ -7,7 +7,7 @@ import sys
 import threading
 import time
 import traceback
-from utils import create_rnd, get_seed
+from utils import create_rnd, get_seed, create_basic_stream_logger
 
 
 class Status(object):
@@ -19,14 +19,25 @@ class Status(object):
     FAILED = 5
 
 
+def create_module_runners(sorted_submodules):
+    subrunner_cache = {}
+    for prefixes, sm in sorted_submodules:
+        subrunner_cache[sm] = ModuleRunner.from_module(
+            sm,
+            prefixes=prefixes,
+            subrunner_cache=subrunner_cache)
+    return subrunner_cache
+
+
 class ModuleRunner(object):
     def __init__(self, config_scopes, subrunners, prefixes, captured_functions):
         self.status = Status.SET_UP
         self.config_scopes = config_scopes
         self.subrunners = subrunners
-        self.prefixes = prefixes
+        self.prefixes = sorted(self.prefixes, key=lambda x: len(x))
         self.config = None
         self.logger = None
+        self.seed = get_seed()
         self._captured_functions = captured_functions
 
     @staticmethod
@@ -37,25 +48,34 @@ class ModuleRunner(object):
                          captured_functions=module._captured_functions)
         return r
 
+    def set_up_logging(self, level=None):
+        if level:
+            try:
+                level = int(level)
+            except ValueError:
+                pass
+
+        if self.logger is None:
+            name = self.prefixes[0]
+            self.logger = create_basic_stream_logger(name, level=level)
+            self.logger.debug("No logger given. Created basic stream logger.")
+
+    def set_up_config(self):
+
+        pass
+
 
 class Run(object):
     """
     Represents a single run of an experiment
     """
 
-    def __init__(self, modrunner, main_function, config, observers, logger,
-                 captured_functions):
+    def __init__(self, modrunner, main_function, observers):
         self.modrunner = modrunner
         self.main_function = main_function
-        self.config = config
         self._observers = observers
-        self.logger = logger
-        self._captured_functions = captured_functions
         self.status = Status.SET_UP
         self.info = {}
-        if 'seed' not in config:
-            config['seed'] = get_seed()
-        self._rnd = create_rnd(config['seed'])
         self._heartbeat = None
         self.captured_out = None
         self.start_time = None

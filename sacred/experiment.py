@@ -7,12 +7,11 @@ import inspect
 import os.path
 import sys
 from host_info import get_module_versions
-from run import Run, ModuleRunner
+from run import Run, create_module_runners
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config, _flatten_keys
 from sacred.config_scope import ConfigScope
-from sacred.utils import create_basic_stream_logger
 from sacred.host_info import get_host_info
 
 
@@ -64,7 +63,7 @@ class Module(object):
                 yield prefix + '.' + p, sr, depth + 1
         self._is_traversing = False
 
-    def create_runner(self):
+    def gather_submodules_with_prefixes_topological(self):
         submodules = {}
         for prefix, sm, depth in self.traverse_modules():
             if sm not in submodules:
@@ -72,17 +71,9 @@ class Module(object):
             else:
                 submodules[sm]['prefixes'].append(prefix)
                 submodules[sm]['depth'] = max(submodules[sm]['depth'], depth)
-
         sorted_submodules = sorted(submodules,
                                    key=lambda x: -submodules[x]['depth'])
-        subrunner_cache = {}
-        for sm in sorted_submodules:
-            subrunner_cache[sm] = ModuleRunner.from_module(
-                sm,
-                prefixes=submodules[sm]['prefixes'],
-                subrunner_cache=subrunner_cache)
-
-        return subrunner_cache[self]
+        return [(submodules[s]['prefixes'], s) for s in sorted_submodules]
 
 
 # TODO: Figure out a good api for calling module commands
@@ -91,10 +82,9 @@ class Module(object):
 
 
 class Experiment(Module):
-    def __init__(self, name=None, logger=None, modules=()):
+    def __init__(self, name=None, modules=()):
         super(Experiment, self).__init__(prefix=name, modules=modules)
         self.name = name
-        self.logger = logger
         self.main_function = None
         self.doc = None
         self.observers = []
@@ -152,8 +142,9 @@ class Experiment(Module):
                           commands=self._commands,
                           print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
-        if args['--logging']:
-            self._set_up_logging(args['--logging'])
+        # FIXME
+        # if args['--logging']:
+        #     self._set_up_logging(args['--logging'])
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']
@@ -176,18 +167,31 @@ class Experiment(Module):
         self._set_up(config_updates)
         assert command_name in self._commands, \
             "Command '%s' not found" % command_name
-        self.logger.info("Running command '%s'" % command_name)
+        # FIXME
+        # self.logger.info("Running command '%s'" % command_name)
         return self._commands[command_name]()
 
     def _create_runner(self):
         pass
 
     def run(self, config_updates=None):
-        runner = self.create_runner()
+        # 1. sort modules topologically
+        sorted_submodules = self.gather_submodules_with_prefixes_topological()
+        # 2. create runners for them
+        subrunners = create_module_runners(sorted_submodules)
+        # 3. create Run for experiment
+        runner = subrunners[self]
+        run = Run(runner, self.main_function, self.observers)
 
+
+        # seed?
+        # loggers
+        # config
+        # info?
+        # captured functions
+        # start
         cfg = self._set_up(config_updates)
-        run = Run(self.main_function, cfg, self.observers, self.logger,
-                  self._captured_functions)
+
         self._emit_run_created_event()
         self.info = run.info   # FIXME: this is a hack to access the info
         run()
@@ -204,20 +208,9 @@ class Experiment(Module):
                 pass
 
     def _set_up(self, config_updates):
-        self._set_up_logging()
         cfg = self.set_up_config(config_updates)
         return cfg
 
-    def _set_up_logging(self, level=None):
-        if level:
-            try:
-                level = int(level)
-            except ValueError:
-                pass
-
-        if self.logger is None:
-            self.logger = create_basic_stream_logger(self.name, level=level)
-            self.logger.debug("No logger given. Created basic stream logger.")
 
     def _warn_about_suspicious_changes(self, config_updates):
         add, upd, tch = self.get_config_modifications(config_updates)
