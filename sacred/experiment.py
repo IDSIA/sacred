@@ -127,15 +127,6 @@ class Experiment(Module):
             host_info=host_info
         )
 
-    def get_config_modifications(self, config_updates):
-        added = set()
-        typechanges = {}
-        updated = list(_flatten_keys(config_updates))
-        for config in self.cfgs:
-            added |= config.added_values
-            typechanges.update(config.typechanges)
-        return added, updated, typechanges
-
     def run_commandline(self):
         args = parse_args(sys.argv,
                           description=self.doc,
@@ -174,24 +165,12 @@ class Experiment(Module):
     def _create_runner(self):
         pass
 
-    def run(self, config_updates=None):
-        # 1. sort modules topologically
+    def run(self, config_updates=None, loglevel=None):
         sorted_submodules = self.gather_submodules_with_prefixes_topological()
-        # 2. create runners for them
         subrunners = create_module_runners(sorted_submodules)
-        # 3. create Run for experiment
-        runner = subrunners[self]
-        run = Run(runner, self.main_function, self.observers)
-
-
-        # seed?
-        # loggers
-        # config
-        # info?
-        # captured functions
-        # start
-        cfg = self._set_up(config_updates)
-
+        run = Run(subrunners[self], subrunners.values(), self.main_function,
+                  self.observers)
+        run.initialize(config_updates, loglevel)
         self._emit_run_created_event()
         self.info = run.info   # FIXME: this is a hack to access the info
         run()
@@ -206,21 +185,4 @@ class Experiment(Module):
                 o.created_event(**experiment_info)
             except AttributeError:
                 pass
-
-    def _set_up(self, config_updates):
-        cfg = self.set_up_config(config_updates)
-        return cfg
-
-
-    def _warn_about_suspicious_changes(self, config_updates):
-        add, upd, tch = self.get_config_modifications(config_updates)
-        for a in sorted(add):
-            self.logger.warning('Added new config entry: "%s"' % a)
-        for k, (t1, t2) in tch.items():
-            if (isinstance(t1, type(None)) or
-                    (t1 in (int, float) and t2 in (int, float))):
-                continue
-            self.logger.warning(
-                'Changed type of config entry "%s" from %s to %s' %
-                (k, t1.__name__, t2.__name__))
 

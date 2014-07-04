@@ -2,11 +2,13 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from collections import OrderedDict
 from datetime import timedelta
 import sys
 import threading
 import time
 import traceback
+from sacred.commands import _flatten_keys
 from utils import create_rnd, get_seed, create_basic_stream_logger
 
 
@@ -31,38 +33,112 @@ def create_module_runners(sorted_submodules):
 
 class ModuleRunner(object):
     def __init__(self, config_scopes, subrunners, prefixes, captured_functions):
-        self.status = Status.SET_UP
         self.config_scopes = config_scopes
         self.subrunners = subrunners
-        self.prefixes = sorted(self.prefixes, key=lambda x: len(x))
+        self.prefixes = sorted(prefixes, key=lambda x: len(x))
+        self.config_updates = {}
         self.config = None
         self.logger = None
-        self.seed = get_seed()
+        self.seed = None
+        self.rnd = None
         self._captured_functions = captured_functions
 
     @staticmethod
     def from_module(module, prefixes, subrunner_cache=()):
+        subrunners = OrderedDict()
+        for n, m in module.modules.items():
+            subrunners[n] = subrunner_cache[m]
         r = ModuleRunner(module.cfgs,
-                         [subrunner_cache[m] for m in module.modules],
+                         subrunners=subrunners,
                          prefixes=prefixes,
                          captured_functions=module._captured_functions)
         return r
 
     def set_up_logging(self, level=None):
+        if self.logger is not None:
+            return
+
         if level:
             try:
                 level = int(level)
             except ValueError:
                 pass
+        name = self.prefixes[0]  # use shortest prefix as name
+        self.logger = create_basic_stream_logger(name, level=level)
+        self.logger.debug("No logger given. Created basic stream logger.")
 
-        if self.logger is None:
-            name = self.prefixes[0]
-            self.logger = create_basic_stream_logger(name, level=level)
-            self.logger.debug("No logger given. Created basic stream logger.")
+    def distribute_config_updates(self, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
+        if not isinstance(config_updates, dict):
+            self.logger.warning("Ignored attempt to overwrite module config "
+                                "with %s." % config_updates)
+        for k, v in config_updates.items():
+            if k in self.subrunners:
+                continue
+            if k in self.config_updates:
+                self.logger.warning("Conflicting update for %s: %s" % (k, v))
+            else:
+                self.config_updates[k] = v
+
+        for prefix, subrunner in self.subrunners.items():
+            subrunner.distribute_config_updates(config_updates.get(prefix))
+
+    def set_up_seed(self, rnd=None):
+        if self.seed is None:
+            self.seed = self.config_updates.get('seed') or get_seed(rnd)
+            self.rnd = create_rnd(self.seed)
+
+        for prefix, subrunner in self.subrunners.items():
+            subrunner.set_up_seed(self.rnd)
 
     def set_up_config(self):
+        if self.config is not None:
+            return self.config
 
-        pass
+        self.config = {'seed': self.seed}
+        for prefix, subrunner in self.subrunners.items():
+            self.config[prefix] = subrunner.set_up_config()
+
+        for config in self.config_scopes:
+            config(self.config_updates, preset=self.config)
+            self.config.update(config)
+
+        return self.config
+
+    def get_config_modifications(self):
+        added = set()
+        typechanges = {}
+        updated = _flatten_keys(self.config_updates)
+        for config in self.config_scopes:
+            added |= config.added_values
+            typechanges.update(config.typechanges)
+
+        return added, updated, typechanges
+
+    def finalize_initialization(self):
+        if 'seed' in self.config:
+            self.seed = self.config['seed']
+            self.rnd = create_rnd(self.seed)
+
+        for cf in self._captured_functions:
+            cf.logger = self.logger.getChild(cf.__name__)
+            cf.config = self.config
+            cf.seed = get_seed(self.rnd)
+            cf.rnd = create_rnd(cf.seed)
+
+        self._warn_about_suspicious_changes()
+
+    def _warn_about_suspicious_changes(self, ):
+        add, upd, tch = self.get_config_modifications()
+        for a in sorted(add):
+            self.logger.warning('Added new config entry: "%s"' % a)
+        for k, (t1, t2) in tch.items():
+            if (isinstance(t1, type(None)) or
+                    (t1 in (int, float) and t2 in (int, float))):
+                continue
+            self.logger.warning(
+                'Changed type of config entry "%s" from %s to %s' %
+                (k, t1.__name__, t2.__name__))
 
 
 class Run(object):
@@ -70,8 +146,9 @@ class Run(object):
     Represents a single run of an experiment
     """
 
-    def __init__(self, modrunner, main_function, observers):
+    def __init__(self, modrunner, subrunners, main_function, observers):
         self.modrunner = modrunner
+        self.subrunners = subrunners
         self.main_function = main_function
         self._observers = observers
         self.status = Status.SET_UP
@@ -83,9 +160,21 @@ class Run(object):
         self.elapsed_time = None
         self.result = None
 
+    def initialize(self, config_updates=None, loglevel=None):
+        for sr in self.subrunners:
+            sr.set_up_logging(loglevel)
+
+        self.modrunner.distribute_config_updates(config_updates)  # recursive
+        self.modrunner.set_up_seed()  # recursive
+        self.modrunner.set_up_config()  # recursive
+
+        for sr in self.subrunners:
+            sr.finalize_initialization()
+
+        self.status = Status.STARTING
+
     def __call__(self):
         self.status = Status.RUNNING
-        self._set_up_captured_functions()
         self._emit_started()
         self._start_heartbeat()
         try:
@@ -107,28 +196,6 @@ class Run(object):
             self._emit_completed(self.result)
             return self.result
 
-
-
-    def set_up_config(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-        current_cfg = {}
-
-        for prefix, mod in self.subrunners.items():
-            config = mod.set_up_config(config_updates.get(prefix))
-            current_cfg[prefix] = config
-
-        for config in self.config_scopes:
-            config(config_updates, preset=current_cfg)
-            current_cfg.update(config)
-        return current_cfg
-
-    def _set_up_captured_functions(self):
-        for cf in self._captured_functions:
-            cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = self.config
-            cf.seed = get_seed(self._rnd)
-            cf.rnd = create_rnd(cf.seed)
-
     def _start_heartbeat(self):
         self._emit_heatbeat()
         self._heartbeat = threading.Timer(10, self._start_heartbeat)
@@ -142,13 +209,13 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_started(self):
-        self.logger.info("Experiment started.")
+        self.modrunner.logger.info("Experiment started.")
         self.start_time = time.time()
         for o in self._observers:
             try:
                 o.started_event(
                     start_time=self.start_time,
-                    config=self.config)
+                    config=self.modrunner.config)
             except AttributeError:
                 pass
 
@@ -168,11 +235,11 @@ class Run(object):
         self.stop_time = time.time()
         elapsed_seconds = round(self.stop_time - self.start_time)
         self.elapsed_time = timedelta(seconds=elapsed_seconds)
-        self.logger.info("Total time elapsed = %s", self.elapsed_time)
+        self.modrunner.logger.info("Total time elapsed = %s", self.elapsed_time)
         return self.stop_time
 
     def _emit_completed(self, result):
-        self.logger.info("Experiment completed.")
+        self.modrunner.logger.info("Experiment completed.")
         stop_time = self._stop_time()
         for o in self._observers:
             try:
@@ -183,7 +250,7 @@ class Run(object):
                 pass
 
     def _emit_interrupted(self):
-        self.logger.warning("Experiment aborted!")
+        self.modrunner.logger.warning("Experiment aborted!")
         interrupt_time = self._stop_time()
         for o in self._observers:
             try:
@@ -193,7 +260,7 @@ class Run(object):
                 pass
 
     def _emit_failed(self, etype, value, tb):
-        self.logger.warning("Experiment failed!")
+        self.modrunner.logger.warning("Experiment failed!")
         fail_time = self._stop_time()
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:
