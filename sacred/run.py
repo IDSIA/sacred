@@ -209,7 +209,7 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_started(self):
-        self.modrunner.logger.info("Experiment started.")
+        self.modrunner.logger.info("Started.")
         self.start_time = time.time()
         for o in self._observers:
             try:
@@ -239,7 +239,7 @@ class Run(object):
         return self.stop_time
 
     def _emit_completed(self, result):
-        self.modrunner.logger.info("Experiment completed.")
+        self.modrunner.logger.info("Completed.")
         stop_time = self._stop_time()
         for o in self._observers:
             try:
@@ -250,7 +250,7 @@ class Run(object):
                 pass
 
     def _emit_interrupted(self):
-        self.modrunner.logger.warning("Experiment aborted!")
+        self.modrunner.logger.warning("Aborted!")
         interrupt_time = self._stop_time()
         for o in self._observers:
             try:
@@ -260,7 +260,7 @@ class Run(object):
                 pass
 
     def _emit_failed(self, etype, value, tb):
-        self.modrunner.logger.warning("Experiment failed!")
+        self.modrunner.logger.warning("Failed!")
         fail_time = self._stop_time()
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:

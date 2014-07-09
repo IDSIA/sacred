@@ -10,7 +10,7 @@ from host_info import get_module_versions
 from run import Run, create_module_runners
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
-from sacred.commands import print_config, _flatten_keys
+from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
 from sacred.host_info import get_host_info
 
@@ -83,7 +83,7 @@ class Module(object):
 
 class Experiment(Module):
     def __init__(self, name=None, modules=()):
-        super(Experiment, self).__init__(prefix=name, modules=modules)
+        super(Experiment, self).__init__(prefix='', modules=modules)
         self.name = name
         self.main_function = None
         self.doc = None
@@ -133,43 +133,44 @@ class Experiment(Module):
                           commands=self._commands,
                           print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
-        # FIXME
-        # if args['--logging']:
-        #     self._set_up_logging(args['--logging'])
-
+        loglevel = args.get('--logging')
         if args['COMMAND']:
             cmd_name = args['COMMAND']
             if cmd_name == 'print_config':
+                # FIXME
                 cfg = self._set_up(config_updates)
-
                 add, upd, tch = self.get_config_modifications(config_updates)
                 return print_config(cfg, add, upd, tch)
             else:
                 return self.run_command(cmd_name,
-                                        config_updates=config_updates)
+                                        config_updates=config_updates,
+                                        loglevel=loglevel)
 
         for obs in get_observers(args):
             if obs not in self.observers:
                 self.observers.append(obs)
 
-        return self.run(config_updates)
+        return self.run(config_updates, loglevel)
 
-    def run_command(self, command_name, config_updates=None):
-        self._set_up(config_updates)
+    def run_command(self, command_name, config_updates=None, loglevel=None):
         assert command_name in self._commands, \
             "Command '%s' not found" % command_name
-        # FIXME
-        # self.logger.info("Running command '%s'" % command_name)
-        return self._commands[command_name]()
+        run = self.create_run(self._commands[command_name], observe=False)
+        run.initialize(config_updates, loglevel)
+        # TODO: self.logger.info("Running command '%s'" % command_name)
+        return run()
 
-    def _create_runner(self):
-        pass
-
-    def run(self, config_updates=None, loglevel=None):
+    def create_run(self, main_func=None, observe=True):
+        if main_func is None:
+            main_func = self.main_function
         sorted_submodules = self.gather_submodules_with_prefixes_topological()
         subrunners = create_module_runners(sorted_submodules)
-        run = Run(subrunners[self], subrunners.values(), self.main_function,
-                  self.observers)
+        observers = self.observers if observe else []
+        run = Run(subrunners[self], subrunners.values(), main_func, observers)
+        return run
+
+    def run(self, config_updates=None, loglevel=None):
+        run = self.create_run()
         run.initialize(config_updates, loglevel)
         self._emit_run_created_event()
         self.info = run.info   # FIXME: this is a hack to access the info
@@ -185,4 +186,3 @@ class Experiment(Module):
                 o.created_event(**experiment_info)
             except AttributeError:
                 pass
-

@@ -21,9 +21,9 @@ def foo(basepath, filename):
     return basepath + filename
 
 
-@m1.command
-def stats(**config):
-    print(config)
+# @m1.command
+# def stats(**config):
+#     print(config)
 
 
 
@@ -37,14 +37,15 @@ def cfg():
     c = a + b
 
 
-@ex.capture("dataset")
-def load_dataset(filename):
-    print(filename)
+# @ex.capture("dataset")
+# def load_dataset(filename):
+#     print(filename)
+
 
 @ex.automain
 def main(a, b, c, dataset):
     print('a =', a)
     print('b =', b)
     print('c =', c)
-    m2.foo()
+    print("foo()", foo())
     print(dataset)
