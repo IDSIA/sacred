@@ -66,11 +66,9 @@ except ImportError:
 
 
 class MongoDBReporter(RunObserver):
-    def __init__(self, url=None, db_name='sacred', save_delay=1):
+    def __init__(self, url=None, db_name='sacred'):
         super(MongoDBReporter, self).__init__()
         self.experiment_entry = None
-        self.last_save = 0
-        self.save_delay = save_delay
         mongo = MongoClient(url)
         self.db = mongo[db_name]
         for manipulator in SON_MANIPULATORS:
@@ -78,7 +76,6 @@ class MongoDBReporter(RunObserver):
         self.collection = self.db['experiments']
 
     def save(self):
-        self.last_save = time.time()
         self.collection.save(self.experiment_entry)
 
     def created_event(self, name, doc, mainfile, dependencies, host_info):
@@ -104,8 +101,7 @@ class MongoDBReporter(RunObserver):
         self.experiment_entry['info'] = info
         self.experiment_entry['captured_out'] = captured_out
         self.experiment_entry['heartbeat'] = datetime.now()
-        if time.time() >= self.last_save + self.save_delay:
-            self.save()
+        self.save()
 
     def completed_event(self, stop_time, result):
         self.experiment_entry['stop_time'] = datetime.fromtimestamp(stop_time)

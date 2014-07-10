@@ -129,15 +129,9 @@ class Experiment(Module):
         loglevel = args.get('--logging')
         if args['COMMAND']:
             cmd_name = args['COMMAND']
-            if cmd_name == 'print_config':
-                # FIXME
-                cfg = self._set_up(config_updates)
-                add, upd, tch = self.get_config_modifications(config_updates)
-                return print_config(cfg, add, upd, tch)
-            else:
-                return self.run_command(cmd_name,
-                                        config_updates=config_updates,
-                                        loglevel=loglevel)
+            return self.run_command(cmd_name,
+                                    config_updates=config_updates,
+                                    loglevel=loglevel)
 
         for obs in get_observers(args):
             if obs not in self.observers:
@@ -150,8 +144,8 @@ class Experiment(Module):
             "Command '%s' not found" % command_name
         run = self.create_run(self._commands[command_name], observe=False)
         run.initialize(config_updates, loglevel)
-        # TODO: self.logger.info("Running command '%s'" % command_name)
-        return run()
+        run.modrunner.logger.info("Running command '%s'" % command_name)
+        return run(run)
 
     def create_run(self, main_func=None, observe=True):
         if main_func is None:

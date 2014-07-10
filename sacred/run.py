@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import traceback
+from sacred.utils import tee_output
 from sacred.commands import _flatten_keys
 from utils import create_rnd, get_seed, create_basic_stream_logger
 
@@ -173,28 +174,29 @@ class Run(object):
 
         self.status = Status.STARTING
 
-    def __call__(self):
-        self.status = Status.RUNNING
-        self._emit_started()
-        self._start_heartbeat()
-        try:
-            self.result = self.main_function()
-        except KeyboardInterrupt:
-            self.status = Status.INTERRUPTED
-            self._stop_heartbeat()
-            self._emit_interrupted()
-            raise
-        except:
-            self.status = Status.FAILED
-            t, v, trace = sys.exc_info()
-            self._stop_heartbeat()
-            self._emit_failed(t, v, trace.tb_next)
-            raise
-        else:
-            self.status = Status.COMPLETED
-            self._stop_heartbeat()
-            self._emit_completed(self.result)
-            return self.result
+    def __call__(self, *args):
+        with tee_output() as self.captured_out:
+            self.status = Status.RUNNING
+            self._emit_started()
+            self._start_heartbeat()
+            try:
+                self.result = self.main_function(*args)
+            except KeyboardInterrupt:
+                self.status = Status.INTERRUPTED
+                self._stop_heartbeat()
+                self._emit_interrupted()
+                raise
+            except:
+                self.status = Status.FAILED
+                t, v, trace = sys.exc_info()
+                self._stop_heartbeat()
+                self._emit_failed(t, v, trace.tb_next)
+                raise
+            else:
+                self.status = Status.COMPLETED
+                self._stop_heartbeat()
+                self._emit_completed(self.result)
+                return self.result
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -228,6 +230,7 @@ class Run(object):
                 o.heartbeat_event(
                     info=self.info,
                     captured_out=self.captured_out.getvalue())
+                    # captured_out="")
             except AttributeError:
                 pass
 

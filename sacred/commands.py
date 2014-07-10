@@ -56,7 +56,7 @@ def _flatten_keys(d):
                 yield key + '.' + k
 
 
-def print_config(final_config, added, updated, typechanges):
+def print_config(run):
     """
     Print the updated configuration and exit.
 
@@ -65,6 +65,8 @@ def print_config(final_config, added, updated, typechanges):
       blue:   value added
       red:    value updated but type changed
     """
+    final_config = run.modrunner.config
+    added, updated, typechanges = run.modrunner.get_config_modifications()
     print('Final Configuration:')
     _cfgprint(final_config, '', added, updated, typechanges)
 
