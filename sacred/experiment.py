@@ -41,13 +41,8 @@ class Module(object):
     def capture(self, f, as_name=None):
         if f in self.captured_functions:
             return f
-        as_name = as_name or f.__name__
-        if hasattr(self, as_name):
-            raise AttributeError("Function name %s is already taken." %
-                                 as_name)
         captured_function = create_captured_function(f)
         self.captured_functions.append(captured_function)
-        setattr(self, as_name, captured_function)
         return captured_function
 
     ################### protected helpers ###################################

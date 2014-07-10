@@ -32,8 +32,6 @@ def test_module_captured_functions():
     f = m.captured_functions[0]
     assert f == get_answer
 
-    assert m.get_answer == get_answer
-
 #
 # def test_submodule_config(somemod):
 #     m = Module("mod", modules=[somemod])
