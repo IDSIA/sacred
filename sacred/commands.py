@@ -23,6 +23,16 @@ def _my_safe_repr(objekt, context, maxlevels, level):
     return pprint._safe_repr(objekt, context, maxlevels, level)
 
 
+def _iterate_separately(val):
+    single_line_keys = [k for k in val.keys() if not isinstance(val[k], dict)]
+    for k in sorted(single_line_keys):
+        yield k, val[k]
+
+    multi_line_keys = [k for k in val.keys() if isinstance(val[k], dict)]
+    for k in sorted(multi_line_keys):
+        yield k, val[k]
+
+
 def _cfgprint(x, key, added, updated, typechanges, indent=''):
     def colored(text):
         if key in added:
@@ -38,9 +48,9 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
     if isinstance(x, dict):
         if last_key:
             print(colored('{}{}:'.format(indent, last_key)))
-        for k in sorted(x.keys()):
+        for k, v in _iterate_separately(x):
             subkey = (key + '.' + k).strip('.')
-            _cfgprint(x[k], subkey, added, updated, typechanges, indent + '  ')
+            _cfgprint(v, subkey, added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
         printer.format = _my_safe_repr
