@@ -90,11 +90,14 @@ class ModuleRunner(object):
             self.config['seed'] = self.seed
 
         for prefix, subrunner in self.subrunners.items():
+            # TODO: make the subrunner configurations read-only
             self.config[prefix] = subrunner.set_up_config()
 
         for config in self.config_scopes:
             config(self.config_updates, preset=self.config)
             self.config.update(config)
+
+        # TODO: replace duplicate subrunner configurations with 'pointer-value'
 
         return self.config
 
@@ -109,6 +112,8 @@ class ModuleRunner(object):
         return added, updated, typechanges
 
     def finalize_initialization(self):
+        # look at seed again, because it might have changed during the
+        # configuration process
         if 'seed' in self.config:
             self.seed = self.config['seed']
             self.rnd = create_rnd(self.seed)
