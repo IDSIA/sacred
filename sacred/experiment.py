@@ -7,7 +7,7 @@ import inspect
 import os.path
 import sys
 from host_info import get_module_versions
-from run import Run, create_module_runners
+from run import Run, create_module_runners, ModuleRunner
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
@@ -20,12 +20,13 @@ class CircularDependencyError(Exception):
 
 
 class Module(object):
-    def __init__(self, prefix, modules=()):
+    def __init__(self, prefix, modules=(), gen_seed=False):
         self.prefix = prefix
         self.cfgs = []
         self.modules = OrderedDict()
         for m in modules:
             self.modules[m.prefix] = m
+        self.gen_seed = gen_seed
         self.captured_functions = []
         self._is_traversing = False
 
@@ -38,7 +39,7 @@ class Module(object):
         self.cfgs.append(ConfigScope(f))
         return self.cfgs[-1]
 
-    def capture(self, f, as_name=None):
+    def capture(self, f):
         if f in self.captured_functions:
             return f
         captured_function = create_captured_function(f)
@@ -69,6 +70,17 @@ class Module(object):
                                    key=lambda x: -submodules[x]['depth'])
         return [(submodules[s]['prefixes'], s) for s in sorted_submodules]
 
+    def create_module_runner(self, prefixes, subrunner_cache=()):
+        subrunners = OrderedDict()
+        for n, m in self.modules.items():
+            subrunners[n] = subrunner_cache[m]
+        r = ModuleRunner(self.cfgs,
+                         subrunners=subrunners,
+                         prefixes=prefixes,
+                         captured_functions=self.captured_functions,
+                         generate_seed=self.gen_seed)
+        return r
+
 
 # TODO: Is there a way of expressing the logger and the seeder as a module?
 # TODO: Do we want that?
@@ -76,7 +88,9 @@ class Module(object):
 
 class Experiment(Module):
     def __init__(self, name=None, modules=()):
-        super(Experiment, self).__init__(prefix='', modules=modules)
+        super(Experiment, self).__init__(prefix='',
+                                         modules=modules,
+                                         gen_seed=True)
         self.name = name
         self.main_function = None
         self.doc = None
@@ -93,7 +107,7 @@ class Experiment(Module):
 
     def main(self, f):
         self.doc = inspect.getmodule(f).__doc__ or ""
-        self.main_function = self.capture(f, "__main__")
+        self.main_function = self.capture(f)
         return self.main_function
 
     def automain(self, f):

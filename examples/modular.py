@@ -7,12 +7,18 @@ from __future__ import division, print_function, unicode_literals
 from sacred import Experiment, Module
 
 
-m1 = Module("dataset")
+m0 = Module("paths")
+
+@m0.config
+def cfg():
+    base = '/home/'
+
+m1 = Module("dataset", modules=[m0])
 
 
 @m1.config
 def cfg():
-    basepath = "/home/"
+    basepath = paths['base'] + 'greff/'
     filename = "foo.hdf5"
 
 
@@ -27,19 +33,15 @@ def foo(basepath, filename):
 
 
 
-ex = Experiment(modules=[m1])
+ex = Experiment(modules=[m0, m1])
 
 
 @ex.config
-def cfg():
+def cfg(seed):
+    d = seed
     a = 10
     b = 17
     c = a + b
-
-
-# @ex.capture("dataset")
-# def load_dataset(filename):
-#     print(filename)
 
 
 @ex.automain

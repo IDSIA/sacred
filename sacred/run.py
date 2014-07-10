@@ -2,7 +2,6 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict
 from datetime import timedelta
 import sys
 import threading
@@ -25,35 +24,25 @@ class Status(object):
 def create_module_runners(sorted_submodules):
     subrunner_cache = {}
     for prefixes, sm in sorted_submodules:
-        subrunner_cache[sm] = ModuleRunner.from_module(
-            sm,
+        subrunner_cache[sm] = sm.create_module_runner(
             prefixes=prefixes,
             subrunner_cache=subrunner_cache)
     return subrunner_cache
 
 
 class ModuleRunner(object):
-    def __init__(self, config_scopes, subrunners, prefixes, captured_functions):
+    def __init__(self, config_scopes, subrunners, prefixes, captured_functions,
+                 generate_seed):
         self.config_scopes = config_scopes
         self.subrunners = subrunners
         self.prefixes = sorted(prefixes, key=lambda x: len(x))
+        self.generate_seed = generate_seed
         self.config_updates = {}
         self.config = None
         self.logger = None
         self.seed = None
         self.rnd = None
         self._captured_functions = captured_functions
-
-    @staticmethod
-    def from_module(module, prefixes, subrunner_cache=()):
-        subrunners = OrderedDict()
-        for n, m in module.modules.items():
-            subrunners[n] = subrunner_cache[m]
-        r = ModuleRunner(module.cfgs,
-                         subrunners=subrunners,
-                         prefixes=prefixes,
-                         captured_functions=module.captured_functions)
-        return r
 
     def set_up_logging(self, level=None):
         if self.logger is not None:
@@ -96,7 +85,10 @@ class ModuleRunner(object):
         if self.config is not None:
             return self.config
 
-        self.config = {'seed': self.seed}
+        self.config = {}
+        if self.generate_seed:
+            self.config['seed'] = self.seed
+
         for prefix, subrunner in self.subrunners.items():
             self.config[prefix] = subrunner.set_up_config()
 
