@@ -26,8 +26,7 @@ class Module(object):
         self.modules = OrderedDict()
         for m in modules:
             self.modules[m.prefix] = m
-        self._captured_functions = []
-        self._is_setting_up_config = False
+        self.captured_functions = []
         self._is_traversing = False
 
     ############################## Decorators ##################################
@@ -40,14 +39,14 @@ class Module(object):
         return self.cfgs[-1]
 
     def capture(self, f, as_name=None):
-        if f in self._captured_functions:
+        if f in self.captured_functions:
             return f
         as_name = as_name or f.__name__
         if hasattr(self, as_name):
             raise AttributeError("Function name %s is already taken." %
                                  as_name)
         captured_function = create_captured_function(f)
-        self._captured_functions.append(captured_function)
+        self.captured_functions.append(captured_function)
         setattr(self, as_name, captured_function)
         return captured_function
 
@@ -76,9 +75,8 @@ class Module(object):
         return [(submodules[s]['prefixes'], s) for s in sorted_submodules]
 
 
-# TODO: Figure out a good api for calling module commands
-# TODO: figure out module equivalent of a Run
-# TODO: Is there a way of expressing the logger and the seeder as a module? Do we want that?
+# TODO: Is there a way of expressing the logger and the seeder as a module?
+# TODO: Do we want that?
 
 
 class Experiment(Module):
@@ -164,9 +162,9 @@ class Experiment(Module):
         if main_func is None:
             main_func = self.main_function
         sorted_submodules = self.gather_submodules_with_prefixes_topological()
-        subrunners = create_module_runners(sorted_submodules)
+        mod_runners = create_module_runners(sorted_submodules)
         observers = self.observers if observe else []
-        run = Run(subrunners[self], subrunners.values(), main_func, observers)
+        run = Run(mod_runners[self], mod_runners.values(), main_func, observers)
         return run
 
     def run(self, config_updates=None, loglevel=None):

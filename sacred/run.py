@@ -51,7 +51,7 @@ class ModuleRunner(object):
         r = ModuleRunner(module.cfgs,
                          subrunners=subrunners,
                          prefixes=prefixes,
-                         captured_functions=module._captured_functions)
+                         captured_functions=module.captured_functions)
         return r
 
     def set_up_logging(self, level=None):
