@@ -7,21 +7,20 @@ from __future__ import division, print_function, unicode_literals
 from sacred import Experiment, Module
 
 
-m0 = Module("paths")
+paths_m = Module("paths")
 
 
-@m0.config
+@paths_m.config
 def cfg():
     base = '/home/'
 
-m1 = Module("dataset", modules=[m0])
+m1 = Module("dataset", modules=[paths_m])
 
 
 @m1.config
-def cfg():
+def cfg(paths):
     basepath = paths['base'] + 'greff/'
     filename = "foo.hdf5"
-    paths['base'] += 'blahhaaa'
 
 
 @m1.capture
@@ -29,13 +28,7 @@ def foo(basepath, filename):
     return basepath + filename
 
 
-# @m1.command
-# def stats(**config):
-#     print(config)
-
-
-
-ex = Experiment(modules=[m0, m1])
+ex = Experiment(modules=[m1, paths_m])
 
 
 @ex.config
@@ -47,10 +40,9 @@ def cfg(seed):
 
 
 @ex.automain
-def main(a, b, c, dataset, paths):
+def main(a, b, c, dataset):
     print('a =', a)
     print('b =', b)
     print('c =', c)
     print("foo()", foo())
     print(dataset)
-    print(paths)

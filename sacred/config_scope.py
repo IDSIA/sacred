@@ -7,7 +7,6 @@ from functools import update_wrapper
 import inspect
 import json
 import re
-from utils import get_seed
 
 
 def dogmatize(x):
@@ -136,20 +135,15 @@ class DogmaticList(list):
         pass
 
 
-def is_zero_argument_function(func):
-    arg_spec = inspect.getargspec(func)
-    return ((arg_spec.args == [] or arg_spec.args == ['seed']) and
-            arg_spec.varargs is None and
-            arg_spec.keywords is None)
-
-
 def get_function_body_code(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
     filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
+    arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
+    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*(seed)?\s*\)[ \t]*:[ \t]*\n\s*".format(
-            func.__name__), flags=re.MULTILINE)
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n\s*".format(
+            func.__name__, arguments), flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
     line_offset = func_code[:defs[0].end()].count('\n')
@@ -164,8 +158,14 @@ def get_function_body_code(func):
 class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
-        assert is_zero_argument_function(func), \
-            "The only allowed argument for ConfigScopes is 'seed'"
+        self.arg_spec = inspect.getargspec(func)
+        assert self.arg_spec.varargs is None, \
+            "varargs are not allowed for ConfigScope functions"
+        assert self.arg_spec.keywords is None, \
+            "kwargs are not allowed for ConfigScope functions"
+        assert self.arg_spec.defaults is None, \
+            "default values are not allowed for ConfigScope functions"
+
         self._func = func
         update_wrapper(self, func)
         self._body_code = get_function_body_code(func)
@@ -177,7 +177,15 @@ class ConfigScope(dict):
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
-        cfg_locals.update(preset)
+        if preset is None:
+            assert self.arg_spec.args == [], \
+                "'%s' not in preset for ConfigScope. (There are no presets)"
+        else:
+            for a in self.arg_spec.args:
+                assert a in preset, "'%s' not in preset for ConfigScope. " \
+                                    "Available options are: %s" % \
+                                    (a, preset.keys())
+                cfg_locals[a] = preset[a]
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges
