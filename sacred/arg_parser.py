@@ -9,6 +9,7 @@ import sys
 from commands import help_for_command
 
 from sacred.observers import MongoDBReporter
+from sacred.utils import set_by_dotted_path
 
 
 __all__ = ['parse_args', 'get_config_updates', 'get_observers']
@@ -73,13 +74,7 @@ def get_config_updates(updates):
             continue
         path, sep, value = upd.partition('=')
         assert sep == '=', "Missing '=' in update '%s'" % upd
-        current_option = config_updates
-        split_path = path.split('.')
-        for p in split_path[:-1]:
-            if p not in current_option:
-                current_option[p] = dict()
-            current_option = current_option[p]
-        current_option[split_path[-1]] = _convert_value(value)
+        set_by_dotted_path(config_updates, path, _convert_value(value))
     return config_updates
 
 

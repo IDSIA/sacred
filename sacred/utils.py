@@ -97,3 +97,55 @@ def get_seed(rnd=None):
 
 def create_rnd(seed):
     return random.Random(seed)
+
+
+def iterate_separately(dictionary):
+    """
+    Iterate over the items of a dictionary. First iterate over all items that
+    are non-dictionary values (sorted by keys), then over the rest
+    (sorted by keys).
+    """
+    single_line_keys = [k for k in dictionary.keys()
+                        if not isinstance(dictionary[k], dict)]
+    for k in sorted(single_line_keys):
+        yield k, dictionary[k]
+
+    multi_line_keys = [k for k in dictionary.keys()
+                       if isinstance(dictionary[k], dict)]
+    for k in sorted(multi_line_keys):
+        yield k, dictionary[k]
+
+
+def iterate_flattened_keys(d):
+    """
+    Iterate over the keys of a dictionary recursively, providing full dotted
+    paths for every entry.
+    """
+    if isinstance(d, dict):
+        for key in d:
+            yield key
+            for k in iterate_flattened_keys(d[key]):
+                yield key + '.' + k
+
+
+def set_by_dotted_path(d, path, value):
+    split_path = path.split('.')
+    current_option = d
+    for p in split_path[:-1]:
+        if p not in current_option:
+            current_option[p] = dict()
+        current_option = current_option[p]
+    assert split_path[-1]
+    current_option[split_path[-1]] = value
+
+
+def get_by_dotted_path(d, path):
+    if not path:
+        return d
+    split_path = path.split('.')
+    current_option = d
+    for p in split_path:
+        if p not in current_option:
+            return None
+        current_option = current_option[p]
+    return current_option

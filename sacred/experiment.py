@@ -7,7 +7,7 @@ import inspect
 import os.path
 import sys
 from host_info import get_module_versions
-from run import Run, create_module_runners, ModuleRunner
+from run import Run, ModuleRunner
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
@@ -23,6 +23,7 @@ class Module(object):
     def __init__(self, prefix, modules=(), gen_seed=False):
         self.prefix = prefix
         self.cfgs = []
+        #TODO: does this need to be a dict any longer?
         self.modules = OrderedDict()
         for m in modules:
             self.modules[m.prefix] = m
@@ -52,32 +53,28 @@ class Module(object):
             raise CircularDependencyError()
         else:
             self._is_traversing = True
-        yield '', self, 0
+        yield self, 0
         for prefix, module in self.modules.items():
-            for p, sr, depth in module.traverse_modules():
-                yield '.' + prefix + p, sr, depth + 1
+            for sr, depth in module.traverse_modules():
+                yield sr, depth + 1
         self._is_traversing = False
 
-    def gather_submodules_with_prefixes_topological(self):
+    def gather_submodules_topological(self):
         submodules = {}
-        for prefix, sm, depth in self.traverse_modules():
-            prefix = prefix.strip('.')
+        for sm, depth in self.traverse_modules():
             if sm not in submodules:
-                submodules[sm] = {'prefixes': [prefix], 'depth': depth}
+                submodules[sm] = depth
             else:
-                submodules[sm]['prefixes'].append(prefix)
-                submodules[sm]['depth'] = max(submodules[sm]['depth'], depth)
+                submodules[sm] = max(submodules[sm], depth)
         sorted_submodules = sorted(submodules,
-                                   key=lambda x: -submodules[x]['depth'])
-        return [(submodules[s]['prefixes'], s) for s in sorted_submodules]
+                                   key=lambda x: -submodules[x])
+        return sorted_submodules
 
-    def create_module_runner(self, prefixes, subrunner_cache=()):
-        subrunners = OrderedDict()
-        for n, m in self.modules.items():
-            subrunners[n] = subrunner_cache[m]
+    def create_module_runner(self, subrunner_cache):
+        subrunners = [subrunner_cache[m] for m in self.modules.values()]
         r = ModuleRunner(self.cfgs,
                          subrunners=subrunners,
-                         prefixes=prefixes,
+                         prefix=self.prefix,
                          captured_functions=self.captured_functions,
                          generate_seed=self.gen_seed)
         return r
@@ -165,7 +162,7 @@ class Experiment(Module):
     def create_run(self, main_func=None, observe=True):
         if main_func is None:
             main_func = self.main_function
-        sorted_submodules = self.gather_submodules_with_prefixes_topological()
+        sorted_submodules = self.gather_submodules_topological()
         mod_runners = create_module_runners(sorted_submodules)
         observers = self.observers if observe else []
         run = Run(mod_runners[self], mod_runners.values(), main_func, observers)
@@ -188,3 +185,10 @@ class Experiment(Module):
                 o.created_event(**experiment_info)
             except AttributeError:
                 pass
+
+
+def create_module_runners(sorted_submodules):
+    subrunner_cache = {}
+    for sm in sorted_submodules:
+        subrunner_cache[sm] = sm.create_module_runner(subrunner_cache)
+    return subrunner_cache

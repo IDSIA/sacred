@@ -7,10 +7,10 @@ import sys
 import threading
 import time
 import traceback
-from sacred.config_scope import dogmatize
+from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import tee_output
-from sacred.commands import _flatten_keys
-from utils import create_rnd, get_seed, create_basic_stream_logger
+from utils import create_rnd, get_seed, create_basic_stream_logger, \
+    iterate_flattened_keys, get_by_dotted_path, set_by_dotted_path
 
 
 class Status(object):
@@ -22,22 +22,12 @@ class Status(object):
     FAILED = 5
 
 
-def create_module_runners(sorted_submodules):
-    subrunner_cache = {}
-    for prefixes, sm in sorted_submodules:
-        subrunner_cache[sm] = sm.create_module_runner(
-            prefixes=prefixes,
-            subrunner_cache=subrunner_cache)
-    return subrunner_cache
-
-
 class ModuleRunner(object):
-    def __init__(self, config_scopes, subrunners, prefixes, captured_functions,
+    def __init__(self, config_scopes, subrunners, prefix, captured_functions,
                  generate_seed):
         self.config_scopes = config_scopes
         self.subrunners = subrunners
-        self.prefixes = sorted(prefixes, key=lambda x: len(x))
-        self.canonical_prefix = prefixes[0]
+        self.prefix = prefix
         self.generate_seed = generate_seed
         self.config_updates = {}
         self.config = None
@@ -55,65 +45,75 @@ class ModuleRunner(object):
                 level = int(level)
             except ValueError:
                 pass
-        self.logger = create_basic_stream_logger(self.canonical_prefix,
-                                                 level=level)
+        self.logger = create_basic_stream_logger(self.prefix, level=level)
         self.logger.debug("No logger given. Created basic stream logger.")
 
-    def distribute_config_updates(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-        if not isinstance(config_updates, dict):
-            self.logger.warning("Ignored attempt to overwrite module config "
-                                "with %s." % config_updates)
-        for k, v in config_updates.items():
-            if k in self.subrunners:
-                continue
-            if k in self.config_updates:
-                self.logger.warning("Conflicting update for %s: %s" % (k, v))
-            else:
-                self.config_updates[k] = v
-
-        for prefix, subrunner in self.subrunners.items():
-            subrunner.distribute_config_updates(config_updates.get(prefix))
+    def set_config_updates(self, config_updates=None):
+        self.config_updates = get_by_dotted_path(config_updates, self.prefix)
+        if self.config_updates is None:
+            self.config_updates = {}
 
     def set_up_seed(self, rnd=None):
-        if self.seed is None:
-            self.seed = self.config_updates.get('seed') or get_seed(rnd)
-            self.rnd = create_rnd(self.seed)
+        if self.seed is not None:
+            return
 
-        for prefix, subrunner in self.subrunners.items():
-            subrunner.set_up_seed(self.rnd)
+        self.seed = self.config_updates.get('seed') or get_seed(rnd)
+        self.rnd = create_rnd(self.seed)
+
+        # Hierarchically set the seed of proper subrunners
+        for subrunner in reversed(self.subrunners):
+            if subrunner.prefix.startswith(self.prefix):
+                subrunner.set_up_seed(self.rnd)
 
     def set_up_config(self):
         if self.config is not None:
             return self.config
 
-        self.config = {}
+        # gather presets
+        preset = {}
+        for subrunner in self.subrunners:
+            set_by_dotted_path(preset, subrunner.prefix,
+                               subrunner.set_up_config())
+
+        for subrunner in self.subrunners:
+            if subrunner.prefix.startswith(self.prefix):
+                prefix = subrunner.prefix[len(self.prefix) + 1:]
+                set_by_dotted_path(preset, prefix,
+                                   subrunner.set_up_config())
+
+        # dogmatize to make the subrunner configurations read-only
+        const_preset = dogmatize(preset)
+        const_preset.revelation()
+
+        self.config = const_preset
+
         if self.generate_seed:
             self.config['seed'] = self.seed
-
-        for prefix, subrunner in self.subrunners.items():
-            # dogmatize to make the subrunner configurations read-only
-            const_sub_config = dogmatize(subrunner.set_up_config())
-            const_sub_config.revelation()
-            self.config[prefix] = const_sub_config
 
         for config in self.config_scopes:
             config(self.config_updates, preset=self.config)
             self.config.update(config)
 
-        # replace duplicate subrunner configurations with 'pointer-value'
-        for prefix, subrunner in self.subrunners.items():
-            full_path = (self.canonical_prefix + '.' + prefix).strip('.')
-            if full_path != subrunner.canonical_prefix:
-                del self.config[prefix]
-                self.config[prefix] = '--> .' + subrunner.canonical_prefix
+        self.config = undogmatize(self.config)
+
+        # remove presets
+        for subrunner in self.subrunners:
+            start, _, rest = subrunner.prefix.partition('.')
+            if start in self.config:
+                del self.config[start]
+
+            if subrunner.prefix.startswith(self.prefix):
+                prefix = subrunner.prefix[len(self.prefix) + 1:]
+                start, _, rest = prefix.partition('.')
+                if start in self.config:
+                    del self.config[start]
 
         return self.config
 
     def get_config_modifications(self):
         added = set()
         typechanges = {}
-        updated = _flatten_keys(self.config_updates)
+        updated = iterate_flattened_keys(self.config_updates)
         for config in self.config_scopes:
             added |= config.added_values
             typechanges.update(config.typechanges)
@@ -170,9 +170,12 @@ class Run(object):
     def initialize(self, config_updates=None, loglevel=None):
         for sr in self.subrunners:
             sr.set_up_logging(loglevel)
+            sr.set_config_updates(config_updates)
 
-        self.modrunner.distribute_config_updates(config_updates)  # recursive
-        self.modrunner.set_up_seed()  # recursive
+        for sr in reversed(self.subrunners):
+            sr.set_up_seed()  # partially recursive
+
+
         self.modrunner.set_up_config()  # recursive
 
         for sr in self.subrunners:
