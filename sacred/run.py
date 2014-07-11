@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import traceback
+from sacred.config_scope import dogmatize
 from sacred.utils import tee_output
 from sacred.commands import _flatten_keys
 from utils import create_rnd, get_seed, create_basic_stream_logger
@@ -36,6 +37,7 @@ class ModuleRunner(object):
         self.config_scopes = config_scopes
         self.subrunners = subrunners
         self.prefixes = sorted(prefixes, key=lambda x: len(x))
+        self.canonical_prefix = prefixes[0]
         self.generate_seed = generate_seed
         self.config_updates = {}
         self.config = None
@@ -53,8 +55,8 @@ class ModuleRunner(object):
                 level = int(level)
             except ValueError:
                 pass
-        name = self.prefixes[0]  # use shortest prefix as name
-        self.logger = create_basic_stream_logger(name, level=level)
+        self.logger = create_basic_stream_logger(self.canonical_prefix,
+                                                 level=level)
         self.logger.debug("No logger given. Created basic stream logger.")
 
     def distribute_config_updates(self, config_updates=None):
@@ -90,14 +92,21 @@ class ModuleRunner(object):
             self.config['seed'] = self.seed
 
         for prefix, subrunner in self.subrunners.items():
-            # TODO: make the subrunner configurations read-only
-            self.config[prefix] = subrunner.set_up_config()
+            # dogmatize to make the subrunner configurations read-only
+            const_sub_config = dogmatize(subrunner.set_up_config())
+            const_sub_config.revelation()
+            self.config[prefix] = const_sub_config
 
         for config in self.config_scopes:
             config(self.config_updates, preset=self.config)
             self.config.update(config)
 
-        # TODO: replace duplicate subrunner configurations with 'pointer-value'
+        # replace duplicate subrunner configurations with 'pointer-value'
+        for prefix, subrunner in self.subrunners.items():
+            full_path = (self.canonical_prefix + '.' + prefix).strip('.')
+            if full_path != subrunner.canonical_prefix:
+                del self.config[prefix]
+                self.config[prefix] = '--> .' + subrunner.canonical_prefix
 
         return self.config
 

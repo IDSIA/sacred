@@ -9,6 +9,7 @@ from sacred import Experiment, Module
 
 m0 = Module("paths")
 
+
 @m0.config
 def cfg():
     base = '/home/'
@@ -20,6 +21,7 @@ m1 = Module("dataset", modules=[m0])
 def cfg():
     basepath = paths['base'] + 'greff/'
     filename = "foo.hdf5"
+    paths['base'] += 'blahhaaa'
 
 
 @m1.capture
@@ -45,9 +47,10 @@ def cfg(seed):
 
 
 @ex.automain
-def main(a, b, c, dataset):
+def main(a, b, c, dataset, paths):
     print('a =', a)
     print('b =', b)
     print('c =', c)
     print("foo()", foo())
     print(dataset)
+    print(paths)

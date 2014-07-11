@@ -52,15 +52,16 @@ class Module(object):
             raise CircularDependencyError()
         else:
             self._is_traversing = True
-        yield self.prefix, self, 0
+        yield '', self, 0
         for prefix, module in self.modules.items():
             for p, sr, depth in module.traverse_modules():
-                yield prefix + '.' + p, sr, depth + 1
+                yield '.' + prefix + p, sr, depth + 1
         self._is_traversing = False
 
     def gather_submodules_with_prefixes_topological(self):
         submodules = {}
         for prefix, sm, depth in self.traverse_modules():
+            prefix = prefix.strip('.')
             if sm not in submodules:
                 submodules[sm] = {'prefixes': [prefix], 'depth': depth}
             else:
