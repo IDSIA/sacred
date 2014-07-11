@@ -49,6 +49,8 @@ class ModuleRunner(object):
         self.logger.debug("No logger given. Created basic stream logger.")
 
     def set_config_updates(self, config_updates=None):
+        config_updates = {} if config_updates is None else config_updates
+
         self.config_updates = get_by_dotted_path(config_updates, self.prefix)
         if self.config_updates is None:
             self.config_updates = {}
@@ -175,8 +177,13 @@ class Run(object):
         for sr in reversed(self.subrunners):
             sr.set_up_seed()  # partially recursive
 
-
         self.modrunner.set_up_config()  # recursive
+
+        for sr in self.subrunners:
+            if sr.prefix:
+                set_by_dotted_path(self.modrunner.config, sr.prefix, sr.config)
+            else:
+                self.modrunner.config.update(sr.config)
 
         for sr in self.subrunners:
             sr.finalize_initialization()

@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import pytest
-from sacred.config_scope import DogmaticList
+from custom_containers import DogmaticList
 
 
 def test_isinstance_of_list():

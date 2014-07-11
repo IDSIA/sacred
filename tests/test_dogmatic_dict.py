@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from sacred.config_scope import DogmaticDict
+from custom_containers import DogmaticDict
 
 
 def test_isinstance_of_dict():

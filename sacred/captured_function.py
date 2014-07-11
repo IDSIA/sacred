@@ -3,82 +3,12 @@
 from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
 import time
-from sacred.signature import Signature
+
 import wrapt
-from utils import get_seed, create_rnd
 
-
-class FallbackDict(dict):
-    """
-    This dictionary either returns the value assigned to a given key or it
-    returns the value for that key from the fallback dict.
-    """
-    def __init__(self, fallback, **kwargs):
-        super(FallbackDict, self).__init__(**kwargs)
-        self.fallback = fallback
-
-    def __getitem__(self, item):
-        if dict.__contains__(self, item):
-            return dict.__getitem__(self, item)
-        else:
-            return self.fallback[item]
-
-    def __contains__(self, item):
-        return dict.__contains__(self, item) or (item in self.fallback)
-
-    def get(self, k, d=None):
-        if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)()
-        else:
-            return self.fallback.get(k, d)
-
-    def has_key(self, item):
-        return self.__contains__(item)
-
-    def items(self):
-        raise NotImplemented
-
-    def iteritems(self):
-        raise NotImplemented
-
-    def iterkeys(self):
-        raise NotImplemented
-
-    def itervalues(self):
-        raise NotImplemented
-
-    def keys(self):
-        raise NotImplemented
-
-    def pop(self, k, d=None):
-        raise NotImplemented
-
-    def popitem(self):
-        raise NotImplemented
-
-    def setdefault(self, k, d=None):
-        raise NotImplemented
-
-    def update(self, E=None, **F):
-        raise NotImplemented
-
-    def values(self):
-        raise NotImplemented
-
-    def viewitems(self):
-        raise NotImplemented
-
-    def viewkeys(self):
-        raise NotImplemented
-
-    def viewvalues(self):
-        raise NotImplemented
-
-    def __iter__(self):
-        raise NotImplemented
-
-    def __len__(self):
-        raise NotImplemented
+from sacred.custom_containers import FallbackDict
+from sacred.signature import Signature
+from sacred.utils import get_seed, create_rnd
 
 
 def create_captured_function(f):

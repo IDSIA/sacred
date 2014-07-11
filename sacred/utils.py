@@ -135,7 +135,7 @@ def set_by_dotted_path(d, path, value):
         if p not in current_option:
             current_option[p] = dict()
         current_option = current_option[p]
-    assert split_path[-1]
+    assert split_path[-1], "empty path or trailing dot ('%s')" % path
     current_option[split_path[-1]] = value
 
 
