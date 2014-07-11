@@ -39,7 +39,7 @@ setup(
     ],
 
     classifiers=filter(None, classifiers.split('\n')),
-    description='Facilitates reproducible research.',
+    description='Facilitates reproducible and automated research.',
     long_description=open('README.md').read(),
     license='LICENSE',
 )
