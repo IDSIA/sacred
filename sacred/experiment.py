@@ -191,7 +191,7 @@ class Experiment(Module):
 
 
 def create_module_runners(sorted_submodules):
-    subrunner_cache = {}
+    subrunner_cache = OrderedDict()
     for sm in sorted_submodules:
         subrunner_cache[sm] = sm.create_module_runner(subrunner_cache)
     return subrunner_cache

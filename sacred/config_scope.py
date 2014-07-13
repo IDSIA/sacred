@@ -49,7 +49,7 @@ class ConfigScope(dict):
         self.added_values = set()
         self.typechanges = {}
 
-    def __call__(self, fixed=None, preset=None):
+    def __call__(self, fixed=None, preset=None, fallback=None):
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
@@ -58,10 +58,17 @@ class ConfigScope(dict):
                 "'%s' not in preset for ConfigScope. (There are no presets)"
         else:
             for a in self.arg_spec.args:
-                assert a in preset, "'%s' not in preset for ConfigScope. " \
-                                    "Available options are: %s" % \
-                                    (a, preset.keys())
-                cfg_locals[a] = preset[a]
+                assert a in preset or a in fallback, \
+                    "'%s' not in preset for ConfigScope. " \
+                    "Available options are: %s" % (a, preset.keys())
+                if a in preset:
+                    cfg_locals[a] = preset[a]
+                else:
+                    assert a in fallback, "'%s' not in preset for ConfigScope."\
+                                          " Available options are: %s" % \
+                                          (a, preset.keys() + fallback.keys())
+
+        cfg_locals.fallback = fallback
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges

@@ -77,13 +77,15 @@ class FallbackDict(dict):
 
 
 class DogmaticDict(dict):
-    def __init__(self, fixed=None):
+    def __init__(self, fixed=None, fallback=None):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
         if fixed is not None:
             self._fixed = fixed
         else:
             self._fixed = ()
+
+        self.fallback = fallback or {}
 
     def __setitem__(self, key, value):
         if key not in self._fixed:
@@ -104,6 +106,27 @@ class DogmaticDict(dict):
                 for k, v in bd.typechanges.items():
                     self.typechanges[key + '.' + k] = v
 
+    def __getitem__(self, item):
+        if dict.__contains__(self, item):
+            return dict.__getitem__(self, item)
+        elif item in self.fallback:
+            if item in self._fixed:
+                return self._fixed[item]
+            else:
+                return self.fallback[item]
+
+    def __contains__(self, item):
+        return dict.__contains__(self, item) or (item in self.fallback)
+
+    def get(self, k, d=None):
+        if dict.__contains__(self, k):
+            return dict.__getitem__(self, k)()
+        else:
+            return self.fallback.get(k, d)
+
+    def has_key(self, item):
+        return self.__contains__(item)
+
     def __delitem__(self, key):
         if key not in self._fixed:
             dict.__delitem__(self, key)
@@ -122,7 +145,7 @@ class DogmaticDict(dict):
     def revelation(self):
         missing = set()
         for key in self._fixed:
-            if not key in self:
+            if not dict.__contains__(self, key):
                 self[key] = self._fixed[key]
                 missing.add(key)
 

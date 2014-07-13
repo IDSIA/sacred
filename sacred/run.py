@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import traceback
+from sacred.custom_containers import FallbackDict
 from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import tee_output
 from utils import (create_rnd, get_seed, create_basic_stream_logger,
@@ -65,43 +66,30 @@ class ModuleRunner(object):
             return self.config
 
         # gather presets
-        preset = {}
-        for subrunner in self.subrunners:
-            set_by_dotted_path(preset, subrunner.prefix,
-                               subrunner.set_up_config())
-
-        for subrunner in self.subrunners:
-            if subrunner.prefix.startswith(self.prefix):
-                prefix = subrunner.prefix[len(self.prefix) + 1:]
-                set_by_dotted_path(preset, prefix,
-                                   subrunner.set_up_config())
+        fallback = {}
+        for sr in self.subrunners:
+            if self.prefix and sr.prefix.startswith(self.prefix):
+                prefix = sr.prefix[len(self.prefix):].strip('.')
+                set_by_dotted_path(fallback, prefix, sr.config)
+            else:
+                set_by_dotted_path(fallback, sr.prefix, sr.config)
 
         # dogmatize to make the subrunner configurations read-only
-        const_preset = dogmatize(preset)
-        const_preset.revelation()
+        const_fallback = dogmatize(fallback)
+        const_fallback.revelation()
 
-        self.config = const_preset
+        self.config = {}
 
         if self.generate_seed:
             self.config['seed'] = self.seed
 
         for config in self.config_scopes:
-            config(self.config_updates, preset=self.config)
+            config(fixed=self.config_updates,
+                   preset=self.config,
+                   fallback=const_fallback)
             self.config.update(config)
 
         self.config = undogmatize(self.config)
-
-        # remove presets
-        for subrunner in self.subrunners:
-            start, _, rest = subrunner.prefix.partition('.')
-            if start in self.config:
-                del self.config[start]
-
-            if subrunner.prefix.startswith(self.prefix):
-                prefix = subrunner.prefix[len(self.prefix) + 1:]
-                start, _, rest = prefix.partition('.')
-                if start in self.config:
-                    del self.config[start]
 
         return self.config
 
@@ -182,7 +170,8 @@ class Run(object):
         for mr in reversed(self.modrunners):
             mr.set_up_seed()  # partially recursive
 
-        self.exrunner.set_up_config()  # recursive
+        for mr in self.modrunners:
+            mr.set_up_config()
 
         for mr in self.modrunners:
             if mr.prefix:
