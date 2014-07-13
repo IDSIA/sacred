@@ -6,43 +6,51 @@ This is a very basic example of how to use sacred.
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment, Module
 
+# ============== Module 1: dataset.paths =================
+data_paths = Module("dataset.paths")
 
-paths_m = Module("paths")
 
-
-@paths_m.config
+@data_paths.config
 def cfg():
-    base = '/home/'
-
-m1 = Module("dataset", modules=[paths_m])
+    base = '/home/sacred/'
 
 
-@m1.config
+# ============== Module 2: dataset =======================
+data = Module("dataset", modules=[data_paths])
+
+
+@data.config
 def cfg(paths):
-    basepath = paths['base'] + 'greff/'
+    basepath = paths['base'] + 'datasets/'
     filename = "foo.hdf5"
 
 
-@m1.capture
+@data.capture
 def foo(basepath, filename):
     return basepath + filename
 
 
-ex = Experiment(modules=[m1, paths_m])
+# ============== Experiment ==============================
+ex = Experiment(modules=[data, data_paths])
 
 
 @ex.config
-def cfg(seed):
-    d = seed
+def cfg(seed, dataset):
+    s = seed*2
     a = 10
     b = 17
     c = a + b
+    out_base = dataset['path']['base'] + 'outputs/'
+    out_filename = dataset['filename'].replace('.hdf5', '.out')
+
 
 
 @ex.automain
-def main(a, b, c, dataset):
+def main(a, b, c, out_base, out_filename, dataset):
     print('a =', a)
     print('b =', b)
     print('c =', c)
+    print('out_base =', out_base, out_filename)
+    print("dataset", dataset)
+    print("dataset.paths", dataset['paths'])
     print("foo()", foo())
-    print(dataset)
