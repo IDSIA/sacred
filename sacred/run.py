@@ -155,9 +155,9 @@ class Run(object):
     Represents a single run of an experiment
     """
 
-    def __init__(self, modrunner, subrunners, main_function, observers):
-        self.modrunner = modrunner
-        self.subrunners = subrunners
+    def __init__(self, exrunner, modrunners, main_function, observers):
+        self.exrunner = exrunner
+        self.modrunners = modrunners
         self.main_function = main_function
         self._observers = observers
         self.status = Status.SET_UP
@@ -170,23 +170,23 @@ class Run(object):
         self.result = None
 
     def initialize(self, config_updates=None, loglevel=None):
-        for sr in self.subrunners:
-            sr.set_up_logging(loglevel)
-            sr.set_config_updates(config_updates)
+        for mr in self.modrunners:
+            mr.set_up_logging(loglevel)
+            mr.set_config_updates(config_updates)
 
-        for sr in reversed(self.subrunners):
-            sr.set_up_seed()  # partially recursive
+        for mr in reversed(self.modrunners):
+            mr.set_up_seed()  # partially recursive
 
-        self.modrunner.set_up_config()  # recursive
+        self.exrunner.set_up_config()  # recursive
 
-        for sr in self.subrunners:
-            if sr.prefix:
-                set_by_dotted_path(self.modrunner.config, sr.prefix, sr.config)
+        for mr in self.modrunners:
+            if mr.prefix:
+                set_by_dotted_path(self.exrunner.config, mr.prefix, mr.config)
             else:
-                self.modrunner.config.update(sr.config)
+                self.exrunner.config.update(mr.config)
 
-        for sr in self.subrunners:
-            sr.finalize_initialization()
+        for mr in self.modrunners:
+            mr.finalize_initialization()
 
         self.status = Status.STARTING
 
@@ -227,13 +227,13 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_started(self):
-        self.modrunner.logger.info("Started.")
+        self.exrunner.logger.info("Started.")
         self.start_time = time.time()
         for o in self._observers:
             try:
                 o.started_event(
                     start_time=self.start_time,
-                    config=self.modrunner.config)
+                    config=self.exrunner.config)
             except AttributeError:
                 pass
 
@@ -254,11 +254,11 @@ class Run(object):
         self.stop_time = time.time()
         elapsed_seconds = round(self.stop_time - self.start_time)
         self.elapsed_time = timedelta(seconds=elapsed_seconds)
-        self.modrunner.logger.info("Total time elapsed = %s", self.elapsed_time)
+        self.exrunner.logger.info("Total time elapsed = %s", self.elapsed_time)
         return self.stop_time
 
     def _emit_completed(self, result):
-        self.modrunner.logger.info("Completed.")
+        self.exrunner.logger.info("Completed.")
         stop_time = self._stop_time()
         for o in self._observers:
             try:
@@ -269,7 +269,7 @@ class Run(object):
                 pass
 
     def _emit_interrupted(self):
-        self.modrunner.logger.warning("Aborted!")
+        self.exrunner.logger.warning("Aborted!")
         interrupt_time = self._stop_time()
         for o in self._observers:
             try:
@@ -279,7 +279,7 @@ class Run(object):
                 pass
 
     def _emit_failed(self, etype, value, tb):
-        self.modrunner.logger.warning("Failed!")
+        self.exrunner.logger.warning("Failed!")
         fail_time = self._stop_time()
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:

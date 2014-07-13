@@ -82,6 +82,7 @@ class Module(object):
 
 # TODO: Is there a way of expressing the logger and the seeder as a module?
 # TODO: Do we want that?
+# TODO: Should 'main' be just a regular command?
 
 
 class Experiment(Module):
@@ -156,7 +157,7 @@ class Experiment(Module):
             "Command '%s' not found" % command_name
         run = self.create_run(self._commands[command_name], observe=False)
         run.initialize(config_updates, loglevel)
-        run.modrunner.logger.info("Running command '%s'" % command_name)
+        run.exrunner.logger.info("Running command '%s'" % command_name)
         return run(run)
 
     def create_run(self, main_func=None, observe=True):
