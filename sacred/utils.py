@@ -116,16 +116,16 @@ def iterate_separately(dictionary):
         yield k, dictionary[k]
 
 
-def iterate_flattened_keys(d):
+def iterate_flattened(d):
     """
-    Iterate over the keys of a dictionary recursively, providing full dotted
-    paths for every entry.
+    Iterate over a dictionary recursively, providing full dotted
+    paths for every item.
     """
     if isinstance(d, dict):
-        for key in d:
-            yield key
-            for k in iterate_flattened_keys(d[key]):
-                yield key + '.' + k
+        for key, value in d.items():
+            yield key, value
+            for k, v in iterate_flattened(d[key]):
+                yield key + '.' + k, v
 
 
 def set_by_dotted_path(d, path, value):

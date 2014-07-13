@@ -9,8 +9,8 @@ import time
 import traceback
 from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import tee_output
-from utils import create_rnd, get_seed, create_basic_stream_logger, \
-    iterate_flattened_keys, get_by_dotted_path, set_by_dotted_path
+from utils import (create_rnd, get_seed, create_basic_stream_logger,
+                   iterate_flattened, get_by_dotted_path, set_by_dotted_path)
 
 
 class Status(object):
@@ -115,7 +115,7 @@ class ModuleRunner(object):
     def get_config_modifications(self):
         added = set()
         typechanges = {}
-        updated = iterate_flattened_keys(self.config_updates)
+        updated = [k for k, v in iterate_flattened(self.config_updates)]
         for config in self.config_scopes:
             added |= config.added_values
             typechanges.update(config.typechanges)
