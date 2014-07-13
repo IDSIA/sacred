@@ -10,7 +10,7 @@ import traceback
 from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import tee_output
 from utils import (create_rnd, get_seed, create_basic_stream_logger,
-                   iterate_flattened, get_by_dotted_path, set_by_dotted_path)
+                   iterate_flattened, set_by_dotted_path, iter_path_splits)
 
 
 class Status(object):
@@ -47,13 +47,6 @@ class ModuleRunner(object):
                 pass
         self.logger = create_basic_stream_logger(self.prefix, level=level)
         self.logger.debug("No logger given. Created basic stream logger.")
-
-    def set_config_updates(self, config_updates=None):
-        config_updates = {} if config_updates is None else config_updates
-
-        self.config_updates = get_by_dotted_path(config_updates, self.prefix)
-        if self.config_updates is None:
-            self.config_updates = {}
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -169,10 +162,22 @@ class Run(object):
         self.elapsed_time = None
         self.result = None
 
+    def distribute_config_updates(self, config_updates):
+        modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
+        for path, value in iterate_flattened(config_updates):
+            for p1, p2 in reversed(iter_path_splits(path)):
+                if p1 in modrunner_cfgups:
+                    set_by_dotted_path(modrunner_cfgups[p1], p2, value)
+                    break
+                    # this is guaranteed to occur for one of the modrunners,
+                    # because the exrunner has prefix ''
+
     def initialize(self, config_updates=None, loglevel=None):
         for mr in self.modrunners:
             mr.set_up_logging(loglevel)
-            mr.set_config_updates(config_updates)
+
+        if config_updates is not None:
+            self.distribute_config_updates(config_updates)
 
         for mr in reversed(self.modrunners):
             mr.set_up_seed()  # partially recursive

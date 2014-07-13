@@ -149,3 +149,11 @@ def get_by_dotted_path(d, path):
             return None
         current_option = current_option[p]
     return current_option
+
+
+def iter_path_splits(path):
+    split_path = path.split('.')
+    for i in range(len(split_path)):
+        p1 = '.'.join(split_path[:i])
+        p2 = '.'.join(split_path[i:])
+        yield p1, p2

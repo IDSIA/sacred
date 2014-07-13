@@ -83,6 +83,8 @@ class Module(object):
 # TODO: Is there a way of expressing the logger and the seeder as a module?
 # TODO: Do we want that?
 # TODO: Should 'main' be just a regular command?
+# TODO: schould experiments be allowed a prefix? This might make them fully
+# TODO: reusable as modules but might complicate things
 
 
 class Experiment(Module):
