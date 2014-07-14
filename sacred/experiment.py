@@ -88,7 +88,7 @@ class Module(object):
 
 
 class Experiment(Module):
-    def __init__(self, name=None, modules=()):
+    def __init__(self, name, modules=()):
         super(Experiment, self).__init__(prefix='',
                                          modules=modules,
                                          gen_seed=True)
@@ -159,7 +159,7 @@ class Experiment(Module):
             "Command '%s' not found" % command_name
         run = self.create_run(self._commands[command_name], observe=False)
         run.initialize(config_updates, loglevel)
-        run.exrunner.logger.info("Running command '%s'" % command_name)
+        run.logger.info("Running command '%s'" % command_name)
         return run()
 
     def create_run(self, main_func=None, observe=True):
@@ -168,7 +168,7 @@ class Experiment(Module):
         sorted_submodules = self.gather_submodules_topological()
         mod_runners = create_module_runners(sorted_submodules)
         observers = self.observers if observe else []
-        run = Run(mod_runners[self], mod_runners.values(), main_func, observers)
+        run = Run(self.name, mod_runners.values(), main_func, observers)
         return run
 
     def run(self, config_updates=None, loglevel=None):

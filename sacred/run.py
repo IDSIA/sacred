@@ -132,8 +132,8 @@ class Run(object):
     Represents a single run of an experiment
     """
 
-    def __init__(self, exrunner, modrunners, main_function, observers):
-        self.exrunner = exrunner
+    def __init__(self, name, modrunners, main_function, observers):
+        self.exname = name
         self.modrunners = modrunners
         self.main_function = main_function
         self._observers = observers
@@ -147,18 +147,16 @@ class Run(object):
         self.result = None
         self.logger = None
 
-    def initialize_logging(self, loglevel=None):
+    def initialize_logging(self, name, loglevel=None):
         if loglevel:
             try:
                 loglevel = int(loglevel)
             except ValueError:
                 pass
-        self.logger = create_basic_stream_logger('', level=loglevel)
+        root_logger = create_basic_stream_logger('', level=loglevel)
         for mr in self.modrunners:
-            if mr is self.exrunner:
-                self.exrunner.set_up_logging(self.logger, 'main')
-                continue
-            mr.set_up_logging(self.logger)
+            mr.set_up_logging(root_logger)
+        self.logger = root_logger.getChild(self.exname)
 
     def distribute_config_updates(self, config_updates):
         modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
@@ -252,13 +250,12 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_started(self):
-        self.exrunner.logger.info("Started.")
         self.start_time = time.time()
         for o in self._observers:
             try:
                 o.started_event(
                     start_time=self.start_time,
-                    config=self.exrunner.config)
+                    config=self.get_configuration())
             except AttributeError:
                 pass
 
@@ -279,11 +276,9 @@ class Run(object):
         self.stop_time = time.time()
         elapsed_seconds = round(self.stop_time - self.start_time)
         self.elapsed_time = timedelta(seconds=elapsed_seconds)
-        self.exrunner.logger.info("Total time elapsed = %s", self.elapsed_time)
         return self.stop_time
 
     def _emit_completed(self, result):
-        self.exrunner.logger.info("Completed.")
         stop_time = self._stop_time()
         for o in self._observers:
             try:
@@ -294,7 +289,7 @@ class Run(object):
                 pass
 
     def _emit_interrupted(self):
-        self.exrunner.logger.warning("Aborted!")
+        self.logger.warning("Aborted!")
         interrupt_time = self._stop_time()
         for o in self._observers:
             try:
@@ -304,7 +299,7 @@ class Run(object):
                 pass
 
     def _emit_failed(self, etype, value, tb):
-        self.exrunner.logger.warning("Failed!")
+        self.logger.warning("Failed!")
         fail_time = self._stop_time()
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:
