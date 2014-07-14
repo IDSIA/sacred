@@ -53,6 +53,7 @@ class ConfigScope(dict):
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
+        fallback = fallback or {}
         if preset is None:
             assert self.arg_spec.args == [], \
                 "'%s' not in preset for ConfigScope. (There are no presets)"

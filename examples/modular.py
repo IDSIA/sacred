@@ -46,11 +46,11 @@ def cfg(seed, dataset):
 
 
 @ex.automain
-def main(a, b, c, out_base, out_filename, dataset):
+def main(a, b, c, out_base, out_filename):
     print('a =', a)
     print('b =', b)
     print('c =', c)
     print('out_base =', out_base, out_filename)
-    print("dataset", dataset)
-    print("dataset.paths", dataset['paths'])
+    # print("dataset", dataset)
+    # print("dataset.paths", dataset['paths'])
     print("foo()", foo())

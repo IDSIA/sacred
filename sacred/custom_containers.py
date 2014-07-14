@@ -80,12 +80,12 @@ class DogmaticDict(dict):
     def __init__(self, fixed=None, fallback=None):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
-        if fixed is not None:
-            self._fixed = fixed
-        else:
-            self._fixed = ()
-
+        self._fixed = fixed or {}
         self.fallback = fallback or {}
+        ffkeys = set(self._fixed.keys()).intersection(set(self.fallback.keys()))
+        if ffkeys:
+            raise ValueError("Keys %s appear are both fixed and fallback keys"
+                             % ffkeys)
 
     def __setitem__(self, key, value):
         if key not in self._fixed:
@@ -114,6 +114,7 @@ class DogmaticDict(dict):
                 return self._fixed[item]
             else:
                 return self.fallback[item]
+        raise KeyError(item)
 
     def __contains__(self, item):
         return dict.__contains__(self, item) or (item in self.fallback)
@@ -203,7 +204,7 @@ def type_changed(a, b):
     return type(a) != type(b)
 
 
-def dogmatize(x):
+def dogmatize(x, with_fallback=()):
     if isinstance(x, dict):
         return DogmaticDict({k: dogmatize(v) for k, v in x.items()})
     elif isinstance(x, list):

@@ -13,6 +13,7 @@ NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
 SEEDRANGE = (1, 1e9)
 
+# TODO: Remove this and put into separate package (maybe a plugin?)
 try:
     from pylstm.training.monitoring import Monitor
 

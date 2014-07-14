@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from custom_containers import DogmaticDict
+import pytest
+from sacred.custom_containers import DogmaticDict
 
 
 def test_isinstance_of_dict():
@@ -76,3 +77,32 @@ def test_revelation():
     m = d.revelation()
     assert set(m) == {'a'}
     assert 'a' in d
+
+
+def test_fallback():
+    d = DogmaticDict(fallback={'a': 23})
+    assert 'a' in d
+    assert d['a'] == 23
+    assert d.get('a') == 23
+
+
+def test_fallback_not_iterated():
+    d = DogmaticDict(fallback={'a': 23})
+    d['b'] = 1234
+    assert d.keys() == ['b']
+    assert d.values() == [1234]
+    assert d.items() == [('b', 1234)]
+
+
+def test_overwrite_fallback():
+    d = DogmaticDict(fallback={'a': 23})
+    d['a'] = 0
+    assert d['a'] == 0
+    assert d.keys() == ['a']
+    assert d.values() == [0]
+    assert d.items() == [('a', 0)]
+
+
+def test_fixed_fallback_prohibited():
+    with pytest.raises(ValueError):
+        d = DogmaticDict(fixed={'a': 10}, fallback={'a': 23})

@@ -37,16 +37,11 @@ class ModuleRunner(object):
         self.rnd = None
         self._captured_functions = captured_functions
 
-    def set_up_logging(self, level=None):
+    def set_up_logging(self, parent_logger, as_name=None):
         if self.logger is not None:
             return
-
-        if level:
-            try:
-                level = int(level)
-            except ValueError:
-                pass
-        self.logger = create_basic_stream_logger(self.prefix, level=level)
+        as_name = self.prefix if as_name is None else as_name
+        self.logger = parent_logger.getChild(as_name)
         self.logger.debug("No logger given. Created basic stream logger.")
 
     def set_up_seed(self, rnd=None):
@@ -149,10 +144,26 @@ class Run(object):
         self.stop_time = None
         self.elapsed_time = None
         self.result = None
+        self.logger = None
+
+    def initialize_logging(self, loglevel=None):
+        if loglevel:
+            try:
+                loglevel = int(loglevel)
+            except ValueError:
+                pass
+        self.logger = create_basic_stream_logger('', level=loglevel)
+        for mr in self.modrunners:
+            if mr is self.exrunner:
+                self.exrunner.set_up_logging(self.logger, 'main')
+                continue
+            mr.set_up_logging(self.logger)
 
     def distribute_config_updates(self, config_updates):
         modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
         for path, value in iterate_flattened(config_updates):
+            if isinstance(value, dict):
+                continue
             for p1, p2 in reversed(list(iter_path_splits(path))):
                 if p1 in modrunner_cfgups:
                     set_by_dotted_path(modrunner_cfgups[p1], p2, value)
@@ -161,8 +172,7 @@ class Run(object):
                     # because the exrunner has prefix ''
 
     def initialize(self, config_updates=None, loglevel=None):
-        for mr in self.modrunners:
-            mr.set_up_logging(loglevel)
+        self.initialize_logging(loglevel)
 
         if config_updates is not None:
             self.distribute_config_updates(config_updates)
