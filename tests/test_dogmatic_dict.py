@@ -85,6 +85,12 @@ def test_fallback():
     assert d['a'] == 23
     assert d.get('a') == 23
 
+    d = DogmaticDict()
+    d.fallback = {'a': 23}
+    assert 'a' in d
+    assert d['a'] == 23
+    assert d.get('a') == 23
+
 
 def test_fallback_not_iterated():
     d = DogmaticDict(fallback={'a': 23})
@@ -106,3 +112,7 @@ def test_overwrite_fallback():
 def test_fixed_fallback_prohibited():
     with pytest.raises(ValueError):
         d = DogmaticDict(fixed={'a': 10}, fallback={'a': 23})
+
+    with pytest.raises(ValueError):
+        d = DogmaticDict(fixed={'a': 10})
+        d.fallback = {'a': 100}

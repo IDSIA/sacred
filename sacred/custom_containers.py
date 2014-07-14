@@ -81,11 +81,21 @@ class DogmaticDict(dict):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
         self._fixed = fixed or {}
-        self.fallback = fallback or {}
-        ffkeys = set(self._fixed.keys()).intersection(set(self.fallback.keys()))
+        self._fallback = {}
+        if fallback:
+            self.fallback = fallback
+
+    @property
+    def fallback(self):
+        return self._fallback
+
+    @fallback.setter
+    def fallback(self, newval):
+        ffkeys = set(self._fixed.keys()).intersection(set(newval.keys()))
         if ffkeys:
             raise ValueError("Keys %s appear are both fixed and fallback keys"
                              % ffkeys)
+        self._fallback = newval
 
     def __setitem__(self, key, value):
         if key not in self._fixed:
