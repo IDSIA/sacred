@@ -7,11 +7,11 @@ import sys
 import threading
 import time
 import traceback
-from sacred.custom_containers import FallbackDict
 from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import tee_output
 from utils import (create_rnd, get_seed, create_basic_stream_logger,
-                   iterate_flattened, set_by_dotted_path, iter_path_splits)
+                   iterate_flattened, set_by_dotted_path, iter_path_splits,
+                   join_paths)
 
 
 class Status(object):
@@ -153,7 +153,7 @@ class Run(object):
     def distribute_config_updates(self, config_updates):
         modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
         for path, value in iterate_flattened(config_updates):
-            for p1, p2 in reversed(iter_path_splits(path)):
+            for p1, p2 in reversed(list(iter_path_splits(path))):
                 if p1 in modrunner_cfgups:
                     set_by_dotted_path(modrunner_cfgups[p1], p2, value)
                     break
@@ -173,16 +173,36 @@ class Run(object):
         for mr in self.modrunners:
             mr.set_up_config()
 
-        for mr in self.modrunners:
-            if mr.prefix:
-                set_by_dotted_path(self.exrunner.config, mr.prefix, mr.config)
-            else:
-                self.exrunner.config.update(mr.config)
-
+        # TODO: figure out which config to pass to captured functions
         for mr in self.modrunners:
             mr.finalize_initialization()
 
         self.status = Status.STARTING
+
+    def get_configuration(self):
+        config = {}
+        for mr in reversed(self.modrunners):
+            if mr.prefix:
+                set_by_dotted_path(config, mr.prefix, mr.config)
+            else:
+                config.update(mr.config)
+
+        return config
+
+    def get_config_modifications(self):
+        # TODO: setting submodule properties results in false added entries
+        added = set()
+        updated = []
+        typechanges = {}
+        for mr in self.modrunners:
+            mr_add, mr_up, mr_tc = mr.get_config_modifications()
+
+            added |= {join_paths(mr.prefix, a) for a in mr_add}
+            updated += [join_paths(mr.prefix, u) for u in mr_up]
+            typechanges.update({join_paths(mr.prefix, k): v
+                                for k, v in mr_tc.items()})
+
+        return added, updated, typechanges
 
     def __call__(self, *args):
         with tee_output() as self.captured_out:

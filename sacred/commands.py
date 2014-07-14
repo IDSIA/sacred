@@ -59,8 +59,8 @@ def print_config(run):
       blue:   value added
       red:    value updated but type changed
     """
-    final_config = run.modrunner.config
-    added, updated, typechanges = run.modrunner.get_config_modifications()
+    final_config = run.get_configuration()
+    added, updated, typechanges = run.get_config_modifications()
     print('Final Configuration:')
     _cfgprint(final_config, '', added, updated, typechanges)
 

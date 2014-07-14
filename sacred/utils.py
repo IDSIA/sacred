@@ -16,7 +16,6 @@ SEEDRANGE = (1, 1e9)
 try:
     from pylstm.training.monitoring import Monitor
 
-
     class InfoUpdater(Monitor):
         def __init__(self, experiment, name=None):
             super(InfoUpdater, self).__init__(name, 'epoch', 1)
@@ -157,3 +156,7 @@ def iter_path_splits(path):
         p1 = '.'.join(split_path[:i])
         p2 = '.'.join(split_path[i:])
         yield p1, p2
+
+
+def join_paths(*parts):
+    return '.'.join(parts).strip('.')
