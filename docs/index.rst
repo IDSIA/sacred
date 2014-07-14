@@ -5,12 +5,21 @@
 
 Welcome to Sacred's documentation!
 ==================================
+    | *Every experiment is sacred*
+    | *Every experiment is great*
+    | *If an experiment is wasted*
+    | *God gets quite irate*
+
+Sacred is a tool to configure, organize, log and reproduce computational
+experiments. It is designed to introduce only minimal overhead, while
+encouraging modularity and configurability of experiments.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   quickstart
 
 
 Indices and tables

@@ -61,7 +61,7 @@ def print_config(run):
     """
     final_config = run.get_configuration()
     added, updated, typechanges = run.get_config_modifications()
-    print('Final Configuration:')
+    print('Configuration:')
     _cfgprint(final_config, '', added, updated, typechanges)
 
 
