@@ -17,6 +17,7 @@ def create_captured_function(f):
     f.config = {}
     f.seed = None
     f.rnd = None
+    f.run = None
     return captured_function(f)
 
 
@@ -27,7 +28,8 @@ def captured_function(wrapped, instance, args, kwargs):
         wrapped.config,
         log=wrapped.logger,
         seed=runseed,
-        rnd=create_rnd(runseed)
+        rnd=create_rnd(runseed),
+        run=wrapped.run
     )
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
     wrapped.logger.info("started")

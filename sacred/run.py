@@ -98,7 +98,7 @@ class ModuleRunner(object):
 
         return added, updated, typechanges
 
-    def finalize_initialization(self):
+    def finalize_initialization(self, run):
         # look at seed again, because it might have changed during the
         # configuration process
         if 'seed' in self.config:
@@ -110,6 +110,7 @@ class ModuleRunner(object):
             cf.config = self.config
             cf.seed = get_seed(self.rnd)
             cf.rnd = create_rnd(cf.seed)
+            cf.run = run
 
         self._warn_about_suspicious_changes()
 
@@ -185,7 +186,7 @@ class Run(object):
 
         # TODO: figure out which config to pass to captured functions
         for mr in self.modrunners:
-            mr.finalize_initialization()
+            mr.finalize_initialization(run=self)
 
         self.status = Status.STARTING
 

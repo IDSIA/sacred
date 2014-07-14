@@ -97,7 +97,7 @@ class Experiment(Module):
         self.doc = None
         self.observers = []
         self._commands = OrderedDict()
-        self._commands['print_config'] = print_config
+        self.command(print_config)
         self.info = None
 
     ############################## Decorators ##################################
@@ -160,7 +160,7 @@ class Experiment(Module):
         run = self.create_run(self._commands[command_name], observe=False)
         run.initialize(config_updates, loglevel)
         run.exrunner.logger.info("Running command '%s'" % command_name)
-        return run(run)
+        return run()
 
     def create_run(self, main_func=None, observe=True):
         if main_func is None:
