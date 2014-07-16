@@ -20,6 +20,7 @@ Contents:
    :maxdepth: 2
 
    quickstart
+   configuration
 
 
 Indices and tables

@@ -31,7 +31,7 @@ def foo(basepath, filename):
 
 
 # ============== Experiment ==============================
-ex = Experiment(modules=[data, data_paths])
+ex = Experiment('modular_example', modules=[data, data_paths])
 
 
 @ex.config
@@ -46,7 +46,7 @@ def cfg(seed, dataset):
 
 
 @ex.automain
-def main(a, b, c, out_base, out_filename):
+def main(a, b, c, out_base, out_filename, dataset):
     print('a =', a)
     print('b =', b)
     print('c =', c)
