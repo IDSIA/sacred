@@ -95,12 +95,80 @@ So the following config scope would result in an empty configuration:
 
 Multiple Config Scopes
 ----------------------
-You can have multiple
+You can have multiple Config Scopes attached to the same experiment or module.
+This is especially useful for overriding module default values (more to that
+later). They will be executed in order of declaration. If you want to access
+values from a previous scope you have to declare them as parameters to your
+function:
+
+.. code-block:: python
+
+    ex = Experiment('multiple_configs_demo')
+
+    @ex.config
+    def my_config1():
+        a = 10
+        b = 'test'
+
+    @ex.config
+    def my_config2(a):  # notice the parameter a here
+        c = a * 2       # we can use a because we declared it
+        a = -1          # we can also change a value
+        #d = b + '2'    # error: no access to b
+
+As you'd expect this will result in the configuration
+``{'a': -1, 'b': 'test', 'c': 20}``.
+
+Configuration Injection
+=======================
+Once you've set up your configuration, the next step is to use those values in
+the code of the experiment. In order to get the values there ``sacred`` uses a
+method called *dependency injection* for configuration values. This means that
+it will automatically fill in the missing parameters of all
+*captured functions* with configuration values:
+
+.. code-block:: python
+
+    ex = Experiment('captured_func_demo')
+
+    @ex.config
+    def my_config1():
+        a = 10
+        b = 'test'
+
+    @ex.automain
+    def my_main(a, b):
+        print("a =", a)
+        print("b =", b)
+
 
 Captured Functions
-==================
+------------------
 
-pass
+  - explain ``@ex.capture``
+  - ``@ex.main``, ``@ex.automain``, and ``@ex.command`` are also captured functions
+
+Priority
+--------
+
+  1. explicitly passed arguments (both positional and keyword)
+  2. configuration values
+  3. default values
+
+You still get errors for
+
+  - missing values
+  - unexpected keyword arguments
+  - too many positional arguments
+
+Special Values
+--------------
+These might change, and are not well documented yet:
+
+  - ``seed`` : a seed that is different for every invocation (-> Controlling Randomness)
+  - ``rnd`` : a random state seeded with ``seed``
+  - ``log`` : a logger for that function
+  - ``run`` : the run object for the current run
 
 Modification via Command-Line
 =============================
