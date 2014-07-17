@@ -6,17 +6,28 @@ This is a very basic example of how to use sacred.
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment, Module
 
+# ============== Module 0: settings =================
+s = Module("settings")
+
+
+@s.config
+def cfg():
+    verbose = True
+
+
+
 # ============== Module 1: dataset.paths =================
-data_paths = Module("dataset.paths")
+data_paths = Module("dataset.paths", modules=[s])
 
 
 @data_paths.config
-def cfg():
+def cfg(settings):
+    v = not settings['verbose']
     base = '/home/sacred/'
 
 
 # ============== Module 2: dataset =======================
-data = Module("dataset", modules=[data_paths])
+data = Module("dataset", modules=[data_paths, s])
 
 
 @data.config
@@ -26,7 +37,9 @@ def cfg(paths):
 
 
 @data.capture
-def foo(basepath, filename):
+def foo(basepath, filename, paths, settings):
+    print(paths)
+    print(settings)
     return basepath + filename
 
 
@@ -42,7 +55,6 @@ def cfg(seed, dataset):
     c = a + b
     out_base = dataset['paths']['base'] + 'outputs/'
     out_filename = dataset['filename'].replace('.hdf5', '.out')
-
 
 
 @ex.automain

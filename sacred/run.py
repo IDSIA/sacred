@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from copy import copy
 from datetime import timedelta
 import sys
 import threading
@@ -98,6 +99,16 @@ class ModuleRunner(object):
 
         return added, updated, typechanges
 
+    def get_fixture(self):
+        fix = copy(self.config)
+        for sr in self.subrunners:
+            if sr.prefix.startswith(self.prefix):
+                prefix = sr.prefix[len(self.prefix):].strip('.')
+                set_by_dotted_path(fix, prefix, copy(sr.config))
+            else:
+                set_by_dotted_path(fix, sr.prefix, copy(sr.config))
+        return fix
+
     def finalize_initialization(self, run):
         # look at seed again, because it might have changed during the
         # configuration process
@@ -105,9 +116,11 @@ class ModuleRunner(object):
             self.seed = self.config['seed']
             self.rnd = create_rnd(self.seed)
 
+        self.fixture = self.get_fixture()
+
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = self.config
+            cf.config = self.fixture
             cf.seed = get_seed(self.rnd)
             cf.rnd = create_rnd(cf.seed)
             cf.run = run
