@@ -3,7 +3,7 @@ Quickstart
 
 Installation
 ============
-Should be as easy as::
+Should be as easy as (TODO: upload to pypi)::
 
     pip install sacred
 
@@ -70,6 +70,7 @@ configuration to our program:
 
 If we run this the output will look precisely as before, but there is a lot
 going on already, so lets look at what we did:
+
   - add the ``my_config`` function and decorate it with ``@ex.config``.
   - within that function define the variable ``message``
   - add the ``message`` parameter to the function ``main`` and use it instead of "Hello world!"
@@ -95,7 +96,7 @@ It also added a ``seed`` to our configuration, but we are going to ignore that
 for now.
 
 Now that our experiment has a configuration we can change it from the
-command-line interface::
+:doc:`commandline`::
 
     > python hello_config.py with recipient="that is cool"
 
