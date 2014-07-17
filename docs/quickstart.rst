@@ -1,6 +1,19 @@
 Quickstart
 **********
 
+Installation
+============
+Should be as easy as::
+
+    pip install sacred
+
+But you can of course also clone the git repo and install it from there::
+
+    git clone TODO@fillthis.in
+
+
+Hello World
+===========
 Let's jump right into it. This is a minimal experiment using ``sacred``:
 
 .. code-block:: python
@@ -31,7 +44,12 @@ This experiment can be run from the commandline, and this is what we get::
 Our experiment already has a full command-line interface, that we could use
 to control the logging level or to automatically save information about the run
 in a database. But all of that is of limited use for an experiment without
-configurations. So let us look at the true strength of ``sacred``, and add some
+configurations.
+
+Our First Configuration
+=======================
+
+So let us look at the true strength of ``sacred``, and add some
 configuration to our program:
 
 .. code-block:: python
