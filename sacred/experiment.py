@@ -23,10 +23,7 @@ class Module(object):
     def __init__(self, prefix, modules=(), gen_seed=False):
         self.prefix = prefix
         self.cfgs = []
-        #TODO: does this need to be a dict any longer?
-        self.modules = OrderedDict()
-        for m in modules:
-            self.modules[m.prefix] = m
+        self.modules = list(modules)
         self.gen_seed = gen_seed
         self.captured_functions = []
         self._is_traversing = False
@@ -54,7 +51,7 @@ class Module(object):
         else:
             self._is_traversing = True
         yield self, 0
-        for prefix, module in self.modules.items():
+        for module in self.modules:
             for sr, depth in module.traverse_modules():
                 yield sr, depth + 1
         self._is_traversing = False
@@ -71,20 +68,13 @@ class Module(object):
         return sorted_submodules
 
     def create_module_runner(self, subrunner_cache):
-        subrunners = [subrunner_cache[m] for m in self.modules.values()]
+        subrunners = [subrunner_cache[m] for m in self.modules]
         r = ModuleRunner(self.cfgs,
                          subrunners=subrunners,
                          prefix=self.prefix,
                          captured_functions=self.captured_functions,
                          generate_seed=self.gen_seed)
         return r
-
-
-# TODO: Is there a way of expressing the logger and the seeder as a module?
-# TODO: Do we want that?
-# TODO: Should 'main' be just a regular command?
-# TODO: schould experiments be allowed a prefix? This might make them fully
-# TODO: reusable as modules but might complicate things
 
 
 class Experiment(Module):
@@ -175,7 +165,7 @@ class Experiment(Module):
         run = self.create_run()
         run.initialize(config_updates, loglevel)
         self._emit_run_created_event()
-        self.info = run.info   # FIXME: this is a hack to access the info
+        self.info = run.info
         run()
         return run
 

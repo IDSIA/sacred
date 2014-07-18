@@ -104,14 +104,13 @@ class ModuleRunner(object):
         if self.fixture is not None:
             return self.fixture
 
-        # TODO: allow other fixtures than just copying the config
         self.fixture = copy(self.config)
         for sr in self.subrunners:
             sub_fix = sr.get_fixture()
             sub_prefix = sr.prefix
             if sub_prefix.startswith(self.prefix):
                 sub_prefix = sr.prefix[len(self.prefix):].strip('.')
-            # TODO: This might fail if we allow non-dict fixtures
+            # Note: This might fail if we allow non-dict fixtures
             set_by_dotted_path(self.fixture, sub_prefix, sub_fix)
         return self.fixture
 
@@ -199,7 +198,6 @@ class Run(object):
         for mr in self.modrunners:
             mr.set_up_config()
 
-        # TODO: figure out which config to pass to captured functions
         for mr in self.modrunners:
             mr.finalize_initialization(run=self)
 
@@ -216,7 +214,6 @@ class Run(object):
         return config
 
     def get_config_modifications(self):
-        # TODO: setting submodule properties results in false added entries
         added = set()
         updated = []
         typechanges = {}
