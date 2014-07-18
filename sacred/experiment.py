@@ -158,7 +158,7 @@ class Experiment(Module):
         sorted_submodules = self.gather_submodules_topological()
         mod_runners = create_module_runners(sorted_submodules)
         observers = self.observers if observe else []
-        run = Run(self.name, mod_runners.values(), main_func, observers)
+        run = Run(self.name, list(mod_runners.values()), main_func, observers)
         return run
 
     def run(self, config_updates=None, loglevel=None):

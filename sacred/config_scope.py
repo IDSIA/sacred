@@ -8,7 +8,7 @@ import inspect
 import json
 import re
 
-from custom_containers import dogmatize, undogmatize
+from sacred.custom_containers import dogmatize, undogmatize
 
 
 def get_function_body_code(func):

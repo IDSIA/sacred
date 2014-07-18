@@ -41,7 +41,10 @@ def test_set_by_dotted_path_creates_missing_dicts():
 
 
 def test_get_by_dotted_path():
+    assert get_by_dotted_path({'a': 12}, 'a') == 12
+    assert get_by_dotted_path({'a': 12}, '') == {'a': 12}
     assert get_by_dotted_path({'foo': {'a': 12}}, 'foo.a') == 12
+    assert get_by_dotted_path({'foo': {'a': 12}}, 'foo.b') is None
 
 
 def test_iter_path_splits():
@@ -64,4 +67,3 @@ def test_join_paths():
     assert join_paths('', 'b', '', 'd') == 'b.d'
     assert join_paths('a.b', 'c.d.e') == 'a.b.c.d.e'
     assert join_paths('a.b.', 'c.d.e') == 'a.b.c.d.e'
-

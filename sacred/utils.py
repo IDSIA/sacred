@@ -6,8 +6,13 @@ import collections
 from contextlib import contextmanager
 import logging
 import random
-from StringIO import StringIO
 import sys
+
+if sys.version_info[0] == 3:
+    import io
+    StringIO = io.StringIO
+else:
+    from StringIO import StringIO
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -36,7 +41,7 @@ def recursive_update(d, u):
     u = {'c': 2, 'a': {'d': 3}}
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
     """
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = recursive_update(d.get(k, {}), v)
             d[k] = r

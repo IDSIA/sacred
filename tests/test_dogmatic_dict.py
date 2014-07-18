@@ -95,18 +95,18 @@ def test_fallback():
 def test_fallback_not_iterated():
     d = DogmaticDict(fallback={'a': 23})
     d['b'] = 1234
-    assert d.keys() == ['b']
-    assert d.values() == [1234]
-    assert d.items() == [('b', 1234)]
+    assert list(d.keys()) == ['b']
+    assert list(d.values()) == [1234]
+    assert list(d.items()) == [('b', 1234)]
 
 
 def test_overwrite_fallback():
     d = DogmaticDict(fallback={'a': 23})
     d['a'] = 0
     assert d['a'] == 0
-    assert d.keys() == ['a']
-    assert d.values() == [0]
-    assert d.items() == [('a', 0)]
+    assert list(d.keys()) == ['a']
+    assert list(d.values()) == [0]
+    assert list(d.items()) == [('a', 0)]
 
 
 def test_fixed_fallback_prohibited():
