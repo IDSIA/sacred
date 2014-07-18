@@ -33,6 +33,7 @@ class ModuleRunner(object):
         self.generate_seed = generate_seed
         self.config_updates = {}
         self.config = None
+        self.fixture = None  # TODO: rename
         self.logger = None
         self.seed = None
         self.rnd = None
@@ -100,14 +101,19 @@ class ModuleRunner(object):
         return added, updated, typechanges
 
     def get_fixture(self):
-        fix = copy(self.config)
+        if self.fixture is not None:
+            return self.fixture
+
+        # TODO: allow other fixtures than just copying the config
+        self.fixture = copy(self.config)
         for sr in self.subrunners:
-            if sr.prefix.startswith(self.prefix):
-                prefix = sr.prefix[len(self.prefix):].strip('.')
-                set_by_dotted_path(fix, prefix, copy(sr.config))
-            else:
-                set_by_dotted_path(fix, sr.prefix, copy(sr.config))
-        return fix
+            sub_fix = sr.get_fixture()
+            sub_prefix = sr.prefix
+            if sub_prefix.startswith(self.prefix):
+                sub_prefix = sr.prefix[len(self.prefix):].strip('.')
+            # TODO: This might fail if we allow non-dict fixtures
+            set_by_dotted_path(self.fixture, sub_prefix, sub_fix)
+        return self.fixture
 
     def finalize_initialization(self, run):
         # look at seed again, because it might have changed during the
@@ -116,11 +122,9 @@ class ModuleRunner(object):
             self.seed = self.config['seed']
             self.rnd = create_rnd(self.seed)
 
-        self.fixture = self.get_fixture()
-
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = self.fixture
+            cf.config = self.get_fixture()
             cf.seed = get_seed(self.rnd)
             cf.rnd = create_rnd(cf.seed)
             cf.run = run
@@ -142,7 +146,7 @@ class ModuleRunner(object):
 
 class Run(object):
     """
-    Represents a single run of an experiment
+    Represents and manages a single run of an experiment.
     """
 
     def __init__(self, name, modrunners, main_function, observers):
@@ -160,7 +164,7 @@ class Run(object):
         self.result = None
         self.logger = None
 
-    def initialize_logging(self, name, loglevel=None):
+    def initialize_logging(self, loglevel=None):
         if loglevel:
             try:
                 loglevel = int(loglevel)
@@ -281,7 +285,6 @@ class Run(object):
                 o.heartbeat_event(
                     info=self.info,
                     captured_out=self.captured_out.getvalue())
-                    # captured_out="")
             except AttributeError:
                 pass
 
