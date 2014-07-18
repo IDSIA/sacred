@@ -106,10 +106,23 @@ def iterate_flattened(d):
         for key, value in d.items():
             yield key, value
             for k, v in iterate_flattened(d[key]):
-                yield key + '.' + k, v
+                yield join_paths(key,  k), v
 
 
 def set_by_dotted_path(d, path, value):
+    """
+    Set an entry in a nested dict using a dotted path. Will create dictionaries
+    as needed.
+
+    Examples:
+    >>> d = {'foo': {'bar': 7}}
+    >>> set_by_dotted_path(d, 'foo.bar', 10)
+    >>> d
+    {'foo': {'bar': 10}}
+    >>> set_by_dotted_path(d, 'foo.d.baz', 3)
+    >>> d
+    {'foo': {'bar': 10, 'd': {'baz': 3}}}
+    """
     split_path = path.split('.')
     current_option = d
     for p in split_path[:-1]:
@@ -121,6 +134,13 @@ def set_by_dotted_path(d, path, value):
 
 
 def get_by_dotted_path(d, path):
+    """
+    Get an entry from nested dictionaries using a dotted path.
+
+    Example:
+    >>> get_by_dotted_path({'foo': {'a': 12}}, 'foo.a')
+    12
+    """
     if not path:
         return d
     split_path = path.split('.')
@@ -133,11 +153,34 @@ def get_by_dotted_path(d, path):
 
 
 def iter_path_splits(path):
+    """
+    Iterate over possible splits of a dotted path. The first part can be empty
+    the second should not be.
+
+    Example:
+    >>> list(iter_path_splits('foo.bar.baz')
+    [('',        'foo.bar.baz'),
+     ('foo',     'bar.baz'),
+     ('foo.bar', 'baz')]
+    """
     split_path = path.split('.')
     for i in range(len(split_path)):
-        p1 = '.'.join(split_path[:i])
-        p2 = '.'.join(split_path[i:])
+        p1 = join_paths(*split_path[:i])
+        p2 = join_paths(*split_path[i:])
         yield p1, p2
+
+
+def iter_prefixes(path):
+    """
+    Iterate through all (non-empty) prefixes of a dotted path.
+
+    Example:
+    >>> list(iter_prefixes('foo.bar.baz')
+    ['foo', 'foo.bar', 'foo.bar.baz']
+    """
+    split_path = path.split('.')
+    for i in range(1, len(split_path) + 1):
+        yield join_paths(*split_path[:i])
 
 
 def join_paths(*parts):

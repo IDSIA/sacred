@@ -9,10 +9,10 @@ import threading
 import time
 import traceback
 from sacred.config_scope import dogmatize, undogmatize
-from sacred.utils import tee_output
-from utils import (create_rnd, get_seed, create_basic_stream_logger,
-                   iterate_flattened, set_by_dotted_path, iter_path_splits,
-                   join_paths)
+from sacred.utils import (
+    create_rnd, create_basic_stream_logger, get_seed, iterate_flattened,
+    iter_path_splits, iter_prefixes, join_paths, set_by_dotted_path,
+    tee_output)
 
 
 class Status(object):
@@ -219,7 +219,8 @@ class Run(object):
         typechanges = {}
         for mr in self.modrunners:
             mr_add, mr_up, mr_tc = mr.get_config_modifications()
-
+            if mr_add or mr_up or mr_tc:
+                updated += list(iter_prefixes(mr.prefix))
             added |= {join_paths(mr.prefix, a) for a in mr_add}
             updated += [join_paths(mr.prefix, u) for u in mr_up]
             typechanges.update({join_paths(mr.prefix, k): v

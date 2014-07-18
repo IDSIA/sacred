@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+from sacred.utils import join_paths
 
 
 class FallbackDict(dict):
@@ -114,7 +115,7 @@ class DogmaticDict(dict):
                     bd[k] = v
 
                 for k, v in bd.typechanges.items():
-                    self.typechanges[key + '.' + k] = v
+                    self.typechanges[join_paths(key, k)] = v
 
     def __getitem__(self, item):
         if dict.__contains__(self, item):

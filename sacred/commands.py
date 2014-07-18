@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 from blessings import Terminal
-from sacred.utils import iterate_separately
+from sacred.utils import iterate_separately, join_paths
 
 
 term = Terminal()
@@ -41,7 +41,7 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
         if last_key:
             print(colored('{}{}:'.format(indent, last_key)))
         for k, v in iterate_separately(x):
-            subkey = (key + '.' + k).strip('.')
+            subkey = join_paths(key, k)
             _cfgprint(v, subkey, added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
