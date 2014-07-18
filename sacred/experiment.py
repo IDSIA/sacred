@@ -6,13 +6,13 @@ from collections import OrderedDict
 import inspect
 import os.path
 import sys
-from host_info import get_module_versions
-from run import Run, ModuleRunner
+
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
-from sacred.host_info import get_host_info
+from sacred.host_info import get_host_info, get_module_versions
+from sacred.run import Run, ModuleRunner
 
 
 class CircularDependencyError(Exception):

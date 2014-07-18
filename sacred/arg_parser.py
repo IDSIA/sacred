@@ -4,10 +4,11 @@ from __future__ import division, print_function, unicode_literals
 import ast
 import re
 import textwrap
-from docopt import docopt
 import sys
-from commands import help_for_command
 
+from docopt import docopt
+
+from sacred.commands import help_for_command
 from sacred.observers import MongoDBReporter
 from sacred.utils import set_by_dotted_path
 

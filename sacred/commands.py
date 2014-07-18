@@ -4,7 +4,9 @@
 from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
+
 from blessings import Terminal
+
 from sacred.utils import iterate_separately, join_paths
 
 

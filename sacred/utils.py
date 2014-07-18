@@ -5,9 +5,9 @@ from __future__ import division, print_function, unicode_literals
 import collections
 from contextlib import contextmanager
 import logging
+import random
 from StringIO import StringIO
 import sys
-import random
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1

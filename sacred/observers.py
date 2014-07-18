@@ -3,7 +3,6 @@
 
 from __future__ import division, print_function, unicode_literals
 import pickle
-import time
 from datetime import datetime
 
 from pymongo import MongoClient

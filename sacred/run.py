@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import traceback
+
 from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import (
     create_rnd, create_basic_stream_logger, get_seed, iterate_flattened,
