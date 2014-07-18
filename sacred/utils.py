@@ -13,25 +13,6 @@ NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
 SEEDRANGE = (1, 1e9)
 
-# TODO: Remove this and put into separate package (maybe a plugin?)
-try:
-    from pylstm.training.monitoring import Monitor
-
-    class InfoUpdater(Monitor):
-        def __init__(self, experiment, name=None):
-            super(InfoUpdater, self).__init__(name, 'epoch', 1)
-            self.ex = experiment
-            self.__name__ = self.__class__.__name__ if name is None else name
-
-        def __call__(self, epoch, net, stepper, logs):
-            info = self.ex.info
-            info['epochs_needed'] = epoch
-            info['monitor'] = logs
-            if 'nr_parameters' not in info:
-                info['nr_parameters'] = net.get_param_size()
-except ImportError:
-    pass
-
 
 def create_basic_stream_logger(name, level=None):
     level = level if level is not None else logging.INFO
