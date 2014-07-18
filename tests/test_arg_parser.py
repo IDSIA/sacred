@@ -135,7 +135,6 @@ def test_get_config_updates(update, expected):
     ('{"a":None}', {'a': None}),
     ('{"a":[1, 2.0, True, None], "b":"foo"}', {"a": [1, 2.0, True, None],
                                                "b": "foo"}),
-    pytest.mark.xfail(('{a:1}', {'a': 1})),
     ('bob', 'bob'),
     ('"hello world"', 'hello world'),
     ("'hello world'", 'hello world'),

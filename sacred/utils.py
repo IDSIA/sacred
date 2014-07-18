@@ -33,7 +33,7 @@ def recursive_update(d, u):
 
     E.g.:
     d = {'a': {'b' : 1}}
-    u = {'c': 2, 'a' : {'d': 3}}
+    u = {'c': 2, 'a': {'d': 3}}
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
     """
     for k, v in u.iteritems():
@@ -100,13 +100,15 @@ def iterate_separately(dictionary):
 def iterate_flattened(d):
     """
     Iterate over a dictionary recursively, providing full dotted
-    paths for every item.
+    paths for every leaf.
     """
-    if isinstance(d, dict):
-        for key, value in d.items():
-            yield key, value
+    for key in sorted(d.keys()):
+        value = d[key]
+        if isinstance(value, dict):
             for k, v in iterate_flattened(d[key]):
                 yield join_paths(key,  k), v
+        else:
+            yield key, value
 
 
 def set_by_dotted_path(d, path, value):
@@ -158,7 +160,7 @@ def iter_path_splits(path):
     the second should not be.
 
     Example:
-    >>> list(iter_path_splits('foo.bar.baz')
+    >>> list(iter_path_splits('foo.bar.baz'))
     [('',        'foo.bar.baz'),
      ('foo',     'bar.baz'),
      ('foo.bar', 'baz')]
@@ -175,7 +177,7 @@ def iter_prefixes(path):
     Iterate through all (non-empty) prefixes of a dotted path.
 
     Example:
-    >>> list(iter_prefixes('foo.bar.baz')
+    >>> list(iter_prefixes('foo.bar.baz'))
     ['foo', 'foo.bar', 'foo.bar.baz']
     """
     split_path = path.split('.')
@@ -184,4 +186,7 @@ def iter_prefixes(path):
 
 
 def join_paths(*parts):
-    return '.'.join(parts).strip('.')
+    """
+    Join different parts together to a valid dotted path.
+    """
+    return '.'.join(p.strip('.') for p in parts if p)

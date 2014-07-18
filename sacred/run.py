@@ -94,7 +94,8 @@ class ModuleRunner(object):
     def get_config_modifications(self):
         added = set()
         typechanges = {}
-        updated = [k for k, v in iterate_flattened(self.config_updates)]
+        flat_config_upd = [k for k, v in iterate_flattened(self.config_updates)]
+        updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
         for config in self.config_scopes:
             added |= config.added_values
             typechanges.update(config.typechanges)
@@ -178,8 +179,6 @@ class Run(object):
     def distribute_config_updates(self, config_updates):
         modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
         for path, value in iterate_flattened(config_updates):
-            if isinstance(value, dict):
-                continue
             for p1, p2 in reversed(list(iter_path_splits(path))):
                 if p1 in modrunner_cfgups:
                     set_by_dotted_path(modrunner_cfgups[p1], p2, value)
@@ -216,14 +215,14 @@ class Run(object):
 
     def get_config_modifications(self):
         added = set()
-        updated = []
+        updated = set()
         typechanges = {}
         for mr in self.modrunners:
             mr_add, mr_up, mr_tc = mr.get_config_modifications()
             if mr_add or mr_up or mr_tc:
-                updated += list(iter_prefixes(mr.prefix))
+                updated |= set(iter_prefixes(mr.prefix))
             added |= {join_paths(mr.prefix, a) for a in mr_add}
-            updated += [join_paths(mr.prefix, u) for u in mr_up]
+            updated |= {join_paths(mr.prefix, u) for u in mr_up}
             typechanges.update({join_paths(mr.prefix, k): v
                                 for k, v in mr_tc.items()})
 

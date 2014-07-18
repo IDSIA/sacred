@@ -4,7 +4,7 @@
 This is a very basic example of how to use sacred.
 """
 from __future__ import division, print_function, unicode_literals
-from sacred import Experiment, Module
+from sacred.experiment import Experiment, Module
 
 # ============== Module 0: settings =================
 s = Module("settings")
