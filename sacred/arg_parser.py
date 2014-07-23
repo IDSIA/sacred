@@ -9,7 +9,7 @@ import sys
 from docopt import docopt
 
 from sacred.commands import help_for_command
-from sacred.observers import MongoDBReporter
+from sacred.observers import MongoObserver
 from sacred.utils import set_by_dotted_path
 
 
@@ -83,7 +83,7 @@ def get_observers(args):
     observers = []
     if args['--mongo_db']:
         url, db_name = _parse_mongo_db_arg(args['--mongo_db'])
-        mongo = MongoDBReporter(db_name=db_name, url=url)
+        mongo = MongoObserver(db_name=db_name, url=url)
         observers.append(mongo)
 
     return observers

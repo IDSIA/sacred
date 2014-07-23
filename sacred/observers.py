@@ -9,6 +9,8 @@ from pymongo import MongoClient
 from pymongo.son_manipulator import SONManipulator
 from bson import Binary
 
+__all__ = ['RunObserver', 'MongoObserver', 'DebugObserver']
+
 
 class RunObserver(object):
     def created_event(self, name, doc, mainfile, dependencies, host_info):
@@ -64,9 +66,9 @@ except ImportError:
     pass
 
 
-class MongoDBReporter(RunObserver):
+class MongoObserver(RunObserver):
     def __init__(self, url=None, db_name='sacred'):
-        super(MongoDBReporter, self).__init__()
+        super(MongoObserver, self).__init__()
         self.experiment_entry = None
         mongo = MongoClient(url)
         self.db = mongo[db_name]
@@ -121,7 +123,7 @@ class MongoDBReporter(RunObserver):
         self.save()
 
     def __eq__(self, other):
-        if not isinstance(other, MongoDBReporter):
+        if not isinstance(other, MongoObserver):
             return False
         return self.collection == other.collection
 
