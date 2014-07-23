@@ -26,11 +26,11 @@ class Status(object):
 
 
 class ModuleRunner(object):
-    def __init__(self, config_scopes, subrunners, prefix, captured_functions,
+    def __init__(self, config_scopes, subrunners, path, captured_functions,
                  generate_seed):
         self.config_scopes = config_scopes
         self.subrunners = subrunners
-        self.prefix = prefix
+        self.path = path
         self.generate_seed = generate_seed
         self.config_updates = {}
         self.config = None
@@ -43,7 +43,7 @@ class ModuleRunner(object):
     def set_up_logging(self, parent_logger, as_name=None):
         if self.logger is not None:
             return
-        as_name = self.prefix if as_name is None else as_name
+        as_name = self.path if as_name is None else as_name
         self.logger = parent_logger.getChild(as_name)
         self.logger.debug("No logger given. Created basic stream logger.")
 
@@ -56,7 +56,7 @@ class ModuleRunner(object):
 
         # Hierarchically set the seed of proper subrunners
         for subrunner in reversed(self.subrunners):
-            if subrunner.prefix.startswith(self.prefix):
+            if not self.path or subrunner.path.startswith(self.path + '.'):
                 subrunner.set_up_seed(self.rnd)
 
     def set_up_config(self):
@@ -66,11 +66,11 @@ class ModuleRunner(object):
         # gather presets
         fallback = {}
         for sr in self.subrunners:
-            if self.prefix and sr.prefix.startswith(self.prefix):
-                prefix = sr.prefix[len(self.prefix):].strip('.')
-                set_by_dotted_path(fallback, prefix, sr.config)
+            if self.path and sr.path.startswith(self.path + '.'):
+                path = sr.path[len(self.path):].strip('.')
+                set_by_dotted_path(fallback, path, sr.config)
             else:
-                set_by_dotted_path(fallback, sr.prefix, sr.config)
+                set_by_dotted_path(fallback, sr.path, sr.config)
 
         # dogmatize to make the subrunner configurations read-only
         const_fallback = dogmatize(fallback)
@@ -109,11 +109,11 @@ class ModuleRunner(object):
         self.fixture = copy(self.config)
         for sr in self.subrunners:
             sub_fix = sr.get_fixture()
-            sub_prefix = sr.prefix
-            if sub_prefix.startswith(self.prefix):
-                sub_prefix = sr.prefix[len(self.prefix):].strip('.')
+            sub_path = sr.path
+            if sub_path.startswith(self.path):
+                sub_path = sr.path[len(self.path):].strip('.')
             # Note: This might fail if we allow non-dict fixtures
-            set_by_dotted_path(self.fixture, sub_prefix, sub_fix)
+            set_by_dotted_path(self.fixture, sub_path, sub_fix)
         return self.fixture
 
     def finalize_initialization(self, run):
@@ -177,14 +177,14 @@ class Run(object):
         self.logger = root_logger.getChild(self.exname)
 
     def distribute_config_updates(self, config_updates):
-        modrunner_cfgups = {m.prefix: m.config_updates for m in self.modrunners}
+        modrunner_cfgups = {m.path: m.config_updates for m in self.modrunners}
         for path, value in iterate_flattened(config_updates):
             for p1, p2 in reversed(list(iter_path_splits(path))):
                 if p1 in modrunner_cfgups:
                     set_by_dotted_path(modrunner_cfgups[p1], p2, value)
                     break
                     # this is guaranteed to occur for one of the modrunners,
-                    # because the exrunner has prefix ''
+                    # because the exrunner has path ''
 
     def initialize(self, config_updates=None, loglevel=None):
         self.initialize_logging(loglevel)
@@ -206,8 +206,8 @@ class Run(object):
     def get_configuration(self):
         config = {}
         for mr in reversed(self.modrunners):
-            if mr.prefix:
-                set_by_dotted_path(config, mr.prefix, mr.config)
+            if mr.path:
+                set_by_dotted_path(config, mr.path, mr.config)
             else:
                 config.update(mr.config)
 
@@ -220,10 +220,10 @@ class Run(object):
         for mr in self.modrunners:
             mr_add, mr_up, mr_tc = mr.get_config_modifications()
             if mr_add or mr_up or mr_tc:
-                updated |= set(iter_prefixes(mr.prefix))
-            added |= {join_paths(mr.prefix, a) for a in mr_add}
-            updated |= {join_paths(mr.prefix, u) for u in mr_up}
-            typechanges.update({join_paths(mr.prefix, k): v
+                updated |= set(iter_prefixes(mr.path))
+            added |= {join_paths(mr.path, a) for a in mr_add}
+            updated |= {join_paths(mr.path, u) for u in mr_up}
+            typechanges.update({join_paths(mr.path, k): v
                                 for k, v in mr_tc.items()})
 
         return added, updated, typechanges

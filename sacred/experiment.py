@@ -20,8 +20,8 @@ class CircularDependencyError(Exception):
 
 
 class Module(object):
-    def __init__(self, prefix, modules=(), gen_seed=False):
-        self.prefix = prefix
+    def __init__(self, path, modules=(), gen_seed=False):
+        self.path = path
         self.cfgs = []
         self.modules = list(modules)
         self.gen_seed = gen_seed
@@ -71,7 +71,7 @@ class Module(object):
         subrunners = [subrunner_cache[m] for m in self.modules]
         r = ModuleRunner(self.cfgs,
                          subrunners=subrunners,
-                         prefix=self.prefix,
+                         path=self.path,
                          captured_functions=self.captured_functions,
                          generate_seed=self.gen_seed)
         return r
@@ -79,7 +79,7 @@ class Module(object):
 
 class Experiment(Module):
     def __init__(self, name, modules=()):
-        super(Experiment, self).__init__(prefix='',
+        super(Experiment, self).__init__(path='',
                                          modules=modules,
                                          gen_seed=True)
         self.name = name
