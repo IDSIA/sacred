@@ -107,4 +107,4 @@ class Signature:
         missing_args = [m for m in free_params if m not in self.kwargs]
         if missing_args:
             raise TypeError("{} is missing value(s) for {}".format(
-                self.name, free_params))
+                self.name, missing_args))
