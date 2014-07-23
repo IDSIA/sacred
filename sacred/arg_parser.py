@@ -111,7 +111,7 @@ def _get_first_line_of_docstring(f):
 def _convert_value(value):
     try:
         return ast.literal_eval(value)
-    except ValueError:
+    except (ValueError, SyntaxError):
         # use as string if nothing else worked
         return value
 
