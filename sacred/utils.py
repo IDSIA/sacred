@@ -195,3 +195,12 @@ def join_paths(*parts):
     Join different parts together to a valid dotted path.
     """
     return '.'.join(p.strip('.') for p in parts if p)
+
+
+def is_prefix(pre_path, path):
+    """
+    Returns True if pre_path is a path-prefix of path.
+    """
+    pre_path = pre_path.strip('.')
+    path = path.strip('.')
+    return not pre_path or path.startswith(pre_path + '.')

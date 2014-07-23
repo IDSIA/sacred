@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from sacred.utils import (recursive_update, iterate_separately,
                           iterate_flattened, set_by_dotted_path,
                           get_by_dotted_path, iter_path_splits, iter_prefixes,
-                          join_paths)
+                          join_paths, is_prefix)
 
 
 def test_recursive_update():
@@ -67,3 +67,16 @@ def test_join_paths():
     assert join_paths('', 'b', '', 'd') == 'b.d'
     assert join_paths('a.b', 'c.d.e') == 'a.b.c.d.e'
     assert join_paths('a.b.', 'c.d.e') == 'a.b.c.d.e'
+
+
+def test_is_prefix():
+    assert is_prefix('', 'foo')
+    assert is_prefix('foo', 'foo.bar')
+    assert is_prefix('foo.bar', 'foo.bar.baz')
+
+    assert not is_prefix('a', 'foo.bar')
+    assert not is_prefix('a.bar', 'foo.bar')
+    assert not is_prefix('foo.b', 'foo.bar')
+    assert not is_prefix('foo.bar', 'foo.bar')
+
+

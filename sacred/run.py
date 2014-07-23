@@ -13,7 +13,7 @@ from sacred.config_scope import dogmatize, undogmatize
 from sacred.utils import (
     create_rnd, create_basic_stream_logger, get_seed, iterate_flattened,
     iter_path_splits, iter_prefixes, join_paths, set_by_dotted_path,
-    tee_output)
+    tee_output, is_prefix)
 
 
 class Status(object):
@@ -56,7 +56,7 @@ class ModuleRunner(object):
 
         # Hierarchically set the seed of proper subrunners
         for subrunner in reversed(self.subrunners):
-            if not self.path or subrunner.path.startswith(self.path + '.'):
+            if is_prefix(self.path, subrunner.path):
                 subrunner.set_up_seed(self.rnd)
 
     def set_up_config(self):
@@ -66,7 +66,7 @@ class ModuleRunner(object):
         # gather presets
         fallback = {}
         for sr in self.subrunners:
-            if self.path and sr.path.startswith(self.path + '.'):
+            if self.path and is_prefix(self.path, sr.path):
                 path = sr.path[len(self.path):].strip('.')
                 set_by_dotted_path(fallback, path, sr.config)
             else:
@@ -110,7 +110,7 @@ class ModuleRunner(object):
         for sr in self.subrunners:
             sub_fix = sr.get_fixture()
             sub_path = sr.path
-            if sub_path.startswith(self.path):
+            if is_prefix(self.path, sub_path):
                 sub_path = sr.path[len(self.path):].strip('.')
             # Note: This might fail if we allow non-dict fixtures
             set_by_dotted_path(self.fixture, sub_path, sub_fix)
