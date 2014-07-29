@@ -51,6 +51,7 @@ def get_module_versions(globs):
     version_info = {}
     for m in module_candidates:
         try:
+            # TODO: use faster heuristics first, because pkg_resources is slow
             version = pkg_resources.get_distribution(m).version
             version_info[m] = version
         except pkg_resources.DistributionNotFound:

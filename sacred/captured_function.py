@@ -26,10 +26,10 @@ def captured_function(wrapped, instance, args, kwargs):
     runseed = get_seed(wrapped.rnd)
     options = FallbackDict(
         wrapped.config,
-        log=wrapped.logger,
-        seed=runseed,
-        rnd=create_rnd(runseed),
-        run=wrapped.run
+        _log=wrapped.logger,
+        _seed=runseed,
+        _rnd=create_rnd(runseed),
+        _run=wrapped.run
     )
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
     wrapped.logger.info("started")

@@ -45,10 +45,12 @@ Contents:
    :maxdepth: 2
 
    quickstart
+   experiment
    configuration
    config_injection
    commandline
    observers
+   logging
    randomness
 
 

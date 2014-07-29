@@ -52,7 +52,7 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
                                          printer.pformat(x))))
 
 
-def print_config(run):
+def print_config(_run):
     """
     Print the updated configuration and exit.
 
@@ -61,8 +61,8 @@ def print_config(run):
       blue:   value added
       red:    value updated but type changed
     """
-    final_config = run.get_configuration()
-    added, updated, typechanges = run.get_config_modifications()
+    final_config = _run.get_configuration()
+    added, updated, typechanges = _run.get_config_modifications()
     print('Configuration:')
     _cfgprint(final_config, '', added, updated, typechanges)
 

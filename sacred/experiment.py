@@ -125,8 +125,11 @@ class Experiment(Module):
             host_info=host_info
         )
 
-    def run_commandline(self):
-        args = parse_args(sys.argv,
+    def run_commandline(self, argv=None):
+        if argv is None:
+            argv = sys.argv
+
+        args = parse_args(argv,
                           description=self.doc,
                           commands=self._commands,
                           print_help=True)
@@ -161,6 +164,8 @@ class Experiment(Module):
         run = Run(self.name, list(mod_runners.values()), main_func, observers)
         return run
 
+    # TODO: allow for non-ConfigScope options
+    # TODO: allow dotted notation in config_updates
     def run(self, config_updates=None, loglevel=None):
         run = self.create_run()
         run.initialize(config_updates, loglevel)
