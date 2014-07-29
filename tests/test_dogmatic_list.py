@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import pytest
-from sacred.custom_containers import DogmaticList
+from sacred.custom_containers import DogmaticList, DogmaticDict
 
 
 def test_isinstance_of_list():
@@ -123,3 +123,19 @@ def test_list_interface_index():
     assert l.index(5) == 4
     with pytest.raises(ValueError):
         l.index(3)
+
+
+def test_empty_revelation():
+    l = DogmaticList([1, 2, 3])
+    assert l.revelation() == set()
+
+
+def test_nested_dict_revelation():
+    d1 = DogmaticDict({'a': 7, 'b': 12})
+    d2 = DogmaticDict({'c': 7})
+    l = DogmaticList([d1, 2, d2])
+#    assert l.revelation() == {'0.a', '0.b', '2.c'}
+    l.revelation()
+    assert 'a' in l[0]
+    assert 'b' in l[0]
+    assert 'c' in l[2]

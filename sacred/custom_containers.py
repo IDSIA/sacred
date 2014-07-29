@@ -110,11 +110,10 @@ class DogmaticDict(dict):
 
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 #recursive update
-                bd = self[key]
                 for k, v in value.items():
-                    bd[k] = v
+                    fixed_val[k] = v
 
-                for k, v in bd.typechanges.items():
+                for k, v in fixed_val.typechanges.items():
                     self.typechanges[join_paths(key, k)] = v
 
     def __getitem__(self, item):
@@ -161,7 +160,7 @@ class DogmaticDict(dict):
                 self[key] = self._fixed[key]
                 missing.add(key)
 
-            if isinstance(self[key], DogmaticDict):
+            if isinstance(self[key], (DogmaticDict, DogmaticList)):
                 missing |= {key + "." + k for k in self[key].revelation()}
         return missing
 
@@ -206,6 +205,13 @@ class DogmaticList(list):
     def remove(self, value):
         pass
 
+    def revelation(self):
+        for i, x in enumerate(self):
+            if isinstance(x, (DogmaticDict, DogmaticList)):
+                ignore = x.revelation()
+                #missing |= {"%d." % i + k for k in x.revelation()}
+        return set()
+
 
 def type_changed(a, b):
     if isinstance(a, DogmaticDict) or isinstance(b, DogmaticDict):
@@ -215,7 +221,7 @@ def type_changed(a, b):
     return type(a) != type(b)
 
 
-def dogmatize(x, with_fallback=()):
+def dogmatize(x):
     if isinstance(x, dict):
         return DogmaticDict({k: dogmatize(v) for k, v in x.items()})
     elif isinstance(x, list):
