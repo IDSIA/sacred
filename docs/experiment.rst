@@ -1,5 +1,5 @@
-Experiment
-**********
+Experiment Overview
+*******************
 ``Experiment`` is the central class of the ``sacred`` framework. This section
 should give you an overview on how to use it and all of its main mechanisms.
 
@@ -82,7 +82,7 @@ You can also specify the log-level while calling ``run`` like so. See
 Configuration
 =============
 The easiest way to add configuration to an experiment is through a
-:doc:`config_scope`:
+:doc:`configuration`:
 
 .. code-block:: python
 
@@ -108,8 +108,10 @@ the configuration that way. The parameters can even depend on each other.
 
 Capture Functions
 =================
-To help you use the configuration values, ``sacred`` uses the principle of
-dependency injection. To see how that works we need to capture some function:
+To use a configuration value all you have to do is *capture* a function and
+accept it as a parameter. Whenever you now call that function ``sacred`` will
+try to fill in missing parameters from the configuration.
+To see how that works we need to *capture* some function:
 
 .. code-block:: python
 
@@ -125,12 +127,18 @@ dependency injection. To see how that works we need to capture some function:
     def some_function(a, foo, bar=10)
         print(a, foo, bar)
 
-Whenever you now call ``some_function`` ``sacred`` will see if there are any
-arguments missing and tries to fill them in from the configuration.
+    @ex.main
+    def my_main()
+        some_function(1, 2, 3)     #  1  2   3
+        some_function(1)           #  1  42  'baz'
+        some_function(1, bar=12)   #  1  42  12
+        some_function()            #  TypeError: missing value for 'a'
 
+.. note::
+    Configuration values are preferred over default values. So in the example
+    above, ``bar=10`` is never used because there is a value of ``bar = 'baz'``
+    in the configuration.
 
-
-* they fill in paramters with dependency injection
 
 Observe an Experiment
 =====================
