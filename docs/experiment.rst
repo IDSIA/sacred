@@ -100,12 +100,36 @@ the configuration that way. The parameters can even depend on each other.
 
 .. note::
     Only variables that are JSON serializable (i.e. a numbers, strings,
-    lists, tuples, dictionaries
+    lists, tuples, dictionaries) become part of the configuration. Other
+    variables are ignored.
+
+    Also all variables starting with an underscore will be ignored.
 
 
 Capture Functions
 =================
-* use @ex.capture
+To help you use the configuration values, ``sacred`` uses the principle of
+dependency injection. To see how that works we need to capture some function:
+
+.. code-block:: python
+
+    from sacred import Experiment
+    ex = Experiment('my_experiment')
+
+    @ex.config
+    def my_config():
+        foo = 42
+        bar = 'baz'
+
+    @ex.capture
+    def some_function(a, foo, bar=10)
+        print(a, foo, bar)
+
+Whenever you now call ``some_function`` ``sacred`` will see if there are any
+arguments missing and tries to fill them in from the configuration.
+
+
+
 * they fill in paramters with dependency injection
 
 Observe an Experiment
