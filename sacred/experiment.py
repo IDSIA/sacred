@@ -6,13 +6,13 @@ from collections import OrderedDict
 import inspect
 import os.path
 import sys
+from initialize import create_run
 
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
 from sacred.host_info import get_host_info, get_module_versions
-from sacred.run import Run, ModuleRunner
 
 
 class CircularDependencyError(Exception):
@@ -55,26 +55,6 @@ class Module(object):
             for sr, depth in module.traverse_modules():
                 yield sr, depth + 1
         self._is_traversing = False
-
-    def gather_submodules_topological(self):
-        submodules = {}
-        for sm, depth in self.traverse_modules():
-            if sm not in submodules:
-                submodules[sm] = depth
-            else:
-                submodules[sm] = max(submodules[sm], depth)
-        sorted_submodules = sorted(submodules,
-                                   key=lambda x: -submodules[x])
-        return sorted_submodules
-
-    def create_module_runner(self, subrunner_cache):
-        subrunners = [subrunner_cache[m] for m in self.modules]
-        r = ModuleRunner(self.cfgs,
-                         subrunners=subrunners,
-                         path=self.path,
-                         captured_functions=self.captured_functions,
-                         generate_seed=self.gen_seed)
-        return r
 
 
 class Experiment(Module):
@@ -150,43 +130,11 @@ class Experiment(Module):
     def run_command(self, command_name, config_updates=None, loglevel=None):
         assert command_name in self._commands, \
             "Command '%s' not found" % command_name
-        run = self.create_run(self._commands[command_name], observe=False)
-        run.initialize(config_updates, loglevel)
+        run = create_run(self, config_updates, self._commands[command_name],
+                         observe=False, log_level=loglevel)
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
-    def create_run(self, main_func=None, observe=True):
-        if main_func is None:
-            main_func = self.main_function
-        sorted_submodules = self.gather_submodules_topological()
-        mod_runners = create_module_runners(sorted_submodules)
-        observers = self.observers if observe else []
-        run = Run(self.name, list(mod_runners.values()), main_func, observers)
-        return run
-
-    # TODO: allow for non-ConfigScope options
-    # TODO: allow dotted notation in config_updates
     def run(self, config_updates=None, loglevel=None):
-        run = self.create_run()
-        run.initialize(config_updates, loglevel)
-        self._emit_run_created_event()
-        self.info = run.info
-        run()
-        return run
-
-    ################### protected helpers ###################################
-
-    def _emit_run_created_event(self):
-        experiment_info = self.get_info()
-        for o in self.observers:
-            try:
-                o.created_event(**experiment_info)
-            except AttributeError:
-                pass
-
-
-def create_module_runners(sorted_submodules):
-    subrunner_cache = OrderedDict()
-    for sm in sorted_submodules:
-        subrunner_cache[sm] = sm.create_module_runner(subrunner_cache)
-    return subrunner_cache
+        run = create_run(self, config_updates, log_level=loglevel)
+        return run()

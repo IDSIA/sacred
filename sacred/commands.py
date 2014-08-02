@@ -61,8 +61,8 @@ def print_config(_run):
       blue:   value added
       red:    value updated but type changed
     """
-    final_config = _run.get_configuration()
-    added, updated, typechanges = _run.get_config_modifications()
+    final_config = _run.config
+    added, updated, typechanges = _run.config_modifications
     print('Configuration:')
     _cfgprint(final_config, '', added, updated, typechanges)
 
