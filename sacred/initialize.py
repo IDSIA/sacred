@@ -174,7 +174,7 @@ def create_scaffolding(experiment):
             path=sm.path,
             captured_functions=sm.captured_functions,
             generate_seed=sm.gen_seed)
-    return scaffolding
+    return scaffolding.values()
 
 
 def gather_submodules_topological(module):

@@ -64,6 +64,7 @@ class Experiment(Module):
                                          gen_seed=True)
         self.name = name
         self.main_function = None
+        self.logger = None
         self.doc = None
         self.observers = []
         self._commands = OrderedDict()
