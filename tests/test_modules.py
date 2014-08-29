@@ -2,11 +2,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from sacred.config_scope import ConfigScope
-from sacred.experiment import Module, Experiment
+from sacred.experiment import Ingredient, Experiment
 
 
-def test_module_config():
-    m = Module("somemod")
+def test_ingredient_config():
+    m = Ingredient("somemod")
 
     @m.config
     def cfg():
@@ -19,8 +19,8 @@ def test_module_config():
     assert cfg() == {'a': 5, 'b': 'foo'}
 
 
-def test_module_captured_functions():
-    m = Module("somemod")
+def test_ingredient_captured_functions():
+    m = Ingredient("somemod")
 
     @m.capture
     def get_answer(b):
@@ -43,15 +43,15 @@ def test_experiment_run():
     assert ex.run() == 12
 
 
-def test_experiment_run_access_submodule():
-    somemod = Module("somemod")
+def test_experiment_run_access_subingredient():
+    somemod = Ingredient("somemod")
 
     @somemod.config
     def cfg():
         a = 5
         b = 'foo'
 
-    ex = Experiment("some_experiment", modules=[somemod])
+    ex = Experiment("some_experiment", ingredients=[somemod])
 
     @ex.main
     def main(somemod):
@@ -62,8 +62,8 @@ def test_experiment_run_access_submodule():
     assert r['b'] == 'foo'
 
 
-def test_experiment_run_submodule_function():
-    somemod = Module("somemod")
+def test_experiment_run_subingredient_function():
+    somemod = Ingredient("somemod")
 
     @somemod.config
     def cfg():
@@ -74,7 +74,7 @@ def test_experiment_run_submodule_function():
     def get_answer(b):
         return b
 
-    ex = Experiment("some_experiment", modules=[somemod])
+    ex = Experiment("some_experiment", ingredients=[somemod])
 
     @ex.main
     def main():

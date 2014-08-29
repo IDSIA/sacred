@@ -4,10 +4,10 @@
 This is a very basic example of how to use sacred.
 """
 from __future__ import division, print_function, unicode_literals
-from sacred.experiment import Experiment, Module
+from sacred.experiment import Experiment, Ingredient
 
-# ============== Module 0: settings =================
-s = Module("settings")
+# ============== Ingredient 0: settings =================
+s = Ingredient("settings")
 
 
 @s.config
@@ -16,8 +16,8 @@ def cfg():
 
 
 
-# ============== Module 1: dataset.paths =================
-data_paths = Module("dataset.paths", modules=[s])
+# ============== Ingredient 1: dataset.paths =================
+data_paths = Ingredient("dataset.paths", ingredients=[s])
 
 
 @data_paths.config
@@ -26,8 +26,8 @@ def cfg(settings):
     base = '/home/sacred/'
 
 
-# ============== Module 2: dataset =======================
-data = Module("dataset", modules=[data_paths, s])
+# ============== Ingredient 2: dataset =======================
+data = Ingredient("dataset", ingredients=[data_paths, s])
 
 
 @data.config
@@ -44,7 +44,7 @@ def foo(basepath, filename, paths, settings):
 
 
 # ============== Experiment ==============================
-ex = Experiment('modular_example', modules=[data, data_paths])
+ex = Experiment('modular_example', ingredients=[data, data_paths])
 
 
 @ex.config

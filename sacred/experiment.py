@@ -12,7 +12,7 @@ from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
-from sacred.host_info import get_host_info, get_module_versions
+from sacred.host_info import get_module_versions
 
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
@@ -22,11 +22,11 @@ class CircularDependencyError(Exception):
     pass
 
 
-class Module(object):
-    def __init__(self, path, modules=(), gen_seed=False):
+class Ingredient(object):
+    def __init__(self, path, ingredients=(), gen_seed=False):
         self.path = path
         self.cfgs = []
-        self.modules = list(modules)
+        self.ingredients = list(ingredients)
         self.gen_seed = gen_seed
         self.captured_functions = []
         self._is_traversing = False
@@ -48,22 +48,22 @@ class Module(object):
         return captured_function
 
     ################### protected helpers ###################################
-    def traverse_modules(self):
+    def traverse_ingredients(self):
         if self._is_traversing:
             raise CircularDependencyError()
         else:
             self._is_traversing = True
         yield self, 0
-        for module in self.modules:
-            for sr, depth in module.traverse_modules():
+        for ingredient in self.ingredients:
+            for sr, depth in ingredient.traverse_ingredients():
                 yield sr, depth + 1
         self._is_traversing = False
 
 
-class Experiment(Module):
-    def __init__(self, name, modules=()):
+class Experiment(Ingredient):
+    def __init__(self, name, ingredients=()):
         super(Experiment, self).__init__(path='',
-                                         modules=modules,
+                                         ingredients=ingredients,
                                          gen_seed=True)
         self.name = name
         self.main_function = None

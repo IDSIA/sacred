@@ -11,8 +11,8 @@ sacred helps you with that:
   * provide possibility to generate a seed for each captured function call
   * all those seeds depend deterministically on the global seed
   * that seed can be fixed easily ``>>./experiment.py with seed=123``
-  * hierarchical seeding for modules: you fix the seed for a module and all the
-    sub-module seeds will be fixed too
+  * hierarchical seeding for ingredients: you fix the seed for a ingredient and all the
+    sub-ingredient seeds will be fixed too
 
 
 

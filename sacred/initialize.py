@@ -170,23 +170,23 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
 
 
 def create_scaffolding(experiment):
-    sorted_submodules = gather_submodules_topological(experiment)
+    sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = OrderedDict()
-    for sm in sorted_submodules:
+    for sm in sorted_ingredients:
         scaffolding[sm] = Scaffold(
             sm.cfgs,
-            subrunners=[scaffolding[m] for m in sm.modules],
+            subrunners=[scaffolding[m] for m in sm.ingredients],
             path=sm.path,
             captured_functions=sm.captured_functions,
             generate_seed=sm.gen_seed)
     return scaffolding.values()
 
 
-def gather_submodules_topological(module):
-    submodules = defaultdict(int)
-    for sm, depth in module.traverse_modules():
-        submodules[sm] = max(submodules[sm], depth)
-    return sorted(submodules, key=lambda x: -submodules[x])
+def gather_ingredients_topological(ingredient):
+    sub_ingredients = defaultdict(int)
+    for sm, depth in ingredient.traverse_ingredients():
+        sub_ingredients[sm] = max(sub_ingredients[sm], depth)
+    return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
 ConfigModifications = namedtuple('ConfigModifications',

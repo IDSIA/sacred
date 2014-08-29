@@ -73,8 +73,8 @@ So the following config scope would result in an empty configuration:
 
 Multiple Config Scopes
 ======================
-You can have multiple Config Scopes attached to the same experiment or module.
-This is especially useful for overriding module default values (more to that
+You can have multiple Config Scopes attached to the same experiment or ingredient.
+This is especially useful for overriding ingredient default values (more about that
 later). They will be executed in order of declaration. If you want to access
 values from a previous scope you have to declare them as parameters to your
 function:
