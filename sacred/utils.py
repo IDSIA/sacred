@@ -204,3 +204,14 @@ def is_prefix(pre_path, path):
     pre_path = pre_path.strip('.')
     path = path.strip('.')
     return not pre_path or path.startswith(pre_path + '.')
+
+
+def convert_to_nested_dict(dotted_dict):
+    """
+    Convert a dictionary where some of the keys might be dotted paths to the
+    corresponding nested dictionary.
+    """
+    nested_dict = {}
+    for k, v in iterate_flattened(dotted_dict):
+        set_by_dotted_path(nested_dict, k, v)
+    return nested_dict

@@ -9,6 +9,7 @@ from sacred.utils import get_seed, create_rnd, is_prefix, set_by_dotted_path, \
     iterate_flattened, iter_prefixes, iter_path_splits, \
     create_basic_stream_logger, join_paths
 from run import Run
+from utils import convert_to_nested_dict
 
 
 class Scaffold(object):
@@ -209,7 +210,8 @@ def create_run(experiment, config_updates=None, main_func=None, observe=True,
     logger = initialize_logging(experiment, scaffolding, log_level)
 
     if config_updates is not None:
-        distribute_config_updates(scaffolding, config_updates)
+        nested_config_updates = convert_to_nested_dict(config_updates)
+        distribute_config_updates(scaffolding, nested_config_updates)
 
     for sc in reversed(scaffolding):
         sc.set_up_seed()  # partially recursive

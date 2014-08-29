@@ -6,6 +6,7 @@ from sacred.utils import (recursive_update, iterate_separately,
                           iterate_flattened, set_by_dotted_path,
                           get_by_dotted_path, iter_path_splits, iter_prefixes,
                           join_paths, is_prefix)
+from utils import convert_to_nested_dict
 
 
 def test_recursive_update():
@@ -80,3 +81,12 @@ def test_is_prefix():
     assert not is_prefix('foo.bar', 'foo.bar')
 
 
+def test_convert_to_nested_dict():
+    dotted_dict = {'foo.bar': 8, 'foo.baz': 7}
+    assert convert_to_nested_dict(dotted_dict) == {'foo': {'bar': 8, 'baz': 7}}
+
+
+def test_convert_to_nested_dict_nested():
+    dotted_dict = {'a.b': {'foo.bar': 8},  'a.b.foo.baz': 7}
+    assert convert_to_nested_dict(dotted_dict) == \
+           {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}
