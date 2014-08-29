@@ -10,6 +10,8 @@ from sacred.custom_containers import FallbackDict
 from sacred.signature import Signature
 from sacred.utils import create_rnd, get_seed
 
+__sacred__ = True
+
 
 def create_captured_function(f):
     f.signature = Signature(f)

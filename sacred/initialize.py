@@ -12,6 +12,9 @@ from run import Run
 from utils import convert_to_nested_dict
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,
                  generate_seed):

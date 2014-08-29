@@ -11,6 +11,9 @@ import traceback
 from sacred.utils import tee_output
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class Status(object):
     READY = 1
     RUNNING = 2

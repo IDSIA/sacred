@@ -4,6 +4,9 @@ from __future__ import division, print_function, unicode_literals
 from sacred.utils import join_paths
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class FallbackDict(dict):
     """
     This dictionary either returns the value assigned to a given key or it

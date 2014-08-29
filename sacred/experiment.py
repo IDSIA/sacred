@@ -15,6 +15,9 @@ from sacred.config_scope import ConfigScope
 from sacred.host_info import get_host_info, get_module_versions
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class CircularDependencyError(Exception):
     pass
 
@@ -125,8 +128,20 @@ class Experiment(Module):
         for obs in get_observers(args):
             if obs not in self.observers:
                 self.observers.append(obs)
-
-        return self.run(config_updates, loglevel)
+        try:
+            return self.run(config_updates, loglevel)
+        except:
+            import traceback as tb
+            print("Traceback (most recent calls WITHOUT sacred internals):",
+                  file=sys.stderr)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            current_tb = exc_traceback
+            while current_tb is not None:
+                if '__sacred__' not in current_tb.tb_frame.f_globals:
+                    tb.print_tb(current_tb, 1)
+                current_tb = current_tb.tb_next
+            tb.print_exception(exc_type, exc_value, None)
+            pass
 
     def run_command(self, command_name, config_updates=None, loglevel=None):
         assert command_name in self._commands, \

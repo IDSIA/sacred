@@ -11,6 +11,9 @@ import re
 from sacred.custom_containers import dogmatize, undogmatize
 
 
+__sacred__ = True
+
+
 def get_function_body_code(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
     filename = inspect.getfile(func)

@@ -8,6 +8,10 @@ import logging
 import random
 import sys
 
+
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 if sys.version_info[0] == 3:
     import io
     StringIO = io.StringIO

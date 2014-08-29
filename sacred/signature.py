@@ -6,6 +6,9 @@ from copy import copy
 import inspect
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class Signature:
     """
     Contains information about the signature of a function.
