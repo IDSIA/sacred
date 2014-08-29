@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict, defaultdict, namedtuple
 from copy import copy
+from host_info import get_host_info
 from sacred.custom_containers import dogmatize, undogmatize
 from sacred.utils import get_seed, create_rnd, is_prefix, set_by_dotted_path, \
     iterate_flattened, iter_prefixes, iter_path_splits, \
@@ -232,15 +233,14 @@ def create_run(experiment, config_updates=None, main_func=None, observe=True,
 
     # only get experiment info if there are observers
     experiment_info = experiment.get_info() if observers else dict(
-        name=experiment.name,
         mainfile='',
         dependencies=[],
-        doc='',
-        host_info={}
+        doc=''
     )
+    host_info = get_host_info()
 
     run = Run(config, config_modifications, main_func, observers, logger,
-              experiment_info)
+              experiment.name, experiment_info, host_info)
 
     for sc in scaffolding:
         sc.finalize_initialization(run=run)

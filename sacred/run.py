@@ -28,13 +28,15 @@ class Run(object):
     """
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_info):
+                 logger, experiment_name, experiment_info, host_info):
         self.config = config
         self.main_function = main_function
         self.config_modifications = config_modifications
         self._observers = observers
         self.logger = logger
+        self.experiment_name = experiment_name
         self.experiment_info = experiment_info
+        self.host_info = host_info
         self.status = Status.READY
         self.info = {}
         self._heartbeat = None
@@ -93,6 +95,9 @@ class Run(object):
         for o in self._observers:
             try:
                 o.started_event(
+                    name=self.experiment_name,
+                    ex_info=self.experiment_info,
+                    host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config)
             except AttributeError:

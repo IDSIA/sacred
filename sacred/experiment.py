@@ -100,13 +100,11 @@ class Experiment(Module):
         if self.name is None:
             filename = os.path.basename(mainfile)
             self.name = filename.rsplit('.', 1)[0]
-        host_info = get_host_info()
         return dict(
             name=self.name,
             mainfile=mainfile,
             dependencies=dependencies,
             doc=self.doc,
-            host_info=host_info
         )
 
     def run_commandline(self, argv=None):

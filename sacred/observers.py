@@ -13,10 +13,7 @@ __all__ = ['RunObserver', 'MongoObserver', 'DebugObserver']
 
 
 class RunObserver(object):
-    def created_event(self, name, doc, mainfile, dependencies, host_info):
-        pass
-
-    def started_event(self, start_time, config):
+    def started_event(self, name, ex_info, host_info, start_time, config):
         pass
 
     def heartbeat_event(self, info, captured_out):
@@ -79,20 +76,16 @@ class MongoObserver(RunObserver):
     def save(self):
         self.collection.save(self.experiment_entry)
 
-    def created_event(self, name, doc, mainfile, dependencies, host_info):
+    def started_event(self, name, ex_info, host_info, start_time, config):
         self.experiment_entry = dict()
         self.experiment_entry['name'] = name
-        self.experiment_entry['mainfile'] = mainfile
+        self.experiment_entry['experiment_info'] = ex_info
         try:
-            with open(mainfile, 'r') as f:
+            with open(ex_info['mainfile'], 'r') as f:
                 self.experiment_entry['source'] = f.read()
         except IOError as e:
-            self.experiment_entry['source'] = str(e)
-        self.experiment_entry['doc'] = doc
+            self.experiment_entry['experiment_info']['source'] = str(e)
         self.experiment_entry['host_info'] = host_info
-        self.experiment_entry['dependencies'] = dependencies
-
-    def started_event(self, start_time, config):
         self.experiment_entry['start_time'] = datetime.fromtimestamp(start_time)
         self.experiment_entry['config'] = config
         self.experiment_entry['status'] = 'RUNNING'
@@ -132,10 +125,7 @@ class MongoObserver(RunObserver):
 
 
 class DebugObserver(RunObserver):
-    def created_event(self, name, mainfile, doc, dependencies, host_info):
-        print('experiment_created_event')
-
-    def started_event(self, start_time, config):
+    def started_event(self, name, ex_info, host_info, start_time, config):
         print('experiment_started_event')
 
     def heartbeat_event(self, info, captured_out):
