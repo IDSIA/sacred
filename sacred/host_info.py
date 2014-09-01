@@ -5,6 +5,7 @@ import multiprocessing
 import platform
 import re
 import subprocess
+import sys
 import pkg_resources
 
 
@@ -36,25 +37,64 @@ def get_host_info():
         "python_compiler": platform.python_compiler()
     }
 
+MODULE_BLACKLIST = {None, '__future__'} | set(sys.builtin_module_names)
+module = type(platform)
 
-def get_module_versions(globs):
-    module = type(platform)
-    module_candidates = set()
-    for k, g in globs.items():
-        if isinstance(g, module):
-            module_candidates.add(g.__name__)
+
+def get_dependencies(globs):
+    dependencies = {}
+
+    for g in globs.values():
+        if isinstance(g, module) and g.__name__ not in MODULE_BLACKLIST:
+            dependencies[g.__name__] = get_module_version_heuristic(g)
+
         elif hasattr(g, '__module__'):
-            split_m = g.__module__.split('.')
-            module_candidates |= {'.'.join(split_m[:i])
-                                  for i in range(1, len(split_m)+1)}
+            modname = g.__module__.split('.')[0]
+            if modname not in MODULE_BLACKLIST and modname not in dependencies:
+                dependencies[modname] = get_module_version_heuristic(modname)
 
-    version_info = {}
-    for m in module_candidates:
-        try:
-            # TODO: use faster heuristics first, because pkg_resources is slow
-            version = pkg_resources.get_distribution(m).version
-            version_info[m] = version
-        except pkg_resources.DistributionNotFound:
-            pass
+    return dependencies
 
-    return version_info
+
+def fill_missing_versions(deps):
+    for mod_name, ver in deps.items():
+        if ver is None:
+            deps[mod_name] = get_module_version_from_pkg_resources(mod_name)
+
+
+def get_modules(globs):
+    return {g for g in globs.values()
+            if isinstance(g, module) and g.__name__ not in MODULE_BLACKLIST}
+
+
+PEP440_VERSION_PATTERN = re.compile(r"""
+^
+(\d+!)?              # epoch
+(\d[\.\d]*(?<= \d))  # release
+((?:[abc]|rc)\d+)?   # pre-release
+(?:(\.post\d+))?     # post-release
+(?:(\.dev\d+))?      # development release
+$
+""", flags=re.VERBOSE)
+
+
+def get_module_version_heuristic(mod):
+    if not isinstance(mod, module):
+        mod = sys.modules.get(mod)
+        if not mod:
+            return None
+    possible_version_attributes = {'version', 'VERSION', '__version__'}
+    for vattr in possible_version_attributes:
+        if not hasattr(mod, vattr):
+            continue
+        v = getattr(mod, vattr)
+        if isinstance(v, (str, unicode)) and PEP440_VERSION_PATTERN.match(v):
+            return v
+    return None
+
+
+def get_module_version_from_pkg_resources(mod_name):
+    try:
+        return pkg_resources.get_distribution(mod_name).version
+    except pkg_resources.DistributionNotFound:
+        return None

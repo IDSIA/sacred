@@ -6,13 +6,15 @@ from collections import OrderedDict
 import inspect
 import os.path
 import sys
-from initialize import create_run
+import traceback as tb
+from host_info import fill_missing_versions
 
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_scope import ConfigScope
-from sacred.host_info import get_module_versions
+from sacred.host_info import get_dependencies
+from sacred.initialize import create_run
 
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
@@ -30,6 +32,12 @@ class Ingredient(object):
         self.gen_seed = gen_seed
         self.captured_functions = []
         self._is_traversing = False
+        main_globals = inspect.stack()[2][0].f_globals
+        self.doc = main_globals.get('__doc__') or ""
+        self.mainfile = main_globals.get('__file__') or ""
+        if self.mainfile:
+            self.mainfile = os.path.abspath(self.mainfile)
+        self.dependencies = get_dependencies(main_globals)
 
     ############################## Decorators ##################################
     # def command(self, f):
@@ -68,7 +76,6 @@ class Experiment(Ingredient):
         self.name = name
         self.main_function = None
         self.logger = None
-        self.doc = None
         self.observers = []
         self._commands = OrderedDict()
         self.command(print_config)
@@ -81,7 +88,6 @@ class Experiment(Ingredient):
         return f
 
     def main(self, f):
-        self.doc = inspect.getmodule(f).__doc__ or ""
         self.main_function = self.capture(f)
         return self.main_function
 
@@ -94,18 +100,17 @@ class Experiment(Ingredient):
     ############################## public interface ############################
 
     def get_info(self):
-        f = self.main_function
-        mainfile = inspect.getabsfile(f)
-        dependencies = get_module_versions(f.__globals__)
+        fill_missing_versions(self.dependencies)
+
         if self.name is None:
-            filename = os.path.basename(mainfile)
+            filename = os.path.basename(self.mainfile)
             self.name = filename.rsplit('.', 1)[0]
+
         return dict(
             name=self.name,
-            mainfile=mainfile,
-            dependencies=dependencies,
-            doc=self.doc,
-        )
+            mainfile=self.mainfile,
+            dependencies=self.dependencies,
+            doc=self.doc)
 
     def run_commandline(self, argv=None):
         if argv is None:
@@ -129,7 +134,6 @@ class Experiment(Ingredient):
         try:
             return self.run(config_updates, loglevel)
         except:
-            import traceback as tb
             print("Traceback (most recent calls WITHOUT sacred internals):",
                   file=sys.stderr)
             exc_type, exc_value, exc_traceback = sys.exc_info()
