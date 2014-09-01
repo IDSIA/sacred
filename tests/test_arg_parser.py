@@ -35,7 +35,7 @@ def test_parse_mongo_db_arg_hostname_dbname():
 
 @pytest.mark.parametrize("argv,expected", [
     ('',                 {}),
-    ('run',              {'run': True}),
+    ('run',              {'COMMAND': 'run'}),
     ('with 1 2',         {'with': True, 'UPDATE': ['1', '2']}),
     ('evaluate',         {'COMMAND': 'evaluate'}),
     ('help',             {'help': True}),
@@ -56,7 +56,6 @@ def test_parse_individual_arguments(argv, expected):
         'COMMAND': None,
         'UPDATE': [],
         'help': False,
-        'run': False,
         'with': False
     }
     plain.update(expected)
@@ -71,10 +70,9 @@ def test_parse_compound_arglist1():
         '--help': False,
         '--mongo_db': 'localhost:22222',
         '--logging': None,
-        'COMMAND': None,
+        'COMMAND': 'run',
         'UPDATE': ['a=17', 'b=1'],
         'help': False,
-        'run': True,
         'with': True
     }
     assert args == expected
@@ -90,7 +88,6 @@ def test_parse_compound_arglist2():
         'COMMAND': 'evaluate',
         'UPDATE': ['a=18', 'b=2'],
         'help': False,
-        'run': False,
         'with': True
     }
     assert args == expected
