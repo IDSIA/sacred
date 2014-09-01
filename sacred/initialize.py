@@ -208,8 +208,7 @@ def get_config_modifications(scaffolding):
     return ConfigModifications(added, updated, typechanges)
 
 
-def create_run(experiment, config_updates=None, main_func=None, observe=True,
-               log_level=None):
+def create_run(experiment, main_func, config_updates=None, log_level=None):
     scaffolding = create_scaffolding(experiment)
     logger = initialize_logging(experiment, scaffolding, log_level)
 
@@ -225,22 +224,18 @@ def create_run(experiment, config_updates=None, main_func=None, observe=True,
 
     config = get_configuration(scaffolding)
 
-    observers = experiment.observers if observe else []
-    if main_func is None:
-        main_func = experiment.main_function
-
     config_modifications = get_config_modifications(scaffolding)
 
     # only get experiment info if there are observers
-    experiment_info = experiment.get_info() if observers else dict(
+    experiment_info = experiment.get_info() if experiment.observers else dict(
         mainfile='',
         dependencies=[],
         doc=''
     )
     host_info = get_host_info()
 
-    run = Run(config, config_modifications, main_func, observers, logger,
-              experiment.name, experiment_info, host_info)
+    run = Run(config, config_modifications, main_func, experiment.observers,
+              logger, experiment.name, experiment_info, host_info)
 
     for sc in scaffolding:
         sc.finalize_initialization(run=run)

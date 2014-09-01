@@ -74,7 +74,7 @@ class Experiment(Ingredient):
                                          ingredients=ingredients,
                                          gen_seed=True)
         self.name = name
-        self.main_function = None
+        self.default_command = None
         self.logger = None
         self.observers = []
         self._commands = OrderedDict()
@@ -84,12 +84,13 @@ class Experiment(Ingredient):
     ############################## Decorators ##################################
 
     def command(self, f):
-        self._commands[f.__name__] = self.capture(f)
-        return f
+        captured_f = self.capture(f)
+        self._commands[f.__name__] = captured_f
+        return captured_f
 
     def main(self, f):
-        self.main_function = self.capture(f)
-        return self.main_function
+        self.default_command = self.command(f)
+        return self.default_command
 
     def automain(self, f):
         captured = self.main(f)
@@ -148,11 +149,12 @@ class Experiment(Ingredient):
     def run_command(self, command_name, config_updates=None, loglevel=None):
         assert command_name in self._commands, \
             "Command '%s' not found" % command_name
-        run = create_run(self, config_updates, self._commands[command_name],
-                         observe=False, log_level=loglevel)
+        run = create_run(self, self._commands[command_name], config_updates,
+                         log_level=loglevel)
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
     def run(self, config_updates=None, loglevel=None):
-        run = create_run(self, config_updates, log_level=loglevel)
+        run = create_run(self, self.default_command, config_updates,
+                         log_level=loglevel)
         return run()

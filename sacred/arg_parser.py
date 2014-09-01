@@ -17,10 +17,10 @@ __all__ = ['parse_args', 'get_config_updates', 'get_observers']
 
 
 USAGE_TEMPLATE = """Usage:
-  {program_name} [run] [(with UPDATE...)] [-m DB] [-l LEVEL]
+  {program_name} [(with UPDATE...)] [-m DB] [-l LEVEL]
   {program_name} help [COMMAND]
   {program_name} (-h | --help)
-  {program_name} COMMAND [(with UPDATE...)] [-l LEVEL]
+  {program_name} COMMAND [(with UPDATE...)] [-m DB] [-l LEVEL]
 
 {description}
 
