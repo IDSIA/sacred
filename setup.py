@@ -2,7 +2,6 @@
 # coding=utf-8
 
 from setuptools import setup
-import sacred
 
 classifiers = """
 Development Status :: 3 - Alpha
@@ -23,13 +22,23 @@ Topic :: Software Development :: Libraries
 Topic :: Software Development :: Quality Assurance
 """
 
+try:
+    from sacred import __about__
+    about = __about__.__dict__
+except ImportError:
+    # installing - dependencies are not there yet
+    ext_modules = []
+    # Manually extract the __about__
+    about = dict()
+    execfile("sacred/__about__.py", about)
+
 
 setup(
     name='sacred',
-    version=sacred.__version__,
+    version=about['__version__'],
 
-    author='Klaus Greff',
-    author_email='qwlouse@gmail.com',
+    author=about['__author__'],
+    author_email=about['__author_email__'],
 
     packages=['sacred'],
     test_suite="tests",
