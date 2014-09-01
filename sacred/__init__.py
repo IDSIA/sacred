@@ -4,5 +4,5 @@ from __future__ import division, print_function, unicode_literals
 
 from __about__ import *
 
-from experiment import Experiment
+from experiment import Experiment, Ingredient
 

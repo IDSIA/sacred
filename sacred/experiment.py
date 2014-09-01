@@ -25,19 +25,20 @@ class CircularDependencyError(Exception):
 
 
 class Ingredient(object):
-    def __init__(self, path, ingredients=(), gen_seed=False):
+    def __init__(self, path, ingredients=(), gen_seed=False,
+                 caller_globals=None):
         self.path = path
         self.cfgs = []
         self.ingredients = list(ingredients)
         self.gen_seed = gen_seed
         self.captured_functions = []
         self._is_traversing = False
-        main_globals = inspect.stack()[2][0].f_globals
-        self.doc = main_globals.get('__doc__') or ""
-        self.mainfile = main_globals.get('__file__') or ""
+        caller_globals = caller_globals or inspect.stack()[1][0].f_globals
+        self.doc = caller_globals.get('__doc__') or ""
+        self.mainfile = caller_globals.get('__file__') or ""
         if self.mainfile:
             self.mainfile = os.path.abspath(self.mainfile)
-        self.dependencies = get_dependencies(main_globals)
+        self.dependencies = get_dependencies(caller_globals)
 
     ############################## Decorators ##################################
     # def command(self, f):
@@ -70,9 +71,11 @@ class Ingredient(object):
 
 class Experiment(Ingredient):
     def __init__(self, name, ingredients=()):
+        caller_globals = inspect.stack()[1][0].f_globals
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
-                                         gen_seed=True)
+                                         gen_seed=True,
+                                         caller_globals=caller_globals)
         self.name = name
         self.default_command = None
         self.logger = None
