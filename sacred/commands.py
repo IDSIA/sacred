@@ -5,12 +5,13 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 
-from blessings import Terminal
-
 from sacred.utils import iterate_separately, join_paths
 
 
-term = Terminal()
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+RED = '\033[91m'
+ENDC = '\033[0m'
 
 
 def _my_safe_repr(objekt, context, maxlevels, level):
@@ -30,11 +31,11 @@ def _my_safe_repr(objekt, context, maxlevels, level):
 def _cfgprint(x, key, added, updated, typechanges, indent=''):
     def colored(text):
         if key in added:
-            return term.blue(text)
+            return BLUE + text + ENDC
         elif key in typechanges:
-            return term.red(text)
+            return RED + text + ENDC
         elif key in updated:
-            return term.green(text)
+            return GREEN + text + ENDC
         else:
             return text
 

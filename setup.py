@@ -35,7 +35,7 @@ setup(
     test_suite="tests",
     scripts=[],
     install_requires=[
-        'pytest', 'docopt', 'blessings', 'wrapt'
+        'pytest', 'docopt', 'wrapt'
     ],
 
     classifiers=filter(None, classifiers.split('\n')),
