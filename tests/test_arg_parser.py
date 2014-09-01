@@ -56,7 +56,8 @@ def test_parse_individual_arguments(argv, expected):
         'COMMAND': None,
         'UPDATE': [],
         'help': False,
-        'with': False
+        'with': False,
+        '--debug': False
     }
     plain.update(expected)
 
@@ -70,6 +71,7 @@ def test_parse_compound_arglist1():
         '--help': False,
         '--mongo_db': 'localhost:22222',
         '--logging': None,
+        '--debug': False,
         'COMMAND': 'run',
         'UPDATE': ['a=17', 'b=1'],
         'help': False,
@@ -85,6 +87,7 @@ def test_parse_compound_arglist2():
         '--help': False,
         '--mongo_db': None,
         '--logging': '30',
+        '--debug': False,
         'COMMAND': 'evaluate',
         'UPDATE': ['a=18', 'b=2'],
         'help': False,

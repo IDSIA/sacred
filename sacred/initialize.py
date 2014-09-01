@@ -176,7 +176,7 @@ def create_scaffolding(experiment):
         scaffolding[sm] = Scaffold(
             sm.cfgs,
             subrunners=[scaffolding[m] for m in sm.ingredients],
-            path=sm.path,
+            path=sm.path if sm != experiment else '',
             captured_functions=sm.captured_functions,
             generate_seed=sm.gen_seed)
     return scaffolding.values()

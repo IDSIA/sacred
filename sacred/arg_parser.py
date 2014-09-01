@@ -17,10 +17,10 @@ __all__ = ['parse_args', 'get_config_updates', 'get_observers']
 
 
 USAGE_TEMPLATE = """Usage:
-  {program_name} [(with UPDATE...)] [-m DB] [-l LEVEL]
+  {program_name} [(with UPDATE...)] [-m DB] [-l LEVEL] [-d]
   {program_name} help [COMMAND]
   {program_name} (-h | --help)
-  {program_name} COMMAND [(with UPDATE...)] [-m DB] [-l LEVEL]
+  {program_name} COMMAND [(with UPDATE...)] [-m DB] [-l LEVEL] [-d]
 
 {description}
 
@@ -28,6 +28,7 @@ Options:
   -h --help                Print this help message and exit
   -m DB --mongo_db=DB      Add a MongoDB Observer to the experiment
   -l LEVEL --logging=LEVEL Adjust the loglevel
+  -d --debug               Don't filter the stacktrace
 
 Arguments:
   DB        Database specification. Can be [host:port:]db_name

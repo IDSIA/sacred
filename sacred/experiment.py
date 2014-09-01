@@ -70,7 +70,7 @@ class Ingredient(object):
 
 class Experiment(Ingredient):
     def __init__(self, name, ingredients=()):
-        super(Experiment, self).__init__(path='',
+        super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
                                          gen_seed=True)
         self.name = name
@@ -103,10 +103,6 @@ class Experiment(Ingredient):
     def get_info(self):
         fill_missing_versions(self.dependencies)
 
-        if self.name is None:
-            filename = os.path.basename(self.mainfile)
-            self.name = filename.rsplit('.', 1)[0]
-
         return dict(
             name=self.name,
             mainfile=self.mainfile,
@@ -135,16 +131,17 @@ class Experiment(Ingredient):
         try:
             return self.run(config_updates, loglevel)
         except:
+            if args['--debug']:
+                raise
+            exc_type, exc_value, exc_traceback = sys.exc_info()
             print("Traceback (most recent calls WITHOUT sacred internals):",
                   file=sys.stderr)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
             current_tb = exc_traceback
             while current_tb is not None:
                 if '__sacred__' not in current_tb.tb_frame.f_globals:
                     tb.print_tb(current_tb, 1)
                 current_tb = current_tb.tb_next
             tb.print_exception(exc_type, exc_value, None)
-            pass
 
     def run_command(self, command_name, config_updates=None, loglevel=None):
         assert command_name in self._commands, \
