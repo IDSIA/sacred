@@ -25,6 +25,8 @@ What is being observed
     - failed_event
         * fail_time, fail_trace
 
+.. _mongo_observer:
+
 The MongoDB Observer
 ====================
 

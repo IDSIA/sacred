@@ -4,8 +4,10 @@ Sacred used the python `logging <https://docs.python.org/2/library/logging.html>
 module to log some basic information about the execution. It also makes it easy
 for you to integrate that logging with your code.
 
-Adjust Log-Levels
-=================
+.. _log_levels:
+
+Adjusting Log-Levels
+====================
 If you run the hello_world example you will see the following output::
 
     >> python hello_world.py
