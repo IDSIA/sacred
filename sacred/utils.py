@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import logging
 import random
 import sys
+import traceback as tb
 
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
@@ -218,3 +219,15 @@ def convert_to_nested_dict(dotted_dict):
     for k, v in iterate_flattened(dotted_dict):
         set_by_dotted_path(nested_dict, k, v)
     return nested_dict
+
+
+def print_filtered_stacktrace():
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    print("Traceback (most recent calls WITHOUT sacred internals):",
+          file=sys.stderr)
+    current_tb = exc_traceback
+    while current_tb is not None:
+        if '__sacred__' not in current_tb.tb_frame.f_globals:
+            tb.print_tb(current_tb, 1)
+        current_tb = current_tb.tb_next
+    tb.print_exception(exc_type, exc_value, None)

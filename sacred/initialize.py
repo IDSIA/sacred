@@ -18,7 +18,7 @@ __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,
-                 generate_seed):
+                 commands, generate_seed):
         self.config_scopes = config_scopes
         self.subrunners = subrunners
         self.path = path
@@ -30,6 +30,7 @@ class Scaffold(object):
         self.seed = None
         self.rnd = None
         self._captured_functions = captured_functions
+        self.commands = commands
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -39,8 +40,8 @@ class Scaffold(object):
         self.rnd = create_rnd(self.seed)
 
         # Hierarchically set the seed of proper subrunners
-        for subrunner in reversed(self.subrunners):
-            if is_prefix(self.path, subrunner.path):
+        for subrunner_path, subrunner in reversed(self.subrunners.items()):
+            if is_prefix(self.path, subrunner_path):
                 subrunner.set_up_seed(self.rnd)
 
     def set_up_config(self):
@@ -49,12 +50,12 @@ class Scaffold(object):
 
         # gather presets
         fallback = {}
-        for sr in self.subrunners:
-            if self.path and is_prefix(self.path, sr.path):
-                path = sr.path[len(self.path):].strip('.')
+        for sr_path, sr in self.subrunners.items():
+            if self.path and is_prefix(self.path, sr_path):
+                path = sr_path[len(self.path):].strip('.')
                 set_by_dotted_path(fallback, path, sr.config)
             else:
-                set_by_dotted_path(fallback, sr.path, sr.config)
+                set_by_dotted_path(fallback, sr_path, sr.config)
 
         # dogmatize to make the subrunner configurations read-only
         const_fallback = dogmatize(fallback)
@@ -91,11 +92,11 @@ class Scaffold(object):
             return self.fixture
 
         self.fixture = copy(self.config)
-        for sr in self.subrunners:
+        for sr_path, sr in self.subrunners.items():
             sub_fix = sr.get_fixture()
-            sub_path = sr.path
+            sub_path = sr_path
             if is_prefix(self.path, sub_path):
-                sub_path = sr.path[len(self.path):].strip('.')
+                sub_path = sr_path[len(self.path):].strip('.')
             # Note: This might fail if we allow non-dict fixtures
             set_by_dotted_path(self.fixture, sub_path, sub_fix)
         return self.fixture
@@ -175,9 +176,11 @@ def create_scaffolding(experiment):
     for sm in sorted_ingredients:
         scaffolding[sm] = Scaffold(
             sm.cfgs,
-            subrunners=[scaffolding[m] for m in sm.ingredients],
+            subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
+                                    for m in sm.ingredients]),
             path=sm.path if sm != experiment else '',
             captured_functions=sm.captured_functions,
+            commands=sm.commands,
             generate_seed=sm.gen_seed)
     return scaffolding.values()
 
@@ -208,7 +211,23 @@ def get_config_modifications(scaffolding):
     return ConfigModifications(added, updated, typechanges)
 
 
-def create_run(experiment, main_func, config_updates=None, log_level=None):
+def get_command(scaffolding, command_path):
+    path, _, command_name = command_path.rpartition('.')
+    for scaf in scaffolding:
+        if scaf.path == path:
+            if command_name in scaf.commands:
+                return scaf.commands[command_name]
+            else:
+                if path:
+                    raise KeyError('Command "%s" not found in ingredient "%s"' %
+                                   (command_name, path))
+                else:
+                    raise KeyError('Command "%s" not found' % command_name)
+
+    raise KeyError('Ingredient for command "%s" not found.' % command_path)
+
+
+def create_run(experiment, command_name, config_updates=None, log_level=None):
     scaffolding = create_scaffolding(experiment)
     logger = initialize_logging(experiment, scaffolding, log_level)
 
@@ -234,7 +253,9 @@ def create_run(experiment, main_func, config_updates=None, log_level=None):
     )
     host_info = get_host_info()
 
-    run = Run(config, config_modifications, main_func, experiment.observers,
+    main_function = get_command(scaffolding, command_name)
+
+    run = Run(config, config_modifications, main_function, experiment.observers,
               logger, experiment.name, experiment_info, host_info)
 
     for sc in scaffolding:
