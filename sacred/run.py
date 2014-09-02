@@ -49,6 +49,7 @@ class Run(object):
 
     def __call__(self, *args):
         with tee_output() as self.captured_out:
+            self.logger.info('Started')
             self.status = Status.RUNNING
             self._emit_started()
             self._start_heartbeat()
@@ -123,6 +124,7 @@ class Run(object):
 
     def _emit_completed(self, result):
         stop_time = self._stop_time()
+        self.logger.info('Completed after %s' % self.elapsed_time)
         for o in self._observers:
             try:
                 o.completed_event(
@@ -132,8 +134,8 @@ class Run(object):
                 pass
 
     def _emit_interrupted(self):
-        self.logger.warning("Aborted!")
         interrupt_time = self._stop_time()
+        self.logger.warning("Aborted after %s!" % self.elapsed_time)
         for o in self._observers:
             try:
                 o.interrupted_event(
@@ -142,8 +144,8 @@ class Run(object):
                 pass
 
     def _emit_failed(self, etype, value, tb):
-        self.logger.warning("Failed!")
         fail_time = self._stop_time()
+        self.logger.error("Failed after %s!" % self.elapsed_time)
         fail_trace = traceback.format_exception(etype, value, tb)
         for o in self._observers:
             try:

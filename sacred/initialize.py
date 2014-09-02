@@ -165,7 +165,10 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
             root_logger.setLevel(loglevel)
 
     for sc in scaffolding:
-        sc.logger = root_logger.getChild(sc.path)
+        if sc.path:
+            sc.logger = root_logger.getChild(sc.path)
+        else:
+            sc.logger = root_logger
 
     return root_logger.getChild(experiment.name)
 
