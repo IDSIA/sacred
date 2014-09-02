@@ -14,17 +14,17 @@ But you can of course also clone the git repo and install it from there::
 
 Hello World
 ===========
-Let's jump right into it. This is a minimal experiment using ``sacred``:
+Let's jump right into it. This is a minimal experiment using Sacred:
 
 .. code-block:: python
 
-    """ This is a minimal example of a sacred experiment """
+    """ This is a minimal example of a Sacred experiment """
     from sacred import Experiment
 
     ex = Experiment('hello_world')
 
     @ex.automain
-    def main():
+    def my_main():
         print('Hello world!')
 
 
@@ -49,7 +49,7 @@ configurations.
 Our First Configuration
 =======================
 
-So let us look at the true strength of ``sacred``, and add some
+So let us look at the true strength of Sacred, and add some
 configuration to our program:
 
 .. code-block:: python
@@ -65,7 +65,7 @@ configuration to our program:
         message = "Hello %s!" % recipient
 
     @ex.automain
-    def main(message):
+    def my_main(message):
         print(message)
 
 If we run this the output will look precisely as before, but there is a lot
@@ -75,7 +75,7 @@ going on already, so lets look at what we did:
   - within that function define the variable ``message``
   - add the ``message`` parameter to the function ``main`` and use it instead of "Hello world!"
 
-When we run this experiment, ``sacred`` will turn the local scope of our
+When we run this experiment, Sacred will turn the local scope of our
 ``my_config`` function into the configuration of our experiment. All the
 variables defined there can then be used in the ``main`` function. We can see
 this happening by asking the command-line interface to print the configuration
@@ -91,7 +91,7 @@ for us::
       seed = 746486301
     INFO - .print_config - finished after 0:00:00.
 
-Notice how ``sacred`` picked up the ``message`` and the ``recipient`` variables.
+Notice how Sacred picked up the ``message`` and the ``recipient`` variables.
 It also added a ``seed`` to our configuration, but we are going to ignore that
 for now.
 
@@ -105,5 +105,5 @@ Now that our experiment has a configuration we can change it from the
     INFO - .main - finished after 0:00:00.
 
 Notice how changing the ``recipient`` also changed the message. This should give
-you a glimpse of the power of ``sacred``. But there is a lot more to it, so stay
+you a glimpse of the power of Sacred. But there is a lot more to it, so stay
 tuned :).

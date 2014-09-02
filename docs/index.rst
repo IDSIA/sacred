@@ -15,7 +15,7 @@ experiments. It is designed to introduce only minimal overhead, while
 encouraging modularity and configurability of experiments.
 
 The ability to conveniently make experiments configurable is at the heart of
-``sacred``. If the parameters of an experiment are exposed in a this way, it
+Sacred. If the parameters of an experiment are exposed in a this way, it
 will help you to:
 
     - keep track of all the parameters of your experiment
@@ -23,7 +23,7 @@ will help you to:
     - save configurations for individual runs in files or a database
     - reproduce your results
 
-In ``sacred`` we achieve this through the following main mechanisms:
+In Sacred we achieve this through the following main mechanisms:
 
     1. *Config Scopes* are functions with a ``@ex.config`` decorator, that turn
        all local variables into configuration entries. This helps to set up your

@@ -1,6 +1,6 @@
 Experiment Overview
 *******************
-``Experiment`` is the central class of the ``sacred`` framework. This section
+``Experiment`` is the central class of the Sacred framework. This section
 should give you an overview on how to use it and all of its main mechanisms.
 
 Create an Experiment
@@ -109,7 +109,7 @@ the configuration that way. The parameters can even depend on each other.
 Capture Functions
 =================
 To use a configuration value all you have to do is *capture* a function and
-accept it as a parameter. Whenever you now call that function ``sacred`` will
+accept it as a parameter. Whenever you now call that function Sacred will
 try to fill in missing parameters from the configuration.
 To see how that works we need to *capture* some function:
 
@@ -142,15 +142,30 @@ To see how that works we need to *capture* some function:
 
 Observe an Experiment
 =====================
-* experiments collect lots of information about
-  - the machine it runs on
-  - the configuration
-  - dependencies
-  - its source code
-  - runtime
-  - results
-* you can add observers like this: ex.observers.append(O)
-* the recommended way is to use the MongoObserver which saves the information
-  into a MongoDB
-* See Observers for more info
+Experiments in Sacred collect lots of information about their runs like:
+
+  - time it was started and time it stopped
+  - the used configuration
+  - the result or any errors that occurred
+  - basic information about the machine it runs on
+  - packages the experiment depends on and their versions
+  - the source code of the experiment
+
+To access these informations you can use the observer interface. First you need to
+add an observer like this:
+
+.. code-block:: python
+
+    from sacred.observers import MongoObserver
+
+    ex.observers.append(MongoObserver())
+
+At the moment ``MongoObserver`` is the only observer that is shipped with
+Sacred. It connects to a MongoDB and puts all these information into a document in a
+collection called ``experiments``. You can also add this observer from the
+:doc:`commandline` like this::
+
+    >> python my_experiment.py -m my_database
+
+For more information see :doc:`observers`
 

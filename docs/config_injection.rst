@@ -1,7 +1,7 @@
 Configuration Injection
 ***********************
 Once you've set up your configuration, the next step is to use those values in
-the code of the experiment. To make this as easy as possible ``sacred``
+the code of the experiment. To make this as easy as possible Sacred
 automatically fills in the missing parameters of a *captured function* with
 configuration values. So for example this would work:
 
@@ -22,7 +22,7 @@ configuration values. So for example this would work:
 
 Captured Functions
 ==================
-``sacred`` automatically injects configuration values for captured functions.
+Sacred automatically injects configuration values for captured functions.
 Apart from the main function (marked by ``@ex.main`` or ``@ex.automain``) this
 includes all functions marked with ``@ex.capture``. So the following example
 works as before:

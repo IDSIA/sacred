@@ -2,7 +2,7 @@ Observing an Experiment
 ***********************
 When you run an experiment you want to keep track of enough information,
 such that you can analyse the results, and even reproduce them if needed.
-The way ``sacred`` helps you doing that is by making letting you attach
+The way Sacred helps you doing that is by making letting you attach
 *Observers* to your experiment.
 
 - assume a local MongoDB (link to instructions)

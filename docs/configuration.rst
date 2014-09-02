@@ -1,7 +1,7 @@
 Config Scopes
 *************
 A Config Scope is just a regular function decorated with ``@ex.config``. It
-is executed by ``sacred`` just before running the experiment. Then all the
+is executed by Sacred just before running the experiment. Then all the
 variables from its local scope are collected, and become the parameters of the
 experiment. This means that you have full access to all the features of python
 for setting up the parameters:
