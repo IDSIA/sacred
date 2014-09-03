@@ -216,12 +216,45 @@ class DogmaticList(list):
         return set()
 
 
+simplify_type = {
+    bool: bool,
+    float: float,
+    int: int,
+    str: str,
+    list: list,
+    tuple: list,
+    dict: dict,
+    DogmaticDict: dict,
+    DogmaticList: list,
+}
+
+# if in python 2 we want to ignore unicode/str and int/long typechanges
+try:
+    simplify_type[unicode] = str
+    simplify_type[long] = int
+except NameError:
+    pass
+
+# if numpy is available we also want to ignore typechanges from numpy
+# datatypes to the corresponding python datatype
+try:
+    import numpy as np
+    np_floats = [np.float, np.float16, np.float32, np.float64, np.float128]
+    for npf in np_floats:
+        simplify_type[npf] = float
+
+    np_ints = [np.int, np.int8, np.int16, np.int32, np.int64,
+               np.uint8, np.uint16, np.uint32, np.uint64]
+    for npi in np_ints:
+        simplify_type[npi] = int
+
+    simplify_type[np.bool] = bool
+except ImportError:
+    pass
+
+
 def type_changed(a, b):
-    if isinstance(a, DogmaticDict) or isinstance(b, DogmaticDict):
-        return not (isinstance(a, dict) and isinstance(b, dict))
-    if isinstance(a, DogmaticList) or isinstance(b, DogmaticList):
-        return not (isinstance(a, list) and isinstance(b, list))
-    return type(a) != type(b)
+    return simplify_type[type(a)] != simplify_type[type(b)]
 
 
 def dogmatize(x):
