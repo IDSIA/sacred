@@ -76,6 +76,8 @@ def get_config_updates(updates):
             continue
         path, sep, value = upd.partition('=')
         assert sep == '=', "Missing '=' in update '%s'" % upd
+        path = path.strip()    # get rid of surrounding whitespace
+        value = value.strip()  # get rid of surrounding whitespace
         set_by_dotted_path(config_updates, path, _convert_value(value))
     return config_updates
 
