@@ -125,17 +125,19 @@ class Experiment(Ingredient):
                           print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
-        if args['COMMAND']:
-            cmd_name = args['COMMAND']
-            return self.run_command(cmd_name,
-                                    config_updates=config_updates,
-                                    loglevel=loglevel)
-
         for obs in get_observers(args):
             if obs not in self.observers:
                 self.observers.append(obs)
+
+        if args['COMMAND']:
+            cmd_name = args['COMMAND']
+        else:
+            cmd_name = self.default_command
+
         try:
-            return self.run(config_updates, loglevel)
+            return self.run_command(cmd_name,
+                                    config_updates=config_updates,
+                                    loglevel=loglevel)
         except:
             if args['--debug']:
                 raise
