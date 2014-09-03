@@ -11,6 +11,10 @@ ex = Experiment('hello_config')
 def cfg():
     recipient = "world"
     message = "Hello %s!" % recipient
+    d = {
+            "foo": 1,
+            "bar": 2,
+        }
 
 
 @ex.automain

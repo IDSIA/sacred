@@ -31,11 +31,11 @@ def _my_safe_repr(objekt, context, maxlevels, level):
 def _cfgprint(x, key, added, updated, typechanges, indent=''):
     def colored(text):
         if key in added:
-            return BLUE + text + ENDC
+            return GREEN + text + ENDC
         elif key in typechanges:
             return RED + text + ENDC
         elif key in updated:
-            return GREEN + text + ENDC
+            return BLUE + text + ENDC
         else:
             return text
 
@@ -52,6 +52,10 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
         print(colored('{}{} = {}'.format(indent, last_key,
                                          printer.pformat(x))))
 
+LEGEND = '(' + BLUE + 'modified' + ENDC +\
+    ', ' + GREEN + 'added' + ENDC +\
+    ', ' + RED + 'typechanged' + ENDC + ')'
+
 
 def print_config(_run):
     """
@@ -64,7 +68,7 @@ def print_config(_run):
     """
     final_config = _run.config
     added, updated, typechanges = _run.config_modifications
-    print('Configuration:')
+    print('Configuration', LEGEND + ':')
     _cfgprint(final_config, '', added, updated, typechanges)
 
 
