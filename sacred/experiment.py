@@ -76,6 +76,14 @@ class Ingredient(object):
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
+    def gather_commands(self):
+        for k, v in self.commands.items():
+            yield self.path + '.' + k, v
+
+        for ingred in self.ingredients:
+            for k, v in ingred.gather_commands():
+                yield k, v
+
 
 class Experiment(Ingredient):
     def __init__(self, name, ingredients=()):
@@ -118,10 +126,11 @@ class Experiment(Ingredient):
     def run_commandline(self, argv=None):
         if argv is None:
             argv = sys.argv
+        all_commands = self.gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
-                          commands=self.commands,
+                          commands=OrderedDict(all_commands),
                           print_help=True)
         config_updates = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
@@ -143,6 +152,14 @@ class Experiment(Ingredient):
                 raise
             else:
                 print_filtered_stacktrace()
+
+    def gather_commands(self):
+        for k, v in self.commands.items():
+            yield k, v
+
+        for ingred in self.ingredients:
+            for k, v in ingred.gather_commands():
+                yield k, v
 
     def run(self, config_updates=None, loglevel=None):
         return self.run_command(self.default_command, config_updates, loglevel)

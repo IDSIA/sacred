@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import ast
+from collections import OrderedDict
 import re
 import textwrap
 import sys
@@ -100,8 +101,9 @@ def _format_usage(program_name, description, commands=None):
     if commands:
         usage += "\nCommands:\n"
         cmd_len = max([len(c) for c in commands] + [8])
-        command_doc = {k: _get_first_line_of_docstring(v)
-                       for k, v in commands.items()}
+        command_doc = OrderedDict(
+            [(k, _get_first_line_of_docstring(v))
+                for k, v in commands.items()])
         for k, v in command_doc.items():
             usage += ("  {:%d}  {}\n" % cmd_len).format(k, v)
     return usage
