@@ -47,6 +47,7 @@ Contents:
    observers
    randomness
    logging
+   ingredients
 
 
 

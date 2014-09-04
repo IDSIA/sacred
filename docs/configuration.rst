@@ -71,6 +71,9 @@ So the following config scope would result in an empty configuration:
         _test_string = 'this is ignored'     # starts with an _
         match = pattern.match(_test_string)  # not JSON serializable
 
+
+.. _multiple_config_scopes:
+
 Multiple Config Scopes
 ======================
 You can have multiple Config Scopes attached to the same experiment or ingredient.
