@@ -1,8 +1,3 @@
-.. Sacred documentation master file, created by
-   sphinx-quickstart on Mon May  5 12:33:14 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Sacred's documentation!
 ==================================
     | *Every experiment is sacred*
@@ -50,8 +45,8 @@ Contents:
    config_injection
    commandline
    observers
-   logging
    randomness
+   logging
 
 
 

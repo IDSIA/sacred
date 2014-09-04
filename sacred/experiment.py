@@ -118,7 +118,6 @@ class Experiment(Ingredient):
         fill_missing_versions(self.dependencies)
 
         return dict(
-            name=self.name,
             mainfile=self.mainfile,
             dependencies=self.dependencies,
             doc=self.doc)
