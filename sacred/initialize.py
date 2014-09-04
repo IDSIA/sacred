@@ -111,8 +111,8 @@ class Scaffold(object):
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
             cf.config = self.get_fixture()
-            cf.seed = get_seed(self.rnd)
-            cf.rnd = create_rnd(cf.seed)
+            seed = get_seed(self.rnd)
+            cf.rnd = create_rnd(seed)
             cf.run = run
 
         self._warn_about_suspicious_changes()

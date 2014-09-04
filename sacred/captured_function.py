@@ -17,7 +17,6 @@ def create_captured_function(f):
     f.signature = Signature(f)
     f.logger = None
     f.config = {}
-    f.seed = None
     f.rnd = None
     f.run = None
     return captured_function(f)
@@ -25,6 +24,8 @@ def create_captured_function(f):
 
 @wrapt.decorator
 def captured_function(wrapped, instance, args, kwargs):
+    # todo: performance optimize this by only creating a PRNG if the signature
+    # contains either _seed or _rnd
     runseed = get_seed(wrapped.rnd)
     options = FallbackDict(
         wrapped.config,

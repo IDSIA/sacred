@@ -5,10 +5,15 @@ from __future__ import division, print_function, unicode_literals
 import collections
 from contextlib import contextmanager
 import logging
-import random
 import sys
 import traceback as tb
 
+try:
+    from numpy.random import randint
+    from numpy.random import RandomState as Random
+except ImportError:
+    from random import randint
+    from random import Random
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
@@ -82,12 +87,12 @@ def tee_output():
 
 def get_seed(rnd=None):
     if rnd is None:
-        return random.randint(*SEEDRANGE)
+        return randint(*SEEDRANGE)
     return rnd.randint(*SEEDRANGE)
 
 
 def create_rnd(seed):
-    return random.Random(seed)
+    return Random(seed)
 
 
 def iterate_separately(dictionary):
