@@ -130,7 +130,7 @@ try:
 
 except ImportError:
     class MongoObserver(RunObserver):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, url=None, db_name='sacred'):
             raise ImportError('only available if "pymongo" is installed')
 
 

@@ -34,6 +34,8 @@ In Sacred we achieve this through the following main mechanisms:
     5. Automatic seeding helps controlling the randomness in your experiments,
        such that they stay reproducible.
 
+
+
 Contents:
 
 .. toctree::
@@ -48,8 +50,7 @@ Contents:
    randomness
    logging
    ingredients
-
-
+   apidoc
 
 
 Indices and tables
