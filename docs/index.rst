@@ -36,10 +36,11 @@ In Sacred we achieve this through the following main mechanisms:
 
 
 
-Contents:
+Contents
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    quickstart
    experiment

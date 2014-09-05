@@ -44,15 +44,32 @@ class Ingredient(object):
 
     ############################## Decorators ##################################
     def command(self, f):
+        """
+        Decorator to define a new command for this Ingredient or Experiment.
+
+        The name of the command will be the name of the function. It can be
+        called from the commandline or by using the run_command function.
+
+        Commands are automatically also captured functions.
+        """
+
         captured_f = self.capture(f)
         self.commands[f.__name__] = captured_f
         return captured_f
 
     def config(self, f):
+        """
+        Decorator to turn a function into a ConfigScope and add it to the
+        Ingredient/Experiment.
+        """
         self.cfgs.append(ConfigScope(f))
         return self.cfgs[-1]
 
     def capture(self, f):
+        """
+        Decorator to turn a function into a captured function.
+        """
+
         if f in self.captured_functions:
             return f
         captured_function = create_captured_function(f)
