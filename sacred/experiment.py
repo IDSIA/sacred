@@ -29,6 +29,7 @@ class Ingredient(object):
                  caller_globals=None):
         self.path = path
         self.cfgs = []
+        self.named_cfgs = dict()
         self.ingredients = list(ingredients)
         self.gen_seed = gen_seed
         self.captured_functions = []
@@ -51,6 +52,11 @@ class Ingredient(object):
     def config(self, f):
         self.cfgs.append(ConfigScope(f))
         return self.cfgs[-1]
+
+    def named_config(self, f):
+        config_scope = ConfigScope(f)
+        self.named_cfgs[f.__name__] = config_scope
+        return config_scope
 
     def capture(self, f):
         if f in self.captured_functions:

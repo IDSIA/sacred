@@ -141,7 +141,10 @@ def get_configuration(scaffolding):
 
 
 def distribute_config_updates(scaffolding, config_updates):
-    for path, value in iterate_flattened(config_updates):
+    if config_updates is None:
+        return
+    nested_config_updates = convert_to_nested_dict(config_updates)
+    for path, value in iterate_flattened(nested_config_updates):
         for p1, p2 in reversed(list(iter_path_splits(path))):
             if p1 in scaffolding:
                 set_by_dotted_path(scaffolding[p1].config_updates, p2, value)
@@ -233,9 +236,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     scaffolding = create_scaffolding(experiment)
     logger = initialize_logging(experiment, scaffolding, log_level)
 
-    if config_updates is not None:
-        nested_config_updates = convert_to_nested_dict(config_updates)
-        distribute_config_updates(scaffolding, nested_config_updates)
+    distribute_config_updates(scaffolding, config_updates)
 
     for sc in reversed(scaffolding.values()):
         sc.set_up_seed()  # partially recursive
@@ -247,13 +248,12 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
 
     config_modifications = get_config_modifications(scaffolding)
 
-    # only get experiment info if there are observers
-    experiment_info = experiment.get_info() if experiment.observers else dict(
-        mainfile='',
-        dependencies=[],
-        doc=''
-    )
-    host_info = get_host_info()
+    # only get experiment and host info if there are observers
+    if experiment.observers:
+        experiment_info = experiment.get_info()
+        host_info = get_host_info()
+    else:
+        experiment_info = host_info = dict()
 
     main_function = get_command(scaffolding, command_name)
 
