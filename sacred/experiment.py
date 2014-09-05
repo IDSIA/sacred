@@ -76,12 +76,12 @@ class Ingredient(object):
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
-    def gather_commands(self):
+    def _gather_commands(self):
         for k, v in self.commands.items():
             yield self.path + '.' + k, v
 
         for ingred in self.ingredients:
-            for k, v in ingred.gather_commands():
+            for k, v in ingred._gather_commands():
                 yield k, v
 
 
@@ -102,11 +102,40 @@ class Experiment(Ingredient):
     ############################## Decorators ##################################
 
     def main(self, f):
+        """
+        Decorator to define the main function of the experiment.
+
+        The main function of an experiment is the default command that is being
+        run when no command is specified, or when calling the run() method.
+        """
         captured = self.command(f)
         self.default_command = captured.__name__
         return captured
 
     def automain(self, f):
+        """
+        Decorator that defines the main function of the experiment and
+        automatically runs the experiment commandline when the file is executed.
+
+        The method decorated by this should be last in the file because:
+
+        .. code-block:: python
+
+            @ex.automain
+            def my_main():
+                pass
+
+        is equivalent to:
+
+        .. code-block:: python
+
+            @ex.main
+            def my_main():
+                pass
+
+            if __name__ == '__main__':
+                ex.run_commandline()
+        """
         captured = self.main(f)
         if f.__module__ == '__main__':
             self.run_commandline()
@@ -122,10 +151,23 @@ class Experiment(Ingredient):
             dependencies=self.dependencies,
             doc=self.doc)
 
+    def run(self, config_updates=None, loglevel=None):
+        """
+        Run the main function of the experiment.
+
+        :param config_updates: Changes to the configuration as a nested dictionary
+        :type config_updates: dict
+        :param loglevel: Changes to the log-level for this run.
+        :type loglevel: int | str
+
+        :return: The result of the main function.
+        """
+        return self.run_command(self.default_command, config_updates, loglevel)
+
     def run_commandline(self, argv=None):
         if argv is None:
             argv = sys.argv
-        all_commands = self.gather_commands()
+        all_commands = self._gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
@@ -152,13 +194,12 @@ class Experiment(Ingredient):
             else:
                 print_filtered_stacktrace()
 
-    def gather_commands(self):
+    ############################## protected interface #########################
+
+    def _gather_commands(self):
         for k, v in self.commands.items():
             yield k, v
 
         for ingred in self.ingredients:
-            for k, v in ingred.gather_commands():
+            for k, v in ingred._gather_commands():
                 yield k, v
-
-    def run(self, config_updates=None, loglevel=None):
-        return self.run_command(self.default_command, config_updates, loglevel)
