@@ -132,20 +132,19 @@ class Scaffold(object):
 
 def get_configuration(scaffolding):
     config = {}
-    for sc in reversed(scaffolding):
-        if sc.path:
-            set_by_dotted_path(config, sc.path, sc.config)
+    for sc_path, sc in reversed(scaffolding.items()):
+        if sc_path:
+            set_by_dotted_path(config, sc_path, sc.config)
         else:
             config.update(sc.config)
     return config
 
 
 def distribute_config_updates(scaffolding, config_updates):
-    modrunner_cfgups = {sc.path: sc.config_updates for sc in scaffolding}
     for path, value in iterate_flattened(config_updates):
         for p1, p2 in reversed(list(iter_path_splits(path))):
-            if p1 in modrunner_cfgups:
-                set_by_dotted_path(modrunner_cfgups[p1], p2, value)
+            if p1 in scaffolding:
+                set_by_dotted_path(scaffolding[p1].config_updates, p2, value)
                 break
                 # this is guaranteed to occur for one of the modrunners,
                 # because the exrunner has path ''
@@ -164,9 +163,9 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
         if loglevel:
             root_logger.setLevel(loglevel)
 
-    for sc in scaffolding:
-        if sc.path:
-            sc.logger = root_logger.getChild(sc.path)
+    for sc_path, sc in scaffolding.items():
+        if sc_path:
+            sc.logger = root_logger.getChild(sc_path)
         else:
             sc.logger = root_logger
 
@@ -185,7 +184,7 @@ def create_scaffolding(experiment):
             captured_functions=sm.captured_functions,
             commands=sm.commands,
             generate_seed=sm.gen_seed)
-    return scaffolding.values()
+    return scaffolding
 
 
 def gather_ingredients_topological(ingredient):
@@ -203,34 +202,34 @@ def get_config_modifications(scaffolding):
     added = set()
     updated = set()
     typechanges = {}
-    for sc in scaffolding:
+    for sc_path, sc in scaffolding.items():
         mr_add, mr_up, mr_tc = sc.get_config_modifications()
         if mr_add or mr_up or mr_tc:
-            updated |= set(iter_prefixes(sc.path))
-        added |= {join_paths(sc.path, a) for a in mr_add}
-        updated |= {join_paths(sc.path, u) for u in mr_up}
-        typechanges.update({join_paths(sc.path, k): v
+            updated |= set(iter_prefixes(sc_path))
+        added |= {join_paths(sc_path, a) for a in mr_add}
+        updated |= {join_paths(sc_path, u) for u in mr_up}
+        typechanges.update({join_paths(sc_path, k): v
                             for k, v in mr_tc.items()})
     return ConfigModifications(added, updated, typechanges)
 
 
 def get_command(scaffolding, command_path):
     path, _, command_name = command_path.rpartition('.')
-    for scaf in scaffolding:
-        if scaf.path == path:
-            if command_name in scaf.commands:
-                return scaf.commands[command_name]
-            else:
-                if path:
-                    raise KeyError('Command "%s" not found in ingredient "%s"' %
-                                   (command_name, path))
-                else:
-                    raise KeyError('Command "%s" not found' % command_name)
+    if path not in scaffolding:
+        raise KeyError('Ingredient for command "%s" not found.' % command_path)
 
-    raise KeyError('Ingredient for command "%s" not found.' % command_path)
+    if command_name in scaffolding[path].commands:
+        return scaffolding[path].commands[command_name]
+    else:
+        if path:
+            raise KeyError('Command "%s" not found in ingredient "%s"' %
+                           (command_name, path))
+        else:
+            raise KeyError('Command "%s" not found' % command_name)
 
 
-def create_run(experiment, command_name, config_updates=None, log_level=None):
+def create_run(experiment, command_name, config_updates=None, log_level=None,
+               named_configs=()):
     scaffolding = create_scaffolding(experiment)
     logger = initialize_logging(experiment, scaffolding, log_level)
 
@@ -238,10 +237,10 @@ def create_run(experiment, command_name, config_updates=None, log_level=None):
         nested_config_updates = convert_to_nested_dict(config_updates)
         distribute_config_updates(scaffolding, nested_config_updates)
 
-    for sc in reversed(scaffolding):
+    for sc in reversed(scaffolding.values()):
         sc.set_up_seed()  # partially recursive
 
-    for sc in scaffolding:
+    for sc in scaffolding.values():
         sc.set_up_config()
 
     config = get_configuration(scaffolding)
@@ -261,7 +260,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None):
     run = Run(config, config_modifications, main_function, experiment.observers,
               logger, experiment.name, experiment_info, host_info)
 
-    for sc in scaffolding:
+    for sc in scaffolding.values():
         sc.finalize_initialization(run=run)
 
     return run
