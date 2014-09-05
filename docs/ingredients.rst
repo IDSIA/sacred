@@ -109,21 +109,55 @@ You can call that command using dotted notation::
 
 Nesting Ingredients
 ===================
-  * It is possible to use Ingredients in Ingredients.
-  * In fact Experiments are also Ingredients, so you can even reuse Experiments
-    as Ingredients in other Experiments.
-  * just add ``ingredients=[subingredient]`` to the creation of the Ingredient.
-  * in the configuration the entries will not be nested. So lets say you use an
-    Ingredient called ``paths`` in the ``dataset`` Ingredient. Then in the
-    configuration of your experiment you will see two entries: ``dataset`` and
-    ``paths`` at the same level. (``paths`` is **not** nested in the ``dataset``
-    entry)
+It is possible to use Ingredients in other Ingredients
+
+.. code-block:: python
+
+    data_ingredient = Ingredient('dataset', ingredients=[my_subingredient])
+
+In fact Experiments are also Ingredients, so you can even reuse Experiments as
+Ingredients.
+
+In the configuration of the Experiment there will be all the used Ingredients
+and sub-Ingredients. So lets say you use an Ingredient called ``paths`` in the
+``dataset`` Ingredient. Then in the configuration of your experiment you will
+see two entries: ``dataset`` and ``paths`` (``paths`` is **not** nested in the
+``dataset`` entry)
 
 Explicit Nesting
 ----------------
-  * If you want nested structure you can do it explicitly by changing the name
-    of the ``path`` Ingredient to ``dataset.path``.
+If you want nested structure you can do it explicitly by changing the name of
+the ``path`` Ingredient to ``dataset.path``. Then the path entry will be nested
+in the dataset entry in the configuration.
 
-  * explicit package structure
-  * accessing subingredients
-  * hierarchical seeding
+
+Accessing the Ingredient Config
+===============================
+You can access the configuration of any used ingredient from ConfigScopes and
+from captured functions via the name of the ingredient:
+
+.. code-block:: python
+
+    @ex.config
+    def cfg(dataset):  # name of the ingredient here
+        abs_filename = os.path.abspath(dataset['filename'])  # access 'filename'
+
+    @ex.capture
+    def some_function(dataset):   # name of the ingredient here
+        if dataset['normalize']:  # access 'normalize'
+            print("Dataset was normalized")
+
+Ingredients with explicit nesting can be accessed by following their path. So
+for the example of the Ingredient ``dataset.path`` we could access it like this:
+
+.. code-block:: python
+
+    @ex.capture
+    def some_function(dataset):
+        path = dataset['path']   # access the configuration of dataset.path
+
+The only exception is, that if you want to access the configuration from another
+Ingredient you can leave away their common prefix. So accessing ``dataset.path``
+from ``dataset`` you could just directly access ``path`` in captured functions
+and ConfigScopes.
+
