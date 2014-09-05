@@ -29,7 +29,7 @@ class Ingredient(object):
                  caller_globals=None):
         self.path = path
         self.cfgs = []
-        self.named_cfgs = dict()
+        self.named_configs = dict()
         self.ingredients = list(ingredients)
         self.gen_seed = gen_seed
         self.captured_functions = []
@@ -55,7 +55,7 @@ class Ingredient(object):
 
     def named_config(self, f):
         config_scope = ConfigScope(f)
-        self.named_cfgs[f.__name__] = config_scope
+        self.named_configs[f.__name__] = config_scope
         return config_scope
 
     def capture(self, f):
@@ -77,8 +77,10 @@ class Ingredient(object):
                 yield sr, depth + 1
         self._is_traversing = False
 
-    def run_command(self, command_name, config_updates=None, loglevel=None):
-        run = create_run(self, command_name, config_updates, log_level=loglevel)
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), loglevel=None):
+        run = create_run(self, command_name, config_updates,
+                         log_level=loglevel, named_configs=named_configs_to_use)
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
@@ -137,7 +139,7 @@ class Experiment(Ingredient):
                           description=self.doc,
                           commands=OrderedDict(all_commands),
                           print_help=True)
-        config_updates = get_config_updates(args['UPDATE'])
+        config_updates, named_configs = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
         for obs in get_observers(args):
             if obs not in self.observers:
@@ -151,6 +153,7 @@ class Experiment(Ingredient):
         try:
             return self.run_command(cmd_name,
                                     config_updates=config_updates,
+                                    named_configs_to_use=named_configs,
                                     loglevel=loglevel)
         except:
             if args['--debug']:

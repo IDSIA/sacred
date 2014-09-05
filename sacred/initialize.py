@@ -18,12 +18,14 @@ __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,
-                 commands, generate_seed):
+                 commands, named_configs, generate_seed):
         self.config_scopes = config_scopes
+        self.named_configs = named_configs
         self.subrunners = subrunners
         self.path = path
         self.generate_seed = generate_seed
         self.config_updates = {}
+        self.named_configs_to_use = []
         self.config = None
         self.fixture = None  # TODO: rename
         self.logger = None
@@ -66,8 +68,19 @@ class Scaffold(object):
         if self.generate_seed:
             self.config['seed'] = self.seed
 
-        for config in self.config_scopes:
+        # named configs first
+        fixed = dict()
+        for cfgname in self.named_configs_to_use:
+            config = self.named_configs[cfgname]
             config(fixed=self.config_updates,
+                   preset=self.config,
+                   fallback=const_fallback)
+            fixed.update(config)
+        fixed.update(self.config_updates)
+
+        # unnamed (default) configs second
+        for config in self.config_scopes:
+            config(fixed=fixed,
                    preset=self.config,
                    fallback=const_fallback)
             self.config.update(config)
@@ -153,6 +166,14 @@ def distribute_config_updates(scaffolding, config_updates):
                 # because the exrunner has path ''
 
 
+def distribute_named_configs(scaffolding, named_configs):
+    for ncfg in named_configs:
+        path, _, cfg_name = ncfg.rpartition('.')
+        if path not in scaffolding:
+            raise KeyError('Ingredient for named config "%s" not found' % ncfg)
+        scaffolding[path].named_configs_to_use.append(cfg_name)
+
+
 def initialize_logging(experiment, scaffolding, loglevel=None):
     if experiment.logger is None:
         if loglevel:
@@ -186,8 +207,9 @@ def create_scaffolding(experiment):
             path=sm.path if sm != experiment else '',
             captured_functions=sm.captured_functions,
             commands=sm.commands,
+            named_configs=sm.named_configs,
             generate_seed=sm.gen_seed)
-    return scaffolding
+    return OrderedDict([(sc.path, sc) for sc in scaffolding.values()])
 
 
 def gather_ingredients_topological(ingredient):
@@ -237,6 +259,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     logger = initialize_logging(experiment, scaffolding, log_level)
 
     distribute_config_updates(scaffolding, config_updates)
+    distribute_named_configs(scaffolding, named_configs)
 
     for sc in reversed(scaffolding.values()):
         sc.set_up_seed()  # partially recursive
