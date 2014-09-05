@@ -44,10 +44,16 @@ class Ingredient(object):
         self.dependencies = get_dependencies(caller_globals)
 
     ############################## Decorators ##################################
-    def command(self, f):
-        captured_f = self.capture(f)
-        self.commands[f.__name__] = captured_f
-        return captured_f
+    def command(self, f=None, prefix=None):
+        def _command(f):
+            captured_f = self.capture(f, prefix=prefix)
+            self.commands[f.__name__] = captured_f
+            return captured_f
+
+        if f is not None:
+            return _command(f)
+        else:
+            return _command
 
     def config(self, f):
         self.cfgs.append(ConfigScope(f))
@@ -58,12 +64,18 @@ class Ingredient(object):
         self.named_configs[f.__name__] = config_scope
         return config_scope
 
-    def capture(self, f):
-        if f in self.captured_functions:
-            return f
-        captured_function = create_captured_function(f)
-        self.captured_functions.append(captured_function)
-        return captured_function
+    def capture(self, f=None, prefix=None):
+        def _capture(f):
+            if f in self.captured_functions:
+                return f
+            captured_function = create_captured_function(f, prefix=prefix)
+            self.captured_functions.append(captured_function)
+            return captured_function
+
+        if f is not None:
+            return _capture(f)
+        else:
+            return _capture
 
     ################### protected helpers ###################################
     def traverse_ingredients(self):

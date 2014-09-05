@@ -123,7 +123,10 @@ class Scaffold(object):
 
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = self.get_fixture()
+            if cf.prefix:
+                cf.config = self.get_fixture()[cf.prefix]
+            else:
+                cf.config = self.get_fixture()
             seed = get_seed(self.rnd)
             cf.rnd = create_rnd(seed)
             cf.run = run
