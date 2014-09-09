@@ -148,7 +148,7 @@ class Experiment(Ingredient):
 
         return dict(
             mainfile=self.mainfile,
-            dependencies=self.dependencies,
+            dependencies=self.dependencies.items(),
             doc=self.doc)
 
     def run(self, config_updates=None, loglevel=None):
