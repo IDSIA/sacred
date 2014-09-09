@@ -109,7 +109,7 @@ def test_parse_compound_arglist2():
     (["f=False"],       {'f': False}),
 ])
 def test_get_config_updates(update, expected):
-    assert get_config_updates(update) == expected
+    assert get_config_updates(update) == (expected, [])
 
 
 @pytest.mark.parametrize("value,expected", [

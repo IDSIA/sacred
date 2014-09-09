@@ -13,12 +13,13 @@ from sacred.utils import create_rnd, get_seed
 __sacred__ = True
 
 
-def create_captured_function(f):
+def create_captured_function(f, prefix=None):
     f.signature = Signature(f)
     f.logger = None
     f.config = {}
     f.rnd = None
     f.run = None
+    f.prefix = prefix
     return captured_function(f)
 
 

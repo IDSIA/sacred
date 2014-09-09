@@ -18,12 +18,14 @@ __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,
-                 commands, generate_seed):
+                 commands, named_configs, generate_seed):
         self.config_scopes = config_scopes
+        self.named_configs = named_configs
         self.subrunners = subrunners
         self.path = path
         self.generate_seed = generate_seed
         self.config_updates = {}
+        self.named_configs_to_use = []
         self.config = None
         self.fixture = None  # TODO: rename
         self.logger = None
@@ -66,8 +68,19 @@ class Scaffold(object):
         if self.generate_seed:
             self.config['seed'] = self.seed
 
-        for config in self.config_scopes:
+        # named configs first
+        fixed = dict()
+        for cfgname in self.named_configs_to_use:
+            config = self.named_configs[cfgname]
             config(fixed=self.config_updates,
+                   preset=self.config,
+                   fallback=const_fallback)
+            fixed.update(config)
+        fixed.update(self.config_updates)
+
+        # unnamed (default) configs second
+        for config in self.config_scopes:
+            config(fixed=fixed,
                    preset=self.config,
                    fallback=const_fallback)
             self.config.update(config)
@@ -110,7 +123,10 @@ class Scaffold(object):
 
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = self.get_fixture()
+            if cf.prefix:
+                cf.config = self.get_fixture()[cf.prefix]
+            else:
+                cf.config = self.get_fixture()
             seed = get_seed(self.rnd)
             cf.rnd = create_rnd(seed)
             cf.run = run
@@ -132,23 +148,33 @@ class Scaffold(object):
 
 def get_configuration(scaffolding):
     config = {}
-    for sc in reversed(scaffolding):
-        if sc.path:
-            set_by_dotted_path(config, sc.path, sc.config)
+    for sc_path, sc in reversed(scaffolding.items()):
+        if sc_path:
+            set_by_dotted_path(config, sc_path, sc.config)
         else:
             config.update(sc.config)
     return config
 
 
 def distribute_config_updates(scaffolding, config_updates):
-    modrunner_cfgups = {sc.path: sc.config_updates for sc in scaffolding}
-    for path, value in iterate_flattened(config_updates):
+    if config_updates is None:
+        return
+    nested_config_updates = convert_to_nested_dict(config_updates)
+    for path, value in iterate_flattened(nested_config_updates):
         for p1, p2 in reversed(list(iter_path_splits(path))):
-            if p1 in modrunner_cfgups:
-                set_by_dotted_path(modrunner_cfgups[p1], p2, value)
+            if p1 in scaffolding:
+                set_by_dotted_path(scaffolding[p1].config_updates, p2, value)
                 break
                 # this is guaranteed to occur for one of the modrunners,
                 # because the exrunner has path ''
+
+
+def distribute_named_configs(scaffolding, named_configs):
+    for ncfg in named_configs:
+        path, _, cfg_name = ncfg.rpartition('.')
+        if path not in scaffolding:
+            raise KeyError('Ingredient for named config "%s" not found' % ncfg)
+        scaffolding[path].named_configs_to_use.append(cfg_name)
 
 
 def initialize_logging(experiment, scaffolding, loglevel=None):
@@ -164,9 +190,9 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
         if loglevel:
             root_logger.setLevel(loglevel)
 
-    for sc in scaffolding:
-        if sc.path:
-            sc.logger = root_logger.getChild(sc.path)
+    for sc_path, sc in scaffolding.items():
+        if sc_path:
+            sc.logger = root_logger.getChild(sc_path)
         else:
             sc.logger = root_logger
 
@@ -184,8 +210,9 @@ def create_scaffolding(experiment):
             path=sm.path if sm != experiment else '',
             captured_functions=sm.captured_functions,
             commands=sm.commands,
+            named_configs=sm.named_configs,
             generate_seed=sm.gen_seed)
-    return scaffolding.values()
+    return OrderedDict([(sc.path, sc) for sc in scaffolding.values()])
 
 
 def gather_ingredients_topological(ingredient):
@@ -203,65 +230,63 @@ def get_config_modifications(scaffolding):
     added = set()
     updated = set()
     typechanges = {}
-    for sc in scaffolding:
+    for sc_path, sc in scaffolding.items():
         mr_add, mr_up, mr_tc = sc.get_config_modifications()
         if mr_add or mr_up or mr_tc:
-            updated |= set(iter_prefixes(sc.path))
-        added |= {join_paths(sc.path, a) for a in mr_add}
-        updated |= {join_paths(sc.path, u) for u in mr_up}
-        typechanges.update({join_paths(sc.path, k): v
+            updated |= set(iter_prefixes(sc_path))
+        added |= {join_paths(sc_path, a) for a in mr_add}
+        updated |= {join_paths(sc_path, u) for u in mr_up}
+        typechanges.update({join_paths(sc_path, k): v
                             for k, v in mr_tc.items()})
     return ConfigModifications(added, updated, typechanges)
 
 
 def get_command(scaffolding, command_path):
     path, _, command_name = command_path.rpartition('.')
-    for scaf in scaffolding:
-        if scaf.path == path:
-            if command_name in scaf.commands:
-                return scaf.commands[command_name]
-            else:
-                if path:
-                    raise KeyError('Command "%s" not found in ingredient "%s"' %
-                                   (command_name, path))
-                else:
-                    raise KeyError('Command "%s" not found' % command_name)
+    if path not in scaffolding:
+        raise KeyError('Ingredient for command "%s" not found.' % command_path)
 
-    raise KeyError('Ingredient for command "%s" not found.' % command_path)
+    if command_name in scaffolding[path].commands:
+        return scaffolding[path].commands[command_name]
+    else:
+        if path:
+            raise KeyError('Command "%s" not found in ingredient "%s"' %
+                           (command_name, path))
+        else:
+            raise KeyError('Command "%s" not found' % command_name)
 
 
-def create_run(experiment, command_name, config_updates=None, log_level=None):
+def create_run(experiment, command_name, config_updates=None, log_level=None,
+               named_configs=()):
     scaffolding = create_scaffolding(experiment)
     logger = initialize_logging(experiment, scaffolding, log_level)
 
-    if config_updates is not None:
-        nested_config_updates = convert_to_nested_dict(config_updates)
-        distribute_config_updates(scaffolding, nested_config_updates)
+    distribute_config_updates(scaffolding, config_updates)
+    distribute_named_configs(scaffolding, named_configs)
 
-    for sc in reversed(scaffolding):
+    for sc in reversed(scaffolding.values()):
         sc.set_up_seed()  # partially recursive
 
-    for sc in scaffolding:
+    for sc in scaffolding.values():
         sc.set_up_config()
 
     config = get_configuration(scaffolding)
 
     config_modifications = get_config_modifications(scaffolding)
 
-    # only get experiment info if there are observers
-    experiment_info = experiment.get_info() if experiment.observers else dict(
-        mainfile='',
-        dependencies=[],
-        doc=''
-    )
-    host_info = get_host_info()
+    # only get experiment and host info if there are observers
+    if experiment.observers:
+        experiment_info = experiment.get_info()
+        host_info = get_host_info()
+    else:
+        experiment_info = host_info = dict()
 
     main_function = get_command(scaffolding, command_name)
 
     run = Run(config, config_modifications, main_function, experiment.observers,
               logger, experiment.name, experiment_info, host_info)
 
-    for sc in scaffolding:
+    for sc in scaffolding.values():
         sc.finalize_initialization(run=run)
 
     return run
