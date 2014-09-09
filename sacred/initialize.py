@@ -90,12 +90,12 @@ class Scaffold(object):
         return self.config
 
     def get_config_modifications(self):
-        added = set()
         typechanges = {}
         flat_config_upd = [k for k, v in iterate_flattened(self.config_updates)]
         updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
+        added = set(updated)
         for config in self.config_scopes:
-            added |= config.added_values
+            added &= config.added_values
             typechanges.update(config.typechanges)
 
         return added, updated, typechanges
