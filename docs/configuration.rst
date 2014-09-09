@@ -100,3 +100,32 @@ function:
 As you'd expect this will result in the configuration
 ``{'a': -1, 'b': 'test', 'c': 20}``.
 
+Named Configurations
+====================
+With so called *Named Configurations* you can provide a ConfigScope that
+is not used by default, but can be optionally added as config updates:
+
+.. code-block:: python
+
+    ex = Experiment('named_configs_demo')
+
+    @ex.config
+    def cfg():
+        a = 10
+        b = 3 * a
+        c = "foo"
+
+    @ex.named_config
+    def variant1():
+        a = 100
+        c = "bar"
+
+The default configuration of this Experiment is ``{'a':10, 'b':30, 'c':"foo"}``.
+But if you run it with the named config like this::
+
+    >> python named_configs_demo.py with variant1
+
+Then the configuration becomes ``{'a':100, 'b':300, 'c':"bar"}``. Note that the
+named ConfigScope is run first and its values are treated as fixed, so you can
+have other values that are computed from them.
+

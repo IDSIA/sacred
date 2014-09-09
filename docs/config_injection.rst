@@ -88,3 +88,29 @@ These might change, and are not well documented yet, so be careful:
   - ``_rnd`` : a random state seeded with ``seed``
   - ``_log`` : a logger for that function
   - ``_run`` : the run object for the current run
+
+
+Prefix
+======
+If you have some function that only needs to access some sub-dictionary of
+your configuration you can use the ``prefix`` parameter of ``@ex.capture``:
+
+.. code-block:: python
+
+    ex = Experiment('prefix_demo')
+
+    @ex.config
+    def my_config1():
+        dataset = {
+            'filename': 'foo.txt',
+            'path': '/tmp/'
+        }
+
+    @ex.capture(prefix='dataset')
+    def print_me(filename, path):  # direct access to entries of the dataset dict
+        print("filename =", filename)
+        print("path =", path)
+
+That way you have direct access to the items of that dictionary, but no access
+to the rest of the configuration anymore. It is a bit like setting a namespace
+for the function. Dotted notation for the prefix works as you would expect.

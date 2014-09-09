@@ -8,7 +8,7 @@ from host_info import get_host_info
 from sacred.custom_containers import dogmatize, undogmatize
 from sacred.utils import get_seed, create_rnd, is_prefix, set_by_dotted_path, \
     iterate_flattened, iter_prefixes, iter_path_splits, \
-    create_basic_stream_logger, join_paths
+    create_basic_stream_logger, join_paths, get_by_dotted_path
 from run import Run
 from utils import convert_to_nested_dict
 
@@ -123,10 +123,7 @@ class Scaffold(object):
 
         for cf in self._captured_functions:
             cf.logger = self.logger.getChild(cf.__name__)
-            if cf.prefix:
-                cf.config = self.get_fixture()[cf.prefix]
-            else:
-                cf.config = self.get_fixture()
+            cf.config = get_by_dotted_path(self.get_fixture(), cf.prefix)
             seed = get_seed(self.rnd)
             cf.rnd = create_rnd(seed)
             cf.run = run
