@@ -41,6 +41,11 @@ class Ingredient(object):
         self.mainfile = caller_globals.get('__file__') or ""
         if self.mainfile:
             self.mainfile = os.path.abspath(self.mainfile)
+            if self.mainfile.endswith('.pyc'):
+                non_compiled_mainfile = self.mainfile[:-1]
+                if os.path.exists(non_compiled_mainfile):
+                    self.mainfile = non_compiled_mainfile
+
         self.dependencies = get_dependencies(caller_globals)
 
     ############################## Decorators ##################################
