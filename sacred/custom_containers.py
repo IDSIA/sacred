@@ -248,7 +248,7 @@ try:
     for npi in np_ints:
         simplify_type[npi] = int
 
-    simplify_type[np.bool] = bool
+    simplify_type[np.bool_] = bool
 except ImportError:
     pass
 
