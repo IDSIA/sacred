@@ -191,13 +191,15 @@ class Experiment(Ingredient):
             dependencies=self.dependencies.items(),
             doc=self.doc)
 
-    def run(self, config_updates=None, loglevel=None):
+    def run(self, config_updates=None, named_configs=(), loglevel=None):
         """
         Run the main function of the experiment.
 
         :param config_updates: Changes to the configuration as a nested
                                dictionary
         :type config_updates: dict
+        :param named_configs: list of names of named_configs to use
+        :type named_configs: list
         :param loglevel: Changes to the log-level for this run.
         :type loglevel: int | str
 
@@ -205,6 +207,7 @@ class Experiment(Ingredient):
         """
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
+                                named_configs_to_use=named_configs,
                                 loglevel=loglevel)
 
     def run_commandline(self, argv=None):
