@@ -69,18 +69,16 @@ class Scaffold(object):
             self.config['seed'] = self.seed
 
         # named configs first
-        fixed = dict()
         for cfgname in self.named_configs_to_use:
             config = self.named_configs[cfgname]
             config(fixed=self.config_updates,
                    preset=self.config,
                    fallback=const_fallback)
-            fixed.update(config)
-        fixed.update(self.config_updates)
+            self.config_updates.update(config)
 
         # unnamed (default) configs second
         for config in self.config_scopes:
-            config(fixed=fixed,
+            config(fixed=self.config_updates,
                    preset=self.config,
                    fallback=const_fallback)
             self.config.update(config)

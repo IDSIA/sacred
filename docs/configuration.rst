@@ -129,3 +129,9 @@ Then the configuration becomes ``{'a':100, 'b':300, 'c':"bar"}``. Note that the
 named ConfigScope is run first and its values are treated as fixed, so you can
 have other values that are computed from them.
 
+.. note::
+
+    You can have multiple named configurations, and you can use as many of them
+    as you like for any given run. But notice that the order in which you
+    include them matters: The ones you put first will be evaluated first and
+    the values they set are treated as fixed for all the further ConfigScopes.

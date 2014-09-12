@@ -12,6 +12,7 @@ def cfg():
     recipient = "world"
     message = "Hello %s!" % recipient
 
+
 @ex.named_config
 def rude():
     recipient = "bastard"
