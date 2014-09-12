@@ -10,6 +10,13 @@ import re
 
 from sacred.custom_containers import dogmatize, undogmatize
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+
+
 
 __sacred__ = True
 
@@ -78,6 +85,10 @@ class ConfigScope(dict):
         self.typechanges = cfg_locals.typechanges
         for k, v in cfg_locals.items():
             if k.startswith('_'):
+                continue
+            if np and isinstance(v, np.bool_):
+                # fixes an issue with numpy.bool_ not being json-serializable
+                self[k] = bool(v)
                 continue
             try:
                 json.dumps(v)
