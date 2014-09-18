@@ -6,6 +6,9 @@ from copy import copy
 import inspect
 
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
+
 class Signature:
     """
     Contains information about the signature of a function.
@@ -43,11 +46,13 @@ class Signature:
         self._assert_no_unexpected_args(args)
         self._assert_no_unexpected_kwargs(kwargs)
         self._assert_no_duplicate_args(args, kwargs)
-        args, kwargs = self._fill_in_options(args, kwargs, options)
         if self.kw_wildcard_name:
             k = copy(options)
             k.update(kwargs)
             kwargs = k
+        else:
+            args, kwargs = self._fill_in_options(args, kwargs, options)
+
         self._assert_no_missing_args(args, kwargs)
         return args, kwargs
 
@@ -105,4 +110,4 @@ class Signature:
         missing_args = [m for m in free_params if m not in self.kwargs]
         if missing_args:
             raise TypeError("{} is missing value(s) for {}".format(
-                self.name, free_params))
+                self.name, missing_args))

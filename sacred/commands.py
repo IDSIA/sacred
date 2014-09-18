@@ -1,13 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
-from blessings import Terminal
-from sacred.captured_function import CapturedFunction
 
-term = Terminal()
+from sacred.utils import iterate_separately, join_paths
+
+
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+RED = '\033[91m'
+ENDC = '\033[0m'
 
 
 def _my_safe_repr(objekt, context, maxlevels, level):
@@ -27,11 +31,11 @@ def _my_safe_repr(objekt, context, maxlevels, level):
 def _cfgprint(x, key, added, updated, typechanges, indent=''):
     def colored(text):
         if key in added:
-            return term.blue(text)
+            return GREEN + text + ENDC
         elif key in typechanges:
-            return term.red(text)
+            return RED + text + ENDC
         elif key in updated:
-            return term.green(text)
+            return BLUE + text + ENDC
         else:
             return text
 
@@ -39,24 +43,21 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
     if isinstance(x, dict):
         if last_key:
             print(colored('{}{}:'.format(indent, last_key)))
-        for k in sorted(x.keys()):
-            _cfgprint(x[k], (key + '.' + k).strip('.'), added, updated, typechanges, indent + '  ')
+        for k, v in iterate_separately(x):
+            subkey = join_paths(key, k)
+            _cfgprint(v, subkey, added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
         printer.format = _my_safe_repr
         print(colored('{}{} = {}'.format(indent, last_key,
                                          printer.pformat(x))))
 
-
-def _flatten_keys(d):
-    if isinstance(d, dict):
-        for key in d:
-            yield key
-            for k in _flatten_keys(d[key]):
-                yield key + '.' + k
+LEGEND = '(' + BLUE + 'modified' + ENDC +\
+    ', ' + GREEN + 'added' + ENDC +\
+    ', ' + RED + 'typechanged' + ENDC + ')'
 
 
-def print_config(final_config, added, updated, typechanges):
+def print_config(_run):
     """
     Print the updated configuration and exit.
 
@@ -65,12 +66,11 @@ def print_config(final_config, added, updated, typechanges):
       blue:   value added
       red:    value updated but type changed
     """
-    print('Final Configuration:')
+    final_config = _run.config
+    added, updated, typechanges = _run.config_modifications
+    print('Configuration', LEGEND + ':')
     _cfgprint(final_config, '', added, updated, typechanges)
 
 
 def help_for_command(command):
-    if isinstance(command, CapturedFunction):
-        return pydoc.text.document(command._wrapped_function)
-    else:
-        return pydoc.text.document(command)
+    return pydoc.text.document(command)

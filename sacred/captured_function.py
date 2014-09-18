@@ -3,32 +3,46 @@
 from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
 import time
+
+import wrapt
+
+from sacred.custom_containers import FallbackDict
 from sacred.signature import Signature
+from sacred.utils import create_rnd, get_seed
+
+__sacred__ = True
 
 
-class CapturedFunction(object):
-    def __init__(self, f, parent):
-        self._wrapped_function = f
-        self.__doc__ = f.__doc__
-        self.__name__ = f.__name__
-        self._parent_experiment = parent
-        self._signature = Signature(f)
-        self.logger = None
+def create_captured_function(f, prefix=None):
+    f.signature = Signature(f)
+    f.logger = None
+    f.config = {}
+    f.rnd = None
+    f.run = None
+    f.prefix = prefix
+    return captured_function(f)
 
-    def execute(self, args, kwargs, options=None):
-        opt = dict(options) if options is not None else dict()
-        if 'log' in self._signature.arguments:
-            opt['log'] = self.logger
-        args, kwargs = self._signature.construct_arguments(args, kwargs, opt)
-        self.logger.info("started")
-        start_time = time.time()
-        ####################### run actual function ############################
-        result = self._wrapped_function(*args, **kwargs)
-        ########################################################################
-        stop_time = time.time()
-        elapsed_time = timedelta(seconds=round(stop_time - start_time))
-        self.logger.info("finished after %s." % elapsed_time)
-        return result
 
-    def __call__(self, *args, **kwargs):
-        return self.execute(args, kwargs, self._parent_experiment.cfg)
+@wrapt.decorator
+def captured_function(wrapped, instance, args, kwargs):
+    # todo: performance optimize this by only creating a PRNG if the signature
+    # contains either _seed or _rnd
+    runseed = get_seed(wrapped.rnd)
+    options = FallbackDict(
+        wrapped.config,
+        _log=wrapped.logger,
+        _seed=runseed,
+        _rnd=create_rnd(runseed),
+        _run=wrapped.run
+    )
+    args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
+    wrapped.logger.debug("Started")
+    start_time = time.time()
+    ####################### run actual function ############################
+    result = wrapped(*args, **kwargs)
+    ########################################################################
+    stop_time = time.time()
+    elapsed_time = timedelta(seconds=round(stop_time - start_time))
+    wrapped.logger.debug("Finished after %s." % elapsed_time)
+
+    return result
