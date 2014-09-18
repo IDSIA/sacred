@@ -4,13 +4,13 @@
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict, defaultdict, namedtuple
 from copy import copy
-from host_info import get_host_info
 from sacred.custom_containers import dogmatize, undogmatize
-from sacred.utils import get_seed, create_rnd, is_prefix, set_by_dotted_path, \
-    iterate_flattened, iter_prefixes, iter_path_splits, \
-    create_basic_stream_logger, join_paths, get_by_dotted_path
-from run import Run
-from utils import convert_to_nested_dict
+from sacred.host_info import get_host_info
+from sacred.run import Run
+from sacred.utils import (
+    get_seed, create_rnd, is_prefix, set_by_dotted_path, iterate_flattened,
+    iter_prefixes, iter_path_splits, create_basic_stream_logger, join_paths,
+    get_by_dotted_path, convert_to_nested_dict)
 
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
@@ -42,7 +42,7 @@ class Scaffold(object):
         self.rnd = create_rnd(self.seed)
 
         # Hierarchically set the seed of proper subrunners
-        for subrunner_path, subrunner in reversed(self.subrunners.items()):
+        for subrunner_path, subrunner in reversed(list(self.subrunners.items())):
             if is_prefix(self.path, subrunner_path):
                 subrunner.set_up_seed(self.rnd)
 
@@ -143,7 +143,7 @@ class Scaffold(object):
 
 def get_configuration(scaffolding):
     config = {}
-    for sc_path, sc in reversed(scaffolding.items()):
+    for sc_path, sc in reversed(list(scaffolding.items())):
         if sc_path:
             set_by_dotted_path(config, sc_path, sc.config)
         else:
@@ -259,7 +259,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)
 
-    for sc in reversed(scaffolding.values()):
+    for sc in reversed(list(scaffolding.values())):
         sc.set_up_seed()  # partially recursive
 
     for sc in scaffolding.values():

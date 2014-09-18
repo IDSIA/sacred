@@ -8,6 +8,15 @@ import subprocess
 import sys
 import pkg_resources
 
+try:
+    basestring  # attempt to evaluate basestring
+
+    def is_str(s):
+        return isinstance(s, basestring)
+except NameError:
+    def is_str(s):
+        return isinstance(s, str)
+
 
 def get_processor_name():
     if platform.system() == "Windows":
@@ -88,7 +97,7 @@ def get_module_version_heuristic(mod):
         if not hasattr(mod, vattr):
             continue
         v = getattr(mod, vattr)
-        if isinstance(v, (str, unicode)) and PEP440_VERSION_PATTERN.match(v):
+        if is_str(v) and PEP440_VERSION_PATTERN.match(v):
             return v
     return None
 

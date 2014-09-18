@@ -5,8 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from sacred.utils import (recursive_update, iterate_separately,
                           iterate_flattened, set_by_dotted_path,
                           get_by_dotted_path, iter_path_splits, iter_prefixes,
-                          join_paths, is_prefix)
-from utils import convert_to_nested_dict
+                          join_paths, is_prefix, convert_to_nested_dict)
 
 
 def test_recursive_update():

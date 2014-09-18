@@ -54,6 +54,18 @@ optional dependencies but they offer some cool features:
 
     pip install numpy, pymongo
     
+Tests
+-----
+The tests for sacred use the [py.test](http://pytest.org/latest/) package. 
+You can execute them like this:
+
+    python setup.py test
+    
+There is also a config file for [tox](https://testrun.org/tox/latest/) so you 
+can automatically run the tests for various python versions like this:
+
+    tox
+
 
 License
 -------
