@@ -70,17 +70,21 @@ def parse_args(argv, description="", commands=None, print_help=True):
 
 def get_config_updates(updates):
     config_updates = {}
+    named_configs = []
     if not updates:
-        return config_updates
+        return config_updates, named_configs
     for upd in updates:
         if upd == '':
             continue
         path, sep, value = upd.partition('=')
-        assert sep == '=', "Missing '=' in update '%s'" % upd
-        path = path.strip()    # get rid of surrounding whitespace
-        value = value.strip()  # get rid of surrounding whitespace
-        set_by_dotted_path(config_updates, path, _convert_value(value))
-    return config_updates
+        #assert sep == '=', "Missing '=' in update '%s'" % upd
+        if sep == '=':
+            path = path.strip()    # get rid of surrounding whitespace
+            value = value.strip()  # get rid of surrounding whitespace
+            set_by_dotted_path(config_updates, path, _convert_value(value))
+        else:
+            named_configs.append(path)
+    return config_updates, named_configs
 
 
 def get_observers(args):

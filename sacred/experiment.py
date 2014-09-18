@@ -29,6 +29,7 @@ class Ingredient(object):
                  caller_globals=None):
         self.path = path
         self.cfgs = []
+        self.named_configs = dict()
         self.ingredients = list(ingredients)
         self.gen_seed = gen_seed
         self.captured_functions = []
@@ -40,24 +41,61 @@ class Ingredient(object):
         self.mainfile = caller_globals.get('__file__') or ""
         if self.mainfile:
             self.mainfile = os.path.abspath(self.mainfile)
+            if self.mainfile.endswith('.pyc'):
+                non_compiled_mainfile = self.mainfile[:-1]
+                if os.path.exists(non_compiled_mainfile):
+                    self.mainfile = non_compiled_mainfile
+
         self.dependencies = get_dependencies(caller_globals)
 
     ############################## Decorators ##################################
-    def command(self, f):
-        captured_f = self.capture(f)
-        self.commands[f.__name__] = captured_f
-        return captured_f
+    def command(self, func=None, prefix=None):
+        """
+        Decorator to define a new command for this Ingredient or Experiment.
 
-    def config(self, f):
-        self.cfgs.append(ConfigScope(f))
+        The name of the command will be the name of the function. It can be
+        called from the commandline or by using the run_command function.
+
+        Commands are automatically also captured functions.
+        """
+        def _command(f):
+            captured_f = self.capture(f, prefix=prefix)
+            self.commands[f.__name__] = captured_f
+            return captured_f
+
+        if func is not None:
+            return _command(func)
+        else:
+            return _command
+
+    def config(self, func):
+        """
+        Decorator to turn a function into a ConfigScope and add it to the
+        Ingredient/Experiment.
+        """
+        self.cfgs.append(ConfigScope(func))
         return self.cfgs[-1]
 
-    def capture(self, f):
-        if f in self.captured_functions:
-            return f
-        captured_function = create_captured_function(f)
-        self.captured_functions.append(captured_function)
-        return captured_function
+    def named_config(self, func):
+        config_scope = ConfigScope(func)
+        self.named_configs[func.__name__] = config_scope
+        return config_scope
+
+    def capture(self, func=None, prefix=None):
+        """
+        Decorator to turn a function into a captured function.
+        """
+        def _capture(f):
+            if f in self.captured_functions:
+                return f
+            captured_function = create_captured_function(f, prefix=prefix)
+            self.captured_functions.append(captured_function)
+            return captured_function
+
+        if func is not None:
+            return _capture(func)
+        else:
+            return _capture
 
     ################### protected helpers ###################################
     def traverse_ingredients(self):
@@ -71,8 +109,10 @@ class Ingredient(object):
                 yield sr, depth + 1
         self._is_traversing = False
 
-    def run_command(self, command_name, config_updates=None, loglevel=None):
-        run = create_run(self, command_name, config_updates, log_level=loglevel)
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), loglevel=None):
+        run = create_run(self, command_name, config_updates,
+                         log_level=loglevel, named_configs=named_configs_to_use)
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
@@ -148,21 +188,27 @@ class Experiment(Ingredient):
 
         return dict(
             mainfile=self.mainfile,
-            dependencies=self.dependencies,
+            dependencies=self.dependencies.items(),
             doc=self.doc)
 
-    def run(self, config_updates=None, loglevel=None):
+    def run(self, config_updates=None, named_configs=(), loglevel=None):
         """
         Run the main function of the experiment.
 
-        :param config_updates: Changes to the configuration as a nested dictionary
+        :param config_updates: Changes to the configuration as a nested
+                               dictionary
         :type config_updates: dict
+        :param named_configs: list of names of named_configs to use
+        :type named_configs: list
         :param loglevel: Changes to the log-level for this run.
         :type loglevel: int | str
 
         :return: The result of the main function.
         """
-        return self.run_command(self.default_command, config_updates, loglevel)
+        return self.run_command(self.default_command,
+                                config_updates=config_updates,
+                                named_configs_to_use=named_configs,
+                                loglevel=loglevel)
 
     def run_commandline(self, argv=None):
         if argv is None:
@@ -173,7 +219,7 @@ class Experiment(Ingredient):
                           description=self.doc,
                           commands=OrderedDict(all_commands),
                           print_help=True)
-        config_updates = get_config_updates(args['UPDATE'])
+        config_updates, named_configs = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
         for obs in get_observers(args):
             if obs not in self.observers:
@@ -187,6 +233,7 @@ class Experiment(Ingredient):
         try:
             return self.run_command(cmd_name,
                                     config_updates=config_updates,
+                                    named_configs_to_use=named_configs,
                                     loglevel=loglevel)
         except:
             if args['--debug']:
