@@ -7,15 +7,12 @@ from functools import update_wrapper
 import inspect
 import json
 import re
-
 from sacred.custom_containers import dogmatize, undogmatize
 
 try:
     import numpy as np
 except ImportError:
     np = None
-
-
 
 
 __sacred__ = True
@@ -60,29 +57,56 @@ class ConfigScope(dict):
         self.typechanges = {}
 
     def __call__(self, fixed=None, preset=None, fallback=None):
+        """
+        Execute this ConfigScope. This will evaluate the function body and
+        fill the relevant local variables into entries into keys in this
+        dictionary.
+
+        :param fixed: Dictionary of entries that should stay fixed during the
+                      evaluation. All of them will be part of the final config.
+        :type fixed: dict
+        :param preset: Dictionary of preset values that will be available during
+                       the evaluation (if they are declared in the function
+                       argument list). All of them will be part of the final
+                       config.
+        :type preset: dict
+        :param fallback: Dictionary of fallback values that will be available
+                         during the evaluation (if they are declared in the
+                         function argument list). They will NOT be part of the
+                         final config.
+        :type fallback: dict
+        :return: self
+        :rtype: ConfigScope
+        """
         self._initialized = True
         self.clear()
         cfg_locals = dogmatize(fixed or {})
         fallback = fallback or {}
-        if preset is None:
-            assert self.arg_spec.args == [], \
-                "'%s' not in preset for ConfigScope. (There are no presets)"
-        else:
-            for a in self.arg_spec.args:
-                assert a in preset or a in fallback, \
-                    "'%s' not in preset for ConfigScope. " \
-                    "Available options are: %s" % (a, preset.keys())
-                if a in preset:
-                    cfg_locals[a] = preset[a]
-                else:
-                    assert a in fallback, "'%s' not in preset for ConfigScope."\
-                                          " Available options are: %s" % \
-                                          (a, preset.keys() + fallback.keys())
+        preset = preset or {}
+        fallback_view = {}
 
-        cfg_locals.fallback = fallback
+        available_entries = set(preset.keys()) | set(fallback.keys())
+
+        for a in self.arg_spec.args:
+            if a not in available_entries:
+                raise KeyError("'%s' not in preset for ConfigScope. "
+                               "Available options are: %s" %
+                               (a, available_entries))
+            if a in preset:
+                cfg_locals[a] = preset[a]
+            else:  # a in fallback
+                fallback_view[a] = fallback[a]
+
+        cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges
+
+        # fill in the unused presets
+        for p in preset:
+            if p not in cfg_locals:
+                cfg_locals[p] = preset[p]
+
         for k, v in cfg_locals.items():
             if k.startswith('_'):
                 continue
@@ -96,19 +120,6 @@ class ConfigScope(dict):
             except TypeError:
                 pass
         return self
-
-    def __getattr__(self, k):
-        """
-        Gets key if it exists, otherwise throws AttributeError.
-        """
-        try:
-            # Throws exception if not in prototype chain
-            return object.__getattribute__(self, k)
-        except AttributeError:
-            try:
-                return self[k]
-            except KeyError:
-                raise AttributeError(k)
 
     def __getitem__(self, item):
         assert self._initialized, "ConfigScope has to be executed before access"
