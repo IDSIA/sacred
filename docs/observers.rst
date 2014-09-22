@@ -98,6 +98,8 @@ Failed:
     In case any other exception occurs, Sacred fires a ``failed_event`` with the
     fail time and the corresponding stacktrace.
 
+.. _custom_info:
+
 Saving Custom Information
 =========================
 Sometimes you want to add custom information about the run of an experiment,

@@ -79,6 +79,16 @@ You can also specify the log-level while calling ``run`` like so. See
 
     ex.run(loglevel='DEBUG')
 
+
+.. note::
+    Under the hood a ``Run`` object is created every time you run an
+    ``Experiment``. This object holds some information about that run (e.g. the
+    final configuration) and is responsible for emitting all the events for the
+    :doc:`observers`. You can access it by accepting the special `_run` argument
+    in any of your :ref:`captured_functions`. It is also used for
+    :ref:`custom_info`.
+
+
 Configuration
 =============
 The easiest way to add configuration to an experiment is through a

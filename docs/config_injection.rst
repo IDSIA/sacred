@@ -19,6 +19,7 @@ configuration values. So for example this would work:
         print("a =", a)  # 10
         print("b =", b)  # test
 
+.. _captured_functions:
 
 Captured Functions
 ==================
