@@ -112,7 +112,7 @@ class DogmaticDict(dict):
                 self.typechanges[key] = (type(value), type(fixed_val))
 
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
-                #recursive update
+                # recursive update
                 for k, v in value.items():
                     fixed_val[k] = v
 
@@ -211,8 +211,7 @@ class DogmaticList(list):
     def revelation(self):
         for i, x in enumerate(self):
             if isinstance(x, (DogmaticDict, DogmaticList)):
-                ignore = x.revelation()
-                #missing |= {"%d." % i + k for k in x.revelation()}
+                x.revelation()
         return set()
 
 

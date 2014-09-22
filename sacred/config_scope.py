@@ -91,10 +91,10 @@ class ConfigScope(dict):
         :param fixed: Dictionary of entries that should stay fixed during the
                       evaluation. All of them will be part of the final config.
         :type fixed: dict
-        :param preset: Dictionary of preset values that will be available during
-                       the evaluation (if they are declared in the function
-                       argument list). All of them will be part of the final
-                       config.
+        :param preset: Dictionary of preset values that will be available
+                       during the evaluation (if they are declared in the
+                       function argument list). All of them will be part of the
+                       final config.
         :type preset: dict
         :param fallback: Dictionary of fallback values that will be available
                          during the evaluation (if they are declared in the
@@ -146,5 +146,5 @@ class ConfigScope(dict):
         return self
 
     def __getitem__(self, item):
-        assert self._initialized, "ConfigScope has to be executed before access"
+        assert self._initialized, "ConfigScope must be executed before access"
         return dict.__getitem__(self, item)

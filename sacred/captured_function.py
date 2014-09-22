@@ -38,9 +38,9 @@ def captured_function(wrapped, instance, args, kwargs):
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
     wrapped.logger.debug("Started")
     start_time = time.time()
-    ####################### run actual function ############################
+    # =================== run actual function =================================
     result = wrapped(*args, **kwargs)
-    ########################################################################
+    # =========================================================================
     stop_time = time.time()
     elapsed_time = timedelta(seconds=round(stop_time - start_time))
     wrapped.logger.debug("Finished after %s." % elapsed_time)

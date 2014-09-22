@@ -43,7 +43,7 @@ Arguments:
 DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
 HOSTNAME_PATTERN = \
     r"(?=.{1,255}$)"\
-         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
+    r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
     r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
     r"\.?"
 URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
@@ -77,7 +77,6 @@ def get_config_updates(updates):
         if upd == '':
             continue
         path, sep, value = upd.partition('=')
-        #assert sep == '=', "Missing '=' in update '%s'" % upd
         if sep == '=':
             path = path.strip()    # get rid of surrounding whitespace
             value = value.strip()  # get rid of surrounding whitespace

@@ -61,14 +61,14 @@ class Signature:
         vararg = ("*" + self.vararg_name) if self.vararg_name else ""
         kwargs = ["%s=%s" % (n, v.__repr__()) for n, v in self.kwargs.items()]
         kw_wc = ("**" + self.kw_wildcard_name) if self.kw_wildcard_name else ""
-        return "{name}({args}{sep1}{vararg}{sep2}{kwargs}{sep3}{kw_wc})".format(
+        return "{name}({args}{c1}{vararg}{c2}{kwargs}{c3}{kw_wc})".format(
             name=self.name,
             args=", ".join(args),
-            sep1=", " if vararg and args else "",
+            c1=", " if vararg and args else "",
             vararg=vararg,
-            sep2=", " if kwargs and (args or vararg) else "",
+            c2=", " if kwargs and (args or vararg) else "",
             kwargs=", ".join(kwargs),
-            sep3=", " if kw_wc and (args or vararg or kwargs) else "",
+            c3=", " if kw_wc and (args or vararg or kwargs) else "",
             kw_wc=kw_wc
         )
 

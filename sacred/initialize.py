@@ -43,7 +43,8 @@ class Scaffold(object):
         self.rnd = create_rnd(self.seed)
 
         # Hierarchically set the seed of proper subrunners
-        for subrunner_path, subrunner in reversed(list(self.subrunners.items())):
+        for subrunner_path, subrunner in reversed(list(
+                self.subrunners.items())):
             if is_prefix(self.path, subrunner_path):
                 subrunner.set_up_seed(self.rnd)
 
@@ -87,7 +88,8 @@ class Scaffold(object):
 
     def get_config_modifications(self):
         typechanges = {}
-        flat_config_upd = [k for k, v in iterate_flattened(self.config_updates)]
+        flat_config_upd = [k
+                           for k, v in iterate_flattened(self.config_updates)]
         updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
         added = set(updated)
         for config in self.config_scopes:
@@ -279,8 +281,9 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
 
     main_function = get_command(scaffolding, command_name)
 
-    run = Run(config, config_modifications, main_function, experiment.observers,
-              logger, experiment.name, experiment_info, host_info)
+    run = Run(config, config_modifications, main_function,
+              experiment.observers, logger, experiment.name, experiment_info,
+              host_info)
 
     for sc in scaffolding.values():
         sc.finalize_initialization(run=run)

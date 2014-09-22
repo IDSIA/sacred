@@ -47,7 +47,7 @@ class Ingredient(object):
 
         self.dependencies = get_dependencies(caller_globals)
 
-    ############################## Decorators ##################################
+    # =========================== Decorators ==================================
     def command(self, func=None, prefix=None):
         """
         Decorator to define a new command for this Ingredient or Experiment.
@@ -96,7 +96,7 @@ class Ingredient(object):
         else:
             return _capture
 
-    ################### protected helpers ###################################
+    # ======================== protected helpers ==============================
     def traverse_ingredients(self):
         if self._is_traversing:
             raise CircularDependencyError()
@@ -111,7 +111,8 @@ class Ingredient(object):
     def run_command(self, command_name, config_updates=None,
                     named_configs_to_use=(), loglevel=None):
         run = create_run(self, command_name, config_updates,
-                         log_level=loglevel, named_configs=named_configs_to_use)
+                         log_level=loglevel,
+                         named_configs=named_configs_to_use)
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
@@ -138,7 +139,7 @@ class Experiment(Ingredient):
         self.command(print_config)
         self.info = None
 
-    ############################## Decorators ##################################
+    # =========================== Decorators ==================================
 
     def main(self, f):
         """
@@ -154,7 +155,8 @@ class Experiment(Ingredient):
     def automain(self, f):
         """
         Decorator that defines the main function of the experiment and
-        automatically runs the experiment commandline when the file is executed.
+        automatically runs the experiment commandline when the file is
+        executed.
 
         The method decorated by this should be last in the file because:
 
@@ -180,7 +182,7 @@ class Experiment(Ingredient):
             self.run_commandline()
         return captured
 
-    ############################## public interface ############################
+    # =========================== public interface ============================
 
     def get_info(self):
         fill_missing_versions(self.dependencies)
@@ -240,7 +242,7 @@ class Experiment(Ingredient):
             else:
                 print_filtered_stacktrace()
 
-    ############################## protected interface #########################
+    # ============================ protected interface ========================
 
     def _gather_commands(self):
         for k, v in self.commands.items():
