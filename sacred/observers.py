@@ -83,7 +83,7 @@ try:
             self.experiment_entry['name'] = name
             self.experiment_entry['experiment_info'] = ex_info
             try:
-                with open(ex_info['mainfile'], 'r') as f:
+                with open(ex_info['mainfile']) as f:
                     self.experiment_entry['source'] = f.read()
             except IOError as e:
                 self.experiment_entry['experiment_info']['source'] = str(e)

@@ -18,6 +18,7 @@ def rude():
     recipient = "bastard"
     message = "Fuck off you %s!" % recipient
 
+
 @ex.automain
 def main(message):
     print(message)

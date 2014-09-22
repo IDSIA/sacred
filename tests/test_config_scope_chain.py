@@ -126,7 +126,8 @@ def test_chained_config_scopes_fix_subentries():
     def cfg2():
         pass
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2], fixed={'d': {'a': 0}})
+    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2],
+                                             fixed={'d': {'a': 0}})
     assert set(final_cfg['d'].keys()) == {'a', 'b'}
     assert final_cfg['d']['a'] == 0
     assert final_cfg['d']['b'] == 20

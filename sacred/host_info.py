@@ -9,7 +9,7 @@ import sys
 import pkg_resources
 
 try:
-    basestring  # attempt to evaluate basestring
+    isinstance("", basestring)  # attempt to evaluate basestring
 
     def is_str(s):
         return isinstance(s, basestring)

@@ -116,12 +116,12 @@ class Ingredient(object):
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
-    def _gather_commands(self):
+    def gather_commands(self):
         for k, v in self.commands.items():
             yield self.path + '.' + k, v
 
         for ingred in self.ingredients:
-            for k, v in ingred._gather_commands():
+            for k, v in ingred.gather_commands():
                 yield k, v
 
 
@@ -214,12 +214,11 @@ class Experiment(Ingredient):
     def run_commandline(self, argv=None):
         if argv is None:
             argv = sys.argv
-        all_commands = self._gather_commands()
+        all_commands = self.gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
-                          commands=OrderedDict(all_commands),
-                          print_help=True)
+                          commands=OrderedDict(all_commands))
         config_updates, named_configs = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
         for obs in get_observers(args):
@@ -242,12 +241,10 @@ class Experiment(Ingredient):
             else:
                 print_filtered_stacktrace()
 
-    # ============================ protected interface ========================
-
-    def _gather_commands(self):
+    def gather_commands(self):
         for k, v in self.commands.items():
             yield k, v
 
         for ingred in self.ingredients:
-            for k, v in ingred._gather_commands():
+            for k, v in ingred.gather_commands():
                 yield k, v

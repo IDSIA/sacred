@@ -9,7 +9,7 @@ import inspect
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 
-class Signature:
+class Signature(object):
     """
     Contains information about the signature of a function.
     name : the functions name

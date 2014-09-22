@@ -15,7 +15,6 @@ def cfg():
     verbose = True
 
 
-
 # ============== Ingredient 1: dataset.paths =================
 data_paths = Ingredient("dataset.paths", ingredients=[s])
 

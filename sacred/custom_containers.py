@@ -35,49 +35,49 @@ class FallbackDict(dict):
         return self.__contains__(item)
 
     def items(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def iteritems(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def iterkeys(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def itervalues(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def keys(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def pop(self, k, d=None):
-        raise NotImplemented
+        raise NotImplementedError
 
     def popitem(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def setdefault(self, k, d=None):
-        raise NotImplemented
+        raise NotImplementedError
 
-    def update(self, E=None, **F):
-        raise NotImplemented
+    def update(self, e=None, **f):
+        raise NotImplementedError
 
     def values(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def viewitems(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def viewkeys(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def viewvalues(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __iter__(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __len__(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class DogmaticDict(dict):
@@ -209,7 +209,7 @@ class DogmaticList(list):
         pass
 
     def revelation(self):
-        for i, x in enumerate(self):
+        for x in self:
             if isinstance(x, (DogmaticDict, DogmaticList)):
                 x.revelation()
         return set()

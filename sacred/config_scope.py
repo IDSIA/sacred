@@ -113,15 +113,15 @@ class ConfigScope(dict):
 
         available_entries = set(preset.keys()) | set(fallback.keys())
 
-        for a in self.arg_spec.args:
-            if a not in available_entries:
+        for arg in self.arg_spec.args:
+            if arg not in available_entries:
                 raise KeyError("'%s' not in preset for ConfigScope. "
                                "Available options are: %s" %
-                               (a, available_entries))
-            if a in preset:
-                cfg_locals[a] = preset[a]
-            else:  # a in fallback
-                fallback_view[a] = fallback[a]
+                               (arg, available_entries))
+            if arg in preset:
+                cfg_locals[arg] = preset[arg]
+            else:  # arg in fallback
+                fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
@@ -131,16 +131,16 @@ class ConfigScope(dict):
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 
-        for k, v in cfg_locals.items():
-            if k.startswith('_'):
+        for key, value in cfg_locals.items():
+            if key.startswith('_'):
                 continue
-            if np and isinstance(v, np.bool_):
+            if np and isinstance(value, np.bool_):
                 # fixes an issue with numpy.bool_ not being json-serializable
-                self[k] = bool(v)
+                self[key] = bool(value)
                 continue
             try:
-                json.dumps(v)
-                self[k] = undogmatize(v)
+                json.dumps(value)
+                self[key] = undogmatize(value)
             except TypeError:
                 pass
         return self

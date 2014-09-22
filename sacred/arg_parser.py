@@ -105,10 +105,10 @@ def _format_usage(program_name, description, commands=None):
         usage += "\nCommands:\n"
         cmd_len = max([len(c) for c in commands] + [8])
         command_doc = OrderedDict(
-            [(k, _get_first_line_of_docstring(v))
-                for k, v in commands.items()])
-        for k, v in command_doc.items():
-            usage += ("  {:%d}  {}\n" % cmd_len).format(k, v)
+            [(cmd_name, _get_first_line_of_docstring(cmd_doc))
+             for cmd_name, cmd_doc in commands.items()])
+        for cmd_name, cmd_doc in command_doc.items():
+            usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
     return usage
 
 

@@ -38,6 +38,7 @@ def conf_scope():
     return cfg
 
 
+
 def test_config_scope_is_dict(conf_scope):
     assert isinstance(conf_scope, ConfigScope)
     assert isinstance(conf_scope, dict)
@@ -133,7 +134,7 @@ def test_conf_scope_contains_presets():
     assert set(cfg.keys()) == {'a', 'answer', 'unrelated'}
     assert cfg['a'] == 21
     assert cfg['answer'] == 42
-    assert cfg['unrelated'] == True
+    assert cfg['unrelated'] is True
 
 
 def test_conf_scope_cannot_access_undeclared_presets():
