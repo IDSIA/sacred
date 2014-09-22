@@ -38,7 +38,7 @@ your actual experiment in order to:
 
 In Sacred we achieve this through the following main mechanisms:
 
-ConfigScopes A very convenient way of the local variables in a function
+-  **ConfigScopes** A very convenient way of the local variables in a function
    to define the parameters your experiment uses.
 -  **Config Injection**: You can access all parameters of your configuration
    from every function. They are automatically injected by name.
