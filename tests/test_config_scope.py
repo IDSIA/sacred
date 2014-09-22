@@ -205,3 +205,16 @@ def test_cannot_access_globals_from_calling_scope():
     from .enclosed_config_scope import cfg2
     with pytest.raises(NameError):
         cfg2()  # would require SEVEN
+
+
+def test_fixed_subentry_of_preset():
+    @ConfigScope
+    def cfg():
+        pass
+
+    cfg(preset={'d': {'a': 1, 'b': 2}}, fixed={'d': {'a': 10}})
+
+    assert set(cfg.keys()) == {'d'}
+    assert set(cfg['d'].keys()) == {'a', 'b'}
+    assert cfg['d']['a'] == 10
+    assert cfg['d']['b'] == 2

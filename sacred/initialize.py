@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict, defaultdict, namedtuple
 from copy import copy
+from sacred.config_scope import chain_evaluate_config_scopes
 from sacred.custom_containers import dogmatize, undogmatize
 from sacred.host_info import get_host_info
 from sacred.run import Run
@@ -77,13 +78,10 @@ class Scaffold(object):
             self.config_updates.update(config)
 
         # unnamed (default) configs second
-        for config in self.config_scopes:
-            config(fixed=self.config_updates,
-                   preset=self.config,
-                   fallback=const_fallback)
-            self.config.update(config)
-
-        self.config = undogmatize(self.config)
+        self.config = chain_evaluate_config_scopes(self.config_scopes,
+                                                   fixed=self.config_updates,
+                                                   preset=self.config,
+                                                   fallback=const_fallback)
 
         return self.config
 

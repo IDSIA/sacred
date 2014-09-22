@@ -38,6 +38,29 @@ def get_function_body_code(func):
     return body_code
 
 
+def recursive_fill_in(config, preset):
+    for p in preset:
+        if p not in config:
+            config[p] = preset[p]
+        elif isinstance(config[p], dict):
+            recursive_fill_in(config[p], preset[p])
+
+
+def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
+                                 fallback=None):
+    fixed = fixed or {}
+    fallback = fallback or {}
+    final_config = dict(preset or {})
+    for config in config_scopes:
+        config(fixed=fixed,
+               preset=final_config,
+               fallback=fallback)
+
+        final_config.update(config)
+
+    return undogmatize(final_config)
+
+
 class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
@@ -103,9 +126,7 @@ class ConfigScope(dict):
         self.typechanges = cfg_locals.typechanges
 
         # fill in the unused presets
-        for p in preset:
-            if p not in cfg_locals:
-                cfg_locals[p] = preset[p]
+        recursive_fill_in(cfg_locals, preset)
 
         for k, v in cfg_locals.items():
             if k.startswith('_'):
