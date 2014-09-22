@@ -95,6 +95,9 @@ class Scaffold(object):
             added &= config.added_values
             typechanges.update(config.typechanges)
 
+        if self.generate_seed and 'seed' in added:
+            added.remove('seed')
+
         return added, updated, typechanges
 
     def get_fixture(self):
