@@ -58,6 +58,9 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
 
         final_config.update(config)
 
+    if not config_scopes:
+        final_config.update(fixed)
+
     return undogmatize(final_config)
 
 

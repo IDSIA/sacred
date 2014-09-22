@@ -78,10 +78,11 @@ class Scaffold(object):
             self.config_updates.update(config)
 
         # unnamed (default) configs second
-        self.config = chain_evaluate_config_scopes(self.config_scopes,
-                                                   fixed=self.config_updates,
-                                                   preset=self.config,
-                                                   fallback=const_fallback)
+        self.config = chain_evaluate_config_scopes(
+            self.config_scopes,
+            fixed=self.config_updates,
+            preset=self.config,
+            fallback=const_fallback)
 
         return self.config
 

@@ -130,3 +130,12 @@ def test_chained_config_scopes_fix_subentries():
     assert set(final_cfg['d'].keys()) == {'a', 'b'}
     assert final_cfg['d']['a'] == 0
     assert final_cfg['d']['b'] == 20
+
+
+def test_empty_chain_contains_preset_and_fixed():
+    final_cfg = chain_evaluate_config_scopes([],
+                                             fixed={'a': 0},
+                                             preset={'a': 1, 'b': 2})
+    assert set(final_cfg.keys()) == {'a', 'b'}
+    assert final_cfg['a'] == 0
+    assert final_cfg['b'] == 2
