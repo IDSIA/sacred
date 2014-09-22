@@ -7,6 +7,10 @@ Sacred
 > God gets quite irate<br>
 
 [![MIT licensed](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://choosealicense.com/licenses/mit/)
+[![ReadTheDocs](https://readthedocs.org/projects/sacred/badge/?version=latest)](http://sacred.readthedocs.org/)
+[![Code Scrutinizer](https://scrutinizer-ci.com/g/Qwlouse/sacred/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Qwlouse/sacred/)
+[![Travis-CI](https://travis-ci.org/Qwlouse/sacred.svg)](https://travis-ci.org/Qwlouse/sacred)
+
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around 
