@@ -6,6 +6,7 @@ Sacred
 > If a experiment is wasted<br>
 > God gets quite irate<br>
 
+[![MIT licensed](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://choosealicense.com/licenses/mit/)
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around 

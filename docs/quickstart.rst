@@ -3,13 +3,13 @@ Quickstart
 
 Installation
 ============
-Should be as easy as (TODO: upload to pypi)::
+Should be as easy as this::
 
     pip install sacred
 
 But you can of course also clone the git repo and install it from there::
 
-    git clone TODO@fillthis.in
+    git clone https://github.com/Qwlouse/sacred.git
 
 
 Hello World
