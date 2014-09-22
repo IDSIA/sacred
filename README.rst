@@ -6,11 +6,11 @@ Sacred
     | *If a experiment is wasted*
     | *God gets quite irate*
 
-.. image:: http://img.shields.io/pypi/v/sacred.svg
+.. image:: http://img.shields.io/pypi/v/sacred.png
     :target: https://pypi.python.org/pypi/sacred
     :alt: Current PyPi Version
 
-.. image:: http://img.shields.io/badge/license-MIT-brightgreen.svg
+.. image:: http://img.shields.io/badge/license-MIT-brightgreen.png
     :target: http://choosealicense.com/licenses/mit/
     :alt: MIT licensed
 
