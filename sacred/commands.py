@@ -28,7 +28,7 @@ def _my_safe_repr(objekt, context, maxlevels, level):
     return pprint._safe_repr(objekt, context, maxlevels, level)
 
 
-def _cfgprint(x, key, added, updated, typechanges, indent=''):
+def _cfgprint(obj, key, added, updated, typechanges, indent=''):
     def colored(text):
         if key in added:
             return GREEN + text + ENDC
@@ -40,17 +40,17 @@ def _cfgprint(x, key, added, updated, typechanges, indent=''):
             return text
 
     last_key = key.split('.')[-1]
-    if isinstance(x, dict):
+    if isinstance(obj, dict):
         if last_key:
             print(colored('{}{}:'.format(indent, last_key)))
-        for k, v in iterate_separately(x):
-            subkey = join_paths(key, k)
-            _cfgprint(v, subkey, added, updated, typechanges, indent + '  ')
+        for key, value in iterate_separately(obj):
+            subkey = join_paths(key, key)
+            _cfgprint(value, subkey, added, updated, typechanges, indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
         printer.format = _my_safe_repr
         print(colored('{}{} = {}'.format(indent, last_key,
-                                         printer.pformat(x))))
+                                         printer.pformat(obj))))
 
 LEGEND = '(' + BLUE + 'modified' + ENDC +\
     ', ' + GREEN + 'added' + ENDC +\

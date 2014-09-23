@@ -62,9 +62,9 @@ class Run(object):
                 raise
             except:
                 self.status = Status.FAILED
-                t, v, trace = sys.exc_info()
+                exc_type, exc_value, trace = sys.exc_info()
                 self._stop_heartbeat()
-                self._emit_failed(t, v, trace.tb_next)
+                self._emit_failed(exc_type, exc_value, trace.tb_next)
                 raise
             else:
                 self.status = Status.COMPLETED
@@ -85,17 +85,17 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_run_created_event(self):
-        for o in self._observers:
+        for observer in self._observers:
             try:
-                o.created_event(**self.experiment_info)
+                observer.created_event(**self.experiment_info)
             except AttributeError:
                 pass
 
     def _emit_started(self):
         self.start_time = time.time()
-        for o in self._observers:
+        for observer in self._observers:
             try:
-                o.started_event(
+                observer.started_event(
                     name=self.experiment_name,
                     ex_info=self.experiment_info,
                     host_info=self.host_info,
@@ -108,9 +108,9 @@ class Run(object):
         if self.status != Status.RUNNING:
             return
 
-        for o in self._observers:
+        for observer in self._observers:
             try:
-                o.heartbeat_event(
+                observer.heartbeat_event(
                     info=self.info,
                     captured_out=self.captured_out.getvalue())
             except AttributeError:
@@ -125,9 +125,9 @@ class Run(object):
     def _emit_completed(self, result):
         stop_time = self._stop_time()
         self.logger.info('Completed after %s' % self.elapsed_time)
-        for o in self._observers:
+        for observer in self._observers:
             try:
-                o.completed_event(
+                observer.completed_event(
                     stop_time=stop_time,
                     result=result)
             except AttributeError:
@@ -136,20 +136,20 @@ class Run(object):
     def _emit_interrupted(self):
         interrupt_time = self._stop_time()
         self.logger.warning("Aborted after %s!" % self.elapsed_time)
-        for o in self._observers:
+        for observer in self._observers:
             try:
-                o.interrupted_event(
+                observer.interrupted_event(
                     interrupt_time=interrupt_time)
             except AttributeError:
                 pass
 
-    def _emit_failed(self, etype, value, tb):
+    def _emit_failed(self, exc_type, exc_value, trace):
         fail_time = self._stop_time()
         self.logger.error("Failed after %s!" % self.elapsed_time)
-        fail_trace = traceback.format_exception(etype, value, tb)
-        for o in self._observers:
+        fail_trace = traceback.format_exception(exc_type, exc_value, trace)
+        for observer in self._observers:
             try:
-                o.failed_event(
+                observer.failed_event(
                     fail_time=fail_time,
                     fail_trace=fail_trace)
             except:  # _emit_failed should never throw

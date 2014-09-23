@@ -34,30 +34,30 @@ def create_basic_stream_logger(name, level=None):
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.handlers = []
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setLevel(level)
     formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
     return logger
 
 
-def recursive_update(d, u):
+def recursive_update(dictionary, updates):
     """
-    Given two dictionaries d and u, update dict d recursively.
+    Given two dictionaries, update dictionary based on updates recursively.
 
     E.g.:
     d = {'a': {'b' : 1}}
     u = {'c': 2, 'a': {'d': 3}}
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
     """
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            r = recursive_update(d.get(k, {}), v)
-            d[k] = r
+    for key, value in updates.items():
+        if isinstance(value, collections.Mapping):
+            updated = recursive_update(dictionary.get(key, {}), value)
+            dictionary[key] = updated
         else:
-            d[k] = u[k]
-    return d
+            dictionary[key] = updates[key]
+    return dictionary
 
 
 class Tee(object):
@@ -112,21 +112,21 @@ def iterate_separately(dictionary):
         yield k, dictionary[k]
 
 
-def iterate_flattened(d):
+def iterate_flattened(dictionary):
     """
     Iterate over a dictionary recursively, providing full dotted
     paths for every leaf.
     """
-    for key in sorted(d.keys()):
-        value = d[key]
+    for key in sorted(dictionary.keys()):
+        value = dictionary[key]
         if isinstance(value, dict):
-            for k, v in iterate_flattened(d[key]):
-                yield join_paths(key,  k), v
+            for sub_key, sub_value in iterate_flattened(value):
+                yield join_paths(key, sub_key), sub_value
         else:
             yield key, value
 
 
-def set_by_dotted_path(d, path, value):
+def set_by_dotted_path(dictionary, path, value):
     """
     Set an entry in a nested dict using a dotted path. Will create dictionaries
     as needed.
@@ -141,15 +141,15 @@ def set_by_dotted_path(d, path, value):
     {'foo': {'bar': 10, 'd': {'baz': 3}}}
     """
     split_path = path.split('.')
-    current_option = d
-    for p in split_path[:-1]:
-        if p not in current_option:
-            current_option[p] = dict()
-        current_option = current_option[p]
+    current_option = dictionary
+    for part in split_path[:-1]:
+        if part not in current_option:
+            current_option[part] = dict()
+        current_option = current_option[part]
     current_option[split_path[-1]] = value
 
 
-def get_by_dotted_path(d, path):
+def get_by_dotted_path(dictionary, path):
     """
     Get an entry from nested dictionaries using a dotted path.
 
@@ -158,13 +158,13 @@ def get_by_dotted_path(d, path):
     12
     """
     if not path:
-        return d
+        return dictionary
     split_path = path.split('.')
-    current_option = d
-    for p in split_path:
-        if p not in current_option:
+    current_option = dictionary
+    for part in split_path:
+        if part not in current_option:
             return None
-        current_option = current_option[p]
+        current_option = current_option[part]
     return current_option
 
 
@@ -181,9 +181,9 @@ def iter_path_splits(path):
     """
     split_path = path.split('.')
     for i in range(len(split_path)):
-        p1 = join_paths(*split_path[:i])
-        p2 = join_paths(*split_path[i:])
-        yield p1, p2
+        path1 = join_paths(*split_path[:i])
+        path2 = join_paths(*split_path[i:])
+        yield path1, path2
 
 
 def iter_prefixes(path):
@@ -221,8 +221,8 @@ def convert_to_nested_dict(dotted_dict):
     corresponding nested dictionary.
     """
     nested_dict = {}
-    for k, v in iterate_flattened(dotted_dict):
-        set_by_dotted_path(nested_dict, k, v)
+    for key, value in iterate_flattened(dotted_dict):
+        set_by_dotted_path(nested_dict, key, value)
     return nested_dict
 
 

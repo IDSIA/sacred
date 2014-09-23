@@ -113,11 +113,11 @@ class DogmaticDict(dict):
 
             if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
                 # recursive update
-                for k, v in value.items():
-                    fixed_val[k] = v
+                for k, val in value.items():
+                    fixed_val[k] = val
 
-                for k, v in fixed_val.typechanges.items():
-                    self.typechanges[join_paths(key, k)] = v
+                for k, val in fixed_val.typechanges.items():
+                    self.typechanges[join_paths(key, k)] = val
 
     def __getitem__(self, item):
         if dict.__contains__(self, item):
@@ -148,13 +148,13 @@ class DogmaticDict(dict):
     def update(self, iterable=None, **kwargs):
         if iterable is not None:
             if hasattr(iterable, 'keys'):
-                for k in iterable:
-                    self[k] = iterable[k]
+                for key in iterable:
+                    self[key] = iterable[key]
             else:
-                for (k, v) in iterable:
-                    self[k] = v
-        for k in kwargs:
-            self[k] = kwargs[k]
+                for (key, value) in iterable:
+                    self[key] = value
+        for key in kwargs:
+            self[key] = kwargs[key]
 
     def revelation(self):
         missing = set()
@@ -209,13 +209,13 @@ class DogmaticList(list):
         pass
 
     def revelation(self):
-        for x in self:
-            if isinstance(x, (DogmaticDict, DogmaticList)):
-                x.revelation()
+        for obj in self:
+            if isinstance(obj, (DogmaticDict, DogmaticList)):
+                obj.revelation()
         return set()
 
 
-simplify_type = {
+SIMPLIFY_TYPE = {
     bool: bool,
     float: float,
     int: int,
@@ -229,8 +229,8 @@ simplify_type = {
 
 # if in python 2 we want to ignore unicode/str and int/long typechanges
 try:
-    simplify_type[unicode] = str
-    simplify_type[long] = int
+    SIMPLIFY_TYPE[unicode] = str
+    SIMPLIFY_TYPE[long] = int
 except NameError:
     pass
 
@@ -238,41 +238,41 @@ except NameError:
 # datatypes to the corresponding python datatype
 try:
     import numpy as np
-    np_floats = [np.float, np.float16, np.float32, np.float64, np.float128]
-    for npf in np_floats:
-        simplify_type[npf] = float
+    NP_FLOATS = [np.float, np.float16, np.float32, np.float64, np.float128]
+    for npf in NP_FLOATS:
+        SIMPLIFY_TYPE[npf] = float
 
-    np_ints = [np.int, np.int8, np.int16, np.int32, np.int64,
+    NP_INTS = [np.int, np.int8, np.int16, np.int32, np.int64,
                np.uint8, np.uint16, np.uint32, np.uint64]
-    for npi in np_ints:
-        simplify_type[npi] = int
+    for npi in NP_INTS:
+        SIMPLIFY_TYPE[npi] = int
 
-    simplify_type[np.bool_] = bool
+    SIMPLIFY_TYPE[np.bool_] = bool
 except ImportError:
     pass
 
 
-def type_changed(a, b):
-    return simplify_type[type(a)] != simplify_type[type(b)]
+def type_changed(old_type, new_type):
+    return SIMPLIFY_TYPE[type(old_type)] != SIMPLIFY_TYPE[type(new_type)]
 
 
-def dogmatize(x):
-    if isinstance(x, dict):
-        return DogmaticDict({k: dogmatize(v) for k, v in x.items()})
-    elif isinstance(x, list):
-        return DogmaticList([dogmatize(v) for v in x])
-    elif isinstance(x, tuple):
-        return tuple(dogmatize(v) for v in x)
+def dogmatize(obj):
+    if isinstance(obj, dict):
+        return DogmaticDict({key: dogmatize(val) for key, val in obj.items()})
+    elif isinstance(obj, list):
+        return DogmaticList([dogmatize(value) for value in obj])
+    elif isinstance(obj, tuple):
+        return tuple(dogmatize(value) for value in obj)
     else:
-        return x
+        return obj
 
 
-def undogmatize(x):
-    if isinstance(x, DogmaticDict):
-        return dict({k: undogmatize(v) for k, v in x.items()})
-    elif isinstance(x, DogmaticList):
-        return list([undogmatize(v) for v in x])
-    elif isinstance(x, tuple):
-        return tuple(undogmatize(v) for v in x)
+def undogmatize(obj):
+    if isinstance(obj, DogmaticDict):
+        return dict({key: undogmatize(value) for key, value in obj.items()})
+    elif isinstance(obj, DogmaticList):
+        return list([undogmatize(value) for value in obj])
+    elif isinstance(obj, tuple):
+        return tuple(undogmatize(value) for value in obj)
     else:
-        return x
+        return obj

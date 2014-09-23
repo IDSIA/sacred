@@ -100,9 +100,9 @@ class Signature(object):
 
     def _fill_in_options(self, args, kwargs, options):
         free_params = self.get_free_parameters(args, kwargs)
-        for f in free_params:
-            if f in options:
-                kwargs[f] = options[f]
+        for param in free_params:
+            if param in options:
+                kwargs[param] = options[param]
         return args, kwargs
 
     def _assert_no_missing_args(self, args, kwargs):

@@ -39,11 +39,11 @@ def get_function_body_code(func):
 
 
 def recursive_fill_in(config, preset):
-    for p in preset:
-        if p not in config:
-            config[p] = preset[p]
-        elif isinstance(config[p], dict):
-            recursive_fill_in(config[p], preset[p])
+    for key in preset:
+        if key not in config:
+            config[key] = preset[key]
+        elif isinstance(config[key], dict):
+            recursive_fill_in(config[key], preset[key])
 
 
 def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,

@@ -112,8 +112,8 @@ def _format_usage(program_name, description, commands=None):
     return usage
 
 
-def _get_first_line_of_docstring(f):
-    return textwrap.dedent(f.__doc__ or "").strip().split('\n')[0]
+def _get_first_line_of_docstring(func):
+    return textwrap.dedent(func.__doc__ or "").strip().split('\n')[0]
 
 
 def _convert_value(value):
@@ -130,8 +130,8 @@ def _parse_mongo_db_arg(mongo_db):
     elif URL.match(mongo_db):
         return mongo_db, 'sacred'
     elif URL_DB_NAME.match(mongo_db):
-        m = URL_DB_NAME.match(mongo_db)
-        return m.group('url'), m.group('db_name')
+        match = URL_DB_NAME.match(mongo_db)
+        return match.group('url'), match.group('db_name')
     else:
         raise ValueError('mongo_db argument must have the form "db_name" or '
                          '"host:port[:db_name]" but was %s' % mongo_db)
