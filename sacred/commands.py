@@ -2,10 +2,11 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+from collections import namedtuple
 import pprint
 import pydoc
 
-from sacred.utils import iterate_separately, join_paths
+from sacred.utils import iterate_flattened_separately, PATHCHANGE
 
 
 BLUE = '\033[94m'
@@ -14,44 +15,62 @@ RED = '\033[91m'
 ENDC = '\033[0m'
 
 
-def _my_safe_repr(objekt, context, maxlevels, level):
+def non_unicode_repr(objekt, context, maxlevels, level):
     """
     Used to override the pprint format method in order to get rid of
     unnecessary unicode prefixes. E.g.: 'John' instead of u'John'.
     """
-    typ = pprint._type(objekt)
-    if typ is unicode:
+    if type(objekt) is unicode:
         try:
             objekt = str(objekt)
         except UnicodeEncodeError:
             pass
+
     return pprint._safe_repr(objekt, context, maxlevels, level)
 
+PRINTER = pprint.PrettyPrinter()
+PRINTER.format = non_unicode_repr
 
-def _cfgprint(obj, key, added, updated, typechanges, indent=''):
-    def colored(text):
-        if key in added:
-            return GREEN + text + ENDC
-        elif key in typechanges:
-            return RED + text + ENDC
-        elif key in updated:
-            return BLUE + text + ENDC
+ConfigEntry = namedtuple('ConfigEntry', 'key value added updated typechange')
+PathEntry = namedtuple('PathEntry', 'path added updated typechange')
+
+
+def iterate_marked(cfg, added, updated, typechanges):
+    for path, value in iterate_flattened_separately(cfg):
+        if value is PATHCHANGE:
+            yield path, PathEntry(path=path,
+                                  added=path in added,
+                                  updated=path in updated,
+                                  typechange=typechanges.get(path))
         else:
-            return text
+            yield path, ConfigEntry(key=path.rpartition('.')[2],
+                                    value=value,
+                                    added=path in added,
+                                    updated=path in updated,
+                                    typechange=typechanges.get(path))
 
-    last_key = key.split('.')[-1]
-    if isinstance(obj, dict):
-        if last_key:
-            print(colored('{}{}:'.format(indent, last_key)))
-        for key, value in iterate_separately(obj):
-            subkey = join_paths(key, key)
-            _cfgprint(value, subkey, added, updated, typechanges,
-                      indent + '  ')
-    else:
-        printer = pprint.PrettyPrinter(indent=len(indent)+2)
-        printer.format = _my_safe_repr
-        print(colored('{}{} = {}'.format(indent, last_key,
-                                         printer.pformat(obj))))
+
+def format_entry(entry):
+    color = ""
+    if entry.typechange:
+        color = RED
+    elif entry.added:
+        color = GREEN
+    elif entry.updated:
+        color = BLUE
+    end = ENDC if color else ""
+    if isinstance(entry, ConfigEntry):
+        return color + entry.key + " = " + PRINTER.pformat(entry.value) + end
+    else:  # isinstance(entry, PathEntry):
+        return color + entry.path + ":" + end
+
+
+def format_config(cfg, added, updated, typechanges):
+    lines = ['Configuration ' + LEGEND + ':']
+    for path, entry in iterate_marked(cfg, added, updated, typechanges):
+        indent = '  ' + '  ' * path.count('.')
+        lines.append(indent + format_entry(entry))
+    return "\n".join(lines)
 
 LEGEND = '(' + BLUE + 'modified' + ENDC +\
     ', ' + GREEN + 'added' + ENDC +\
@@ -69,8 +88,7 @@ def print_config(_run):
     """
     final_config = _run.config
     added, updated, typechanges = _run.config_modifications
-    print('Configuration', LEGEND + ':')
-    _cfgprint(final_config, '', added, updated, typechanges)
+    print(format_config(final_config, added, updated, typechanges))
 
 
 def help_for_command(command):

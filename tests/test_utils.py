@@ -2,10 +2,11 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from sacred.utils import (recursive_update, iterate_separately,
+from sacred.utils import (recursive_update, iterate_flattened_separately,
                           iterate_flattened, set_by_dotted_path,
                           get_by_dotted_path, iter_path_splits, iter_prefixes,
-                          join_paths, is_prefix, convert_to_nested_dict)
+                          join_paths, is_prefix, convert_to_nested_dict,
+                          PATHCHANGE)
 
 
 def test_recursive_update():
@@ -15,11 +16,15 @@ def test_recursive_update():
     assert res == {'a': {'b': 1, 'd': 3}, 'c': 2}
 
 
-def test_iterate_separately():
-    d = {'a1': 1, 'b2': {'foo': 'bar'}, 'c1': 'f', 'd1': [1, 2, 3], 'e2': {}}
-    res = list(iterate_separately(d))
-    assert res == [('a1', 1), ('c1', 'f'), ('d1', [1, 2, 3]),
-                   ('b2', {'foo': 'bar'}), ('e2', {})]
+def test_iterate_flattened_separately():
+    d = {'a1': 1,
+         'b2': {'foo': 'bar'},
+         'c1': 'f',
+         'd1': [1, 2, 3],
+         'e2': {}}
+    res = list(iterate_flattened_separately(d))
+    assert res == [('a1', 1), ('c1', 'f'), ('d1', [1, 2, 3]), ('e2', {}),
+                   ('b2', PATHCHANGE), ('b2.foo', 'bar')]
 
 
 def test_iterate_flattened():

@@ -3,7 +3,7 @@ Sacred
 
     | *Every experiment is sacred*
     | *Every experiment is great*
-    | *If a experiment is wasted*
+    | *If an experiment is wasted*
     | *God gets quite irate*
 
 .. image:: http://img.shields.io/pypi/v/sacred.png
