@@ -28,7 +28,8 @@ def conf_scope():
 
         deriv = ignored1()
 
-        def ignored2(): pass
+        def ignored2():
+            pass
 
         ignored3 = int
 
@@ -36,7 +37,6 @@ def conf_scope():
 
     cfg()
     return cfg
-
 
 
 def test_config_scope_is_dict(conf_scope):

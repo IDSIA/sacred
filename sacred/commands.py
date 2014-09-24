@@ -45,7 +45,8 @@ def _cfgprint(obj, key, added, updated, typechanges, indent=''):
             print(colored('{}{}:'.format(indent, last_key)))
         for key, value in iterate_separately(obj):
             subkey = join_paths(key, key)
-            _cfgprint(value, subkey, added, updated, typechanges, indent + '  ')
+            _cfgprint(value, subkey, added, updated, typechanges,
+                      indent + '  ')
     else:
         printer = pprint.PrettyPrinter(indent=len(indent)+2)
         printer.format = _my_safe_repr

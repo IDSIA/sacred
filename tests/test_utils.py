@@ -88,4 +88,4 @@ def test_convert_to_nested_dict():
 def test_convert_to_nested_dict_nested():
     dotted_dict = {'a.b': {'foo.bar': 8},  'a.b.foo.baz': 7}
     assert convert_to_nested_dict(dotted_dict) == \
-           {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}
+        {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}

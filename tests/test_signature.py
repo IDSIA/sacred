@@ -6,7 +6,7 @@ import pytest
 from sacred.signature import Signature
 
 
-##############  function definitions to test on ################################
+# #############  function definitions to test on ##############################
 def foo():
     return
 
@@ -50,7 +50,8 @@ functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals,
              _name_with_underscore_, __double_underscore__, old_name, renamed]
 
 ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
-       '_name_with_underscore_', '__double_underscore__', 'old_name', 'renamed']
+       '_name_with_underscore_', '__double_underscore__', 'old_name',
+       'renamed']
 
 names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
          '_name_with_underscore_', '__double_underscore__', 'old_name',
@@ -71,7 +72,7 @@ pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
 kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}, {}]
 
 
-########################  Tests  ###############################################
+# #######################  Tests  #############################################
 
 @pytest.mark.parametrize("function, name", zip(functions, names), ids=ids)
 def test_constructor_extract_function_name(function, name):
@@ -332,7 +333,8 @@ def test_unicode_():
         "_name_with_underscore_(fo, bar, *baz)"
     assert Signature(__double_underscore__).__unicode__() == \
         "__double_underscore__(man, o, *men, **oo)"
-    assert Signature(old_name).__unicode__() == "old_name(verylongvariablename)"
+    assert Signature(old_name).__unicode__() == \
+        "old_name(verylongvariablename)"
     assert Signature(renamed).__unicode__() == "old_name(verylongvariablename)"
     assert Signature(generic).__unicode__() == "generic(*args, **kwargs)"
     assert Signature(onlykwrgs).__unicode__() == "onlykwrgs(**kwargs)"
