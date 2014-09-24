@@ -34,19 +34,21 @@ ConfigEntry = namedtuple('ConfigEntry', 'key value added updated typechange')
 PathEntry = namedtuple('PathEntry', 'key added updated typechange')
 
 
-def iterate_marked(cfg, added, updated, typechanges):
+def iterate_marked(cfg, config_mods):
     for path, value in iterate_flattened_separately(cfg):
         if value is PATHCHANGE:
-            yield path, PathEntry(key=path.rpartition('.')[2],
-                                  added=path in added,
-                                  updated=path in updated,
-                                  typechange=typechanges.get(path))
+            yield path, PathEntry(
+                key=path.rpartition('.')[2],
+                added=path in config_mods.added,
+                updated=path in config_mods.updated,
+                typechange=config_mods.typechanges.get(path))
         else:
-            yield path, ConfigEntry(key=path.rpartition('.')[2],
-                                    value=value,
-                                    added=path in added,
-                                    updated=path in updated,
-                                    typechange=typechanges.get(path))
+            yield path, ConfigEntry(
+                key=path.rpartition('.')[2],
+                value=value,
+                added=path in config_mods.added,
+                updated=path in config_mods.updated,
+                typechange=config_mods.typechanges.get(path))
 
 
 def format_entry(entry):
@@ -64,9 +66,9 @@ def format_entry(entry):
         return color + entry.key + ":" + end
 
 
-def format_config(cfg, added, updated, typechanges):
+def format_config(cfg, config_mods):
     lines = ['Configuration ' + LEGEND + ':']
-    for path, entry in iterate_marked(cfg, added, updated, typechanges):
+    for path, entry in iterate_marked(cfg, config_mods):
         indent = '  ' + '  ' * path.count('.')
         lines.append(indent + format_entry(entry))
     return "\n".join(lines)
@@ -86,8 +88,8 @@ def print_config(_run):
       red:    value updated but type changed
     """
     final_config = _run.config
-    added, updated, typechanges = _run.config_modifications
-    print(format_config(final_config, added, updated, typechanges))
+    config_mods = _run.config_modifications
+    print(format_config(final_config, config_mods))
 
 
 def help_for_command(command):

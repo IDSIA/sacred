@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 import pprint
 import pytest
+from sacred.initialize import ConfigModifications
 from sacred.commands import (iterate_marked, non_unicode_repr, ConfigEntry,
                              PathEntry, format_entry, BLUE, GREEN, RED, ENDC,
                              format_config, help_for_command)
@@ -35,7 +36,7 @@ def cfg():
 
 
 def test_iterate_marked(cfg):
-    assert list(iterate_marked(cfg, set(), set(), dict())) == \
+    assert list(iterate_marked(cfg, ConfigModifications())) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, False, None)),
@@ -50,13 +51,13 @@ def test_iterate_marked(cfg):
 
 def test_iterate_marked_added(cfg):
     added = {'a', 'c.cB', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, added, set(), dict())) == \
+    assert list(iterate_marked(cfg, ConfigModifications(added=added))) == \
         [('a', ConfigEntry('a', 0, True, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
-         ('c', PathEntry('c', False, False, None)),
+         ('c', PathEntry('c', False, True, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, True, False, None)),
-         ('c.cC', PathEntry('cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, True, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, True, False, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, None))
@@ -65,13 +66,13 @@ def test_iterate_marked_added(cfg):
 
 def test_iterate_marked_updated(cfg):
     updated = {'b', 'c', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, set(), updated, dict())) == \
+    assert list(iterate_marked(cfg, ConfigModifications(updated=updated))) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, True, None)),
          ('c', PathEntry('c', False, True, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, False, False, None)),
-         ('c.cC', PathEntry('cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, True, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, False, True, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, None))
@@ -81,7 +82,9 @@ def test_iterate_marked_updated(cfg):
 def test_iterate_marked_typechanged(cfg):
     typechanges = {'a': (bool, int),
                    'd.dA': (float, int)}
-    assert list(iterate_marked(cfg, set(), set(), typechanges)) == \
+    result = list(iterate_marked(cfg,
+                                 ConfigModifications(typechanges=typechanges)))
+    assert result == \
         [('a', ConfigEntry('a', 0, False, False, (bool, int))),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, False, None)),
@@ -89,7 +92,7 @@ def test_iterate_marked_typechanged(cfg):
          ('c.cB', ConfigEntry('cB', 4, False, False, None)),
          ('c.cC', PathEntry('cC', False, False, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, False, False, None)),
-         ('d', PathEntry('d', False, False, None)),
+         ('d', PathEntry('d', False, True, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, (float, int)))
          ]
 
@@ -132,7 +135,7 @@ def test_format_entry_colors(entry, color):
 
 
 def test_format_config(cfg):
-    cfg_text = format_config(cfg, set(), set(), dict())
+    cfg_text = format_config(cfg, ConfigModifications())
     lines = cfg_text.split('\n')
     assert lines[0].startswith('Configuration')
     assert lines[1].find(' a = 0') > -1

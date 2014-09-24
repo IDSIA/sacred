@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict
 from copy import copy
 from sacred.config_scope import chain_evaluate_config_scopes
 from sacred.custom_containers import dogmatize
@@ -34,6 +34,7 @@ class Scaffold(object):
         self.rnd = None
         self._captured_functions = captured_functions
         self.commands = commands
+        self.config_mods = None
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -44,6 +45,10 @@ class Scaffold(object):
 
         if self.generate_seed:
             self.config['seed'] = self.seed
+
+        if 'seed' in self.config and 'seed' in self.config_mods.added:
+            self.config_mods.updated.add('seed')
+            self.config_mods.added -= {'seed'}
 
         # Hierarchically set the seed of proper subrunners
         for subrunner_path, subrunner in reversed(list(
@@ -84,22 +89,19 @@ class Scaffold(object):
             preset=self.config,
             fallback=const_fallback)
 
+        self.get_config_modifications()
+
     def get_config_modifications(self):
         typechanges = {}
-        flat_config_upd = [k
-                           for k, _ in iterate_flattened(self.config_updates)]
-        updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
-        added = set(updated)
-        modified = set()
+        added = {p for k, _ in iterate_flattened(self.config_updates)
+                 for p in iter_prefixes(k)}
+        updated = set()
         for config in self.config_scopes:
             added &= config.added_values
             typechanges.update(config.typechanges)
-            modified |= config.modified
+            updated |= config.modified
 
-        if self.generate_seed and 'seed' in added:
-            added.remove('seed')
-
-        return added, modified, typechanges
+        self.config_mods = ConfigModifications(added, updated, typechanges)
 
     def get_fixture(self):
         if self.fixture is not None:
@@ -131,11 +133,11 @@ class Scaffold(object):
 
         self._warn_about_suspicious_changes()
 
-    def _warn_about_suspicious_changes(self, ):
-        added, _, typechanged = self.get_config_modifications()
-        for add in sorted(added):
+    def _warn_about_suspicious_changes(self):
+        for add in sorted(self.config_mods.added):
             self.logger.warning('Added new config entry: "%s"' % add)
-        for key, (type_old, type_new) in typechanged.items():
+
+        for key, (type_old, type_new) in self.config_mods.typechanges.items():
             if (isinstance(type_old, type(None)) or
                     (type_old in (int, float) and type_new in (int, float))):
                 continue
@@ -228,23 +230,40 @@ def gather_ingredients_topological(ingredient):
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
-ConfigModifications = namedtuple('ConfigModifications',
-                                 ['added', 'updated', 'typechanges'])
+class ConfigModifications():
+    def __init__(self, added=(), updated=(), typechanges=()):
+        self.added = set(added)
+        self.updated = set(updated)
+        self.typechanges = dict(typechanges)
+        self.ensure_coherence()
+
+    def update_from(self, config_mod, path=''):
+        added = config_mod.added
+        updated = config_mod.updated
+        typechanges = config_mod.typechanges
+        self.added |= {join_paths(path, a) for a in added}
+        self.updated |= {join_paths(path, u) for u in updated}
+        self.typechanges.update({join_paths(path, k): v
+                                 for k, v in typechanges.items()})
+        self.ensure_coherence()
+
+    def ensure_coherence(self):
+        # make sure parent paths show up as updated appropriately
+        self.updated |= {p for a in self.added for p in iter_prefixes(a)}
+        self.updated |= {p for u in self.updated for p in iter_prefixes(u)}
+        self.updated |= {p for t in self.typechanges for p in iter_prefixes(t)}
+
+        # make sure there is no overlap
+        self.added -= set(self.typechanges.keys())
+        self.updated -= set(self.typechanges.keys())
+        self.updated -= self.added
 
 
 def get_config_modifications(scaffolding):
-    added = set()
-    updated = set()
-    typechanges = {}
+    config_modifications = ConfigModifications()
     for sc_path, scaffold in scaffolding.items():
-        mr_add, mr_up, mr_tc = scaffold.get_config_modifications()
-        if mr_add or mr_up or mr_tc:
-            updated |= set(iter_prefixes(sc_path))
-        added |= {join_paths(sc_path, a) for a in mr_add}
-        updated |= {join_paths(sc_path, u) for u in mr_up}
-        typechanges.update({join_paths(sc_path, k): v
-                            for k, v in mr_tc.items()})
-    return ConfigModifications(added, updated, typechanges)
+        config_modifications.update_from(scaffold.config_mods, path=sc_path)
+    return config_modifications
 
 
 def get_command(scaffolding, command_path):

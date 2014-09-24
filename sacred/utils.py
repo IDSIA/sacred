@@ -95,7 +95,7 @@ def get_seed(rnd=None):
 
 def create_rnd(seed):
     assert isinstance(seed, int), "Seed has to be integer but was %s %s" % \
-                                  (seed, type(seed))
+                                  (repr(seed), type(seed))
     return Random(seed)
 
 
