@@ -39,8 +39,11 @@ class Scaffold(object):
         if self.seed is not None:
             return
 
-        self.seed = self.config_updates.get('seed') or get_seed(rnd)
+        self.seed = self.config.get('seed') or get_seed(rnd)
         self.rnd = create_rnd(self.seed)
+
+        if self.generate_seed:
+            self.config['seed'] = self.seed
 
         # Hierarchically set the seed of proper subrunners
         for subrunner_path, subrunner in reversed(list(
@@ -67,9 +70,6 @@ class Scaffold(object):
 
         self.config = {}
 
-        if self.generate_seed:
-            self.config['seed'] = self.seed
-
         # named configs first
         self.config_updates = chain_evaluate_config_scopes(
             [self.named_configs[n] for n in self.named_configs_to_use],
@@ -83,8 +83,6 @@ class Scaffold(object):
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
-
-        return self.config
 
     def get_config_modifications(self):
         typechanges = {}
@@ -272,11 +270,11 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)
 
-    for scaffold in reversed(list(scaffolding.values())):
-        scaffold.set_up_seed()  # partially recursive
-
     for scaffold in scaffolding.values():
         scaffold.set_up_config()
+
+    for scaffold in reversed(list(scaffolding.values())):
+        scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
 

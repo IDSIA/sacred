@@ -47,8 +47,7 @@ ex = Experiment('modular_example', ingredients=[data, data_paths])
 
 
 @ex.config
-def cfg(seed, dataset):
-    s = seed*2
+def cfg(dataset):
     a = 10
     b = 17
     c = a + b
