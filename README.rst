@@ -26,6 +26,10 @@ Sacred
     :target: https://scrutinizer-ci.com/g/Qwlouse/sacred/
     :alt: Code Scrutinizer Quality
 
+.. image:: https://pypip.in/wheel/sacred/badge.png
+    :target: https://pypi.python.org/pypi/sacred/
+    :alt: Wheel Status
+
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around
