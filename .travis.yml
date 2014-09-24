@@ -9,3 +9,8 @@ install:
   - pip install tox
 script:
   - tox -e $TOX_ENV
+
+branches:
+  only:
+    - master
+    - /^release.*$/
