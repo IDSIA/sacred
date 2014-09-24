@@ -22,6 +22,10 @@ Sacred
     :target: https://travis-ci.org/Qwlouse/sacred
     :alt: Travis-CI Status
 
+.. image:: https://coveralls.io/repos/Qwlouse/sacred/badge.png
+    :target: https://coveralls.io/r/Qwlouse/sacred
+    :alt: Coverage Report
+
 .. image:: https://scrutinizer-ci.com/g/Qwlouse/sacred/badges/quality-score.png?b=master
     :target: https://scrutinizer-ci.com/g/Qwlouse/sacred/
     :alt: Code Scrutinizer Quality
