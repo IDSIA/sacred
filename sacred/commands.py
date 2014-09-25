@@ -20,13 +20,11 @@ def non_unicode_repr(objekt, context, maxlevels, level):
     Used to override the pprint format method in order to get rid of
     unnecessary unicode prefixes. E.g.: 'John' instead of u'John'.
     """
-    if type(objekt) is unicode:
-        try:
-            objekt = str(objekt)
-        except UnicodeEncodeError:
-            pass
-
-    return pprint._safe_repr(objekt, context, maxlevels, level)
+    repr_string, isreadable, isrecursive = pprint._safe_repr(objekt, context,
+                                                             maxlevels, level)
+    if repr_string.startswith('u"') or repr_string.startswith("u'"):
+        repr_string = repr_string[1:]
+    return repr_string, isreadable, isrecursive
 
 PRINTER = pprint.PrettyPrinter()
 PRINTER.format = non_unicode_repr
