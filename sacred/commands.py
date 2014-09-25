@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from collections import namedtuple
 import pprint
 import pydoc
+import re
 
 from sacred.utils import iterate_flattened_separately, PATHCHANGE
 
@@ -30,13 +31,13 @@ PRINTER = pprint.PrettyPrinter()
 PRINTER.format = non_unicode_repr
 
 ConfigEntry = namedtuple('ConfigEntry', 'key value added updated typechange')
-PathEntry = namedtuple('PathEntry', 'path added updated typechange')
+PathEntry = namedtuple('PathEntry', 'key added updated typechange')
 
 
 def iterate_marked(cfg, added, updated, typechanges):
     for path, value in iterate_flattened_separately(cfg):
         if value is PATHCHANGE:
-            yield path, PathEntry(path=path,
+            yield path, PathEntry(key=path.rpartition('.')[2],
                                   added=path in added,
                                   updated=path in updated,
                                   typechange=typechanges.get(path))
@@ -60,7 +61,7 @@ def format_entry(entry):
     if isinstance(entry, ConfigEntry):
         return color + entry.key + " = " + PRINTER.pformat(entry.value) + end
     else:  # isinstance(entry, PathEntry):
-        return color + entry.path + ":" + end
+        return color + entry.key + ":" + end
 
 
 def format_config(cfg, added, updated, typechanges):
@@ -90,4 +91,6 @@ def print_config(_run):
 
 
 def help_for_command(command):
-    return pydoc.text.document(command)
+    help_text = pydoc.text.document(command)
+    # remove backspaces
+    return re.subn('.\\x08', '', help_text)[0]

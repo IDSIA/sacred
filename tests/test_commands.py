@@ -5,7 +5,8 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pytest
 from sacred.commands import (iterate_marked, non_unicode_repr, ConfigEntry,
-                             PathEntry, format_entry, BLUE, GREEN, RED, ENDC)
+                             PathEntry, format_entry, BLUE, GREEN, RED, ENDC,
+                             format_config, help_for_command)
 
 
 def test_non_unicode_repr():
@@ -40,7 +41,7 @@ def test_iterate_marked(cfg):
          ('c', PathEntry('c', False, False, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, False, False, None)),
-         ('c.cC', PathEntry('c.cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, False, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, False, False, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, None))
@@ -55,7 +56,7 @@ def test_iterate_marked_added(cfg):
          ('c', PathEntry('c', False, False, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, True, False, None)),
-         ('c.cC', PathEntry('c.cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, False, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, True, False, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, None))
@@ -70,7 +71,7 @@ def test_iterate_marked_updated(cfg):
          ('c', PathEntry('c', False, True, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, False, False, None)),
-         ('c.cC', PathEntry('c.cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, False, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, False, True, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, None))
@@ -86,7 +87,7 @@ def test_iterate_marked_typechanged(cfg):
          ('c', PathEntry('c', False, False, None)),
          ('c.cA', ConfigEntry('cA', 3, False, False, None)),
          ('c.cB', ConfigEntry('cB', 4, False, False, None)),
-         ('c.cC', PathEntry('c.cC', False, False, None)),
+         ('c.cC', PathEntry('cC', False, False, None)),
          ('c.cC.cC1', ConfigEntry('cC1', 6, False, False, None)),
          ('d', PathEntry('d', False, False, None)),
          ('d.dA', ConfigEntry('dA', 8, False, False, (float, int)))
@@ -101,9 +102,7 @@ def test_iterate_marked_typechanged(cfg):
     (ConfigEntry('d', 0.5, False, False, None),     "d = 0.5"),
     (ConfigEntry('e', {}, False, False, None),      "e = {}"),
     # Path entries
-    (PathEntry('f', False, False, None),     "f:"),
-    (PathEntry('f.g', False, False, None),   "f.g:"),
-    (PathEntry('f.g.h', False, False, None), "f.g.h:"),
+    (PathEntry('f', False, False, None), "f:"),
 ])
 def test_format_entry(entry, expected):
     assert format_entry(entry) == expected
@@ -130,3 +129,28 @@ def test_format_entry_colors(entry, color):
     s = format_entry(entry)
     assert s.startswith(color)
     assert s.endswith(ENDC)
+
+
+def test_format_config(cfg):
+    cfg_text = format_config(cfg, set(), set(), dict())
+    lines = cfg_text.split('\n')
+    assert lines[0].startswith('Configuration')
+    assert lines[1].find(' a = 0') > -1
+    assert lines[2].find(' b = {}') > -1
+    assert lines[3].find(' c:') > -1
+    assert lines[4].find(' cA = 3') > -1
+    assert lines[5].find(' cB = 4') > -1
+    assert lines[6].find(' cC:') > -1
+    assert lines[7].find(' cC1 = 6') > -1
+    assert lines[8].find(' d:') > -1
+    assert lines[9].find(' dA = 8') > -1
+
+
+def test_help_for_command():
+    def my_command():
+        """This is my docstring"""
+        pass
+
+    help_text = help_for_command(my_command)
+    assert help_text.find("my_command") > -1
+    assert help_text.find("This is my docstring") > -1
