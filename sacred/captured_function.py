@@ -14,7 +14,10 @@ __sacred__ = True
 
 
 def create_captured_function(function, prefix=None):
-    function.signature = Signature(function)
+    sig = Signature(function)
+    function.signature = sig
+    function.uses_randomness = ("_seed" in sig.arguments or
+                                "_rnd" in sig.arguments)
     function.logger = None
     function.config = {}
     function.rnd = None
@@ -25,16 +28,16 @@ def create_captured_function(function, prefix=None):
 
 @wrapt.decorator
 def captured_function(wrapped, instance, args, kwargs):
-    # todo: performance optimize this by only creating a PRNG if the signature
-    # contains either _seed or _rnd
-    runseed = get_seed(wrapped.rnd)
     options = FallbackDict(
         wrapped.config,
+        _config=wrapped.config,
         _log=wrapped.logger,
-        _seed=runseed,
-        _rnd=create_rnd(runseed),
         _run=wrapped.run
     )
+    if wrapped.uses_randomness:  # only generate _seed and _rnd if needed
+        options['_seed'] = get_seed(wrapped.rnd)
+        options['_rnd'] = create_rnd(options['_seed'])
+
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options)
     wrapped.logger.debug("Started")
     start_time = time.time()

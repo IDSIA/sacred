@@ -46,12 +46,8 @@ class Signature(object):
         self._assert_no_unexpected_args(args)
         self._assert_no_unexpected_kwargs(kwargs)
         self._assert_no_duplicate_args(args, kwargs)
-        if self.kw_wildcard_name:
-            k = copy(options)
-            k.update(kwargs)
-            kwargs = k
-        else:
-            args, kwargs = self._fill_in_options(args, kwargs, options)
+
+        args, kwargs = self._fill_in_options(args, kwargs, options)
 
         self._assert_no_missing_args(args, kwargs)
         return args, kwargs

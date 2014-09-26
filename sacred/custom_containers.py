@@ -35,49 +35,49 @@ class FallbackDict(dict):
         return self.__contains__(item)
 
     def items(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def iteritems(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def iterkeys(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def itervalues(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def keys(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def pop(self, k, d=None):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def popitem(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def setdefault(self, k, d=None):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def update(self, e=None, **f):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def values(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def viewitems(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def viewkeys(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def viewvalues(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def __iter__(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def __len__(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class DogmaticDict(dict):
