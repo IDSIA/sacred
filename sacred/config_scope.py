@@ -18,22 +18,57 @@ except ImportError:
 __sacred__ = True
 
 
-def get_function_body_code(func):
+def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
-    filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
     arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
     arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n\s*".format(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
             func.__name__, arguments), flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
-    line_offset = func_code[:defs[0].end()].count('\n')
+    line_offset = start_idx + func_code[:defs[0].end()].count('\n') - 1
     func_body = func_code[defs[0].end():]
-    body_code = compile(inspect.cleandoc(func_body), filename, "exec",
-                        ast.PyCF_ONLY_AST)
-    body_code = ast.increment_lineno(body_code, n=start_idx+line_offset-1)
+    return func_body, line_offset
+
+
+def is_empty_or_comment(line):
+    sline = line.strip()
+    return sline == '' or sline.startswith('#')
+
+
+def dedent_line(line, indent):
+    for i, (line_sym, indent_sym) in enumerate(zip(line, indent)):
+        if line_sym != indent_sym:
+            start = i
+            break
+    else:
+        start = len(indent)
+    return line[start:]
+
+
+def dedent_function_body(body):
+    lines = body.split('\n')
+    # find indentation by first line
+    indent = ''
+    for line in lines:
+        if is_empty_or_comment(line):
+            continue
+        else:
+            indent = re.match('^\s*', line).group()
+            break
+
+    out_lines = [dedent_line(line, indent) for line in lines]
+    return '\n'.join(out_lines)
+
+
+def get_function_body_code(func):
+    filename = inspect.getfile(func)
+    func_body, line_offset = get_function_body(func)
+    body_source = dedent_function_body(func_body)
+    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
+    body_code = ast.increment_lineno(body_code, n=line_offset)
     body_code = compile(body_code, filename, "exec")
     return body_code
 
