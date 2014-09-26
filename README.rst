@@ -10,7 +10,7 @@ Sacred
     :target: https://pypi.python.org/pypi/sacred
     :alt: Current PyPi Version
 
-.. image:: http://img.shields.io/badge/license-MIT-brightgreen.png
+.. image:: http://img.shields.io/badge/license-MIT-blue.png
     :target: http://choosealicense.com/licenses/mit/
     :alt: MIT licensed
 
