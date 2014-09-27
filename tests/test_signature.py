@@ -128,50 +128,28 @@ def test_get_free_parameters():
     assert s.get_free_parameters([1, 2, 3], {}) == []
 
 
-def test_construct_arguments_with_unexpected_kwargs_raises_typeerror():
+@pytest.mark.parametrize('function',
+                         [foo, bariza, complex_function_name,
+                          _name_with_underscore_, old_name, renamed])
+def test_construct_arguments_with_unexpected_kwargs_raises_typeerror(function):
     kwargs = {'zimbabwe': 23}
     unexpected = re.compile(".*unexpected.*zimbabwe.*")
     with pytest.raises(TypeError) as excinfo:
-        Signature(foo).construct_arguments([], kwargs, {})
-    assert unexpected.match(excinfo.value.args[0])
-
-    with pytest.raises(TypeError) as excinfo:
-        Signature(bariza).construct_arguments([], kwargs, {})
-    assert unexpected.match(excinfo.value.args[0])
-
-    with pytest.raises(TypeError) as excinfo:
-        s = Signature(complex_function_name)
-        s.construct_arguments([], kwargs, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        s = Signature(_name_with_underscore_)
-        s.construct_arguments([], kwargs, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        Signature(old_name).construct_arguments([], kwargs, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        Signature(renamed).construct_arguments([], kwargs, {})
+        Signature(function).construct_arguments([], kwargs, {})
     assert unexpected.match(excinfo.value.args[0])
 
 
-def test_construct_arguments_with_unexpected_args_raises_typeerror():
+@pytest.mark.parametrize('func,args', [
+    (foo, [1]),
+    (bariza, [1, 2, 3, 4]),
+    (complex_function_name, [1, 2, 3, 4]),
+    (old_name, [1, 2]),
+    (renamed, [1, 2])
+])
+def test_construct_arguments_with_unexpected_args_raises_typeerror(func, args):
     unexpected = re.compile(".*unexpected.*")
     with pytest.raises(TypeError) as excinfo:
-        Signature(foo).construct_arguments([1], {}, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        Signature(bariza).construct_arguments([1, 2, 3, 4], {}, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        s = Signature(complex_function_name)
-        s.construct_arguments([1, 2, 3, 4], {}, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        Signature(old_name).construct_arguments([1, 2], {}, {})
-    assert unexpected.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        Signature(renamed).construct_arguments([1, 2], {}, {})
+        Signature(func).construct_arguments(args, {}, {})
     assert unexpected.match(excinfo.value.args[0])
 
 
@@ -322,37 +300,27 @@ def test_construct_arguments_does_not_raise_for_missing_defaults():
     s.construct_arguments([], {}, {})
 
 
-def test_unicode_():
-    assert Signature(foo).__unicode__() == "foo()"
-    assert Signature(bariza).__unicode__() == "bariza(a, b, c)"
+@pytest.mark.parametrize('func,expected', [
+    (foo, "foo()"),
+    (bariza, "bariza(a, b, c)"),
+    (FunCTIonWithCAPItals, "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"),
+    (_name_with_underscore_, "_name_with_underscore_(fo, bar, *baz)"),
+    (__double_underscore__, "__double_underscore__(man, o, *men, **oo)"),
+    (old_name, "old_name(verylongvariablename)"),
+    (renamed, "old_name(verylongvariablename)"),
+    (generic, "generic(*args, **kwargs)"),
+    (onlykwrgs, "onlykwrgs(**kwargs)")
+])
+def test_unicode_(func, expected):
+    assert Signature(func).__unicode__() == expected
+
+
+def test_unicode_special():
     assert re.match("complex_function_name\(a=1, b=u?'fo', c=9\)",
                     Signature(complex_function_name).__unicode__())
-    assert Signature(FunCTIonWithCAPItals).__unicode__() == \
-        "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"
-    assert Signature(_name_with_underscore_).__unicode__() == \
-        "_name_with_underscore_(fo, bar, *baz)"
-    assert Signature(__double_underscore__).__unicode__() == \
-        "__double_underscore__(man, o, *men, **oo)"
-    assert Signature(old_name).__unicode__() == \
-        "old_name(verylongvariablename)"
-    assert Signature(renamed).__unicode__() == "old_name(verylongvariablename)"
-    assert Signature(generic).__unicode__() == "generic(*args, **kwargs)"
-    assert Signature(onlykwrgs).__unicode__() == "onlykwrgs(**kwargs)"
 
 
-def test_repr_():
+@pytest.mark.parametrize('name,func', zip(names, functions))
+def test_repr_(name, func):
     regex = "<Signature at 0x[0-9a-fA-F]+ for '%s'>"
-    assert re.match(regex % 'foo', Signature(foo).__repr__())
-    assert re.match(regex % 'bariza', Signature(bariza).__repr__())
-    assert re.match(regex % 'complex_function_name',
-                    Signature(complex_function_name).__repr__())
-    assert re.match(regex % 'FunCTIonWithCAPItals',
-                    Signature(FunCTIonWithCAPItals).__repr__())
-    assert re.match(regex % '_name_with_underscore_',
-                    Signature(_name_with_underscore_).__repr__())
-    assert re.match(regex % '__double_underscore__',
-                    Signature(__double_underscore__).__repr__())
-    assert re.match(regex % 'old_name', Signature(old_name).__repr__())
-    assert re.match(regex % 'old_name', Signature(renamed).__repr__())
-    assert re.match(regex % 'generic', Signature(generic).__repr__())
-    assert re.match(regex % 'onlykwrgs', Signature(onlykwrgs).__repr__())
+    assert re.match(regex % name, Signature(func).__repr__())

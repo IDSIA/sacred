@@ -101,23 +101,27 @@ class DogmaticDict(dict):
                              % ffkeys)
         self._fallback = newval
 
+    def _log_blocked_setitem(self, key, value, fixed_value):
+        if type_changed(value, fixed_value):
+            self.typechanges[key] = (type(value), type(fixed_value))
+
+        # if both are dicts recursively collect typechanges
+        if isinstance(fixed_value, DogmaticDict) and isinstance(value, dict):
+            for k, val in fixed_value.typechanges.items():
+                self.typechanges[join_paths(key, k)] = val
+
     def __setitem__(self, key, value):
         if key not in self._fixed:
-            dict.__setitem__(self, key, value)
-        else:
-            fixed_val = self._fixed[key]
-            dict.__setitem__(self, key, fixed_val)
-            # log typechanges
-            if type_changed(value, fixed_val):
-                self.typechanges[key] = (type(value), type(fixed_val))
+            return dict.__setitem__(self, key, value)
 
-            if isinstance(fixed_val, DogmaticDict) and isinstance(value, dict):
-                # recursive update
-                for k, val in value.items():
-                    fixed_val[k] = val
+        fixed_value = self._fixed[key]
+        dict.__setitem__(self, key, fixed_value)
+        # if both are dicts do a recursive update
+        if isinstance(fixed_value, DogmaticDict) and isinstance(value, dict):
+            for k, val in value.items():
+                fixed_value[k] = val
 
-                for k, val in fixed_val.typechanges.items():
-                    self.typechanges[join_paths(key, k)] = val
+        self._log_blocked_setitem(key, value, fixed_value)
 
     def __getitem__(self, item):
         if dict.__contains__(self, item):
