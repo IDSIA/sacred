@@ -84,6 +84,7 @@ class DogmaticDict(dict):
     def __init__(self, fixed=None, fallback=None):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
+        self.ignored_fallback_writes = []
         self._fixed = fixed or {}
         self._fallback = {}
         if fallback:
@@ -112,6 +113,8 @@ class DogmaticDict(dict):
 
     def __setitem__(self, key, value):
         if key not in self._fixed:
+            if key in self._fallback:
+                self.ignored_fallback_writes.append(key)
             return dict.__setitem__(self, key, value)
 
         fixed_value = self._fixed[key]

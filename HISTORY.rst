@@ -5,8 +5,10 @@ Release History
 ++++++++++++++++++
 * Style: Lots of pep8 and pylint fixes
 * Optimization: special arguments ``_rnd`` and ``_seed`` are now only generated
+  if needed
 * Feature: added special argument ``_config`` for captured functions
 * Bugfix: fixed bug where indentation could lead to errors in a ``ConfigScope``
+* Bugfix: added warning when an attempt to overwrite an ingredient is ignored
 
 0.5 (2014-09-22)
 ++++++++++++++++

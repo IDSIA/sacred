@@ -143,6 +143,13 @@ class Scaffold(object):
                 'Changed type of config entry "%s" from %s to %s' %
                 (key, type_old.__name__, type_new.__name__))
 
+        for config in self.config_scopes:
+            for key in config.ignored_fallback_writes:
+                self.logger.warning(
+                    'Ignored attempt to set value of "%s", because it is an '
+                    'ingredient.' % key
+                )
+
 
 def get_configuration(scaffolding):
     config = {}
