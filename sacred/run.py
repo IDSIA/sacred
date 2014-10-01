@@ -56,19 +56,19 @@ class Run(object):
             try:
                 self.result = self.main_function(*args)
             except KeyboardInterrupt:
-                self.status = Status.INTERRUPTED
                 self._stop_heartbeat()
+                self.status = Status.INTERRUPTED
                 self._emit_interrupted()
                 raise
             except:
-                self.status = Status.FAILED
                 exc_type, exc_value, trace = sys.exc_info()
                 self._stop_heartbeat()
+                self.status = Status.FAILED
                 self._emit_failed(exc_type, exc_value, trace.tb_next)
                 raise
             else:
-                self.status = Status.COMPLETED
                 self._stop_heartbeat()
+                self.status = Status.COMPLETED
                 self._emit_completed(self.result)
                 return self.result
 
