@@ -48,7 +48,7 @@ class Ingredient(object):
         self.dependencies = get_dependencies(caller_globals)
 
     # =========================== Decorators ==================================
-    def command(self, func=None, prefix=None):
+    def command(self, function=None, prefix=None):
         """
         Decorator to define a new command for this Ingredient or Experiment.
 
@@ -57,22 +57,22 @@ class Ingredient(object):
 
         Commands are automatically also captured functions.
         """
-        def _command(f):
-            captured_f = self.capture(f, prefix=prefix)
-            self.commands[f.__name__] = captured_f
+        def _command(func):
+            captured_f = self.capture(func, prefix=prefix)
+            self.commands[func.__name__] = captured_f
             return captured_f
 
-        if func is not None:
-            return _command(func)
+        if function is not None:
+            return _command(function)
         else:
             return _command
 
-    def config(self, func):
+    def config(self, function):
         """
         Decorator to turn a function into a ConfigScope and add it to the
         Ingredient/Experiment.
         """
-        self.cfgs.append(ConfigScope(func))
+        self.cfgs.append(ConfigScope(function))
         return self.cfgs[-1]
 
     def named_config(self, func):
@@ -80,19 +80,19 @@ class Ingredient(object):
         self.named_configs[func.__name__] = config_scope
         return config_scope
 
-    def capture(self, func=None, prefix=None):
+    def capture(self, function=None, prefix=None):
         """
         Decorator to turn a function into a captured function.
         """
-        def _capture(f):
-            if f in self.captured_functions:
-                return f
-            captured_function = create_captured_function(f, prefix=prefix)
+        def _capture(func):
+            if func in self.captured_functions:
+                return func
+            captured_function = create_captured_function(func, prefix=prefix)
             self.captured_functions.append(captured_function)
             return captured_function
 
-        if func is not None:
-            return _capture(func)
+        if function is not None:
+            return _capture(function)
         else:
             return _capture
 
@@ -104,8 +104,8 @@ class Ingredient(object):
             self._is_traversing = True
         yield self, 0
         for ingredient in self.ingredients:
-            for sr, depth in ingredient.traverse_ingredients():
-                yield sr, depth + 1
+            for ingred, depth in ingredient.traverse_ingredients():
+                yield ingred, depth + 1
         self._is_traversing = False
 
     def run_command(self, command_name, config_updates=None,
@@ -116,13 +116,13 @@ class Ingredient(object):
         run.logger.info("Running command '%s'" % command_name)
         return run()
 
-    def _gather_commands(self):
-        for k, v in self.commands.items():
-            yield self.path + '.' + k, v
+    def gather_commands(self):
+        for cmd_name, cmd in self.commands.items():
+            yield self.path + '.' + cmd_name, cmd
 
         for ingred in self.ingredients:
-            for k, v in ingred._gather_commands():
-                yield k, v
+            for cmd_name, cmd in ingred.gather_commands():
+                yield cmd_name, cmd
 
 
 class Experiment(Ingredient):
@@ -141,18 +141,18 @@ class Experiment(Ingredient):
 
     # =========================== Decorators ==================================
 
-    def main(self, f):
+    def main(self, function):
         """
         Decorator to define the main function of the experiment.
 
         The main function of an experiment is the default command that is being
         run when no command is specified, or when calling the run() method.
         """
-        captured = self.command(f)
+        captured = self.command(function)
         self.default_command = captured.__name__
         return captured
 
-    def automain(self, f):
+    def automain(self, function):
         """
         Decorator that defines the main function of the experiment and
         automatically runs the experiment commandline when the file is
@@ -177,8 +177,8 @@ class Experiment(Ingredient):
             if __name__ == '__main__':
                 ex.run_commandline()
         """
-        captured = self.main(f)
-        if f.__module__ == '__main__':
+        captured = self.main(function)
+        if function.__module__ == '__main__':
             self.run_commandline()
         return captured
 
@@ -214,12 +214,11 @@ class Experiment(Ingredient):
     def run_commandline(self, argv=None):
         if argv is None:
             argv = sys.argv
-        all_commands = self._gather_commands()
+        all_commands = self.gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
-                          commands=OrderedDict(all_commands),
-                          print_help=True)
+                          commands=OrderedDict(all_commands))
         config_updates, named_configs = get_config_updates(args['UPDATE'])
         loglevel = args.get('--logging')
         for obs in get_observers(args):
@@ -242,12 +241,10 @@ class Experiment(Ingredient):
             else:
                 print_filtered_stacktrace()
 
-    # ============================ protected interface ========================
-
-    def _gather_commands(self):
-        for k, v in self.commands.items():
-            yield k, v
+    def gather_commands(self):
+        for cmd_name, cmd in self.commands.items():
+            yield cmd_name, cmd
 
         for ingred in self.ingredients:
-            for k, v in ingred._gather_commands():
-                yield k, v
+            for cmd_name, cmd in ingred.gather_commands():
+                yield cmd_name, cmd

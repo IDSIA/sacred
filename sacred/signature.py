@@ -2,14 +2,13 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict
-from copy import copy
 import inspect
 
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 
-class Signature:
+class Signature(object):
     """
     Contains information about the signature of a function.
     name : the functions name
@@ -46,50 +45,36 @@ class Signature:
         self._assert_no_unexpected_args(args)
         self._assert_no_unexpected_kwargs(kwargs)
         self._assert_no_duplicate_args(args, kwargs)
-        if self.kw_wildcard_name:
-            k = copy(options)
-            k.update(kwargs)
-            kwargs = k
-        else:
-            args, kwargs = self._fill_in_options(args, kwargs, options)
+
+        args, kwargs = self._fill_in_options(args, kwargs, options)
 
         self._assert_no_missing_args(args, kwargs)
         return args, kwargs
 
     def __unicode__(self):
-        args = self.positional_args
-        vararg = ("*" + self.vararg_name) if self.vararg_name else ""
+        pos_args = self.positional_args
+        varg = ["*" + self.vararg_name] if self.vararg_name else []
         kwargs = ["%s=%s" % (n, v.__repr__()) for n, v in self.kwargs.items()]
-        kw_wc = ("**" + self.kw_wildcard_name) if self.kw_wildcard_name else ""
-        return "{name}({args}{c1}{vararg}{c2}{kwargs}{c3}{kw_wc})".format(
-            name=self.name,
-            args=", ".join(args),
-            c1=", " if vararg and args else "",
-            vararg=vararg,
-            c2=", " if kwargs and (args or vararg) else "",
-            kwargs=", ".join(kwargs),
-            c3=", " if kw_wc and (args or vararg or kwargs) else "",
-            kw_wc=kw_wc
-        )
+        kw_wc = ["**" + self.kw_wildcard_name] if self.kw_wildcard_name else []
+        arglist = pos_args + varg + kwargs + kw_wc
+        return "{}({})".format(self.name, ", ".join(arglist))
 
     def __repr__(self):
         return "<Signature at 0x{1:x} for '{0}'>".format(self.name, id(self))
 
     def _assert_no_unexpected_args(self, args):
-        if self.vararg_name is not None:
-            return
-        if len(args) > len(self.arguments):
+        if not self.vararg_name and len(args) > len(self.arguments):
             unexpected_args = args[len(self.arguments):]
             raise TypeError("{} got unexpected argument(s): {}".format(
                 self.name, unexpected_args))
 
     def _assert_no_unexpected_kwargs(self, kwargs):
-        if self.kw_wildcard_name is not None:
+        if self.kw_wildcard_name:
             return
-        unexpected_kwargs = [v for v in kwargs if v not in self.arguments]
+        unexpected_kwargs = set(kwargs) - set(self.arguments)
         if unexpected_kwargs:
             raise TypeError("{} got unexpected kwarg(s): {}".format(
-                self.name, unexpected_kwargs))
+                self.name, sorted(unexpected_kwargs)))
 
     def _assert_no_duplicate_args(self, args, kwargs):
         positional_arguments = self.arguments[:len(args)]
@@ -100,9 +85,9 @@ class Signature:
 
     def _fill_in_options(self, args, kwargs, options):
         free_params = self.get_free_parameters(args, kwargs)
-        for f in free_params:
-            if f in options:
-                kwargs[f] = options[f]
+        for param in free_params:
+            if param in options:
+                kwargs[param] = options[param]
         return args, kwargs
 
     def _assert_no_missing_args(self, args, kwargs):

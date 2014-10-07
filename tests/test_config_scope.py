@@ -3,7 +3,8 @@
 from __future__ import division, print_function, unicode_literals
 import pytest
 from sacred.custom_containers import DogmaticDict, DogmaticList
-from sacred.config_scope import ConfigScope
+from sacred.config_scope import (ConfigScope, dedent_line, is_empty_or_comment,
+                                 dedent_function_body, get_function_body)
 
 try:
     import numpy as np
@@ -28,7 +29,8 @@ def conf_scope():
 
         deriv = ignored1()
 
-        def ignored2(): pass
+        def ignored2():
+            pass
 
         ignored3 = int
 
@@ -133,7 +135,7 @@ def test_conf_scope_contains_presets():
     assert set(cfg.keys()) == {'a', 'answer', 'unrelated'}
     assert cfg['a'] == 21
     assert cfg['answer'] == 42
-    assert cfg['unrelated'] == True
+    assert cfg['unrelated'] is True
 
 
 def test_conf_scope_cannot_access_undeclared_presets():
@@ -218,3 +220,129 @@ def test_fixed_subentry_of_preset():
     assert set(cfg['d'].keys()) == {'a', 'b'}
     assert cfg['d']['a'] == 10
     assert cfg['d']['b'] == 2
+
+
+@pytest.mark.parametrize("line,indent,expected", [
+    ('    a=5', '    ', 'a=5'),
+    ('  a=5',   '    ', 'a=5'),
+    ('a=5',     '    ', 'a=5'),
+    ('    a=5', '  ',   '  a=5'),
+    ('    a=5', '',     '    a=5'),
+    ('    a=5', '\t',   '    a=5'),
+    ('  a=5', '      ', 'a=5'),
+    ('    a=5', '  \t', '  a=5')
+])
+def test_dedent_line(line, indent, expected):
+    assert dedent_line(line, indent) == expected
+
+
+@pytest.mark.parametrize("line,expected", [
+    ('', True),
+    ('  ', True),
+    ('\n', True),
+    ('    \n', True),
+    ('  \t \n', True),
+    ('#comment', True),
+    ('   #comment', True),
+    ('  a=5 # not comment', False),
+    ('a=5', False),
+    ('"""', False),
+    ("'''", False)
+
+])
+def test_is_empty_or_comment(line, expected):
+    assert is_empty_or_comment(line) == expected
+
+
+def evil_indentation_func(a,
+                                    b,
+c, d):
+# Lets do the most evil things with indentation
+  # 1
+    # 2
+     # ran
+        """ and also in the docstring
+             atrne
+    uiaeue
+utdr
+    """
+        alpha = 0.1
+        d = ('even', 'more',
+    'evilness')
+        wat = """ multi
+    line
+strings
+    """
+# another comment
+        # this one is ok
+    # madness
+        foo=12
+
+        def subfunc():
+            return 23
+
+body = '''# Lets do the most evil things with indentation
+  # 1
+    # 2
+     # ran
+        """ and also in the docstring
+             atrne
+    uiaeue
+utdr
+    """
+        alpha = 0.1
+        d = ('even', 'more',
+    'evilness')
+        wat = """ multi
+    line
+strings
+    """
+# another comment
+        # this one is ok
+    # madness
+        foo=12
+
+        def subfunc():
+            return 23
+'''
+
+dedented_body = '''# Lets do the most evil things with indentation
+# 1
+# 2
+# ran
+""" and also in the docstring
+     atrne
+uiaeue
+utdr
+"""
+alpha = 0.1
+d = ('even', 'more',
+'evilness')
+wat = """ multi
+line
+strings
+"""
+# another comment
+# this one is ok
+# madness
+foo=12
+
+def subfunc():
+    return 23
+'''
+
+
+def test_dedent_body():
+    assert dedent_function_body(body) == dedented_body
+
+
+def test_get_function_body():
+    func_body, line_offset = get_function_body(evil_indentation_func)
+    assert func_body == body
+
+
+def test_config_scope_can_deal_with_indentation_madness():
+    # assert_no_raise:
+    ConfigScope(evil_indentation_func)
+
+

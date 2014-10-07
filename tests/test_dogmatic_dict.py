@@ -9,9 +9,16 @@ def test_isinstance_of_dict():
     assert isinstance(DogmaticDict(), dict)
 
 
-def test_dict_interface():
+def test_dict_interface_initialized_empty():
     d = DogmaticDict()
     assert d == {}
+    assert set(d.keys()) == set()
+    assert set(d.values()) == set()
+    assert set(d.items()) == set()
+
+
+def test_dict_interface_set_item():
+    d = DogmaticDict()
     d['a'] = 12
     d['b'] = 'foo'
     assert 'a' in d
@@ -24,24 +31,40 @@ def test_dict_interface():
     assert set(d.values()) == {12, 'foo'}
     assert set(d.items()) == {('a', 12), ('b', 'foo')}
 
+
+def test_dict_interface_del_item():
+    d = DogmaticDict()
+    d['a'] = 12
     del d['a']
     assert 'a' not in d
 
-    d['b'] = 'bar'
-    assert d['b'] == 'bar'
+
+def test_dict_interface_update_with_dict():
+    d = DogmaticDict()
+    d['a'] = 12
+    d['b'] = 'foo'
 
     d.update({'a': 1, 'c': 2})
     assert d['a'] == 1
-    assert d['b'] == 'bar'
+    assert d['b'] == 'foo'
     assert d['c'] == 2
 
+
+def test_dict_interface_update_with_kwargs():
+    d = DogmaticDict()
+    d['a'] = 12
+    d['b'] = 'foo'
     d.update(a=2, b=3)
     assert d['a'] == 2
     assert d['b'] == 3
-    assert d['c'] == 2
 
+
+def test_dict_interface_update_with_list_of_items():
+    d = DogmaticDict()
+    d['a'] = 12
+    d['b'] = 'foo'
     d.update([('b', 9), ('c', 7)])
-    assert d['a'] == 2
+    assert d['a'] == 12
     assert d['b'] == 9
     assert d['c'] == 7
 

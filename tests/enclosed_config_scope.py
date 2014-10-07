@@ -6,6 +6,7 @@ from sacred.config_scope import ConfigScope
 
 SIX = 6
 
+
 @ConfigScope
 def cfg():
     answer = 7 * SIX

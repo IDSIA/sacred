@@ -9,13 +9,13 @@ import sys
 import pkg_resources
 
 try:
-    basestring  # attempt to evaluate basestring
+    isinstance("", basestring)  # attempt to evaluate basestring
 
-    def is_str(s):
-        return isinstance(s, basestring)
+    def is_str(obj):
+        return isinstance(obj, basestring)
 except NameError:
-    def is_str(s):
-        return isinstance(s, str)
+    def is_str(obj):
+        return isinstance(obj, str)
 
 
 def get_processor_name():
@@ -53,12 +53,12 @@ module = type(platform)
 def get_dependencies(globs):
     dependencies = {}
 
-    for g in globs.values():
-        if isinstance(g, module) and g.__name__ not in MODULE_BLACKLIST:
-            dependencies[g.__name__] = get_module_version_heuristic(g)
+    for glob in globs.values():
+        if isinstance(glob, module) and glob.__name__ not in MODULE_BLACKLIST:
+            dependencies[glob.__name__] = get_module_version_heuristic(glob)
 
-        elif hasattr(g, '__module__'):
-            modname = g.__module__.split('.')[0]
+        elif hasattr(glob, '__module__'):
+            modname = glob.__module__.split('.')[0]
             if modname not in MODULE_BLACKLIST and modname not in dependencies:
                 dependencies[modname] = get_module_version_heuristic(modname)
 
@@ -68,7 +68,7 @@ def get_dependencies(globs):
 def fill_missing_versions(deps):
     for mod_name, ver in deps.items():
         if ver is None:
-            deps[mod_name] = get_module_version_from_pkg_resources(mod_name)
+            deps[mod_name] = get_version_from_pkg_resources(mod_name)
 
 
 def get_modules(globs):
@@ -96,13 +96,13 @@ def get_module_version_heuristic(mod):
     for vattr in possible_version_attributes:
         if not hasattr(mod, vattr):
             continue
-        v = getattr(mod, vattr)
-        if is_str(v) and PEP440_VERSION_PATTERN.match(v):
-            return v
+        version = getattr(mod, vattr)
+        if is_str(version) and PEP440_VERSION_PATTERN.match(version):
+            return version
     return None
 
 
-def get_module_version_from_pkg_resources(mod_name):
+def get_version_from_pkg_resources(mod_name):
     try:
         return pkg_resources.get_distribution(mod_name).version
     except pkg_resources.DistributionNotFound:

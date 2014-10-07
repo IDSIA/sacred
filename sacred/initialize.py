@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict
 from copy import copy
 from sacred.config_scope import chain_evaluate_config_scopes
 from sacred.custom_containers import dogmatize
@@ -34,13 +34,21 @@ class Scaffold(object):
         self.rnd = None
         self._captured_functions = captured_functions
         self.commands = commands
+        self.config_mods = None
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
             return
 
-        self.seed = self.config_updates.get('seed') or get_seed(rnd)
+        self.seed = self.config.get('seed') or get_seed(rnd)
         self.rnd = create_rnd(self.seed)
+
+        if self.generate_seed:
+            self.config['seed'] = self.seed
+
+        if 'seed' in self.config and 'seed' in self.config_mods.added:
+            self.config_mods.updated.add('seed')
+            self.config_mods.added -= {'seed'}
 
         # Hierarchically set the seed of proper subrunners
         for subrunner_path, subrunner in reversed(list(
@@ -54,21 +62,18 @@ class Scaffold(object):
 
         # gather presets
         fallback = {}
-        for sr_path, sr in self.subrunners.items():
+        for sr_path, subrunner in self.subrunners.items():
             if self.path and is_prefix(self.path, sr_path):
                 path = sr_path[len(self.path):].strip('.')
-                set_by_dotted_path(fallback, path, sr.config)
+                set_by_dotted_path(fallback, path, subrunner.config)
             else:
-                set_by_dotted_path(fallback, sr_path, sr.config)
+                set_by_dotted_path(fallback, sr_path, subrunner.config)
 
         # dogmatize to make the subrunner configurations read-only
         const_fallback = dogmatize(fallback)
         const_fallback.revelation()
 
         self.config = {}
-
-        if self.generate_seed:
-            self.config['seed'] = self.seed
 
         # named configs first
         self.config_updates = chain_evaluate_config_scopes(
@@ -84,30 +89,27 @@ class Scaffold(object):
             preset=self.config,
             fallback=const_fallback)
 
-        return self.config
+        self.get_config_modifications()
 
     def get_config_modifications(self):
         typechanges = {}
-        flat_config_upd = [k
-                           for k, v in iterate_flattened(self.config_updates)]
-        updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
-        added = set(updated)
+        added = {p for k, _ in iterate_flattened(self.config_updates)
+                 for p in iter_prefixes(k)}
+        updated = set()
         for config in self.config_scopes:
             added &= config.added_values
             typechanges.update(config.typechanges)
+            updated |= config.modified
 
-        if self.generate_seed and 'seed' in added:
-            added.remove('seed')
-
-        return added, updated, typechanges
+        self.config_mods = ConfigModifications(added, updated, typechanges)
 
     def get_fixture(self):
         if self.fixture is not None:
             return self.fixture
 
         self.fixture = copy(self.config)
-        for sr_path, sr in self.subrunners.items():
-            sub_fix = sr.get_fixture()
+        for sr_path, subrunner in self.subrunners.items():
+            sub_fix = subrunner.get_fixture()
             sub_path = sr_path
             if is_prefix(self.path, sub_path):
                 sub_path = sr_path[len(self.path):].strip('.')
@@ -120,37 +122,44 @@ class Scaffold(object):
         # configuration process
         if 'seed' in self.config:
             self.seed = self.config['seed']
-            self.rnd = create_rnd(self.seed)
+        self.rnd = create_rnd(self.seed)
 
-        for cf in self._captured_functions:
-            cf.logger = self.logger.getChild(cf.__name__)
-            cf.config = get_by_dotted_path(self.get_fixture(), cf.prefix)
+        for cfunc in self._captured_functions:
+            cfunc.logger = self.logger.getChild(cfunc.__name__)
+            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix)
             seed = get_seed(self.rnd)
-            cf.rnd = create_rnd(seed)
-            cf.run = run
+            cfunc.rnd = create_rnd(seed)
+            cfunc.run = run
 
         self._warn_about_suspicious_changes()
 
-    def _warn_about_suspicious_changes(self, ):
-        add, upd, tch = self.get_config_modifications()
-        for a in sorted(add):
-            self.logger.warning('Added new config entry: "%s"' % a)
-        for k, (t1, t2) in tch.items():
-            if (isinstance(t1, type(None)) or
-                    (t1 in (int, float) and t2 in (int, float))):
+    def _warn_about_suspicious_changes(self):
+        for add in sorted(self.config_mods.added):
+            self.logger.warning('Added new config entry: "%s"' % add)
+
+        for key, (type_old, type_new) in self.config_mods.typechanges.items():
+            if (isinstance(type_old, type(None)) or
+                    (type_old in (int, float) and type_new in (int, float))):
                 continue
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
-                (k, t1.__name__, t2.__name__))
+                (key, type_old.__name__, type_new.__name__))
+
+        for config in self.config_scopes:
+            for key in config.ignored_fallback_writes:
+                self.logger.warning(
+                    'Ignored attempt to set value of "%s", because it is an '
+                    'ingredient.' % key
+                )
 
 
 def get_configuration(scaffolding):
     config = {}
-    for sc_path, sc in reversed(list(scaffolding.items())):
+    for sc_path, scaffold in reversed(list(scaffolding.items())):
         if sc_path:
-            set_by_dotted_path(config, sc_path, sc.config)
+            set_by_dotted_path(config, sc_path, scaffold.config)
         else:
-            config.update(sc.config)
+            config.update(scaffold.config)
     return config
 
 
@@ -159,9 +168,10 @@ def distribute_config_updates(scaffolding, config_updates):
         return
     nested_config_updates = convert_to_nested_dict(config_updates)
     for path, value in iterate_flattened(nested_config_updates):
-        for p1, p2 in reversed(list(iter_path_splits(path))):
-            if p1 in scaffolding:
-                set_by_dotted_path(scaffolding[p1].config_updates, p2, value)
+        for prefix, suffix in reversed(list(iter_path_splits(path))):
+            if prefix in scaffolding:
+                set_by_dotted_path(scaffolding[prefix].config_updates, suffix,
+                                   value)
                 break
                 # this is guaranteed to occur for one of the modrunners,
                 # because the exrunner has path ''
@@ -188,11 +198,11 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
         if loglevel:
             root_logger.setLevel(loglevel)
 
-    for sc_path, sc in scaffolding.items():
+    for sc_path, scaffold in scaffolding.items():
         if sc_path:
-            sc.logger = root_logger.getChild(sc_path)
+            scaffold.logger = root_logger.getChild(sc_path)
         else:
-            sc.logger = root_logger
+            scaffold.logger = root_logger
 
     return root_logger.getChild(experiment.name)
 
@@ -200,43 +210,60 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
 def create_scaffolding(experiment):
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = OrderedDict()
-    for sm in sorted_ingredients:
-        scaffolding[sm] = Scaffold(
-            sm.cfgs,
+    for ingredient in sorted_ingredients:
+        scaffolding[ingredient] = Scaffold(
+            ingredient.cfgs,
             subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
-                                    for m in sm.ingredients]),
-            path=sm.path if sm != experiment else '',
-            captured_functions=sm.captured_functions,
-            commands=sm.commands,
-            named_configs=sm.named_configs,
-            generate_seed=sm.gen_seed)
+                                    for m in ingredient.ingredients]),
+            path=ingredient.path if ingredient != experiment else '',
+            captured_functions=ingredient.captured_functions,
+            commands=ingredient.commands,
+            named_configs=ingredient.named_configs,
+            generate_seed=ingredient.gen_seed)
     return OrderedDict([(sc.path, sc) for sc in scaffolding.values()])
 
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
-    for sm, depth in ingredient.traverse_ingredients():
-        sub_ingredients[sm] = max(sub_ingredients[sm], depth)
+    for ingredient, depth in ingredient.traverse_ingredients():
+        sub_ingredients[ingredient] = max(sub_ingredients[ingredient], depth)
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
-ConfigModifications = namedtuple('ConfigModifications',
-                                 ['added', 'updated', 'typechanges'])
+class ConfigModifications():
+    def __init__(self, added=(), updated=(), typechanges=()):
+        self.added = set(added)
+        self.updated = set(updated)
+        self.typechanges = dict(typechanges)
+        self.ensure_coherence()
+
+    def update_from(self, config_mod, path=''):
+        added = config_mod.added
+        updated = config_mod.updated
+        typechanges = config_mod.typechanges
+        self.added |= {join_paths(path, a) for a in added}
+        self.updated |= {join_paths(path, u) for u in updated}
+        self.typechanges.update({join_paths(path, k): v
+                                 for k, v in typechanges.items()})
+        self.ensure_coherence()
+
+    def ensure_coherence(self):
+        # make sure parent paths show up as updated appropriately
+        self.updated |= {p for a in self.added for p in iter_prefixes(a)}
+        self.updated |= {p for u in self.updated for p in iter_prefixes(u)}
+        self.updated |= {p for t in self.typechanges for p in iter_prefixes(t)}
+
+        # make sure there is no overlap
+        self.added -= set(self.typechanges.keys())
+        self.updated -= set(self.typechanges.keys())
+        self.updated -= self.added
 
 
 def get_config_modifications(scaffolding):
-    added = set()
-    updated = set()
-    typechanges = {}
-    for sc_path, sc in scaffolding.items():
-        mr_add, mr_up, mr_tc = sc.get_config_modifications()
-        if mr_add or mr_up or mr_tc:
-            updated |= set(iter_prefixes(sc_path))
-        added |= {join_paths(sc_path, a) for a in mr_add}
-        updated |= {join_paths(sc_path, u) for u in mr_up}
-        typechanges.update({join_paths(sc_path, k): v
-                            for k, v in mr_tc.items()})
-    return ConfigModifications(added, updated, typechanges)
+    config_modifications = ConfigModifications()
+    for sc_path, scaffold in scaffolding.items():
+        config_modifications.update_from(scaffold.config_mods, path=sc_path)
+    return config_modifications
 
 
 def get_command(scaffolding, command_path):
@@ -262,11 +289,11 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)
 
-    for sc in reversed(list(scaffolding.values())):
-        sc.set_up_seed()  # partially recursive
+    for scaffold in scaffolding.values():
+        scaffold.set_up_config()
 
-    for sc in scaffolding.values():
-        sc.set_up_config()
+    for scaffold in reversed(list(scaffolding.values())):
+        scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
 
@@ -285,7 +312,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
               experiment.observers, logger, experiment.name, experiment_info,
               host_info)
 
-    for sc in scaffolding.values():
-        sc.finalize_initialization(run=run)
+    for scaffold in scaffolding.values():
+        scaffold.finalize_initialization(run=run)
 
     return run

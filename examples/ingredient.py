@@ -4,7 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 from sacred import Ingredient, Experiment
 
-# ================== Dataset Ingredient ========================================
+# ================== Dataset Ingredient =======================================
 # could be in a separate file
 
 data_ingredient = Ingredient('dataset')
@@ -31,7 +31,7 @@ def stats(filename):
     print('mean = 42.23')
 
 
-# ================== Experiment ================================================
+# ================== Experiment ===============================================
 
 @data_ingredient.config
 def cfg():

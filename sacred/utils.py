@@ -28,6 +28,8 @@ NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
 SEEDRANGE = (1, 1e9)
 
+PATHCHANGE = object()
+
 
 def create_basic_stream_logger(name, level=None):
     level = level if level is not None else logging.INFO
@@ -92,24 +94,30 @@ def get_seed(rnd=None):
 
 
 def create_rnd(seed):
+    assert isinstance(seed, int), "Seed has to be integer but was %s %s" % \
+                                  (repr(seed), type(seed))
     return Random(seed)
 
 
-def iterate_separately(dictionary):
+def iterate_flattened_separately(dictionary):
     """
     Iterate over the items of a dictionary. First iterate over all items that
     are non-dictionary values (sorted by keys), then over the rest
-    (sorted by keys).
+    (sorted by keys), providing full dotted paths for every leaf.
     """
-    single_line_keys = [k for k in dictionary.keys()
-                        if not isinstance(dictionary[k], dict)]
-    for k in sorted(single_line_keys):
-        yield k, dictionary[k]
+    single_line_keys = [key for key in dictionary.keys() if
+                        not dictionary[key] or
+                        not isinstance(dictionary[key], dict)]
+    for key in sorted(single_line_keys):
+        yield key, dictionary[key]
 
-    multi_line_keys = [k for k in dictionary.keys()
-                       if isinstance(dictionary[k], dict)]
-    for k in sorted(multi_line_keys):
-        yield k, dictionary[k]
+    multi_line_keys = [key for key in dictionary.keys()
+                       if (dictionary[key] and
+                           isinstance(dictionary[key], dict))]
+    for key in sorted(multi_line_keys):
+        yield key, PATHCHANGE
+        for k, val in iterate_flattened_separately(dictionary[key]):
+            yield join_paths(key,  k), val
 
 
 def iterate_flattened(d):

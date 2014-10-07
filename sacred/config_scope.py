@@ -18,32 +18,67 @@ except ImportError:
 __sacred__ = True
 
 
-def get_function_body_code(func):
+def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
-    filename = inspect.getfile(func)
     func_code = ''.join(func_code_lines)
     arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
     arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n\s*".format(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
             func.__name__, arguments), flags=re.MULTILINE)
     defs = list(re.finditer(func_def, func_code))
     assert defs
-    line_offset = func_code[:defs[0].end()].count('\n')
+    line_offset = start_idx + func_code[:defs[0].end()].count('\n') - 1
     func_body = func_code[defs[0].end():]
-    body_code = compile(inspect.cleandoc(func_body), filename, "exec",
-                        ast.PyCF_ONLY_AST)
-    body_code = ast.increment_lineno(body_code, n=start_idx+line_offset-1)
+    return func_body, line_offset
+
+
+def is_empty_or_comment(line):
+    sline = line.strip()
+    return sline == '' or sline.startswith('#')
+
+
+def dedent_line(line, indent):
+    for i, (line_sym, indent_sym) in enumerate(zip(line, indent)):
+        if line_sym != indent_sym:
+            start = i
+            break
+    else:
+        start = len(indent)
+    return line[start:]
+
+
+def dedent_function_body(body):
+    lines = body.split('\n')
+    # find indentation by first line
+    indent = ''
+    for line in lines:
+        if is_empty_or_comment(line):
+            continue
+        else:
+            indent = re.match('^\s*', line).group()
+            break
+
+    out_lines = [dedent_line(line, indent) for line in lines]
+    return '\n'.join(out_lines)
+
+
+def get_function_body_code(func):
+    filename = inspect.getfile(func)
+    func_body, line_offset = get_function_body(func)
+    body_source = dedent_function_body(func_body)
+    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
+    body_code = ast.increment_lineno(body_code, n=line_offset)
     body_code = compile(body_code, filename, "exec")
     return body_code
 
 
 def recursive_fill_in(config, preset):
-    for p in preset:
-        if p not in config:
-            config[p] = preset[p]
-        elif isinstance(config[p], dict):
-            recursive_fill_in(config[p], preset[p])
+    for key in preset:
+        if key not in config:
+            config[key] = preset[key]
+        elif isinstance(config[key], dict):
+            recursive_fill_in(config[key], preset[key])
 
 
 def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
@@ -81,6 +116,8 @@ class ConfigScope(dict):
         self._initialized = False
         self.added_values = set()
         self.typechanges = {}
+        self.ignored_fallback_writes = []
+        self.modified = {}
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -113,34 +150,36 @@ class ConfigScope(dict):
 
         available_entries = set(preset.keys()) | set(fallback.keys())
 
-        for a in self.arg_spec.args:
-            if a not in available_entries:
+        for arg in self.arg_spec.args:
+            if arg not in available_entries:
                 raise KeyError("'%s' not in preset for ConfigScope. "
                                "Available options are: %s" %
-                               (a, available_entries))
-            if a in preset:
-                cfg_locals[a] = preset[a]
-            else:  # a in fallback
-                fallback_view[a] = fallback[a]
+                               (arg, available_entries))
+            if arg in preset:
+                cfg_locals[arg] = preset[arg]
+            else:  # arg in fallback
+                fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges
+        self.ignored_fallback_writes = cfg_locals.ignored_fallback_writes
+        self.modified = cfg_locals.modified
 
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 
-        for k, v in cfg_locals.items():
-            if k.startswith('_'):
+        for key, value in cfg_locals.items():
+            if key.startswith('_'):
                 continue
-            if np and isinstance(v, np.bool_):
+            if np and isinstance(value, np.bool_):
                 # fixes an issue with numpy.bool_ not being json-serializable
-                self[k] = bool(v)
+                self[key] = bool(value)
                 continue
             try:
-                json.dumps(v)
-                self[k] = undogmatize(v)
+                json.dumps(value)
+                self[key] = undogmatize(value)
             except TypeError:
                 pass
         return self

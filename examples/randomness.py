@@ -56,4 +56,3 @@ def run(reverse):
         do_more_random_stuff()
 
     do_random_stuff()
-

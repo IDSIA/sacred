@@ -7,16 +7,17 @@ from sacred import Experiment
 ex = Experiment('hello_config')
 
 
+@ex.named_config
+def rude():
+    recipient = "bastard"
+    message = "Fuck off you %s!" % recipient
+
+
 @ex.config
 def cfg():
     recipient = "world"
     message = "Hello %s!" % recipient
 
-
-@ex.named_config
-def rude():
-    recipient = "bastard"
-    message = "Fuck off you %s!" % recipient
 
 @ex.automain
 def main(message):

@@ -70,10 +70,10 @@ try:
             RunObserver.__init__(self)
             self.experiment_entry = None
             mongo = MongoClient(url)
-            self.db = mongo[db_name]
+            database = mongo[db_name]
             for manipulator in SON_MANIPULATORS:
-                self.db.add_son_manipulator(manipulator)
-            self.collection = self.db['experiments']
+                database.add_son_manipulator(manipulator)
+            self.collection = database['experiments']
 
         def save(self):
             self.collection.save(self.experiment_entry)
@@ -83,10 +83,10 @@ try:
             self.experiment_entry['name'] = name
             self.experiment_entry['experiment_info'] = ex_info
             try:
-                with open(ex_info['mainfile'], 'r') as f:
-                    self.experiment_entry['source'] = f.read()
-            except IOError as e:
-                self.experiment_entry['experiment_info']['source'] = str(e)
+                with open(ex_info['mainfile']) as source_file:
+                    self.experiment_entry['source'] = source_file.read()
+            except IOError as err:
+                self.experiment_entry['experiment_info']['source'] = str(err)
             self.experiment_entry['host_info'] = host_info
             self.experiment_entry['start_time'] = \
                 datetime.fromtimestamp(start_time)

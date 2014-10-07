@@ -85,6 +85,7 @@ Special Values
 There are a couple of special parameters that captured functions can accept.
 These might change, and are not well documented yet, so be careful:
 
+  - ``_config`` : the whole configuration dict that is accessible for this function
   - ``_seed`` : a seed that is different for every invocation (-> Controlling Randomness)
   - ``_rnd`` : a random state seeded with ``seed``
   - ``_log`` : a logger for that function

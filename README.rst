@@ -3,14 +3,14 @@ Sacred
 
     | *Every experiment is sacred*
     | *Every experiment is great*
-    | *If a experiment is wasted*
+    | *If an experiment is wasted*
     | *God gets quite irate*
 
-.. image:: http://img.shields.io/pypi/v/sacred.svg
+.. image:: http://img.shields.io/pypi/v/sacred.png
     :target: https://pypi.python.org/pypi/sacred
     :alt: Current PyPi Version
 
-.. image:: http://img.shields.io/badge/license-MIT-brightgreen.svg
+.. image:: http://img.shields.io/badge/license-MIT-blue.png
     :target: http://choosealicense.com/licenses/mit/
     :alt: MIT licensed
 
@@ -22,9 +22,17 @@ Sacred
     :target: https://travis-ci.org/Qwlouse/sacred
     :alt: Travis-CI Status
 
+.. image:: https://coveralls.io/repos/Qwlouse/sacred/badge.png
+    :target: https://coveralls.io/r/Qwlouse/sacred
+    :alt: Coverage Report
+
 .. image:: https://scrutinizer-ci.com/g/Qwlouse/sacred/badges/quality-score.png?b=master
     :target: https://scrutinizer-ci.com/g/Qwlouse/sacred/
     :alt: Code Scrutinizer Quality
+
+.. image:: https://pypip.in/wheel/sacred/badge.png
+    :target: https://pypi.python.org/pypi/sacred/
+    :alt: Wheel Status
 
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.

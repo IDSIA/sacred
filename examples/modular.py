@@ -15,7 +15,6 @@ def cfg():
     verbose = True
 
 
-
 # ============== Ingredient 1: dataset.paths =================
 data_paths = Ingredient("dataset.paths", ingredients=[s])
 
@@ -48,8 +47,7 @@ ex = Experiment('modular_example', ingredients=[data, data_paths])
 
 
 @ex.config
-def cfg(seed, dataset):
-    s = seed*2
+def cfg(dataset):
     a = 10
     b = 17
     c = a + b

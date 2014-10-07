@@ -81,6 +81,7 @@ You can also specify the log-level while calling ``run`` like so. See
 
 
 .. note::
+
     Under the hood a ``Run`` object is created every time you run an
     ``Experiment``. This object holds some information about that run (e.g. the
     final configuration) and is responsible for emitting all the events for the
