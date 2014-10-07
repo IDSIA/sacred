@@ -117,6 +117,7 @@ class ConfigScope(dict):
         self.added_values = set()
         self.typechanges = {}
         self.ignored_fallback_writes = []
+        self.modified = {}
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -164,6 +165,7 @@ class ConfigScope(dict):
         self.added_values = cfg_locals.revelation()
         self.typechanges = cfg_locals.typechanges
         self.ignored_fallback_writes = cfg_locals.ignored_fallback_writes
+        self.modified = cfg_locals.modified
 
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)

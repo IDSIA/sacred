@@ -85,6 +85,7 @@ class DogmaticDict(dict):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
         self.ignored_fallback_writes = []
+        self.modified = set()
         self._fixed = fixed or {}
         self._fallback = {}
         if fallback:
@@ -106,10 +107,15 @@ class DogmaticDict(dict):
         if type_changed(value, fixed_value):
             self.typechanges[key] = (type(value), type(fixed_value))
 
-        # if both are dicts recursively collect typechanges
+        if value != fixed_value:
+            self.modified.add(key)
+
+        # if both are dicts recursively collect modified and typechanges
         if isinstance(fixed_value, DogmaticDict) and isinstance(value, dict):
             for k, val in fixed_value.typechanges.items():
                 self.typechanges[join_paths(key, k)] = val
+
+            self.modified |= {join_paths(key, m) for m in fixed_value.modified}
 
     def __setitem__(self, key, value):
         if key not in self._fixed:

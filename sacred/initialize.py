@@ -92,14 +92,16 @@ class Scaffold(object):
                            for k, _ in iterate_flattened(self.config_updates)]
         updated = {sp for p in flat_config_upd for sp in iter_prefixes(p)}
         added = set(updated)
+        modified = set()
         for config in self.config_scopes:
             added &= config.added_values
             typechanges.update(config.typechanges)
+            modified |= config.modified
 
         if self.generate_seed and 'seed' in added:
             added.remove('seed')
 
-        return added, updated, typechanges
+        return added, modified, typechanges
 
     def get_fixture(self):
         if self.fixture is not None:
@@ -120,7 +122,7 @@ class Scaffold(object):
         # configuration process
         if 'seed' in self.config:
             self.seed = self.config['seed']
-            self.rnd = create_rnd(self.seed)
+        self.rnd = create_rnd(self.seed)
 
         for cfunc in self._captured_functions:
             cfunc.logger = self.logger.getChild(cfunc.__name__)
