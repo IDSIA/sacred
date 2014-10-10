@@ -4,6 +4,8 @@
 from __future__ import division, print_function, unicode_literals
 from datetime import datetime
 import pickle
+import sys
+import time
 
 __all__ = ['RunObserver', 'MongoObserver', 'DebugObserver']
 
@@ -27,6 +29,7 @@ class RunObserver(object):
 
 try:
     from pymongo import MongoClient
+    from pymongo.errors import AutoReconnect
     from pymongo.son_manipulator import SONManipulator
     from bson import Binary
 
@@ -76,7 +79,27 @@ try:
             self.collection = database['experiments']
 
         def save(self):
-            self.collection.save(self.experiment_entry)
+            try:
+                self.collection.save(self.experiment_entry)
+            except AutoReconnect:  # just wait for the next save
+                pass
+
+        def final_save(self, attempts=10):
+            for i in range(attempts):
+                try:
+                    self.collection.save(self.experiment_entry)
+                    return
+                except AutoReconnect:
+                    if i < attempts - 1:
+                        time.sleep(1)
+
+            from tempfile import NamedTemporaryFile
+            with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                    prefix='sacred_mongo_fail_') as f:
+                pickle.dump(self.experiment_entry, f)
+                print("Warning: saving to MongoDB failed! "
+                      "Stored experiment entry in '%s'" % f.name,
+                      file=sys.stderr)
 
         def started_event(self, name, ex_info, host_info, start_time, config):
             self.experiment_entry = dict()
@@ -105,20 +128,20 @@ try:
                 datetime.fromtimestamp(stop_time)
             self.experiment_entry['result'] = result
             self.experiment_entry['status'] = 'COMPLETED'
-            self.save()
+            self.final_save(attempts=10)
 
         def interrupted_event(self, interrupt_time):
             self.experiment_entry['stop_time'] = \
                 datetime.fromtimestamp(interrupt_time)
             self.experiment_entry['status'] = 'INTERRUPTED'
-            self.save()
+            self.final_save(attempts=3)
 
         def failed_event(self, fail_time, fail_trace):
             self.experiment_entry['stop_time'] = \
                 datetime.fromtimestamp(fail_time)
             self.experiment_entry['status'] = 'FAILED'
             self.experiment_entry['fail_trace'] = fail_trace
-            self.save()
+            self.final_save(attempts=1)
 
         def __eq__(self, other):
             if isinstance(other, MongoObserver):
