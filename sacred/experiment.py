@@ -10,7 +10,7 @@ import sys
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
-from sacred.config_scope import ConfigScope
+from sacred.config_scope import ConfigScope, ConfigDict
 from sacred.host_info import get_dependencies, fill_missing_versions
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
@@ -74,6 +74,22 @@ class Ingredient(object):
         """
         self.cfgs.append(ConfigScope(function))
         return self.cfgs[-1]
+
+    def add_config(self, cfg=None, **kw_conf):
+        # TODO: write documentation for this function
+        if cfg is not None and kw_conf:
+            raise ValueError("cannot combine keyword config with "
+                             "positional argument")
+        if cfg is None:
+            if not kw_conf:
+                raise ValueError("attempted to add empty config")
+            self.cfgs.append(ConfigDict(kw_conf))
+        elif inspect.isfunction(cfg):
+            self.config(cfg)
+        elif isinstance(cfg, dict):
+            self.cfgs.append(ConfigDict(cfg))
+        else:
+            raise TypeError("Invalid argument type {}".format(type(cfg)))
 
     def named_config(self, func):
         config_scope = ConfigScope(func)
