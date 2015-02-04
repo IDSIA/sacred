@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import collections
 from contextlib import contextmanager
 import logging
+import re
 import sys
 import traceback as tb
 
@@ -29,6 +30,8 @@ NO_LOGGER.disabled = 1
 SEEDRANGE = (1, 1e9)
 
 PATHCHANGE = object()
+
+PYTHON_IDENTIFIER = re.compile("^[a-zA-Z][_a-zA-Z0-9]*$")
 
 
 def create_basic_stream_logger(name, level=None):

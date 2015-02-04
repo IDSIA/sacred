@@ -8,6 +8,7 @@ import inspect
 import json
 import re
 from sacred.custom_containers import dogmatize, undogmatize
+from sacred.utils import PYTHON_IDENTIFIER
 
 try:
     import numpy as np
@@ -99,6 +100,40 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
     return undogmatize(final_config)
 
 
+class ConfigDict(dict):
+    def __init__(self, d):
+        super(ConfigDict, self).__init__()
+        self._conf = {}
+        self.ignored_fallback_writes = []  # TODO: test for this member
+        self.modified = set()  # TODO: test for this member
+
+        for key, value in d.items():
+            if not PYTHON_IDENTIFIER.match(key):
+                raise KeyError('invalid key "{}". Keys have to be valid python'
+                               ' identifiers and cannot start with "_"')
+            if np and isinstance(value, np.bool_):
+                # fixes an issue with numpy.bool_ not being json-serializable
+                self._conf[key] = bool(value)
+                continue
+            try:
+                json.dumps(value)
+                self._conf[key] = undogmatize(value)
+            except TypeError:
+                raise ValueError("invalid value for {}. All values have to be"
+                                 "JSON-serializeable".format(key))
+
+    def __call__(self, fixed=None, preset=None, fallback=None):
+        result = dogmatize(fixed or {})
+        result.update(preset)
+        result.update(self._conf)
+
+        self.added_values = result.revelation()
+        self.typechanges = result.typechanges
+        self.modified = result.modified
+        self.update(undogmatize(result))
+        return self
+
+
 class ConfigScope(dict):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
@@ -116,8 +151,8 @@ class ConfigScope(dict):
         self._initialized = False
         self.added_values = set()
         self.typechanges = {}
-        self.ignored_fallback_writes = []
-        self.modified = {}
+        self.ignored_fallback_writes = []  # TODO: test for this member
+        self.modified = set()  # TODO: test for this member
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
