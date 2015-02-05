@@ -100,15 +100,30 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
     return undogmatize(final_config)
 
 
-class ConfigDict(dict):
+class ConfigEntry(dict):
+    def __init__(self):
+        super(ConfigEntry, self).__init__()
+        self.ignored_fallback_writes = []  # TODO: test for this member
+        self.modified = set()  # TODO: test for this member
+        self.added_values = set()
+        self.typechanges = {}
+        self._initialized = False
+
+    def __call__(self, fixed=None, preset=None, fallback=None):
+        raise NotImplementedError()
+
+    def __getitem__(self, item):
+        assert self._initialized, "ConfigScope must be executed before access"
+        return dict.__getitem__(self, item)
+
+
+class ConfigDict(ConfigEntry):
     def __init__(self, d):
         super(ConfigDict, self).__init__()
         self._conf = {}
-        self.ignored_fallback_writes = []  # TODO: test for this member
-        self.modified = set()  # TODO: test for this member
 
         for key, value in d.items():
-            if not PYTHON_IDENTIFIER.match(key):
+            if not isinstance(key, str) or not PYTHON_IDENTIFIER.match(key):
                 raise KeyError('invalid key "{}". Keys have to be valid python'
                                ' identifiers and cannot start with "_"')
             if np and isinstance(value, np.bool_):
@@ -123,6 +138,7 @@ class ConfigDict(dict):
                                  "JSON-serializeable".format(key))
 
     def __call__(self, fixed=None, preset=None, fallback=None):
+        self._initialized = True
         result = dogmatize(fixed or {})
         result.update(preset)
         result.update(self._conf)
@@ -134,7 +150,7 @@ class ConfigDict(dict):
         return self
 
 
-class ConfigScope(dict):
+class ConfigScope(ConfigEntry):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
         self.arg_spec = inspect.getargspec(func)
@@ -146,13 +162,8 @@ class ConfigScope(dict):
             "default values are not allowed for ConfigScope functions"
 
         self._func = func
-        update_wrapper(self, func)
+        update_wrapper(self, func)  # TODO: Do we really need this?
         self._body_code = get_function_body_code(func)
-        self._initialized = False
-        self.added_values = set()
-        self.typechanges = {}
-        self.ignored_fallback_writes = []  # TODO: test for this member
-        self.modified = set()  # TODO: test for this member
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -218,7 +229,3 @@ class ConfigScope(dict):
             except TypeError:
                 pass
         return self
-
-    def __getitem__(self, item):
-        assert self._initialized, "ConfigScope must be executed before access"
-        return dict.__getitem__(self, item)

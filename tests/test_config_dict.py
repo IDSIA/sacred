@@ -46,6 +46,18 @@ def test_fixing_values(conf_dict):
     assert conf_dict['a'] == 100
 
 
+@pytest.mark.parametrize("key", ["_underscore", "white space", 12, "12", "$f"])
+def test_config_dict_raises_on_invalid_keys(key):
+    with pytest.raises(KeyError):
+        ConfigDict({key: True})
+
+
+@pytest.mark.parametrize("value", [lambda x:x, pytest, test_fixing_values])
+def test_config_dict_raises_on_invalid_keys(value):
+    with pytest.raises(ValueError):
+        ConfigDict({"invalid": value})
+
+
 def test_fixing_nested_dicts(conf_dict):
     conf_dict({'f': {'c': 't'}})
     assert conf_dict['f']['a'] == 'b'
