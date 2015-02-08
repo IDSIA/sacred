@@ -35,6 +35,7 @@ class Scaffold(object):
         self._captured_functions = captured_functions
         self.commands = commands
         self.config_mods = None
+        self.summaries = []
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -76,19 +77,20 @@ class Scaffold(object):
         self.config = {}
 
         # named configs first
-        self.config_updates = chain_evaluate_config_scopes(
+        self.config_updates, summaries1 = chain_evaluate_config_scopes(
             [self.named_configs[n] for n in self.named_configs_to_use],
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
 
         # unnamed (default) configs second
-        self.config = chain_evaluate_config_scopes(
+        self.config, summaries2 = chain_evaluate_config_scopes(
             self.config_scopes,
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
 
+        self.summaries = summaries1 + summaries2
         self.get_config_modifications()
 
     def get_config_modifications(self):
@@ -96,10 +98,10 @@ class Scaffold(object):
         added = {p for k, _ in iterate_flattened(self.config_updates)
                  for p in iter_prefixes(k)}
         updated = set()
-        for config in self.config_scopes:
-            added &= config.added_values
-            typechanges.update(config.typechanges)
-            updated |= config.modified
+        for cfg_summary in self.summaries:
+            added &= cfg_summary.added_values
+            typechanges.update(cfg_summary.typechanges)
+            updated |= cfg_summary.modified
 
         self.config_mods = ConfigModifications(added, updated, typechanges)
 
@@ -145,8 +147,8 @@ class Scaffold(object):
                 'Changed type of config entry "%s" from %s to %s' %
                 (key, type_old.__name__, type_new.__name__))
 
-        for config in self.config_scopes:
-            for key in config.ignored_fallback_writes:
+        for cfg_summary in self.summaries:
+            for key in cfg_summary.ignored_fallback_writes:
                 self.logger.warning(
                     'Ignored attempt to set value of "%s", because it is an '
                     'ingredient.' % key

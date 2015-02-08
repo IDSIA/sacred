@@ -15,7 +15,7 @@ def test_chained_config_scopes_contain_combined_keys():
     def cfg2():
         b = 20
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2])
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2])
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 10
     assert final_cfg['b'] == 20
@@ -30,7 +30,7 @@ def test_chained_config_scopes_can_access_previous_keys():
     def cfg2(a):
         b = 2 * a
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2])
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2])
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 10
 
@@ -46,7 +46,7 @@ def test_chained_config_scopes_can_modify_previous_keys():
         a *= 2
         b = 22
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2])
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2])
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 20
     assert final_cfg['b'] == 22
@@ -76,7 +76,8 @@ def test_chained_config_scopes_cannot_modify_fixed():
         b = 4 * c
         c *= 3
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2], fixed={'c': 5})
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2],
+                                                      fixed={'c': 5})
     assert set(final_cfg.keys()) == {'a', 'b', 'c'}
     assert final_cfg['a'] == 10
     assert final_cfg['b'] == 20
@@ -92,7 +93,8 @@ def test_chained_config_scopes_can_access_preset():
     def cfg2(a, c):
         b = a * 2 + c
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2], preset={'c': 32})
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2],
+                                                      preset={'c': 32})
     assert set(final_cfg.keys()) == {'a', 'b', 'c'}
     assert final_cfg['a'] == 42
     assert final_cfg['b'] == 116
@@ -108,7 +110,8 @@ def test_chained_config_scopes_can_access_fallback():
     def cfg2(a, c):
         b = a * 2 + c
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2], fallback={'c': 32})
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2],
+                                                      fallback={'c': 32})
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 42
     assert final_cfg['b'] == 116
@@ -126,17 +129,17 @@ def test_chained_config_scopes_fix_subentries():
     def cfg2():
         pass
 
-    final_cfg = chain_evaluate_config_scopes([cfg1, cfg2],
-                                             fixed={'d': {'a': 0}})
+    final_cfg, summary = chain_evaluate_config_scopes([cfg1, cfg2],
+                                                      fixed={'d': {'a': 0}})
     assert set(final_cfg['d'].keys()) == {'a', 'b'}
     assert final_cfg['d']['a'] == 0
     assert final_cfg['d']['b'] == 20
 
 
 def test_empty_chain_contains_preset_and_fixed():
-    final_cfg = chain_evaluate_config_scopes([],
-                                             fixed={'a': 0},
-                                             preset={'a': 1, 'b': 2})
+    final_cfg, summary = chain_evaluate_config_scopes([],
+                                                      fixed={'a': 0},
+                                                      preset={'a': 1, 'b': 2})
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 0
     assert final_cfg['b'] == 2

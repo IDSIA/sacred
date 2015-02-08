@@ -87,34 +87,32 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
     fixed = fixed or {}
     fallback = fallback or {}
     final_config = dict(preset or {})
+    config_summaries = []
     for config in config_scopes:
-        config(fixed=fixed,
-               preset=final_config,
-               fallback=fallback)
-
-        final_config.update(config)
+        cfg = config(fixed=fixed,
+                     preset=final_config,
+                     fallback=fallback)
+        config_summaries.append(cfg)
+        final_config.update(cfg)
 
     if not config_scopes:
         final_config.update(fixed)
 
-    return undogmatize(final_config)
+    return undogmatize(final_config), config_summaries
 
 
-class ConfigEntry(dict):
+class ConfigSummary(dict):
     def __init__(self):
-        super(ConfigEntry, self).__init__()
+        super(ConfigSummary, self).__init__()
+        self.added_values = set()
         self.ignored_fallback_writes = []  # TODO: test for this member
         self.modified = set()  # TODO: test for this member
-        self.added_values = set()
         self.typechanges = {}
-        self._initialized = False
 
+
+class ConfigEntry(object):
     def __call__(self, fixed=None, preset=None, fallback=None):
         raise NotImplementedError()
-
-    def __getitem__(self, item):
-        assert self._initialized, "ConfigScope must be executed before access"
-        return dict.__getitem__(self, item)
 
 
 class ConfigDict(ConfigEntry):
@@ -138,16 +136,18 @@ class ConfigDict(ConfigEntry):
                                  "JSON-serializeable".format(key))
 
     def __call__(self, fixed=None, preset=None, fallback=None):
-        self._initialized = True
         result = dogmatize(fixed or {})
         result.update(preset)
         result.update(self._conf)
 
-        self.added_values = result.revelation()
-        self.typechanges = result.typechanges
-        self.modified = result.modified
-        self.update(undogmatize(result))
-        return self
+        config_summary = ConfigSummary()
+        config_summary.added_values = result.revelation()
+        config_summary.ignored_fallback_writes = []
+        config_summary.modified = result.modified
+        config_summary.typechanges = result.typechanges
+        config_summary.update(undogmatize(result))
+
+        return config_summary
 
 
 class ConfigScope(ConfigEntry):
@@ -162,7 +162,6 @@ class ConfigScope(ConfigEntry):
             "default values are not allowed for ConfigScope functions"
 
         self._func = func
-        update_wrapper(self, func)  # TODO: Do we really need this?
         self._body_code = get_function_body_code(func)
 
     def __call__(self, fixed=None, preset=None, fallback=None):
@@ -187,8 +186,6 @@ class ConfigScope(ConfigEntry):
         :return: self
         :rtype: ConfigScope
         """
-        self._initialized = True
-        self.clear()
         cfg_locals = dogmatize(fixed or {})
         fallback = fallback or {}
         preset = preset or {}
@@ -208,10 +205,12 @@ class ConfigScope(ConfigEntry):
 
         cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
-        self.added_values = cfg_locals.revelation()
-        self.typechanges = cfg_locals.typechanges
-        self.ignored_fallback_writes = cfg_locals.ignored_fallback_writes
-        self.modified = cfg_locals.modified
+        config_summary = ConfigSummary()
+
+        config_summary.added_values = cfg_locals.revelation()
+        config_summary.ignored_fallback_writes = cfg_locals.ignored_fallback_writes
+        config_summary.modified = cfg_locals.modified
+        config_summary.typechanges = cfg_locals.typechanges
 
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
@@ -221,11 +220,11 @@ class ConfigScope(ConfigEntry):
                 continue
             if np and isinstance(value, np.bool_):
                 # fixes an issue with numpy.bool_ not being json-serializable
-                self[key] = bool(value)
+                config_summary[key] = bool(value)
                 continue
             try:
                 json.dumps(value)
-                self[key] = undogmatize(value)
+                config_summary[key] = undogmatize(value)
             except TypeError:
                 pass
-        return self
+        return config_summary
