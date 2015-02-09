@@ -24,10 +24,10 @@ def get_processor_name():
     elif platform.system() == "Darwin":
         import os
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + '/usr/sbin'
-        command = "sysctl -n machdep.cpu.brand_string"
+        command = ["sysctl", "-n", "machdep.cpu.brand_string"]
         return subprocess.check_output(command).strip()
     elif platform.system() == "Linux":
-        command = "cat /proc/cpuinfo"
+        command = ["cat", "/proc/cpuinfo"]
         all_info = str(subprocess.check_output(command, shell=True)).strip()
         for line in all_info.split("\n"):
             if "model name" in line:
