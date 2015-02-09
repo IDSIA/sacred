@@ -31,6 +31,12 @@ ConfigScope
     :members:
     :undoc-members:
 
+ConfigDict
+==========
+.. autoclass:: sacred.config_scope.ConfigDict
+    :members:
+    :undoc-members:
+
 Observers
 =========
 

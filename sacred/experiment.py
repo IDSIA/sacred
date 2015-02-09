@@ -69,14 +69,31 @@ class Ingredient(object):
 
     def config(self, function):
         """
-        Decorator to turn a function into a ConfigScope and add it to the
+        Decorator to turn a function into a
+        :class:`~sacred.config_scope.ConfigScope` and add it to the
         Ingredient/Experiment.
         """
         self.cfgs.append(ConfigScope(function))
         return self.cfgs[-1]
 
     def add_config(self, cfg=None, **kw_conf):
-        # TODO: write documentation for this function
+        """
+        Add a configuration entry to this ingredient/experiment. Can be called
+        either with a dictionary, a function or with keyword arguments.
+
+        If called with a function it will be turned into a
+        :class:`sacred.config_scope.ConfigScope` (equivalent to decorating it
+        with :meth:`~sacred.Experiment.config`).
+
+        Calling this with a dictionary or using keyword arguments will result
+        in a :class:`~sacred.config_scope.ConfigDict`.
+
+        :param cfg: Configuration function or dictionary to add to this
+                    ingredient/experiment.
+        :type cfg: dict | function
+        :param kw_conf: Configuration entries to be added to this
+                        ingredient/experiment.
+        """
         if cfg is not None and kw_conf:
             raise ValueError("cannot combine keyword config with "
                              "positional argument")
