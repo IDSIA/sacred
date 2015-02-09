@@ -1,6 +1,10 @@
 Release History
 ---------------
 
+0.5.2 (2015-02-09)
+++++++++++++++++++
+* Bugfix: processor name was not queried correctly on OSX
+
 0.5.1 (2014-10-07)
 ++++++++++++++++++
 * Feature: added special argument ``_config`` for captured functions
