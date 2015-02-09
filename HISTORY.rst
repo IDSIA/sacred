@@ -1,6 +1,14 @@
 Release History
 ---------------
 
+0.5.3 (2015-02-??)
+++++++++++++++++++
+* Feature: Normal dictionaries can now be added as configuration to experiments
+           using the new ``add_config`` method.
+* Feature: MongoObserver now tries to reconnect to the MongoDB if connection
+           is lost, and at the end of an experiment writes the entry to a
+           tempfile if the reconnects failed.
+
 0.5.2 (2015-02-09)
 ++++++++++++++++++
 * Bugfix: processor name was not queried correctly on OSX
