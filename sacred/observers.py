@@ -66,14 +66,15 @@ try:
         pass
 
     class MongoObserver(RunObserver):
-        def __init__(self, url=None, db_name='sacred'):
+        def __init__(self, url=None, db_name='sacred',
+                     collection_name='experiments'):
             RunObserver.__init__(self)
             self.experiment_entry = None
             mongo = MongoClient(url)
             database = mongo[db_name]
             for manipulator in SON_MANIPULATORS:
                 database.add_son_manipulator(manipulator)
-            self.collection = database['experiments']
+            self.collection = database[collection_name]
 
         def save(self):
             self.collection.save(self.experiment_entry)
