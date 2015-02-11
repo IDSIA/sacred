@@ -4,7 +4,9 @@
 from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict, defaultdict
 from copy import copy
-from sacred.config_scope import chain_evaluate_config_scopes
+import os
+from sacred.config_files import load_config_file
+from sacred.config_scope import chain_evaluate_config_scopes, ConfigDict
 from sacred.custom_containers import dogmatize
 from sacred.host_info import get_host_info
 from sacred.run import Run
@@ -77,8 +79,15 @@ class Scaffold(object):
         self.config = {}
 
         # named configs first
+        cfg_list = []
+        for ncfg in self.named_configs_to_use:
+            if os.path.exists(ncfg):
+                cfg_list.append(ConfigDict(load_config_file(ncfg)))
+            else:
+                cfg_list.append(self.named_configs[ncfg])
+
         self.config_updates, summaries1 = chain_evaluate_config_scopes(
-            [self.named_configs[n] for n in self.named_configs_to_use],
+            cfg_list,
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
@@ -181,10 +190,13 @@ def distribute_config_updates(scaffolding, config_updates):
 
 def distribute_named_configs(scaffolding, named_configs):
     for ncfg in named_configs:
-        path, _, cfg_name = ncfg.rpartition('.')
-        if path not in scaffolding:
-            raise KeyError('Ingredient for named config "%s" not found' % ncfg)
-        scaffolding[path].named_configs_to_use.append(cfg_name)
+        if os.path.exists(ncfg):
+            scaffolding[''].named_configs_to_use.append(ncfg)
+        else:
+            path, _, cfg_name = ncfg.rpartition('.')
+            if path not in scaffolding:
+                raise KeyError('Ingredient for named config "%s" not found' % ncfg)
+            scaffolding[path].named_configs_to_use.append(cfg_name)
 
 
 def initialize_logging(experiment, scaffolding, loglevel=None):

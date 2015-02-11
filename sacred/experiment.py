@@ -10,6 +10,7 @@ import sys
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
+from sacred.config_files import load_config_file
 from sacred.config_scope import ConfigScope, ConfigDict
 from sacred.host_info import get_dependencies, fill_missing_versions
 from sacred.initialize import create_run
@@ -79,18 +80,14 @@ class Ingredient(object):
     def add_config(self, cfg=None, **kw_conf):
         """
         Add a configuration entry to this ingredient/experiment. Can be called
-        either with a dictionary, a function or with keyword arguments.
+        either with a dictionary or with keyword arguments.
 
-        If called with a function it will be turned into a
-        :class:`sacred.config_scope.ConfigScope` (equivalent to decorating it
-        with :meth:`~sacred.Experiment.config`).
+        The dictionary or the keyword arguments will be converted into a
+        :class:`~sacred.config_scope.ConfigDict`.
 
-        Calling this with a dictionary or using keyword arguments will result
-        in a :class:`~sacred.config_scope.ConfigDict`.
-
-        :param cfg: Configuration function or dictionary to add to this
+        :param cfg: Configuration dictionary to add to this
                     ingredient/experiment.
-        :type cfg: dict | function
+        :type cfg: dict
         :param kw_conf: Configuration entries to be added to this
                         ingredient/experiment.
         """
@@ -101,12 +98,17 @@ class Ingredient(object):
             if not kw_conf:
                 raise ValueError("attempted to add empty config")
             self.cfgs.append(ConfigDict(kw_conf))
-        elif inspect.isfunction(cfg):
-            self.config(cfg)
         elif isinstance(cfg, dict):
             self.cfgs.append(ConfigDict(cfg))
         else:
             raise TypeError("Invalid argument type {}".format(type(cfg)))
+
+    def add_config_file(self, filename):
+        if not os.path.exists(filename):
+            raise FileNotFoundError(filename)
+        abspath = os.path.abspath(filename)
+        conf_dict = load_config_file(abspath)
+        self.add_config(conf_dict)
 
     def named_config(self, func):
         config_scope = ConfigScope(func)
