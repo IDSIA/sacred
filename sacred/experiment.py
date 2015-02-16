@@ -12,7 +12,8 @@ from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_files import load_config_file
 from sacred.config_scope import ConfigScope, ConfigDict
-from sacred.host_info import get_dependencies, fill_missing_versions
+from sacred.dependencies import (
+    get_dependencies, fill_missing_versions, FileDependency)
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
 
@@ -37,15 +38,8 @@ class Ingredient(object):
         self.commands = OrderedDict()
         # capture some context information
         caller_globals = caller_globals or inspect.stack()[1][0].f_globals
-        self.doc = caller_globals.get('__doc__') or ""
-        self.mainfile = caller_globals.get('__file__') or ""
-        if self.mainfile:
-            self.mainfile = os.path.abspath(self.mainfile)
-            if self.mainfile.endswith('.pyc'):
-                non_compiled_mainfile = self.mainfile[:-1]
-                if os.path.exists(non_compiled_mainfile):
-                    self.mainfile = non_compiled_mainfile
-
+        self.doc = caller_globals.get('__doc__', "")
+        self.mainfile = FileDependency.create(caller_globals.get('__file__'))
         self.dependencies = get_dependencies(caller_globals)
 
     # =========================== Decorators ==================================
@@ -105,7 +99,7 @@ class Ingredient(object):
 
     def add_config_file(self, filename):
         if not os.path.exists(filename):
-            raise FileNotFoundError(filename)
+            raise IOError('File not found {}'.format(filename))
         abspath = os.path.abspath(filename)
         conf_dict = load_config_file(abspath)
         self.add_config(conf_dict)
