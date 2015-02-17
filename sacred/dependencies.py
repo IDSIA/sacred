@@ -33,7 +33,7 @@ class FileDependency(object):
     @staticmethod
     def get_digest(filename):
         h = hashlib.sha256()
-        with open(filename) as f:
+        with open(filename, 'rb') as f:
             data = f.read(1 * MB)
             while data:
                 h.update(data)
@@ -97,12 +97,12 @@ def get_dependencies(globs):
 
     for glob in globs.values():
         if isinstance(glob, module) and glob.__name__ not in MODULE_BLACKLIST:
-            dependencies[glob.__name__] = get_module_version_heuristic(glob)
+            dependencies[glob.__name__] = PackageDependency.get_version_heuristic(glob)
 
         elif hasattr(glob, '__module__'):
             modname = glob.__module__.split('.')[0]
             if modname not in MODULE_BLACKLIST and modname not in dependencies:
-                dependencies[modname] = get_module_version_heuristic(modname)
+                dependencies[modname] = PackageDependency.get_version_heuristic(modname)
 
     return dependencies
 
