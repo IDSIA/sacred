@@ -62,7 +62,7 @@ setup(
     packages=['sacred'],
     scripts=[],
     install_requires=[
-        'docopt', 'wrapt'
+        'docopt', 'six', 'wrapt'
     ],
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
