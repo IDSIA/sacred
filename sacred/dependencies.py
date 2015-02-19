@@ -8,7 +8,7 @@ import re
 import sys
 import pkg_resources
 import six
-from sacred.utils import is_subdir
+from sacred.utils import is_subdir, iter_prefixes
 
 MB = 1048576
 MODULE_BLACKLIST = {None, '__future__', 'hashlib', 'os', 're'} | \
@@ -76,6 +76,9 @@ class Source(object):
     def __le__(self, other):
         return self.filename.__le__(other.filename)
 
+    def __repr__(self):
+        return '<Source: {}>'.format(self.filename)
+
 
 class PackageDependency(object):
     def __init__(self, name, version):
@@ -104,6 +107,9 @@ class PackageDependency(object):
 
     def __le__(self, other):
         return self.name.__le__(other.name)
+
+    def __repr__(self):
+        return '<PackageDependency: {}>={}>'.format(self.name, self.version)
 
     @staticmethod
     def get_version_heuristic(mod):
@@ -149,19 +155,18 @@ def gather_sources_and_dependencies(globs):
     sources = {main}
     experiment_path = os.path.dirname(main.filename)
     for glob in globs.values():
+        print(glob)
         if isinstance(glob, module):
-            create_source_or_dep(glob.__name__, glob, dependencies, sources,
-                                 experiment_path)
+            mod_path = glob.__name__
         elif hasattr(glob, '__module__'):
-            modname = glob.__module__
-            mod = sys.modules.get(modname)
-            create_source_or_dep(modname, mod, dependencies, sources,
-                                 experiment_path)
-            modname = modname.split('.')[0]
-            mod = sys.modules.get(modname)
-            create_source_or_dep(modname, mod, dependencies, sources,
-                                 experiment_path)
+            mod_path = glob.__module__
         else:
             continue
+
+        for modname in iter_prefixes(mod_path):
+            print(modname)
+            mod = sys.modules.get(modname)
+            create_source_or_dep(modname, mod, dependencies, sources,
+                                 experiment_path)
 
     return sources, dependencies

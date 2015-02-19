@@ -6,7 +6,7 @@ from __future__ import division, print_function, unicode_literals
 # example_test will be parametrized by the test generation hook in conftest.py
 def test_example(capsys, example_test):
     ex, call, out = example_test
-    r = ex.run_commandline(call)
+    ex.run_commandline(call)
     captured_out, captured_err = capsys.readouterr()
     captured_out = captured_out.split('\n')
     captured_err = captured_err.split('\n')
@@ -18,4 +18,3 @@ def test_example(capsys, example_test):
             captured_err.pop(0)
     assert captured_out == ['']
     assert captured_err == ['']
-

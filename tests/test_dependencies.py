@@ -5,7 +5,8 @@ import os.path
 import mock
 import pytest
 from sacred.dependencies import (
-    PEP440_VERSION_PATTERN, Source, get_py_file_if_possible, PackageDependency)
+    PEP440_VERSION_PATTERN, Source, get_py_file_if_possible, PackageDependency,
+    gather_sources_and_dependencies)
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
 EXAMPLE_DIGEST = \
@@ -49,6 +50,11 @@ def test_source_create_py():
     assert s.digest == EXAMPLE_DIGEST
 
 
+def test_source_to_tuple():
+    s = Source.create(EXAMPLE_SOURCE)
+    assert s.to_tuple() == (os.path.abspath(EXAMPLE_SOURCE), EXAMPLE_DIGEST)
+
+
 def test_get_py_file_if_possible_with_py_file():
     assert get_py_file_if_possible(EXAMPLE_SOURCE) == EXAMPLE_SOURCE
 
@@ -87,3 +93,59 @@ def test_package_dependency_get_version_heuristic_version(version, expected):
 def test_package_dependency_get_version_heuristic_VERSION(version, expected):
     mod = mock.Mock(spec=[], VERSION=version)
     assert PackageDependency.get_version_heuristic(mod) == expected
+
+
+def test_package_dependency_create():
+    mod = mock.Mock(spec=[], __version__='0.1.2', __name__='testmod')
+    pd = PackageDependency.create(mod)
+    assert pd.name == 'testmod'
+    assert pd.version == '0.1.2'
+
+
+def test_package_dependency_create_no_version():
+    mod = mock.Mock(spec=[], __name__='testmod')
+    pd = PackageDependency.create(mod)
+    assert pd.name == 'testmod'
+    assert pd.version is None
+
+
+def test_package_dependency_to_tuple():
+    mod = mock.Mock(spec=[], __version__='3.2.1', __name__='testmod')
+    pd = PackageDependency.create(mod)
+    assert pd.to_tuple() == ('testmod', '3.2.1')
+
+
+def test_package_dependency_fill_non_missing_version():
+    pd = PackageDependency('mymod', '1.2.3rc4')
+    pd.fill_missing_version()
+    assert pd.version == '1.2.3rc4'
+
+
+def test_package_dependency_fill_missing_version_unknown():
+    pd = PackageDependency('mymod', None)
+    pd.fill_missing_version()
+    assert pd.version == '<unknown>'
+
+
+def test_package_dependency_fill_missing_version():
+    pd = PackageDependency('pytest', None)
+    pd.fill_missing_version()
+    assert pd.version == pytest.__version__
+
+
+def test_gather_sources_and_dependencies():
+    from tests.dependency_example import some_func
+    sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    assert isinstance(sources, set)
+    assert isinstance(deps, set)
+    expected_sources = {
+        Source.create('tests/__init__.py'),
+        Source.create('tests/dependency_example.py'),
+        Source.create('tests/foo/__init__.py'),
+        Source.create('tests/foo/bar.py')
+    }
+    assert sources == expected_sources
+    assert deps == {
+        PackageDependency.create(pytest),
+        PackageDependency.create(mock)
+    }
