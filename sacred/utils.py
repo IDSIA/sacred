@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import collections
 from contextlib import contextmanager
 import logging
+import os.path
 import re
 import sys
 import traceback as tb
@@ -247,3 +248,10 @@ def print_filtered_stacktrace():
             tb.print_tb(current_tb, 1)
         current_tb = current_tb.tb_next
     tb.print_exception(exc_type, exc_value, None)
+
+
+def is_subdir(path, directory):
+    path = os.path.abspath(os.path.realpath(path)) + os.sep
+    directory = os.path.abspath(os.path.realpath(directory)) + os.sep
+
+    return path.startswith(directory)

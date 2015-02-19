@@ -100,7 +100,7 @@ def get_observers(args):
 def _format_usage(program_name, description, commands=None):
     usage = USAGE_TEMPLATE.format(
         program_name=program_name,
-        description=description.strip())
+        description=description.strip() if description else '')
 
     if commands:
         usage += "\nCommands:\n"

@@ -12,8 +12,7 @@ from sacred.captured_function import create_captured_function
 from sacred.commands import print_config
 from sacred.config_files import load_config_file
 from sacred.config_scope import ConfigScope, ConfigDict
-from sacred.dependencies import (
-    get_dependencies, fill_missing_versions, FileDependency)
+from sacred.dependencies import gather_sources_and_dependencies
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
 
@@ -39,8 +38,8 @@ class Ingredient(object):
         # capture some context information
         caller_globals = caller_globals or inspect.stack()[1][0].f_globals
         self.doc = caller_globals.get('__doc__', "")
-        self.mainfile = FileDependency.create(caller_globals.get('__file__'))
-        self.dependencies = get_dependencies(caller_globals)
+        self.sources, self.dependencies = \
+            gather_sources_and_dependencies(caller_globals)
 
     # =========================== Decorators ==================================
     def command(self, function=None, prefix=None):
@@ -214,11 +213,18 @@ class Experiment(Ingredient):
     # =========================== public interface ============================
 
     def get_info(self):
-        fill_missing_versions(self.dependencies)
+        dependencies = set()
+        sources = set()
+        for ing, _ in self.traverse_ingredients():
+            dependencies |= ing.dependencies
+            sources |= ing.sources
+
+        for dep in dependencies:
+            dep.fill_missing_version()
 
         return dict(
-            mainfile=self.mainfile,
-            dependencies=self.dependencies.items(),
+            sources=[s.to_tuple() for s in sorted(sources)],
+            dependencies=[d.to_tuple() for d in sorted(dependencies)],
             doc=self.doc)
 
     def run(self, config_updates=None, named_configs=(), loglevel=None):

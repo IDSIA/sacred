@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import functools
 import hashlib
 import os.path
-import sys
 import re
+import sys
 import pkg_resources
 import six
-
-# PackageDependency = namedtuple("PackageDepenency", "packagename,version")
-# FileDependency = namedtuple("FileDependency", 'filename,sha256')
+from sacred.utils import is_subdir
 
 MB = 1048576
-MODULE_BLACKLIST = {None, '__future__'} | set(sys.builtin_module_names)
+MODULE_BLACKLIST = {None, '__future__', 'hashlib', 'os', 're'} | \
+                   set(sys.builtin_module_names)
 module = type(sys)
 PEP440_VERSION_PATTERN = re.compile(r"""
 ^
@@ -25,7 +25,18 @@ $
 """, flags=re.VERBOSE)
 
 
-class FileDependency(object):
+def get_py_file_if_possible(pyc_name):
+    if pyc_name.endswith('.py'):
+        return pyc_name
+    assert pyc_name.endswith('.pyc')
+    non_compiled_file = pyc_name[:-1]
+    if os.path.exists(non_compiled_file):
+        return non_compiled_file
+    return pyc_name
+
+
+@functools.total_ordering
+class Source(object):
     def __init__(self, filename, digest):
         self.filename = filename
         self.digest = digest
@@ -42,22 +53,57 @@ class FileDependency(object):
 
     @staticmethod
     def create(filename):
-        if not filename:
-            return FileDependency('', '')
+        if not filename or not os.path.exists(filename):
+            raise ValueError('invalid filename or file not found "{}"'
+                             .format(filename))
 
-        mainfile = os.path.abspath(filename)
-        if mainfile.endswith('.pyc'):
-            non_compiled_mainfile = mainfile[:-1]
-            if os.path.exists(non_compiled_mainfile):
-                mainfile = non_compiled_mainfile
+        mainfile = get_py_file_if_possible(os.path.abspath(filename))
 
-        return FileDependency(mainfile, FileDependency.get_digest(mainfile))
+        return Source(mainfile, Source.get_digest(mainfile))
+
+    def to_tuple(self):
+        return self.filename, self.digest
+
+    def __hash__(self):
+        return hash(self.filename)
+
+    def __eq__(self, other):
+        if isinstance(other, Source):
+            return self.filename == other.filename
+        else:
+            return False
+
+    def __le__(self, other):
+        return self.filename.__le__(other.filename)
 
 
 class PackageDependency(object):
     def __init__(self, name, version):
         self.name = name
         self.version = version
+
+    def fill_missing_version(self):
+        if self.version is not None:
+            return
+        try:
+            self.version = pkg_resources.get_distribution(self.name).version
+        except pkg_resources.DistributionNotFound:
+            self.version = '<unknown>'
+
+    def to_tuple(self):
+        return self.name, self.version
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        if isinstance(other, PackageDependency):
+            return self.name == other.name
+        else:
+            return False
+
+    def __le__(self, other):
+        return self.name.__le__(other.name)
 
     @staticmethod
     def get_version_heuristic(mod):
@@ -76,53 +122,46 @@ class PackageDependency(object):
         return None
 
     @staticmethod
-    def create(mod_or_name):
-        if isinstance(mod_or_name, module):
-            mod = mod_or_name
-        else:
-            mod = sys.modules.get(mod_or_name)
-
-        if not mod:
-            return None
-
+    def create(mod):
         modname = mod.__name__
         version = PackageDependency.get_version_heuristic(mod)
-
         return PackageDependency(modname, version)
 
 
+def create_source_or_dep(modname, mod, dependencies, sources, experiment_path):
+    if modname in MODULE_BLACKLIST or modname in dependencies:
+        return
 
-def get_dependencies(globs):
-    dependencies = {}
+    filename = os.path.abspath(mod.__file__) if mod is not None else ''
+    if filename and filename not in sources and \
+            is_subdir(filename, experiment_path):
+        s = Source.create(filename)
+        sources.add(s)
+    elif mod is not None:
+        pdep = PackageDependency.create(mod)
+        if pdep.name.find('.') == -1 or pdep.version is not None:
+            dependencies.add(pdep)
 
+
+def gather_sources_and_dependencies(globs):
+    dependencies = set()
+    main = Source.create(globs.get('__file__'))
+    sources = {main}
+    experiment_path = os.path.dirname(main.filename)
     for glob in globs.values():
-        if isinstance(glob, module) and glob.__name__ not in MODULE_BLACKLIST:
-            dependencies[glob.__name__] = PackageDependency.get_version_heuristic(glob)
-
+        if isinstance(glob, module):
+            create_source_or_dep(glob.__name__, glob, dependencies, sources,
+                                 experiment_path)
         elif hasattr(glob, '__module__'):
-            modname = glob.__module__.split('.')[0]
-            if modname not in MODULE_BLACKLIST and modname not in dependencies:
-                dependencies[modname] = PackageDependency.get_version_heuristic(modname)
+            modname = glob.__module__
+            mod = sys.modules.get(modname)
+            create_source_or_dep(modname, mod, dependencies, sources,
+                                 experiment_path)
+            modname = modname.split('.')[0]
+            mod = sys.modules.get(modname)
+            create_source_or_dep(modname, mod, dependencies, sources,
+                                 experiment_path)
+        else:
+            continue
 
-    return dependencies
-
-
-def fill_missing_versions(deps):
-    for mod_name, ver in deps.items():
-        if ver is None:
-            deps[mod_name] = get_version_from_pkg_resources(mod_name)
-
-
-def get_modules(globs):
-    return {g for g in globs.values()
-            if isinstance(g, module) and g.__name__ not in MODULE_BLACKLIST}
-
-
-
-
-
-def get_version_from_pkg_resources(mod_name):
-    try:
-        return pkg_resources.get_distribution(mod_name).version
-    except pkg_resources.DistributionNotFound:
-        return None
+    return sources, dependencies

@@ -106,7 +106,7 @@ try:
             self.experiment_entry['name'] = name
             self.experiment_entry['experiment_info'] = ex_info
             try:
-                with open(ex_info['mainfile']) as source_file:
+                with open(ex_info['sources'][0][0]) as source_file:
                     self.experiment_entry['source'] = source_file.read()
             except IOError as err:
                 self.experiment_entry['experiment_info']['source'] = str(err)
