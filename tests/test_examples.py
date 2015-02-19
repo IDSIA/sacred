@@ -20,7 +20,7 @@ def get_calls_from_doc(doc):
     outputs = []
     out = []
     for l in doc.split('\n'):
-        if l.startswith('>>$'):
+        if l.startswith('  $'):
             calls.append(shlex.split(l[3:]))
             out = []
             outputs.append(out)

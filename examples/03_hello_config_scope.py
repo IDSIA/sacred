@@ -2,29 +2,30 @@
 # coding=utf-8
 """
 A configurable Hello World "experiment".
-In this example we configure the message using Sacreds special ConfigScope.
+In this example we configure the message using Sacreds special ``ConfigScope``.
 
-As with hello_config_dict you can run it like this:
+As with hello_config_dict you can run it like this::
 
->>$ ./03_hello_config_scope.py
+  $ ./03_hello_config_scope.py
   INFO - hello_config_scope - Running command 'main'
   INFO - hello_config_scope - Started
   Hello world!
   INFO - hello_config_scope - Completed after 0:00:00
 
-The message can also easily be changed using the `with` commandline argument:
+The message can also easily be changed using the ``with`` commandline
+argument::
 
->>$ ./03_hello_config_scope.py with message='Ciao world!'
+  $ ./03_hello_config_scope.py with message='Ciao world!'
   INFO - hello_config_scope - Running command 'main'
   INFO - hello_config_scope - Started
   Ciao world!
   INFO - hello_config_scope - Completed after 0:00:00
 
 
-But because we are using a ConfigScope that constructs the message from a
-recipient we can also just modify that:
+But because we are using a ``ConfigScope`` that constructs the message from a
+recipient we can also just modify that::
 
->>$ ./03_hello_config_scope.py with recipient='Bob'
+  $ ./03_hello_config_scope.py with recipient='Bob'
   INFO - hello_config_scope - Running command 'main'
   INFO - hello_config_scope - Started
   Hello Bob!

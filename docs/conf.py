@@ -15,6 +15,7 @@
 import os
 import os.path
 import sys
+sys.path.append('../sacred')
 import __about__
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -55,7 +56,7 @@ copyright = u'2014, Klaus Greff'
 # built documents.
 #
 # The short X.Y version.
-sys.path.append('../sacred')
+
 
 # The full version, including alpha/beta/rc tags.
 release = __about__.__version__
