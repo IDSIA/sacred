@@ -96,3 +96,17 @@ def help_for_command(command):
     help_text = pydoc.text.document(command)
     # remove backspaces
     return re.subn('.\\x08', '', help_text)[0]
+
+
+def print_dependencies(_run):
+    """
+    Print the detected source-files and dependencies.
+    """
+    print('Sources:')
+    for source, digest in _run.experiment_info['sources']:
+        print('  {:<43}  {}'.format(source, digest))
+
+    print('\nDependencies:')
+    for pack, version in _run.experiment_info['dependencies']:
+        print('  {:<20} >= {}'.format(pack, version))
+

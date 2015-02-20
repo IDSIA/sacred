@@ -43,7 +43,7 @@ class Source(object):
 
     @staticmethod
     def get_digest(filename):
-        h = hashlib.sha256()
+        h = hashlib.md5()
         with open(filename, 'rb') as f:
             data = f.read(1 * MB)
             while data:
@@ -80,6 +80,7 @@ class Source(object):
         return '<Source: {}>'.format(self.filename)
 
 
+@functools.total_ordering
 class PackageDependency(object):
     def __init__(self, name, version):
         self.name = name
@@ -155,7 +156,6 @@ def gather_sources_and_dependencies(globs):
     sources = {main}
     experiment_path = os.path.dirname(main.filename)
     for glob in globs.values():
-        print(glob)
         if isinstance(glob, module):
             mod_path = glob.__name__
         elif hasattr(glob, '__module__'):
@@ -164,7 +164,6 @@ def gather_sources_and_dependencies(globs):
             continue
 
         for modname in iter_prefixes(mod_path):
-            print(modname)
             mod = sys.modules.get(modname)
             create_source_or_dep(modname, mod, dependencies, sources,
                                  experiment_path)

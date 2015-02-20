@@ -310,16 +310,9 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
-
     config_modifications = get_config_modifications(scaffolding)
-
-    # only get experiment and host info if there are observers
-    if experiment.observers:
-        experiment_info = experiment.get_info()
-        host_info = get_host_info()
-    else:
-        experiment_info = host_info = dict()
-
+    experiment_info = experiment.get_info()
+    host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
 
     run = Run(config, config_modifications, main_function,

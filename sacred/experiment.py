@@ -9,7 +9,7 @@ import sys
 
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.captured_function import create_captured_function
-from sacred.commands import print_config
+from sacred.commands import print_config, print_info
 from sacred.config_files import load_config_file
 from sacred.config_scope import ConfigScope, ConfigDict
 from sacred.dependencies import gather_sources_and_dependencies
@@ -165,6 +165,7 @@ class Experiment(Ingredient):
         self.logger = None
         self.observers = []
         self.command(print_config)
+        self.command(print_info)
         self.info = None
 
     # =========================== Decorators ==================================
