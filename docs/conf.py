@@ -12,8 +12,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
+import os
 import os.path
+import sys
+import __about__
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -54,7 +56,7 @@ copyright = u'2014, Klaus Greff'
 #
 # The short X.Y version.
 sys.path.append('../sacred')
-import __about__
+
 # The full version, including alpha/beta/rc tags.
 release = __about__.__version__
 
@@ -102,7 +104,6 @@ pygments_style = 'sphinx'
 # -- Options for HTML output ----------------------------------------------
 
 # on_rtd is whether we are on readthedocs.org
-import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally

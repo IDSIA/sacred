@@ -2,12 +2,12 @@
 # coding=utf-8
 """ An example showcasing the logging system of Sacred."""
 from __future__ import division, print_function, unicode_literals
+import logging
 from sacred import Experiment
 
 ex = Experiment('log_example')
 
 # set up a custom logger
-import logging
 logger = logging.getLogger('mylogger')
 logger.handlers = []
 ch = logging.StreamHandler()
