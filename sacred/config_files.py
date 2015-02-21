@@ -7,6 +7,7 @@ import os
 
 __sacred__ = True  # marker for filtering stacktraces when run from commandline
 
+
 class Handler(object):
     def __init__(self, load, dump, mode):
         self.load = load

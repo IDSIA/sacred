@@ -21,7 +21,7 @@ Here are a couple of things you should try:
   - run the experiment a couple of times with a fixed seed.
     Notice that the results are the same::
 
-      $ ./06_randomness.py with seed=12345 -l WARNING
+      :$ ./06_randomness.py with seed=12345 -l WARNING
       [57]
       [28]
       695891797
@@ -32,7 +32,7 @@ Here are a couple of things you should try:
     This demonstrates that all the calls to one function are in fact
     independent from each other::
 
-      $ ./06_randomness.py with seed=12345 numbers=3 -l WARNING
+      :$ ./06_randomness.py with seed=12345 numbers=3 -l WARNING
       [57, 79, 86]
       [28, 90, 92]
       695891797
@@ -43,7 +43,7 @@ Here are a couple of things you should try:
     This shows that calls to different functions do not interfere with one
     another::
 
-      $ ./06_randomness.py with seed=12345 reverse=True numbers=3 -l WARNING
+      :$ ./06_randomness.py with seed=12345 reverse=True numbers=3 -l WARNING
       695891797
       [57, 79, 86]
       [28, 90, 92]

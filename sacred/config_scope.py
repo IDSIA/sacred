@@ -210,7 +210,8 @@ class ConfigScope(ConfigEntry):
         config_summary = ConfigSummary()
 
         config_summary.added_values = cfg_locals.revelation()
-        config_summary.ignored_fallback_writes = cfg_locals.ignored_fallback_writes
+        config_summary.ignored_fallback_writes = \
+            cfg_locals.ignored_fallback_writes
         config_summary.modified = cfg_locals.modified
         config_summary.typechanges = cfg_locals.typechanges
 

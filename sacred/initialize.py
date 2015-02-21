@@ -194,7 +194,8 @@ def distribute_named_configs(scaffolding, named_configs):
         else:
             path, _, cfg_name = ncfg.rpartition('.')
             if path not in scaffolding:
-                raise KeyError('Ingredient for named config "%s" not found' % ncfg)
+                raise KeyError('Ingredient for named config "{}" not found'
+                               .format(ncfg))
             scaffolding[path].named_configs_to_use.append(cfg_name)
 
 

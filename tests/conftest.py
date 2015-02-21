@@ -40,7 +40,8 @@ def pytest_generate_tests(metafunc):
     # it then parametrizes the function with 'example_test'
     if 'example_test' in metafunc.fixturenames:
         examples = [f.strip('.py') for f in os.listdir(EXAMPLES_PATH)
-                    if os.path.isfile(os.path.join(EXAMPLES_PATH, f))]
+                    if os.path.isfile(os.path.join(EXAMPLES_PATH, f)) and
+                    f.endswith('.py')]
 
         sys.path.append(EXAMPLES_PATH)
         example_tests = []
