@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
 from datetime import datetime
 import pickle
 import sys
 import time
+
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 __all__ = ['RunObserver', 'MongoObserver', 'DebugObserver']
 

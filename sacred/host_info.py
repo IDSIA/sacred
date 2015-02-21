@@ -6,6 +6,7 @@ import platform
 import re
 import subprocess
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 def get_processor_name():
     if platform.system() == "Windows":

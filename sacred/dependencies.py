@@ -10,6 +10,8 @@ import pkg_resources
 import six
 from sacred.utils import is_subdir, iter_prefixes
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
+
 MB = 1048576
 MODULE_BLACKLIST = {None, '__future__', 'hashlib', 'os', 're'} | \
                    set(sys.builtin_module_names)

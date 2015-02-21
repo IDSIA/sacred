@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
 from collections import namedtuple
 import pprint
@@ -9,6 +8,7 @@ import re
 
 from sacred.utils import iterate_flattened_separately, PATHCHANGE
 
+__sacred__ = True  # marker for filtering stacktraces when run from commandline
 
 BLUE = '\033[94m'
 GREEN = '\033[92m'
