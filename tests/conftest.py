@@ -2,10 +2,12 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import os.path
+import re
 import sys
 import shlex
 
 EXAMPLES_PATH = os.path.abspath('examples')
+BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)
 
 
 def get_calls_from_doc(doc):
@@ -18,13 +20,15 @@ def get_calls_from_doc(doc):
     calls = []
     outputs = []
     out = []
+    block_indent = 2
     for l in doc.split('\n'):
-        if l.startswith('  $'):
-            calls.append(shlex.split(l[3:]))
+        if BLOCK_START.match(l):
+            block_indent = l.find('$')
+            calls.append(shlex.split(l[block_indent + 1:]))
             out = []
             outputs.append(out)
-        elif l.startswith('  '):
-            out.append(l[2:])
+        elif l.startswith(' ' * block_indent):
+            out.append(l[block_indent:])
         else:
             out = []
 

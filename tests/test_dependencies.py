@@ -9,8 +9,7 @@ from sacred.dependencies import (
     gather_sources_and_dependencies)
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
-EXAMPLE_DIGEST = \
-    'dca1c3c61e6d88a278551deb7110bbacaf5458f11af9818171d72e1af0b55114'
+EXAMPLE_DIGEST = 'e3e5102d21897ad2bfa1140e359075e1'
 
 
 @pytest.mark.parametrize('version', [

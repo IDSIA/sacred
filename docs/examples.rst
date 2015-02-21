@@ -40,3 +40,8 @@ My Commands
 
 .. automodule:: examples.05_my_commands
 
+Randomness
+==========
+`examples/06_randomness.py <https://github.com/Qwlouse/sacred/tree/master/examples/06_randomness.py>`_
+
+.. automodule:: examples.06_randomness
