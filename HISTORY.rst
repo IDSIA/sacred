@@ -1,8 +1,18 @@
 Release History
 ---------------
 
-0.5.3 (2015-02-??)
-++++++++++++++++++
+0.6 (2015-02-??)
+++++++++++++++++
+* Feature: Automatically collect imported sources and dependencies also from
+           ingredients
+* Feature: added print_dependencies command
+* Documentation: greatly improved the examples and added them to the docs
+* Bugfix: fixed coloring of seeds modified by or entries added by named configs
+* Feature: With the ``--debug`` flag sacred now automatically enters
+           post-mortem debugging after an exception.
+* Feature: Only filter the stacktrace if exception originated outside of Sacred
+* Feature: Allow to specify a config file (json, pickle or yaml) on the
+           command line using with.
 * Feature: Normal dictionaries can now be added as configuration to experiments
            using the new ``add_config`` method.
 * Feature: MongoObserver now tries to reconnect to the MongoDB if connection
