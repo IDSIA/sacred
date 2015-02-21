@@ -16,7 +16,7 @@ from sacred.utils import (
     get_by_dotted_path, convert_to_nested_dict)
 
 
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class Scaffold(object):
@@ -239,7 +239,7 @@ def create_scaffolding(experiment):
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
-    for ingredient, depth in ingredient.traverse_ingredients():
+    for ingredient, depth in ingredient._traverse_ingredients():
         sub_ingredients[ingredient] = max(sub_ingredients[ingredient], depth)
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
@@ -311,7 +311,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
 
     config = get_configuration(scaffolding)
     config_modifications = get_config_modifications(scaffolding)
-    experiment_info = experiment.get_info()
+    experiment_info = experiment._get_info()
     host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
 

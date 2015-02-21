@@ -8,14 +8,14 @@ Experiment
 .. autoclass:: sacred.Experiment
     :members:
     :inherited-members:
-    :undoc-members:
+    :special-members: __init__
 
 Ingredient
 ==========
 
 .. autoclass:: sacred.Ingredient
     :members:
-    :undoc-members:
+    :special-members: __init__
 
 
 The Run Object

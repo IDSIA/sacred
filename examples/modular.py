@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-This is a very basic example of how to use sacred.
+This is a very basic example of how to use Sacred.
 """
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment, Ingredient

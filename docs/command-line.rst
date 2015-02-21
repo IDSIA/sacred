@@ -1,7 +1,7 @@
 Command-Line Interface
 **********************
 
-Sacred provides a powerful command line interface for every experiment out of
+Sacred provides a powerful command-line interface for every experiment out of
 box. All you have to do to use it is to either have a method decorated with
 ``@ex.automain`` or to put this block at the end of your file:
 
@@ -14,8 +14,8 @@ box. All you have to do to use it is to either have a method decorated with
 Configuration Updates
 =====================
 You can easily change any configuration entry using the powerful
-``with`` command on the commandline. Just put ``with config=update`` after your
-experiment call like this::
+``with`` command on the command-line. Just put ``with config=update`` after
+your experiment call like this::
 
     >>> ./example.py with 'a=10'
 
@@ -161,7 +161,7 @@ the docstring by passing it to help::
 
 Commands are of course also captured functions, so you can take arguments that
 will get filled in from the config, and you can use ``with config=update`` to
-change parameters from the commandline:
+change parameters from the command-line:
 
 .. code-block:: python
 

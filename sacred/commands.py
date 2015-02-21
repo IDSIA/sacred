@@ -8,7 +8,7 @@ import re
 
 from sacred.utils import iterate_flattened_separately, PATHCHANGE
 
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 BLUE = '\033[94m'
 GREEN = '\033[92m'

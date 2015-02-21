@@ -33,7 +33,7 @@ We did three things here:
   - create an experiment instance ``ex`` and pass it the name 'hello_world'
   - decorate the function that we want to run with ``@ex.automain``
 
-This experiment can be run from the commandline, and this is what we get::
+This experiment can be run from the command-line, and this is what we get::
 
     > python hello_world.py
 
@@ -96,7 +96,7 @@ It also added a ``seed`` to our configuration, but we are going to ignore that
 for now.
 
 Now that our experiment has a configuration we can change it from the
-:doc:`commandline`::
+:doc:`command-line`::
 
     > python hello_config.py with recipient="that is cool"
 

@@ -3,7 +3,7 @@
 """
 This experiment showcases the concept of commands in Sacred.
 By just using the ``@ex.command`` decorator we can add additional commands to
-the command line interface of the experiment::
+the command-line interface of the experiment::
 
   $ ./05_my_commands.py greet
   INFO - my_commands - Running command 'greet'

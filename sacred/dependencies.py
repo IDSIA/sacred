@@ -10,7 +10,7 @@ import pkg_resources
 import six
 from sacred.utils import is_subdir, iter_prefixes
 
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 MB = 1048576
 MODULE_BLACKLIST = {None, '__future__', 'hashlib', 'os', 're'} | \

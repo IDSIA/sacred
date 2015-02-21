@@ -4,7 +4,7 @@ You can find these examples in the examples directory (surprise!) of the
 Sacred sources or in the
 `Github Repository <https://github.com/Qwlouse/sacred/tree/master/examples>`_.
 Look at them for the sourcecode, it is an important part of the examples.
-It can also be very helpful to run them yourself and play with the commandline
+It can also be very helpful to run them yourself and play with the command-line
 interface.
 
 The following is just their documentation from their docstring which you can

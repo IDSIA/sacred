@@ -17,7 +17,7 @@ except ImportError:
     from random import randint
     from random import Random
 
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 if sys.version_info[0] == 3:
@@ -245,12 +245,12 @@ def print_filtered_stacktrace():
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
     if '__sacred__' in current_tb.tb_frame.f_globals:
-        print("Exception originated from within sacred.\n"
+        print("Exception originated from within Sacred.\n"
               "Traceback (most recent calls):", file=sys.stderr)
         tb.print_tb(exc_traceback)
         tb.print_exception(exc_type, exc_value, None)
     else:
-        print("Traceback (most recent calls WITHOUT sacred internals):",
+        print("Traceback (most recent calls WITHOUT Sacred internals):",
               file=sys.stderr)
         current_tb = exc_traceback
         while current_tb is not None:

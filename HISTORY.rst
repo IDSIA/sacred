@@ -8,11 +8,11 @@ Release History
 * Feature: added print_dependencies command
 * Documentation: greatly improved the examples and added them to the docs
 * Bugfix: fixed coloring of seeds modified by or entries added by named configs
-* Feature: With the ``--debug`` flag sacred now automatically enters
+* Feature: With the ``--debug`` flag Sacred now automatically enters
            post-mortem debugging after an exception.
 * Feature: Only filter the stacktrace if exception originated outside of Sacred
 * Feature: Allow to specify a config file (json, pickle or yaml) on the
-           command line using with.
+           command-line using with.
 * Feature: Normal dictionaries can now be added as configuration to experiments
            using the new ``add_config`` method.
 * Feature: MongoObserver now tries to reconnect to the MongoDB if connection
@@ -34,7 +34,7 @@ Release History
           captured functions
 * Bugfix: fixed bug where indentation could lead to errors in a ``ConfigScope``
 * Bugfix: added warning when attempting to overwrite an ingredient
-          and it is ignored by sacred
+          and it is ignored by Sacred
 * Bugfix: fixed issue with synchronizing captured out at the end of the run.
           (before up to 10sec of captured output could be lost at the end)
 * Bugfix: modifications on seed were not marked correctly by print_config

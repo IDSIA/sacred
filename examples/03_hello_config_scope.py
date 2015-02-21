@@ -12,7 +12,7 @@ As with hello_config_dict you can run it like this::
   Hello world!
   INFO - hello_config_scope - Completed after 0:00:00
 
-The message can also easily be changed using the ``with`` commandline
+The message can also easily be changed using the ``with`` command-line
 argument::
 
   $ ./03_hello_config_scope.py with message='Ciao world!'

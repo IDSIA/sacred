@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-This is a minimal example of a sacred experiment.
+This is a minimal example of a Sacred experiment.
 
-Not much to see here. But it comes with a commandline interface and can be
+Not much to see here. But it comes with a command-line interface and can be
 called like this::
 
   $ ./01_hello_world.py
@@ -18,7 +18,7 @@ additional logging. The log-level can be controlled using the ``-l`` argument::
   $ ./01_hello_world.py -l WARNING
   Hello world!
 
-If you want to learn more about the commandline interface try
+If you want to learn more about the command-line interface try
 ``help`` or ``-h``.
 """
 from __future__ import division, print_function, unicode_literals

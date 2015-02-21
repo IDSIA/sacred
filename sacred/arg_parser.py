@@ -13,7 +13,7 @@ from sacred.commands import help_for_command
 from sacred.observers import MongoObserver
 from sacred.utils import set_by_dotted_path
 
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 __all__ = ['parse_args', 'get_config_updates', 'get_observers']
 

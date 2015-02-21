@@ -17,7 +17,7 @@ If you run the hello_world example you will see the following output::
     INFO - hello_world - Completed after 0:00:00
 
 The lines starting with ``INFO`` are logging outputs. They can be suppressed by
-adjusting the loglevel. This can be done via the commandline like with the
+adjusting the loglevel. This can be done via the command-line like with the
 ``-l`` option::
 
     >> python hello_world -l ERROR

@@ -11,8 +11,8 @@ the run even while it is still running.
 The MongoDB Observer
 ====================
 The easiest way to use that is to use the included MongoObserver.
-You can add that via the commandline by adding the ``-m MY_DB`` flag. This will
-gather all the information and save it to MY_DB in your local MongoDB.
+You can add that via the command-line by adding the ``-m MY_DB`` flag. This
+will gather all the information and save it to MY_DB in your local MongoDB.
 
 This assumes you have a local `MongoDB <http://www.mongodb.org/>`_ running. See
 `here <http://docs.mongodb.org/manual/installation/>`_ on how to install.

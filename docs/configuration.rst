@@ -100,6 +100,8 @@ function:
 As you'd expect this will result in the configuration
 ``{'a': -1, 'b': 'test', 'c': 20}``.
 
+.. _named_configurations:
+
 Named Configurations
 ====================
 With so called *Named Configurations* you can provide a ConfigScope that
