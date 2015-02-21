@@ -86,20 +86,19 @@ class Scaffold(object):
             else:
                 cfg_list.append(self.named_configs[ncfg])
 
-        self.config_updates, summaries1 = chain_evaluate_config_scopes(
+        self.config_updates, _ = chain_evaluate_config_scopes(
             cfg_list,
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
 
         # unnamed (default) configs second
-        self.config, summaries2 = chain_evaluate_config_scopes(
+        self.config, self.summaries = chain_evaluate_config_scopes(
             self.config_scopes,
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
 
-        self.summaries = summaries1 + summaries2
         self.get_config_modifications()
 
     def get_config_modifications(self):
