@@ -31,7 +31,8 @@ Options:
   -h --help                Print this help message and exit
   -m DB --mongo_db=DB      Add a MongoDB Observer to the experiment
   -l LEVEL --logging=LEVEL Adjust the loglevel
-  -d --debug               Don't filter the stacktrace
+  -d --debug               Don't filter the stacktrace and automatically enter
+                           post-mortem debugging with pdb
 
 Arguments:
   DB        Database specification. Can be [host:port:]db_name

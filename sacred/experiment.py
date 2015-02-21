@@ -273,7 +273,10 @@ class Experiment(Ingredient):
                                     loglevel=loglevel)
         except:
             if args['--debug']:
-                raise
+                import traceback
+                import pdb
+                traceback.print_exception(*sys.exc_info())
+                pdb.post_mortem()
             else:
                 print_filtered_stacktrace()
 
