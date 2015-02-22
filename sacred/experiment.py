@@ -52,6 +52,7 @@ class Ingredient(object):
         self.doc = _caller_globals.get('__doc__', "")
         self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals)
+        self.current_run = None
 
     # =========================== Decorators ==================================
     def command(self, function=None, prefix=None):
@@ -210,11 +211,10 @@ class Ingredient(object):
 
     def run_command(self, command_name, config_updates=None,
                     named_configs_to_use=(), loglevel=None):
-        run = self.create_run_for_command(command_name, config_updates,
-                                          named_configs_to_use, loglevel)
-        run.logger.info("Running command '%s'" % command_name)
-        run()
-        return run
+        self.current_run = self.create_run_for_command(
+            command_name, config_updates, named_configs_to_use, loglevel)
+        self.current_run.logger.info("Running command '%s'" % command_name)
+        return self.current_run()
 
     def _gather_commands(self):
         for cmd_name, cmd in self.commands.items():
@@ -362,6 +362,10 @@ class Experiment(Ingredient):
                 pdb.post_mortem()
             else:
                 print_filtered_stacktrace()
+
+    def open_resource(self, filename):
+        assert self.current_run is not None, "Can only be called during a run."
+        return self.current_run.open_resource(filename)
 
     # =========================== Private Helpers =============================
 

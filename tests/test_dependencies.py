@@ -6,7 +6,7 @@ import mock
 import pytest
 from sacred.dependencies import (
     PEP440_VERSION_PATTERN, Source, get_py_file_if_possible, PackageDependency,
-    gather_sources_and_dependencies)
+    gather_sources_and_dependencies, get_digest)
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
 EXAMPLE_DIGEST = 'e3e5102d21897ad2bfa1140e359075e1'
@@ -30,7 +30,7 @@ def test_pep440_version_pattern_invalid():
 
 
 def test_source_get_digest():
-    assert Source.get_digest(EXAMPLE_SOURCE) == EXAMPLE_DIGEST
+    assert get_digest(EXAMPLE_SOURCE) == EXAMPLE_DIGEST
 
 
 def test_source_create_empty():

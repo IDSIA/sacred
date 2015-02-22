@@ -37,14 +37,7 @@ def get_py_file_if_possible(pyc_name):
     return pyc_name
 
 
-@functools.total_ordering
-class Source(object):
-    def __init__(self, filename, digest):
-        self.filename = filename
-        self.digest = digest
-
-    @staticmethod
-    def get_digest(filename):
+def get_digest(filename):
         h = hashlib.md5()
         with open(filename, 'rb') as f:
             data = f.read(1 * MB)
@@ -52,6 +45,13 @@ class Source(object):
                 h.update(data)
                 data = f.read(1 * MB)
         return h.hexdigest()
+
+
+@functools.total_ordering
+class Source(object):
+    def __init__(self, filename, digest):
+        self.filename = filename
+        self.digest = digest
 
     @staticmethod
     def create(filename):
@@ -61,7 +61,7 @@ class Source(object):
 
         mainfile = get_py_file_if_possible(os.path.abspath(filename))
 
-        return Source(mainfile, Source.get_digest(mainfile))
+        return Source(mainfile, get_digest(mainfile))
 
     def to_tuple(self):
         return self.filename, self.digest

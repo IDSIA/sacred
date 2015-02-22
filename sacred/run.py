@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, unicode_literals
 from datetime import timedelta
+import os.path
 import sys
 import threading
 import time
@@ -46,6 +47,11 @@ class Run(object):
         self.elapsed_time = None
         self.result = None
         self._emit_run_created_event()
+
+    def open_resource(self, filename):
+        filename = os.path.abspath(filename)
+        self._emit_resource_added(filename)  # TODO: maybe non-blocking?
+        return open(filename, 'r')  # TODO: How to deal with binary mode?
 
     def __call__(self, *args):
         with tee_output() as self.captured_out:
@@ -153,4 +159,12 @@ class Run(object):
                     fail_time=fail_time,
                     fail_trace=fail_trace)
             except:  # _emit_failed should never throw
+                pass
+
+    def _emit_resource_added(self, filename):
+        for observer in self._observers:
+            try:
+                observer.resource_event(
+                    filename=filename)
+            except AttributeError:
                 pass

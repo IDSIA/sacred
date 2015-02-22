@@ -5,6 +5,7 @@ from datetime import datetime
 import pickle
 import sys
 import time
+from sacred.dependencies import get_digest
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -25,6 +26,9 @@ class RunObserver(object):
         pass
 
     def failed_event(self, fail_time, fail_trace):
+        pass
+
+    def resource_event(self, filename):
         pass
 
 
@@ -78,12 +82,12 @@ try:
             for manipulator in SON_MANIPULATORS:
                 database.add_son_manipulator(manipulator)
             experiments_collection = database['experiments']
-            sources_fs = gridfs.GridFS(database, collection='sources')
-            return MongoObserver(experiments_collection, sources_fs)
+            fs = gridfs.GridFS(database)
+            return MongoObserver(experiments_collection, fs)
 
-        def __init__(self, experiments_collection, sources_fs):
+        def __init__(self, experiments_collection, fs):
             self.collection = experiments_collection
-            self.sources_fs = sources_fs
+            self.fs = fs
             self.experiment_entry = None
 
         def save(self):
@@ -118,12 +122,13 @@ try:
                 datetime.fromtimestamp(start_time)
             self.experiment_entry['config'] = config
             self.experiment_entry['status'] = 'RUNNING'
+            self.experiment_entry['resources'] = []
             self.save()
 
             for source_name, md5 in ex_info['sources']:
-                if not self.sources_fs.exists(filename=source_name, md5=md5):
+                if not self.fs.exists(filename=source_name, md5=md5):
                     with open(source_name, 'rb') as f:
-                        self.sources_fs.put(f, filename=source_name)
+                        self.fs.put(f, filename=source_name)
 
         def heartbeat_event(self, info, captured_out):
             self.experiment_entry['info'] = info
@@ -150,6 +155,17 @@ try:
             self.experiment_entry['status'] = 'FAILED'
             self.experiment_entry['fail_trace'] = fail_trace
             self.final_save(attempts=1)
+
+        def resource_event(self, filename):
+            if self.fs.exists(filename=filename):
+                md5hash = get_digest(filename)
+                if self.fs.exists(filename=filename, md5=md5hash):
+                    self.experiment_entry['resources'].append((filename, md5hash))
+                    return
+            with open(filename, 'rb') as f:
+                file_id = self.fs.put(f, filename=filename)
+            md5hash = self.fs.get(file_id).md5
+            self.experiment_entry['resources'].append((filename, md5hash))
 
         def __eq__(self, other):
             if isinstance(other, MongoObserver):
@@ -184,3 +200,6 @@ class DebugObserver(RunObserver):
 
     def failed_event(self, fail_time, fail_trace):
         print('experiment_failed_event')
+
+    def resource_event(self, filename):
+        print('resource_event: {}'.format(filename))
