@@ -92,7 +92,7 @@ def get_observers(args):
     observers = []
     if args['--mongo_db']:
         url, db_name = _parse_mongo_db_arg(args['--mongo_db'])
-        mongo = MongoObserver(db_name=db_name, url=url)
+        mongo = MongoObserver.create(db_name=db_name, url=url)
         observers.append(mongo)
 
     return observers

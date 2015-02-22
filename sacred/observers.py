@@ -33,6 +33,7 @@ try:
     from pymongo.errors import AutoReconnect
     from pymongo.son_manipulator import SONManipulator
     from bson import Binary
+    import gridfs
 
     SON_MANIPULATORS = []
 
@@ -70,14 +71,20 @@ try:
         pass
 
     class MongoObserver(RunObserver):
-        def __init__(self, url=None, db_name='sacred'):
-            RunObserver.__init__(self)
-            self.experiment_entry = None
-            mongo = MongoClient(url)
-            database = mongo[db_name]
+        @staticmethod
+        def create(url, db_name='sacred', **kwargs):
+            client = MongoClient(url, **kwargs)
+            database = client[db_name]
             for manipulator in SON_MANIPULATORS:
                 database.add_son_manipulator(manipulator)
-            self.collection = database['experiments']
+            experiments_collection = database['experiments']
+            sources_fs = gridfs.GridFS(database, collection='sources')
+            return MongoObserver(experiments_collection, sources_fs)
+
+        def __init__(self, experiments_collection, sources_fs):
+            self.collection = experiments_collection
+            self.sources_fs = sources_fs
+            self.experiment_entry = None
 
         def save(self):
             try:
@@ -106,17 +113,17 @@ try:
             self.experiment_entry = dict()
             self.experiment_entry['name'] = name
             self.experiment_entry['experiment_info'] = ex_info
-            try:
-                with open(ex_info['sources'][0][0]) as source_file:
-                    self.experiment_entry['source'] = source_file.read()
-            except IOError as err:
-                self.experiment_entry['experiment_info']['source'] = str(err)
             self.experiment_entry['host_info'] = host_info
             self.experiment_entry['start_time'] = \
                 datetime.fromtimestamp(start_time)
             self.experiment_entry['config'] = config
             self.experiment_entry['status'] = 'RUNNING'
             self.save()
+
+            for source_name, md5 in ex_info['sources']:
+                if not self.sources_fs.exists(filename=source_name, md5=md5):
+                    with open(source_name, 'rb') as f:
+                        self.sources_fs.put(f, filename=source_name)
 
         def heartbeat_event(self, info, captured_out):
             self.experiment_entry['info'] = info
@@ -154,7 +161,11 @@ try:
 
 except ImportError:
     class MongoObserver(RunObserver):
-        def __init__(self, url=None, db_name='sacred'):
+        @staticmethod
+        def create(url, db_name='sacred', **kwargs):
+            raise ImportError('only available if "pymongo" is installed')
+
+        def __init__(self, experiments_collection, sources_fs):
             raise ImportError('only available if "pymongo" is installed')
 
 
