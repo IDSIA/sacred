@@ -176,13 +176,20 @@ class Ingredient(object):
                 yield ingred, depth + 1
         self._is_traversing = False
 
-    def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), loglevel=None):
+    def create_run_for_command(self, command_name, config_updates=None,
+                               named_configs_to_use=(), loglevel=None):
         run = create_run(self, command_name, config_updates,
                          log_level=loglevel,
                          named_configs=named_configs_to_use)
+        return run
+
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), loglevel=None):
+        run = self.create_run_for_command(command_name, config_updates,
+                                          named_configs_to_use, loglevel)
         run.logger.info("Running command '%s'" % command_name)
-        return run()
+        run()
+        return run
 
     def _gather_commands(self):
         for cmd_name, cmd in self.commands.items():
