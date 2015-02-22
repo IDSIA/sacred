@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from datetime import datetime
+import os.path
 import pickle
 import sys
 import time
@@ -164,7 +165,9 @@ try:
             if self.fs.exists(filename=filename):
                 md5hash = get_digest(filename)
                 if self.fs.exists(filename=filename, md5=md5hash):
-                    self.experiment_entry['resources'].append((filename, md5hash))
+                    resource = (filename, md5hash)
+                    if resource not in self.experiment_entry['resources']:
+                        self.experiment_entry['resources'].append(resource)
                     return
             with open(filename, 'rb') as f:
                 file_id = self.fs.put(f, filename=filename)
@@ -173,7 +176,11 @@ try:
 
         def artifact_event(self, filename):
             with open(filename, 'rb') as f:
-                file_id = self.fs.put(f, filename=filename)
+                head, tail = os.path.split(filename)
+                run_id = self.experiment_entry['_id']
+                db_filename = 'artifact://{}/{}/{}'.format(
+                    self.experiment_entry['name'], run_id, tail)
+                file_id = self.fs.put(f, filename=db_filename)
             self.experiment_entry['artifacts'].append(file_id)
             self.save()
 
