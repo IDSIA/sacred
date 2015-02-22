@@ -31,6 +31,9 @@ class RunObserver(object):
     def resource_event(self, filename):
         pass
 
+    def artifact_event(self, filename):
+        pass
+
 
 try:
     from pymongo import MongoClient
@@ -123,6 +126,7 @@ try:
             self.experiment_entry['config'] = config
             self.experiment_entry['status'] = 'RUNNING'
             self.experiment_entry['resources'] = []
+            self.experiment_entry['artifacts'] = []
             self.save()
 
             for source_name, md5 in ex_info['sources']:
@@ -167,6 +171,12 @@ try:
             md5hash = self.fs.get(file_id).md5
             self.experiment_entry['resources'].append((filename, md5hash))
 
+        def artifact_event(self, filename):
+            with open(filename, 'rb') as f:
+                file_id = self.fs.put(f, filename=filename)
+            self.experiment_entry['artifacts'].append(file_id)
+            self.save()
+
         def __eq__(self, other):
             if isinstance(other, MongoObserver):
                 return self.collection == other.collection
@@ -203,3 +213,6 @@ class DebugObserver(RunObserver):
 
     def resource_event(self, filename):
         print('resource_event: {}'.format(filename))
+
+    def artifact_event(self, filename):
+        print('artifact_event: {}'.format(filename))

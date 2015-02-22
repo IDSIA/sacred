@@ -40,7 +40,7 @@ def test_experiment_run():
     def main():
         return 12
 
-    assert ex.run().result == 12
+    assert ex.run() == 12
 
 
 def test_experiment_run_access_subingredient():
@@ -57,7 +57,7 @@ def test_experiment_run_access_subingredient():
     def main(somemod):
         return somemod
 
-    r = ex.run().result
+    r = ex.run()
     assert r['a'] == 5
     assert r['b'] == 'foo'
 
@@ -80,4 +80,4 @@ def test_experiment_run_subingredient_function():
     def main():
         return get_answer()
 
-    assert ex.run().result == 'foo'
+    assert ex.run() == 'foo'

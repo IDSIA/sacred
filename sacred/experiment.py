@@ -367,6 +367,10 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename)
 
+    def add_artifact(self, filename):
+        assert self.current_run is not None, "Can only be called during a run."
+        return self.current_run.add_artifact(filename)
+
     # =========================== Private Helpers =============================
 
     def _gather_commands(self):

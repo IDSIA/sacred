@@ -53,6 +53,10 @@ class Run(object):
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
         return open(filename, 'r')  # TODO: How to deal with binary mode?
 
+    def add_artifact(self, filename):
+        filename = os.path.abspath(filename)
+        self._emit_artifact_added(filename)
+
     def __call__(self, *args):
         with tee_output() as self.captured_out:
             self.logger.info('Started')
@@ -164,7 +168,13 @@ class Run(object):
     def _emit_resource_added(self, filename):
         for observer in self._observers:
             try:
-                observer.resource_event(
-                    filename=filename)
+                observer.resource_event(filename=filename)
+            except AttributeError:
+                pass
+
+    def _emit_artifact_added(self, filename):
+        for observer in self._observers:
+            try:
+                observer.artifact_event(filename=filename)
             except AttributeError:
                 pass
