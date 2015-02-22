@@ -298,7 +298,6 @@ def get_command(scaffolding, command_path):
 def create_run(experiment, command_name, config_updates=None, log_level=None,
                named_configs=()):
     scaffolding = create_scaffolding(experiment)
-    logger = initialize_logging(experiment, scaffolding, log_level)
 
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)
@@ -311,10 +310,12 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
 
     config = get_configuration(scaffolding)
     config_modifications = get_config_modifications(scaffolding)
+
     experiment_info = experiment._get_info()
     host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
 
+    logger = initialize_logging(experiment, scaffolding, log_level)
     run = Run(config, config_modifications, main_function,
               experiment.observers, logger, experiment.name, experiment_info,
               host_info)

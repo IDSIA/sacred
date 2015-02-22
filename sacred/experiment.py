@@ -12,7 +12,9 @@ from sacred.captured_function import create_captured_function
 from sacred.commands import print_config, print_dependencies
 from sacred.config_files import load_config_file
 from sacred.config_scope import ConfigScope, ConfigDict
-from sacred.dependencies import gather_sources_and_dependencies
+from sacred.dependencies import (
+    gather_sources_and_dependencies, Source, PackageDependency,
+    PEP440_VERSION_PATTERN)
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
 
@@ -162,6 +164,29 @@ class Ingredient(object):
         abspath = os.path.abspath(filename)
         conf_dict = load_config_file(abspath)
         self.add_config(conf_dict)
+
+    def add_source_file(self, filename):
+        """
+        Add a file as additional source dependency to this experiment or
+        ingredient.
+
+        :param filename: filename of the source to be added as dependency
+        :type filename: str
+        """
+        self.sources.add(Source.create(filename))
+
+    def add_package_dependency(self, package_name, version):
+        """
+        Add a package to the list of dependencies.
+
+        :param package_name: The name of the package dependency
+        :type package_name: str
+        :param version: The (minimum) version of the package
+        :type version: str
+        """
+        if not PEP440_VERSION_PATTERN.match(version):
+            raise ValueError('Invalid Version: "{}"'.format(version))
+        self.dependencies.add(PackageDependency(package_name, version))
 
     # ======================== Private Helpers ================================
 
