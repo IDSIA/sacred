@@ -211,10 +211,13 @@ class Ingredient(object):
 
     def run_command(self, command_name, config_updates=None,
                     named_configs_to_use=(), loglevel=None):
-        self.current_run = self.create_run_for_command(
+        run = self.create_run_for_command(
             command_name, config_updates, named_configs_to_use, loglevel)
+        self.current_run = run
         self.current_run.logger.info("Running command '%s'" % command_name)
-        return self.current_run()
+        run()
+        self.current_run = None
+        return run
 
     def _gather_commands(self):
         for cmd_name, cmd in self.commands.items():

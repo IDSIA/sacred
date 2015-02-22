@@ -58,9 +58,9 @@ observers. It contains the following information:
     start_time   The date/time it was started
     ex_info      Some information about the experiment:
 
-                    * filename of the source-file of the experiment
                     * the docstring of the experiment-file
-                    * dictionary of packages the experiment depends on and their used versions
+                    * filename and md5 hash for all source-dependencies of the experiment
+                    * names and versions of packages the experiment depends on
 
     host_info    Some information about the machine it's being run on:
 
@@ -97,6 +97,18 @@ Interrupted:
 Failed:
     In case any other exception occurs, Sacred fires a ``failed_event`` with the
     fail time and the corresponding stacktrace.
+
+
+Resources
+---------
+Every time ``ex.open_resource(filename)`` is called an event will be fired
+with that filename.
+
+Artifacts
+---------
+Every time ``ex.add_artifact(filename)`` is called an event will be fired
+with that filename.
+
 
 .. _custom_info:
 
