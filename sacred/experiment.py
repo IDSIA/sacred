@@ -395,6 +395,7 @@ class Experiment(Ingredient):
             dep.fill_missing_version()
 
         return dict(
+            name=self.name,
             sources=[s.to_tuple() for s in sorted(sources)],
             dependencies=[d.to_tuple() for d in sorted(dependencies)],
             doc=self.doc)

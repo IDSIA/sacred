@@ -11,13 +11,14 @@ from sacred.observers.base import RunObserver
 import sacred.optional as opt
 import pymongo
 from pymongo.errors import AutoReconnect
+from pymongo.son_manipulator import SONManipulator
 import bson
 import gridfs
 
 SON_MANIPULATORS = []
 
 if opt.has_numpy:
-    class PickleNumpyArrays(pymongo.son_manipulator.SONManipulator):
+    class PickleNumpyArrays(SONManipulator):
         """
         Helper that makes sure numpy arrays get pickled and stored in the
         database as binary strings.
@@ -27,8 +28,7 @@ if opt.has_numpy:
                 if isinstance(value, opt.np.ndarray):
                     son[key] = {
                         "_type": "ndarray",
-                        "_value": bson.Binary(pickle.dumps(value,
-                                                               protocol=2))
+                        "_value": bson.Binary(pickle.dumps(value, protocol=2))
                     }
                 elif isinstance(value, dict):
                     # Make sure we recurse into sub-docs
@@ -119,24 +119,19 @@ class MongoObserver(RunObserver):
                   "Stored experiment entry in '%s'" % f.name,
                   file=sys.stderr)
 
-    def started_event(self, name, ex_info, host_info, start_time, config):
+    def started_event(self, ex_info, host_info, start_time, config):
         self.experiment_and_host_saved = False
-        self.experiment_entry = dict()
-        self.experiment_entry['name'] = name
-        self.experiment_entry.update(ex_info)
-
-        self.host_entry = dict()
-        self.host_entry = host_info
-
-        self.run_entry = dict()
-        self.run_entry['start_time'] = datetime.fromtimestamp(start_time)
-        self.run_entry['config'] = config
-        self.run_entry['status'] = 'RUNNING'
-        self.run_entry['resources'] = []
-        self.run_entry['artifacts'] = []
+        self.experiment_entry = dict(ex_info)
+        self.host_entry = dict(host_info)
+        self.run_entry = {
+            'start_time': datetime.fromtimestamp(start_time),
+            'config': config,
+            'status': 'RUNNING',
+            'resources': [],
+            'artifacts': []
+        }
 
         self.save()
-
         for source_name, md5 in ex_info['sources']:
             if not self.fs.exists(filename=source_name, md5=md5):
                 with open(source_name, 'rb') as f:

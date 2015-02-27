@@ -9,7 +9,7 @@ class MissingDependencyMock(object):
 
     def __getattribute__(self, item):
         raise ImportError('Depends on missing "{}" package.'
-                          .format(self.depends_on))
+                          .format(object.__getattribute__(self, 'depends_on')))
 
 
 try:
@@ -26,9 +26,7 @@ try:
     import gridfs
     has_pymongo = True
 except ImportError:
-    pymongo = None
-    bson = None
-    gridfs = None
+    pymongo = bson = gridfs = None
     has_pymongo = False
 
 

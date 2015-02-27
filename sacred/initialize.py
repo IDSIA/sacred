@@ -318,7 +318,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
 
     logger = initialize_logging(experiment, scaffolding, log_level)
     run = Run(config, config_modifications, main_function,
-              experiment.observers, logger, experiment.name, experiment_info,
+              experiment.observers, logger, experiment_info,
               host_info)
 
     for scaffold in scaffolding.values():

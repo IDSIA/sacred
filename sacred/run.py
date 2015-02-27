@@ -15,30 +15,20 @@ from sacred.utils import tee_output
 __sacred__ = True  # marks files that should be filtered from stack traces
 
 
-class Status(object):
-    READY = 1
-    RUNNING = 2
-    COMPLETED = 3
-    INTERRUPTED = 4
-    FAILED = 5
-
-
 class Run(object):
     """
     Represents and manages a single run of an experiment.
     """
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_name, experiment_info, host_info):
+                 logger, experiment_info, host_info):
         self.config = config
         self.main_function = main_function
         self.config_modifications = config_modifications
         self._observers = observers
         self.logger = logger
-        self.experiment_name = experiment_name
         self.experiment_info = experiment_info
         self.host_info = host_info
-        self.status = Status.READY
         self.info = {}
         self._heartbeat = None
         self.captured_out = None
@@ -46,7 +36,6 @@ class Run(object):
         self.stop_time = None
         self.elapsed_time = None
         self.result = None
-        self._emit_run_created_event()
 
     def open_resource(self, filename):
         filename = os.path.abspath(filename)
@@ -61,25 +50,21 @@ class Run(object):
         set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
             self.logger.info('Started')
-            self.status = Status.RUNNING
             self._emit_started()
             self._start_heartbeat()
             try:
                 self.result = self.main_function(*args)
             except KeyboardInterrupt:
                 self._stop_heartbeat()
-                self.status = Status.INTERRUPTED
                 self._emit_interrupted()
                 raise
             except:
                 exc_type, exc_value, trace = sys.exc_info()
                 self._stop_heartbeat()
-                self.status = Status.FAILED
                 self._emit_failed(exc_type, exc_value, trace.tb_next)
                 raise
             else:
                 self._stop_heartbeat()
-                self.status = Status.COMPLETED
                 self._emit_completed(self.result)
                 return self.result
 
@@ -95,19 +80,11 @@ class Run(object):
         self._heartbeat = None
         self._emit_heatbeat()  # one final beat to flush pending changes
 
-    def _emit_run_created_event(self):
-        for observer in self._observers:
-            try:
-                observer.created_event(**self.experiment_info)
-            except AttributeError:
-                pass
-
     def _emit_started(self):
         self.start_time = time.time()
         for observer in self._observers:
             try:
                 observer.started_event(
-                    name=self.experiment_name,
                     ex_info=self.experiment_info,
                     host_info=self.host_info,
                     start_time=self.start_time,
@@ -116,7 +93,7 @@ class Run(object):
                 pass
 
     def _emit_heatbeat(self):
-        if self.status != Status.RUNNING:
+        if self.start_time is None or self.stop_time is not None:
             return
 
         for observer in self._observers:
