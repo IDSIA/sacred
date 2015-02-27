@@ -4,11 +4,7 @@ from __future__ import division, print_function, unicode_literals
 import pytest
 from sacred.custom_containers import DogmaticDict, DogmaticList
 from sacred.config_scope import ConfigDict
-
-try:
-    import numpy as np
-except ImportError:
-    np = None
+import sacred.optional as opt
 
 
 @pytest.fixture
@@ -94,10 +90,10 @@ def test_result_of_conf_dict_is_not_dogmatic(conf_dict):
     assert not is_dogmatic(cfg)
 
 
-@pytest.mark.skipif(np is None, reason="requires numpy")
+@pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
 def test_conf_scope_handles_numpy_bools():
     cfg = ConfigDict({
-        "a": np.bool_(1)
+        "a": opt.np.bool_(1)
     })
     assert 'a' in cfg()
     assert cfg()['a']

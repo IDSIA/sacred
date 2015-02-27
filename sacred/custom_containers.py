@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from sacred.utils import join_paths
+import sacred.optional as opt
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -249,8 +250,8 @@ except NameError:
 
 # if numpy is available we also want to ignore typechanges from numpy
 # datatypes to the corresponding python datatype
-try:
-    import numpy as np
+if opt.has_numpy:
+    from sacred.optional import np
     NP_FLOATS = [np.float, np.float16, np.float32, np.float64, np.float128]
     for npf in NP_FLOATS:
         SIMPLIFY_TYPE[npf] = float
@@ -261,8 +262,6 @@ try:
         SIMPLIFY_TYPE[npi] = int
 
     SIMPLIFY_TYPE[np.bool_] = bool
-except ImportError:
-    pass
 
 
 def type_changed(old_type, new_type):

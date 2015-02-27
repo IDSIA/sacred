@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 import traceback
-
+from sacred.randomness import set_global_seed
 from sacred.utils import tee_output
 
 
@@ -58,6 +58,7 @@ class Run(object):
         self._emit_artifact_added(filename)
 
     def __call__(self, *args):
+        set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
             self.logger.info('Started')
             self.status = Status.RUNNING

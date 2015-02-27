@@ -6,14 +6,10 @@ from copy import copy
 import inspect
 import json
 import re
-from sacred.custom_containers import dogmatize, undogmatize
-from sacred.utils import PYTHON_IDENTIFIER
 import six
-
-try:
-    import numpy as np
-except ImportError:
-    np = None
+from sacred.custom_containers import dogmatize, undogmatize
+import sacred.optional as opt
+from sacred.utils import PYTHON_IDENTIFIER
 
 
 __sacred__ = True
@@ -126,7 +122,7 @@ class ConfigDict(ConfigEntry):
                 raise KeyError('invalid key "{}". Keys have to be valid python'
                                ' identifiers and cannot start with "_"'
                                ''.format(key))
-            if np and isinstance(value, np.bool_):
+            if opt.has_numpy and isinstance(value, opt.np.bool_):
                 # fixes an issue with numpy.bool_ not being json-serializable
                 self._conf[key] = bool(value)
                 continue
@@ -221,7 +217,7 @@ class ConfigScope(ConfigEntry):
         for key, value in cfg_locals.items():
             if key.startswith('_'):
                 continue
-            if np and isinstance(value, np.bool_):
+            if opt.has_numpy and isinstance(value, opt.np.bool_):
                 # fixes an issue with numpy.bool_ not being json-serializable
                 config_summary[key] = bool(value)
                 continue

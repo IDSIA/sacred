@@ -9,10 +9,11 @@ from sacred.config_files import load_config_file
 from sacred.config_scope import chain_evaluate_config_scopes, ConfigDict
 from sacred.custom_containers import dogmatize
 from sacred.host_info import get_host_info
+from sacred.randomness import get_seed, create_rnd
 from sacred.run import Run
 from sacred.utils import (
-    get_seed, create_rnd, is_prefix, set_by_dotted_path, iterate_flattened,
-    iter_prefixes, iter_path_splits, create_basic_stream_logger, join_paths,
+    is_prefix, set_by_dotted_path, iterate_flattened, iter_prefixes,
+    iter_path_splits, create_basic_stream_logger, join_paths,
     get_by_dotted_path, convert_to_nested_dict)
 
 

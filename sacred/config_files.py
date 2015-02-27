@@ -4,6 +4,8 @@ from __future__ import division, print_function, unicode_literals
 import json
 import pickle
 import os
+import sacred.optional as opt
+
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -20,11 +22,8 @@ HANDLER_BY_EXT = {
 }
 
 
-try:
-    import yaml
-    HANDLER_BY_EXT['.yaml'] = Handler(yaml.load, yaml.dump, '')
-except ImportError:
-    pass
+if opt.has_yaml:
+    HANDLER_BY_EXT['.yaml'] = Handler(opt.yaml.load, opt.yaml.dump, '')
 
 
 def load_config_file(filename):

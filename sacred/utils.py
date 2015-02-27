@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
 import collections
 from contextlib import contextmanager
@@ -10,12 +9,6 @@ import re
 import sys
 import traceback as tb
 
-try:
-    from numpy.random import randint
-    from numpy.random import RandomState as Random
-except ImportError:
-    from random import randint
-    from random import Random
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -28,7 +21,6 @@ else:
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
-SEEDRANGE = (1, 1e9)
 
 PATHCHANGE = object()
 
@@ -89,18 +81,6 @@ def tee_output():
     sys.stdout = sys.stdout.out1
     sys.stderr = sys.stderr.out1
     out.close()
-
-
-def get_seed(rnd=None):
-    if rnd is None:
-        return randint(*SEEDRANGE)
-    return rnd.randint(*SEEDRANGE)
-
-
-def create_rnd(seed):
-    assert isinstance(seed, int), "Seed has to be integer but was %s %s" % \
-                                  (repr(seed), type(seed))
-    return Random(seed)
 
 
 def iterate_flattened_separately(dictionary):

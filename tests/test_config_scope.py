@@ -5,11 +5,7 @@ import pytest
 from sacred.custom_containers import DogmaticDict, DogmaticList
 from sacred.config_scope import (ConfigScope, dedent_line, is_empty_or_comment,
                                  dedent_function_body, get_function_body)
-
-try:
-    import numpy as np
-except ImportError:
-    np = None
+import sacred.optional as opt
 
 
 @pytest.fixture
@@ -106,11 +102,11 @@ def test_conf_scope_is_not_dogmatic(conf_scope):
     assert not is_dogmatic(conf_scope({'e': [1, 1, 1]}))
 
 
-@pytest.mark.skipif(np is None, reason="requires numpy")
+@pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
 def test_conf_scope_handles_numpy_bools():
     @ConfigScope
     def conf_scope():
-        a = np.bool_(1)
+        a = opt.np.bool_(1)
 
     cfg = conf_scope()
     assert 'a' in cfg

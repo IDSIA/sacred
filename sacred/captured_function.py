@@ -8,7 +8,7 @@ import wrapt
 
 from sacred.custom_containers import FallbackDict
 from sacred.signature import Signature
-from sacred.utils import create_rnd, get_seed
+from sacred.randomness import create_rnd, get_seed
 
 __sacred__ = True
 
