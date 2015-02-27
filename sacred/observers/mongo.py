@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from datetime import datetime
 import os.path
 import pickle
 import sys
@@ -124,11 +123,14 @@ class MongoObserver(RunObserver):
         self.experiment_entry = dict(ex_info)
         self.host_entry = dict(host_info)
         self.run_entry = {
-            'start_time': datetime.fromtimestamp(start_time),
+            'start_time': start_time,
             'config': config,
             'status': 'RUNNING',
             'resources': [],
-            'artifacts': []
+            'artifacts': [],
+            'captured_out': '',
+            'info': {},
+            'heartbeat': None
         }
 
         self.save()
@@ -137,28 +139,25 @@ class MongoObserver(RunObserver):
                 with open(source_name, 'rb') as f:
                     self.fs.put(f, filename=source_name)
 
-    def heartbeat_event(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out, beat_time):
         self.run_entry['info'] = info
         self.run_entry['captured_out'] = captured_out
-        self.run_entry['heartbeat'] = datetime.now()
+        self.run_entry['heartbeat'] = beat_time
         self.save()
 
     def completed_event(self, stop_time, result):
-        self.run_entry['stop_time'] = \
-            datetime.fromtimestamp(stop_time)
+        self.run_entry['stop_time'] = stop_time
         self.run_entry['result'] = result
         self.run_entry['status'] = 'COMPLETED'
         self.final_save(attempts=10)
 
     def interrupted_event(self, interrupt_time):
-        self.run_entry['stop_time'] = \
-            datetime.fromtimestamp(interrupt_time)
+        self.run_entry['stop_time'] = interrupt_time
         self.run_entry['status'] = 'INTERRUPTED'
         self.final_save(attempts=3)
 
     def failed_event(self, fail_time, fail_trace):
-        self.run_entry['stop_time'] = \
-            datetime.fromtimestamp(fail_time)
+        self.run_entry['stop_time'] = fail_time
         self.run_entry['status'] = 'FAILED'
         self.run_entry['fail_trace'] = fail_trace
         self.final_save(attempts=1)

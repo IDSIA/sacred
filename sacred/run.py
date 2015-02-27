@@ -2,11 +2,10 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
-from datetime import timedelta
+import datetime
 import os.path
 import sys
 import threading
-import time
 import traceback
 from sacred.randomness import set_global_seed
 from sacred.utils import tee_output
@@ -81,7 +80,7 @@ class Run(object):
         self._emit_heatbeat()  # one final beat to flush pending changes
 
     def _emit_started(self):
-        self.start_time = time.time()
+        self.start_time = datetime.datetime.now()
         for observer in self._observers:
             try:
                 observer.started_event(
@@ -95,19 +94,20 @@ class Run(object):
     def _emit_heatbeat(self):
         if self.start_time is None or self.stop_time is not None:
             return
-
+        beat_time = datetime.datetime.now()
         for observer in self._observers:
             try:
                 observer.heartbeat_event(
                     info=self.info,
-                    captured_out=self.captured_out.getvalue())
+                    captured_out=self.captured_out.getvalue(),
+                    beat_time=beat_time)
             except AttributeError:
                 pass
 
     def _stop_time(self):
-        self.stop_time = time.time()
-        elapsed_seconds = round(self.stop_time - self.start_time)
-        self.elapsed_time = timedelta(seconds=elapsed_seconds)
+        self.stop_time = datetime.datetime.now()
+        self.elapsed_time = datetime.timedelta(
+            seconds=round((self.stop_time - self.start_time).total_seconds()))
         return self.stop_time
 
     def _emit_completed(self, result):

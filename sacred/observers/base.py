@@ -14,7 +14,7 @@ class RunObserver(object):
     def started_event(self, ex_info, host_info, start_time, config):
         pass
 
-    def heartbeat_event(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out, beat_time):
         pass
 
     def completed_event(self, stop_time, result):
@@ -37,7 +37,7 @@ class DebugObserver(RunObserver):
     def started_event(self, ex_info, host_info, start_time, config):
         print('experiment_started_event')
 
-    def heartbeat_event(self, info, captured_out):
+    def heartbeat_event(self, info, captured_out, beat_time):
         print('experiment_info_updated')
 
     def completed_event(self, stop_time, result):
