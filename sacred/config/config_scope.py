@@ -6,8 +6,10 @@ from copy import copy
 import inspect
 import json
 import re
+
 import six
-from sacred.custom_containers import dogmatize, undogmatize
+
+from sacred.config.custom_containers import dogmatize, undogmatize
 import sacred.optional as opt
 
 

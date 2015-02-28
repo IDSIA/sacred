@@ -2,8 +2,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import tempfile
+
 import pytest
-from sacred.config_files import (HANDLER_BY_EXT, load_config_file)
+
+from sacred.config.config_files import (HANDLER_BY_EXT, load_config_file)
+
 
 data = {
     'foo': 42,

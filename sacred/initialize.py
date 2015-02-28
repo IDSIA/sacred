@@ -5,9 +5,10 @@ from __future__ import division, print_function, unicode_literals
 from collections import OrderedDict, defaultdict
 from copy import copy
 import os
-from sacred.config_files import load_config_file
-from sacred.config_scope import chain_evaluate_config_scopes, ConfigDict
-from sacred.custom_containers import dogmatize
+
+from sacred.config.config_files import load_config_file
+from sacred.config.config_scope import chain_evaluate_config_scopes, ConfigDict
+from sacred.config.custom_containers import dogmatize
 from sacred.host_info import get_host_info
 from sacred.randomness import get_seed, create_rnd
 from sacred.run import Run

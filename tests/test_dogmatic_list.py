@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import pytest
-from sacred.custom_containers import DogmaticList, DogmaticDict
+
+from sacred.config.custom_containers import DogmaticList, DogmaticDict
 
 
 def test_isinstance_of_list():

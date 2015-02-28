@@ -6,9 +6,10 @@ import time
 
 import wrapt
 
-from sacred.custom_containers import FallbackDict
-from sacred.signature import Signature
+from sacred.config.custom_containers import FallbackDict
+from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
+
 
 __sacred__ = True
 

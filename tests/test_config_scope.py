@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import pytest
-from sacred.custom_containers import DogmaticDict, DogmaticList
-from sacred.config_scope import (ConfigScope, dedent_line, is_empty_or_comment,
-                                 dedent_function_body, get_function_body)
+from sacred.config.config_scope import (
+    ConfigScope, dedent_line, is_empty_or_comment, dedent_function_body,
+    get_function_body)
+from sacred.config.custom_containers import DogmaticDict, DogmaticList
 import sacred.optional as opt
 
 
