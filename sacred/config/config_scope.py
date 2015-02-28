@@ -4,165 +4,15 @@ from __future__ import division, print_function, unicode_literals
 import ast
 from copy import copy
 import inspect
-import json
 import re
-
-import six
-
-from sacred.config.custom_containers import dogmatize, undogmatize
-import sacred.optional as opt
+from sacred.config.config_summary import ConfigSummary
+from sacred.config.utils import recursive_fill_in, normalize_or_die, dogmatize
 
 
 __sacred__ = True
 
 
-def get_function_body(func):
-    func_code_lines, start_idx = inspect.getsourcelines(func)
-    func_code = ''.join(func_code_lines)
-    arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
-    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
-    func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
-            func.__name__, arguments), flags=re.MULTILINE)
-    defs = list(re.finditer(func_def, func_code))
-    assert defs
-    line_offset = start_idx + func_code[:defs[0].end()].count('\n') - 1
-    func_body = func_code[defs[0].end():]
-    return func_body, line_offset
-
-
-def is_empty_or_comment(line):
-    sline = line.strip()
-    return sline == '' or sline.startswith('#')
-
-
-def dedent_line(line, indent):
-    for i, (line_sym, indent_sym) in enumerate(zip(line, indent)):
-        if line_sym != indent_sym:
-            start = i
-            break
-    else:
-        start = len(indent)
-    return line[start:]
-
-
-def dedent_function_body(body):
-    lines = body.split('\n')
-    # find indentation by first line
-    indent = ''
-    for line in lines:
-        if is_empty_or_comment(line):
-            continue
-        else:
-            indent = re.match('^\s*', line).group()
-            break
-
-    out_lines = [dedent_line(line, indent) for line in lines]
-    return '\n'.join(out_lines)
-
-
-def get_function_body_code(func):
-    filename = inspect.getfile(func)
-    func_body, line_offset = get_function_body(func)
-    body_source = dedent_function_body(func_body)
-    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
-    body_code = ast.increment_lineno(body_code, n=line_offset)
-    body_code = compile(body_code, filename, "exec")
-    return body_code
-
-
-def recursive_fill_in(config, preset):
-    for key in preset:
-        if key not in config:
-            config[key] = preset[key]
-        elif isinstance(config[key], dict):
-            recursive_fill_in(config[key], preset[key])
-
-
-def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
-                                 fallback=None):
-    fixed = fixed or {}
-    fallback = fallback or {}
-    final_config = dict(preset or {})
-    config_summaries = []
-    for config in config_scopes:
-        cfg = config(fixed=fixed,
-                     preset=final_config,
-                     fallback=fallback)
-        config_summaries.append(cfg)
-        final_config.update(cfg)
-
-    if not config_scopes:
-        final_config.update(fixed)
-
-    return undogmatize(final_config), config_summaries
-
-
-def assert_is_valid_key(key):
-    if not isinstance(key, six.string_types):
-        raise KeyError('Invalid key "{}". Config-keys have to be strings, '
-                       'but was {}'.format(key, type(key)))
-    elif key.find('.') > -1 or key.find('$') > -1:
-        raise KeyError('Invalid key "{}". Config-keys cannot '
-                       'contain "." or "$"'.format(key))
-
-
-def normalize_or_die(obj):
-    if isinstance(obj, dict):
-        res = dict()
-        for key, value in obj.items():
-            assert_is_valid_key(key)
-            res[key] = normalize_or_die(value)
-        return res
-    elif isinstance(obj, (list, tuple)):
-        return list([normalize_or_die(value) for value in obj])
-    elif opt.has_numpy and isinstance(obj, opt.np.bool_):
-        # fixes an issue with numpy.bool_ not being json-serializable
-        return bool(obj)
-    else:
-        try:
-            json.dumps(obj)
-            return obj
-        except TypeError:
-            raise ValueError("Invalid value '{}'. All values have to be"
-                             "JSON-serializeable".format(obj))
-
-
-class ConfigSummary(dict):
-    def __init__(self):
-        super(ConfigSummary, self).__init__()
-        self.added_values = set()
-        self.ignored_fallback_writes = []  # TODO: test for this member
-        self.modified = set()  # TODO: test for this member
-        self.typechanges = {}
-
-
-class ConfigEntry(object):
-    def __call__(self, fixed=None, preset=None, fallback=None):
-        raise NotImplementedError()
-
-
-class ConfigDict(ConfigEntry):
-    def __init__(self, d):
-        super(ConfigDict, self).__init__()
-        self._conf = normalize_or_die(d)
-
-    def __call__(self, fixed=None, preset=None, fallback=None):
-        result = dogmatize(fixed or {})
-        result.update(preset)
-        result.update(self._conf)
-
-        config_summary = ConfigSummary()
-        config_summary.added_values = result.revelation()
-        config_summary.ignored_fallback_writes = []
-        config_summary.modified = result.modified
-        config_summary.typechanges = result.typechanges
-        config_summary.update(undogmatize(result))
-
-        return config_summary
-
-
-class ConfigScope(ConfigEntry):
+class ConfigScope(object):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
         self.arg_spec = inspect.getargspec(func)
@@ -234,3 +84,58 @@ class ConfigScope(ConfigEntry):
             except ValueError:
                 pass
         return config_summary
+
+
+def get_function_body(func):
+    func_code_lines, start_idx = inspect.getsourcelines(func)
+    func_code = ''.join(func_code_lines)
+    arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
+    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
+    func_def = re.compile(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
+            func.__name__, arguments), flags=re.MULTILINE)
+    defs = list(re.finditer(func_def, func_code))
+    assert defs
+    line_offset = start_idx + func_code[:defs[0].end()].count('\n') - 1
+    func_body = func_code[defs[0].end():]
+    return func_body, line_offset
+
+
+def is_empty_or_comment(line):
+    sline = line.strip()
+    return sline == '' or sline.startswith('#')
+
+
+def dedent_line(line, indent):
+    for i, (line_sym, indent_sym) in enumerate(zip(line, indent)):
+        if line_sym != indent_sym:
+            start = i
+            break
+    else:
+        start = len(indent)
+    return line[start:]
+
+
+def dedent_function_body(body):
+    lines = body.split('\n')
+    # find indentation by first line
+    indent = ''
+    for line in lines:
+        if is_empty_or_comment(line):
+            continue
+        else:
+            indent = re.match('^\s*', line).group()
+            break
+
+    out_lines = [dedent_line(line, indent) for line in lines]
+    return '\n'.join(out_lines)
+
+
+def get_function_body_code(func):
+    filename = inspect.getfile(func)
+    func_body, line_offset = get_function_body(func)
+    body_source = dedent_function_body(func_body)
+    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
+    body_code = ast.increment_lineno(body_code, n=line_offset)
+    body_code = compile(body_code, filename, "exec")
+    return body_code

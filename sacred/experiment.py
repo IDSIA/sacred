@@ -5,13 +5,10 @@ from collections import OrderedDict
 import inspect
 import os.path
 import sys
-
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
-
 from sacred.commands import print_config, print_dependencies
-from sacred.config.captured_function import create_captured_function
-from sacred.config.config_files import load_config_file
-from sacred.config.config_scope import ConfigScope, ConfigDict
+from sacred.config import (ConfigScope, ConfigDict, load_config_file,
+                           create_captured_function)
 from sacred.dependencies import (
     gather_sources_and_dependencies, Source, PackageDependency,
     PEP440_VERSION_PATTERN)

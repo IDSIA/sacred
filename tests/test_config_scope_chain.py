@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
-
 import pytest
-
-from sacred.config.config_scope import ConfigScope, chain_evaluate_config_scopes
+from sacred.config import ConfigScope, chain_evaluate_config_scopes
 
 
 def test_chained_config_scopes_contain_combined_keys():

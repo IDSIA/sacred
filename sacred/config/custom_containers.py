@@ -266,25 +266,3 @@ if opt.has_numpy:
 
 def type_changed(old_type, new_type):
     return SIMPLIFY_TYPE[type(old_type)] != SIMPLIFY_TYPE[type(new_type)]
-
-
-def dogmatize(obj):
-    if isinstance(obj, dict):
-        return DogmaticDict({key: dogmatize(val) for key, val in obj.items()})
-    elif isinstance(obj, list):
-        return DogmaticList([dogmatize(value) for value in obj])
-    elif isinstance(obj, tuple):
-        return tuple(dogmatize(value) for value in obj)
-    else:
-        return obj
-
-
-def undogmatize(obj):
-    if isinstance(obj, DogmaticDict):
-        return dict({key: undogmatize(value) for key, value in obj.items()})
-    elif isinstance(obj, DogmaticList):
-        return list([undogmatize(value) for value in obj])
-    elif isinstance(obj, tuple):
-        return tuple(undogmatize(value) for value in obj)
-    else:
-        return obj
