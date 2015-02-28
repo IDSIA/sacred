@@ -53,6 +53,9 @@ class Run(object):
             self._start_heartbeat()
             try:
                 self.result = self.main_function(*args)
+                self._stop_heartbeat()
+                self._emit_completed(self.result)
+                return self.result
             except KeyboardInterrupt:
                 self._stop_heartbeat()
                 self._emit_interrupted()
@@ -62,10 +65,6 @@ class Run(object):
                 self._stop_heartbeat()
                 self._emit_failed(exc_type, exc_value, trace.tb_next)
                 raise
-            else:
-                self._stop_heartbeat()
-                self._emit_completed(self.result)
-                return self.result
 
     def _start_heartbeat(self):
         self._emit_heatbeat()

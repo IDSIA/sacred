@@ -30,7 +30,6 @@ def conf_scope():
 
         ignored3 = int
 
-        _ignored4 = 'eventhough it is a string'
 
     cfg()
     return cfg

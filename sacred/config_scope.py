@@ -9,7 +9,6 @@ import re
 import six
 from sacred.custom_containers import dogmatize, undogmatize
 import sacred.optional as opt
-from sacred.utils import PYTHON_IDENTIFIER
 
 
 __sacred__ = True
@@ -97,6 +96,36 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
     return undogmatize(final_config), config_summaries
 
 
+def assert_is_valid_key(key):
+    if not isinstance(key, six.string_types):
+        raise KeyError('Invalid key "{}". Config-keys have to be strings, '
+                       'but was {}'.format(key, type(key)))
+    elif key.find('.') > -1 or key.find('$') > -1:
+        raise KeyError('Invalid key "{}". Config-keys cannot '
+                       'contain "." or "$"'.format(key))
+
+
+def normalize_or_die(obj):
+    if isinstance(obj, dict):
+        res = dict()
+        for key, value in obj.items():
+            assert_is_valid_key(key)
+            res[key] = normalize_or_die(value)
+        return res
+    elif isinstance(obj, (list, tuple)):
+        return list([normalize_or_die(value) for value in obj])
+    elif opt.has_numpy and isinstance(obj, opt.np.bool_):
+        # fixes an issue with numpy.bool_ not being json-serializable
+        return bool(obj)
+    else:
+        try:
+            json.dumps(obj)
+            return obj
+        except TypeError:
+            raise ValueError("Invalid value '{}'. All values have to be"
+                             "JSON-serializeable".format(obj))
+
+
 class ConfigSummary(dict):
     def __init__(self):
         super(ConfigSummary, self).__init__()
@@ -114,24 +143,7 @@ class ConfigEntry(object):
 class ConfigDict(ConfigEntry):
     def __init__(self, d):
         super(ConfigDict, self).__init__()
-        self._conf = {}
-
-        for key, value in d.items():
-            if not isinstance(key, six.string_types) or \
-                    not PYTHON_IDENTIFIER.match(key):
-                raise KeyError('invalid key "{}". Keys have to be valid python'
-                               ' identifiers and cannot start with "_"'
-                               ''.format(key))
-            if opt.has_numpy and isinstance(value, opt.np.bool_):
-                # fixes an issue with numpy.bool_ not being json-serializable
-                self._conf[key] = bool(value)
-                continue
-            try:
-                json.dumps(value)
-                self._conf[key] = undogmatize(value)
-            except TypeError:
-                raise ValueError("invalid value for {}. All values have to be"
-                                 "JSON-serializeable".format(key))
+        self._conf = normalize_or_die(d)
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         result = dogmatize(fixed or {})
@@ -215,15 +227,8 @@ class ConfigScope(ConfigEntry):
         recursive_fill_in(cfg_locals, preset)
 
         for key, value in cfg_locals.items():
-            if key.startswith('_'):
-                continue
-            if opt.has_numpy and isinstance(value, opt.np.bool_):
-                # fixes an issue with numpy.bool_ not being json-serializable
-                config_summary[key] = bool(value)
-                continue
             try:
-                json.dumps(value)
-                config_summary[key] = undogmatize(value)
-            except TypeError:
+                config_summary[key] = normalize_or_die(value)
+            except ValueError:
                 pass
         return config_summary
