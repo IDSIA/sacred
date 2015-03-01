@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
+import sys
 
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
-import sys
 
 classifiers = """
 Development Status :: 4 - Beta

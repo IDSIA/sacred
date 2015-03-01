@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-
 from sacred.config.custom_containers import DogmaticDict
 
 

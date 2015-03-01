@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import os.path
 import re
-import sys
 import shlex
+import sys
 
 EXAMPLES_PATH = os.path.abspath('examples')
 BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)

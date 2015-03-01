@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import os.path
 import pickle
 import sys
 import time
-from sacred.dependencies import get_digest
-from sacred.observers.base import RunObserver
-import sacred.optional as opt
-import pymongo
-from pymongo.errors import AutoReconnect
-from pymongo.son_manipulator import SONManipulator
+
 import bson
 import gridfs
+import pymongo
+import sacred.optional as opt
+from pymongo.errors import AutoReconnect
+from pymongo.son_manipulator import SONManipulator
+from sacred.dependencies import get_digest
+from sacred.observers.base import RunObserver
 
 SON_MANIPULATORS = []
 

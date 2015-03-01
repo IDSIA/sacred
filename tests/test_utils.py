@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import pytest
-from sacred.utils import (recursive_update, iterate_flattened_separately,
-                          iterate_flattened, set_by_dotted_path,
-                          get_by_dotted_path, iter_path_splits, iter_prefixes,
-                          join_paths, is_prefix, convert_to_nested_dict,
-                          PATHCHANGE, is_subdir)
+from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
+                          get_by_dotted_path, is_prefix, is_subdir,
+                          iter_path_splits, iter_prefixes, iterate_flattened,
+                          iterate_flattened_separately, join_paths,
+                          recursive_update, set_by_dotted_path)
 
 
 def test_recursive_update():

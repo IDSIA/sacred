@@ -2,9 +2,10 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+
 import pytest
-from sacred.arg_parser import (_parse_mongo_db_arg, get_config_updates,
-                               parse_args, _convert_value)
+from sacred.arg_parser import (_convert_value, _parse_mongo_db_arg,
+                               get_config_updates, parse_args)
 
 
 def test_parse_mongo_db_arg():

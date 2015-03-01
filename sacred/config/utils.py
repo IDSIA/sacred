@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import json
+
+import sacred.optional as opt
 import six
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
-import sacred.optional as opt
 
 
 def assert_is_valid_key(key):

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import os.path
+
 import mock
 import pytest
-from sacred.dependencies import (
-    PEP440_VERSION_PATTERN, Source, get_py_file_if_possible, PackageDependency,
-    gather_sources_and_dependencies, get_digest)
+from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
+                                 Source, gather_sources_and_dependencies,
+                                 get_digest, get_py_file_if_possible)
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
 EXAMPLE_DIGEST = 'e3e5102d21897ad2bfa1140e359075e1'

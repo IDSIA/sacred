@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import collections
-from contextlib import contextmanager
 import logging
 import os.path
 import re
 import sys
 import traceback as tb
-
+from contextlib import contextmanager
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 

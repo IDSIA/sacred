@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import pytest
+import sacred.optional as opt
 from sacred.config import ConfigDict
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
-import sacred.optional as opt
 
 
 @pytest.fixture

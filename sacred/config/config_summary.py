@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from sacred.utils import join_paths, iter_prefixes
+
+from sacred.utils import iter_prefixes, join_paths
 
 
 class ConfigSummary(dict):

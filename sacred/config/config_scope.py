@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import ast
-from copy import copy
 import inspect
 import re
-from sacred.config.config_summary import ConfigSummary
-from sacred.config.utils import recursive_fill_in, normalize_or_die, dogmatize
+from copy import copy
 
+from sacred.config.config_summary import ConfigSummary
+from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 
 __sacred__ = True
 

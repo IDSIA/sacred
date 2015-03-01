@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from collections import namedtuple
+
 import pprint
 import pydoc
 import re
+from collections import namedtuple
 
-from sacred.utils import iterate_flattened_separately, PATHCHANGE
+from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 

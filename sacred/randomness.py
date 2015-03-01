@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import random
+
 import sacred.optional as opt
 
 __sacred__ = True  # marks files that should be filtered from stack traces

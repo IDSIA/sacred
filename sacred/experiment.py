@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict
+
 import inspect
 import os.path
 import sys
+from collections import OrderedDict
+
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.commands import print_config, print_dependencies
-from sacred.config import (ConfigScope, ConfigDict, load_config_file,
-                           create_captured_function)
-from sacred.dependencies import (
-    gather_sources_and_dependencies, Source, PackageDependency,
-    PEP440_VERSION_PATTERN)
+from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
+                           load_config_file)
+from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
+                                 Source, gather_sources_and_dependencies)
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
-
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 

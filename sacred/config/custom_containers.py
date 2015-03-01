@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import sacred.optional as opt
 from sacred.utils import join_paths
-
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 

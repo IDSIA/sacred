@@ -3,11 +3,11 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-from sacred.config.config_scope import (
-    ConfigScope, dedent_line, is_empty_or_comment, dedent_function_body,
-    get_function_body)
-from sacred.config.custom_containers import DogmaticDict, DogmaticList
 import sacred.optional as opt
+from sacred.config.config_scope import (ConfigScope, dedent_function_body,
+                                        dedent_line, get_function_body,
+                                        is_empty_or_comment)
+from sacred.config.custom_containers import DogmaticDict, DogmaticList
 
 
 @pytest.fixture
@@ -340,5 +340,3 @@ def test_get_function_body():
 def test_config_scope_can_deal_with_indentation_madness():
     # assert_no_raise:
     ConfigScope(evil_indentation_func)
-
-

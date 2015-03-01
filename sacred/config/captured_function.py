@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from datetime import timedelta
+
 import time
+from datetime import timedelta
 
 import wrapt
-
 from sacred.config.custom_containers import FallbackDict
 from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
-
 
 __sacred__ = True
 

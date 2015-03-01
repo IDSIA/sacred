@@ -2,12 +2,14 @@
 # coding=utf-8
 
 from __future__ import division, print_function, unicode_literals
+
 import pprint
+
 import pytest
+from sacred.commands import (BLUE, ENDC, GREEN, RED, ConfigEntry, PathEntry,
+                             format_config, format_entry, help_for_command,
+                             iterate_marked, non_unicode_repr)
 from sacred.config.config_summary import ConfigSummary
-from sacred.commands import (iterate_marked, non_unicode_repr, ConfigEntry,
-                             PathEntry, format_entry, BLUE, GREEN, RED, ENDC,
-                             format_config, help_for_command)
 
 
 def test_non_unicode_repr():

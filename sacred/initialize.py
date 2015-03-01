@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+import os
 from collections import OrderedDict, defaultdict
 from copy import copy
-import os
-from sacred.config import (
-    load_config_file, ConfigDict, dogmatize, chain_evaluate_config_scopes)
+
+from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
+                           load_config_file)
 from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
-from sacred.randomness import get_seed, create_rnd
+from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
-from sacred.utils import (
-    is_prefix, set_by_dotted_path, iterate_flattened, iter_path_splits,
-    create_basic_stream_logger, get_by_dotted_path, convert_to_nested_dict)
-
+from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
+                          get_by_dotted_path, is_prefix, iter_path_splits,
+                          iterate_flattened, set_by_dotted_path)
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
