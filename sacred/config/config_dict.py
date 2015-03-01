@@ -14,12 +14,8 @@ class ConfigDict(object):
         result = dogmatize(fixed or {})
         result.update(preset)
         result.update(self._conf)
-
-        config_summary = ConfigSummary()
-        config_summary.added_values = result.revelation()
-        config_summary.ignored_fallback_writes = []
-        config_summary.modified = result.modified
-        config_summary.typechanges = result.typechanges
+        added = result.revelation()
+        config_summary = ConfigSummary(added, result.modified,
+                                       result.typechanges)
         config_summary.update(undogmatize(result))
-
         return config_summary

@@ -67,14 +67,12 @@ class ConfigScope(object):
 
         cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
-        config_summary = ConfigSummary()
 
-        config_summary.added_values = cfg_locals.revelation()
-        config_summary.ignored_fallback_writes = \
-            cfg_locals.ignored_fallback_writes
-        config_summary.modified = cfg_locals.modified
-        config_summary.typechanges = cfg_locals.typechanges
 
+        added = cfg_locals.revelation()
+        config_summary = ConfigSummary(added, cfg_locals.modified,
+                                       cfg_locals.typechanges,
+                                       cfg_locals.ignored_fallback_writes)
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 

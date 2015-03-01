@@ -30,8 +30,8 @@ def non_unicode_repr(objekt, context, maxlevels, level):
 PRINTER = pprint.PrettyPrinter()
 PRINTER.format = non_unicode_repr
 
-ConfigEntry = namedtuple('ConfigEntry', 'key value added updated typechange')
-PathEntry = namedtuple('PathEntry', 'key added updated typechange')
+ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged')
+PathEntry = namedtuple('PathEntry', 'key added modified typechanged')
 
 
 def iterate_marked(cfg, config_mods):
@@ -40,24 +40,24 @@ def iterate_marked(cfg, config_mods):
             yield path, PathEntry(
                 key=path.rpartition('.')[2],
                 added=path in config_mods.added,
-                updated=path in config_mods.updated,
-                typechange=config_mods.typechanges.get(path))
+                modified=path in config_mods.modified,
+                typechanged=config_mods.typechanged.get(path))
         else:
             yield path, ConfigEntry(
                 key=path.rpartition('.')[2],
                 value=value,
                 added=path in config_mods.added,
-                updated=path in config_mods.updated,
-                typechange=config_mods.typechanges.get(path))
+                modified=path in config_mods.modified,
+                typechanged=config_mods.typechanged.get(path))
 
 
 def format_entry(entry):
     color = ""
-    if entry.typechange:
+    if entry.typechanged:
         color = RED
     elif entry.added:
         color = GREEN
-    elif entry.updated:
+    elif entry.modified:
         color = BLUE
     end = ENDC if color else ""
     if isinstance(entry, ConfigEntry):
@@ -83,9 +83,9 @@ def print_config(_run):
     Print the updated configuration and exit.
 
     Text is highlighted:
-      green:  value updated
+      green:  value modified
       blue:   value added
-      red:    value updated but type changed
+      red:    value modified but type changed
     """
     final_config = _run.config
     config_mods = _run.config_modifications

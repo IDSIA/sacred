@@ -61,19 +61,19 @@ def test_adding_values(conf_dict):
     cfg = conf_dict({'g': 23, 'h': {'i': 10}})
     assert cfg['g'] == 23
     assert cfg['h'] == {'i': 10}
-    assert cfg.added_values == {'g', 'h', 'h.i'}
+    assert cfg.added == {'g', 'h', 'h.i'}
 
 
 def test_typechange(conf_dict):
     cfg = conf_dict({'a': 'bar', 'b': 'foo', 'c': 1})
-    assert cfg.typechanges == {'a': (int, type('bar')),
+    assert cfg.typechanged == {'a': (int, type('bar')),
                                'b': (float, type('foo')),
                                'c': (bool, int)}
 
 
 def test_nested_typechange(conf_dict):
     cfg = conf_dict({'f': {'a': 10}})
-    assert cfg.typechanges == {'f.a': (type('a'), int)}
+    assert cfg.typechanged == {'f.a': (type('a'), int)}
 
 
 def is_dogmatic(a):

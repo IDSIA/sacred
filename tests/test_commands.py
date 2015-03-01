@@ -4,7 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 import pprint
 import pytest
-from sacred.initialize import ConfigModifications
+from sacred.config.config_summary import ConfigSummary
 from sacred.commands import (iterate_marked, non_unicode_repr, ConfigEntry,
                              PathEntry, format_entry, BLUE, GREEN, RED, ENDC,
                              format_config, help_for_command)
@@ -36,7 +36,7 @@ def cfg():
 
 
 def test_iterate_marked(cfg):
-    assert list(iterate_marked(cfg, ConfigModifications())) == \
+    assert list(iterate_marked(cfg, ConfigSummary())) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, False, None)),
@@ -51,7 +51,7 @@ def test_iterate_marked(cfg):
 
 def test_iterate_marked_added(cfg):
     added = {'a', 'c.cB', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, ConfigModifications(added=added))) == \
+    assert list(iterate_marked(cfg, ConfigSummary(added=added))) == \
         [('a', ConfigEntry('a', 0, True, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, True, None)),
@@ -65,8 +65,8 @@ def test_iterate_marked_added(cfg):
 
 
 def test_iterate_marked_updated(cfg):
-    updated = {'b', 'c', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, ConfigModifications(updated=updated))) == \
+    modified = {'b', 'c', 'c.cC.cC1'}
+    assert list(iterate_marked(cfg, ConfigSummary(modified=modified))) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, True, None)),
          ('c', PathEntry('c', False, True, None)),
@@ -80,10 +80,9 @@ def test_iterate_marked_updated(cfg):
 
 
 def test_iterate_marked_typechanged(cfg):
-    typechanges = {'a': (bool, int),
+    typechanged = {'a': (bool, int),
                    'd.dA': (float, int)}
-    result = list(iterate_marked(cfg,
-                                 ConfigModifications(typechanges=typechanges)))
+    result = list(iterate_marked(cfg, ConfigSummary(typechanged=typechanged)))
     assert result == \
         [('a', ConfigEntry('a', 0, False, False, (bool, int))),
          ('b', ConfigEntry('b', {}, False, False, None)),
@@ -135,7 +134,7 @@ def test_format_entry_colors(entry, color):
 
 
 def test_format_config(cfg):
-    cfg_text = format_config(cfg, ConfigModifications())
+    cfg_text = format_config(cfg, ConfigSummary())
     lines = cfg_text.split('\n')
     assert lines[0].startswith('Configuration')
     assert lines[1].find(' a = 0') > -1

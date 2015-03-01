@@ -6,6 +6,7 @@ from copy import copy
 import os
 from sacred.config import (
     load_config_file, ConfigDict, dogmatize, chain_evaluate_config_scopes)
+from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
 from sacred.randomness import get_seed, create_rnd
 from sacred.run import Run
@@ -49,7 +50,7 @@ class Scaffold(object):
             self.config['seed'] = self.seed
 
         if 'seed' in self.config and 'seed' in self.config_mods.added:
-            self.config_mods.updated.add('seed')
+            self.config_mods.modified.add('seed')
             self.config_mods.added -= {'seed'}
 
         # Hierarchically set the seed of proper subrunners
@@ -101,16 +102,9 @@ class Scaffold(object):
         self.get_config_modifications()
 
     def get_config_modifications(self):
-        typechanges = {}
-        added = {p for k, _ in iterate_flattened(self.config_updates)
-                 for p in iter_prefixes(k)}
-        updated = set()
+        self.config_mods = ConfigSummary()
         for cfg_summary in self.summaries:
-            added &= cfg_summary.added_values
-            typechanges.update(cfg_summary.typechanges)
-            updated |= cfg_summary.modified
-
-        self.config_mods = ConfigModifications(added, updated, typechanges)
+            self.config_mods.update_from(cfg_summary)
 
     def get_fixture(self):
         if self.fixture is not None:
@@ -146,7 +140,7 @@ class Scaffold(object):
         for add in sorted(self.config_mods.added):
             self.logger.warning('Added new config entry: "%s"' % add)
 
-        for key, (type_old, type_new) in self.config_mods.typechanges.items():
+        for key, (type_old, type_new) in self.config_mods.typechanged.items():
             if (isinstance(type_old, type(None)) or
                     (type_old in (int, float) and type_new in (int, float))):
                 continue
@@ -155,7 +149,7 @@ class Scaffold(object):
                 (key, type_old.__name__, type_new.__name__))
 
         for cfg_summary in self.summaries:
-            for key in cfg_summary.ignored_fallback_writes:
+            for key in cfg_summary.ignored_fallbacks:
                 self.logger.warning(
                     'Ignored attempt to set value of "%s", because it is an '
                     'ingredient.' % key
@@ -243,37 +237,8 @@ def gather_ingredients_topological(ingredient):
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
-class ConfigModifications():
-    def __init__(self, added=(), updated=(), typechanges=()):
-        self.added = set(added)
-        self.updated = set(updated)
-        self.typechanges = dict(typechanges)
-        self.ensure_coherence()
-
-    def update_from(self, config_mod, path=''):
-        added = config_mod.added
-        updated = config_mod.updated
-        typechanges = config_mod.typechanges
-        self.added |= {join_paths(path, a) for a in added}
-        self.updated |= {join_paths(path, u) for u in updated}
-        self.typechanges.update({join_paths(path, k): v
-                                 for k, v in typechanges.items()})
-        self.ensure_coherence()
-
-    def ensure_coherence(self):
-        # make sure parent paths show up as updated appropriately
-        self.updated |= {p for a in self.added for p in iter_prefixes(a)}
-        self.updated |= {p for u in self.updated for p in iter_prefixes(u)}
-        self.updated |= {p for t in self.typechanges for p in iter_prefixes(t)}
-
-        # make sure there is no overlap
-        self.added -= set(self.typechanges.keys())
-        self.updated -= set(self.typechanges.keys())
-        self.updated -= self.added
-
-
 def get_config_modifications(scaffolding):
-    config_modifications = ConfigModifications()
+    config_modifications = ConfigSummary()
     for sc_path, scaffold in scaffolding.items():
         config_modifications.update_from(scaffold.config_mods, path=sc_path)
     return config_modifications
