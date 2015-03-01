@@ -52,54 +52,25 @@ if opt.has_numpy:
 
 class MongoObserver(RunObserver):
     @staticmethod
-    def create(url, db_name='sacred', prefix='my', **kwargs):
+    def create(url, db_name='sacred', prefix='sr', **kwargs):
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         for manipulator in SON_MANIPULATORS:
             database.add_son_manipulator(manipulator)
-        experiments_collection = database[prefix + '.experiments']
         runs_collection = database[prefix + '.runs']
-        hosts_collection = database[prefix + '.hosts']
         fs = gridfs.GridFS(database, collection=prefix)
-        return MongoObserver(experiments_collection, runs_collection,
-                             hosts_collection, fs)
+        return MongoObserver(runs_collection, fs)
 
-    def __init__(self, experiments_collection, runs_collection,
-                 hosts_collection, fs):
-        self.experiments = experiments_collection
+    def __init__(self, runs_collection, fs):
         self.runs = runs_collection
-        self.hosts = hosts_collection
         self.fs = fs
-        self.experiment_entry = None
         self.run_entry = None
-        self.host_entry = None
-        self.experiment_and_host_saved = False
-
-    @staticmethod
-    def find_or_save(collection, document):
-        doc = collection.find_one(document)
-        if doc is None:
-            return bson.DBRef(collection=collection.name,
-                              id=collection.save(document))
-        else:
-            return bson.DBRef(collection=collection.name,
-                              id=doc['_id'])
 
     def save(self):
         try:
-            if not self.experiment_and_host_saved:
-                ex_ref = self.find_or_save(self.experiments,
-                                           self.experiment_entry)
-                self.run_entry['experiment'] = ex_ref
-
-                host_ref = self.find_or_save(self.hosts, self.host_entry)
-                self.run_entry['host'] = host_ref
-
-                self.experiment_and_host_saved = True
-
             self.runs.save(self.run_entry)
-        except AutoReconnect:  # just wait for the next save
-            pass
+        except AutoReconnect:
+            pass  # just wait for the next save
 
     def final_save(self, attempts=10):
         for i in range(attempts):
@@ -113,19 +84,16 @@ class MongoObserver(RunObserver):
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(suffix='.pickle', delete=False,
                                 prefix='sacred_mongo_fail_') as f:
-            pickle.dump([self.experiment_entry,
-                         self.host_entry,
-                         self.run_entry], f)
+            pickle.dump(self.run_entry, f)
 
             print("Warning: saving to MongoDB failed! "
                   "Stored experiment entry in '%s'" % f.name,
                   file=sys.stderr)
 
     def started_event(self, ex_info, host_info, start_time, config):
-        self.experiment_and_host_saved = False
-        self.experiment_entry = dict(ex_info)
-        self.host_entry = dict(host_info)
         self.run_entry = {
+            'experiment': dict(ex_info),
+            'host': dict(host_info),
             'start_time': start_time,
             'config': config,
             'status': 'RUNNING',
@@ -190,7 +158,7 @@ class MongoObserver(RunObserver):
 
     def __eq__(self, other):
         if isinstance(other, MongoObserver):
-            return self.experiments == other.experiments
+            return self.runs == other.runs
         return False
 
     def __ne__(self, other):
