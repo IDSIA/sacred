@@ -28,7 +28,8 @@ class ConfigSummary(dict):
         # make sure parent paths show up as updated appropriately
         self.modified |= {p for a in self.added for p in iter_prefixes(a)}
         self.modified |= {p for u in self.modified for p in iter_prefixes(u)}
-        self.modified |= {p for t in self.typechanged for p in iter_prefixes(t)}
+        self.modified |= {p for t in self.typechanged
+                          for p in iter_prefixes(t)}
 
         # make sure there is no overlap
         self.added -= set(self.typechanged.keys())

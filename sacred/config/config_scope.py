@@ -68,7 +68,6 @@ class ConfigScope(object):
         cfg_locals.fallback = fallback_view
         eval(self._body_code, copy(self._func.__globals__), cfg_locals)
 
-
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(added, cfg_locals.modified,
                                        cfg_locals.typechanges,

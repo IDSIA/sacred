@@ -9,3 +9,5 @@ if opt.has_pymongo:
     from sacred.observers.mongo import MongoObserver
 else:
     MongoObserver = opt.MissingDependencyMock('pymongo')
+
+__all__ = ['RunObserver', 'DebugObserver', 'MongoObserver']

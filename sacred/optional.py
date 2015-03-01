@@ -8,6 +8,8 @@ class MissingDependencyMock(object):
         self.depends_on = depends_on
 
     def __getattribute__(self, item):
+        if item.startswith('__'):
+            return object.__getattribute__(self, item)
         raise ImportError('Depends on missing "{}" package.'
                           .format(object.__getattribute__(self, 'depends_on')))
 

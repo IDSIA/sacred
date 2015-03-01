@@ -16,34 +16,36 @@ import gridfs
 
 SON_MANIPULATORS = []
 
+
+class PickleNumpyArrays(SONManipulator):
+    """
+    Helper that makes sure numpy arrays get pickled and stored in the
+    database as binary strings.
+    """
+    def transform_incoming(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, opt.np.ndarray):
+                son[key] = {
+                    "_type": "ndarray",
+                    "_value": bson.Binary(pickle.dumps(value, protocol=2))
+                }
+            elif isinstance(value, dict):
+                # Make sure we recurse into sub-docs
+                son[key] = self.transform_incoming(value, collection)
+        return son
+
+    def transform_outgoing(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, dict):
+                if "_type" in value and value["_type"] == "ndarray":
+                    son[key] = pickle.loads(str(value["_value"]))
+                else:  # Again, make sure to recurse into sub-docs
+                    son[key] = self.transform_outgoing(value,
+                                                       collection)
+        return son
+
+
 if opt.has_numpy:
-    class PickleNumpyArrays(SONManipulator):
-        """
-        Helper that makes sure numpy arrays get pickled and stored in the
-        database as binary strings.
-        """
-        def transform_incoming(self, son, collection):
-            for (key, value) in son.items():
-                if isinstance(value, opt.np.ndarray):
-                    son[key] = {
-                        "_type": "ndarray",
-                        "_value": bson.Binary(pickle.dumps(value, protocol=2))
-                    }
-                elif isinstance(value, dict):
-                    # Make sure we recurse into sub-docs
-                    son[key] = self.transform_incoming(value, collection)
-            return son
-
-        def transform_outgoing(self, son, collection):
-            for (key, value) in son.items():
-                if isinstance(value, dict):
-                    if "_type" in value and value["_type"] == "ndarray":
-                        son[key] = pickle.loads(str(value["_value"]))
-                    else:  # Again, make sure to recurse into sub-docs
-                        son[key] = self.transform_outgoing(value,
-                                                           collection)
-            return son
-
     SON_MANIPULATORS.append(PickleNumpyArrays())
 
 

@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import mock
-from sacred.observers.mongo import MongoObserver
+from sacred.observers import MongoObserver
 import datetime
 import time
 import mongomock
@@ -85,9 +85,9 @@ def test_mongo_observer_started_event_creates_experiment_if_new(mongo_obs):
            'sources': [('/tmp/foo.py', '11111111111111')],
            'doc': "mydoc"}
     other = {'name': 'test_exp',
-           'dependencies': [('pytest', '1.2.3'), ('sacred', '1.0')],
-           'sources': [('/tmp/foo.py', '22222222222222')],
-           'doc': "mydoc"}
+             'dependencies': [('pytest', '1.2.3'), ('sacred', '1.0')],
+             'sources': [('/tmp/foo.py', '22222222222222')],
+             'doc': "mydoc"}
     e_id = mongo_obs.experiments.insert(copy(other))
 
     mongo_obs.started_event(
