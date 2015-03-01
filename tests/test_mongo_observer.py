@@ -12,6 +12,7 @@ from copy import copy
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
+
 @pytest.fixture
 def mongo_obs():
     db = mongomock.Connection().db

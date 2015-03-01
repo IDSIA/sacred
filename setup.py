@@ -28,7 +28,7 @@ except ImportError:
     ext_modules = []
     # Manually extract the __about__
     about = dict()
-    execfile("sacred/__about__.py", about)
+    exec(open("sacred/__about__.py").read(), about)
 
 
 class PyTest(TestCommand):
@@ -59,12 +59,12 @@ setup(
 
     url=about['__url__'],
 
-    packages=['sacred'],
+    packages=['sacred', 'sacred.observers', 'sacred.config'],
     scripts=[],
     install_requires=[
         'docopt', 'six', 'wrapt'
     ],
-    tests_require=['pytest'],
+    tests_require=['mock', 'mongomock', 'pytest'],
     cmdclass={'test': PyTest},
 
     classifiers=filter(None, classifiers.split('\n')),
