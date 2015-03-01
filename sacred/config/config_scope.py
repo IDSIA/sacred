@@ -28,9 +28,10 @@ class ConfigScope(object):
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
-        Execute this ConfigScope. This will evaluate the function body and
-        fill the relevant local variables into entries into keys in this
-        dictionary.
+        Evaluate this ConfigScope.
+
+        This will evaluate the function body and fill the relevant local
+        variables into entries into keys in this dictionary.
 
         :param fixed: Dictionary of entries that should stay fixed during the
                       evaluation. All of them will be part of the final config.

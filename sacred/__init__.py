@@ -6,5 +6,5 @@ from .__about__ import __version__, __author__, __author_email__, __url__
 
 from .experiment import Experiment, Ingredient
 
-__all__ = ['Experiment', 'Ingredient', '__version__', '__author__',
-           '__author_email__', '__url__']
+__all__ = ('Experiment', 'Ingredient', '__version__', '__author__',
+           '__author_email__', '__url__')

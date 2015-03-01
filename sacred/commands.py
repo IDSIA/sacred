@@ -18,8 +18,9 @@ ENDC = '\033[0m'
 
 def non_unicode_repr(objekt, context, maxlevels, level):
     """
-    Used to override the pprint format method in order to get rid of
-    unnecessary unicode prefixes. E.g.: 'John' instead of u'John'.
+    Used to override the pprint format method to get rid of unicode prefixes.
+
+    E.g.: 'John' instead of u'John'.
     """
     repr_string, isreadable, isrecursive = pprint._safe_repr(objekt, context,
                                                              maxlevels, level)
@@ -99,9 +100,7 @@ def help_for_command(command):
 
 
 def print_dependencies(_run):
-    """
-    Print the detected source-files and dependencies.
-    """
+    """Print the detected source-files and dependencies."""
     print('Sources:')
     for source, digest in _run.experiment_info['sources']:
         print('  {:<43}  {}'.format(source, digest))

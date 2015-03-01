@@ -14,7 +14,7 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 MB = 1048576
 MODULE_BLACKLIST = {None, '__future__', 'hashlib', 'os', 're'} | \
-                   set(sys.builtin_module_names)
+    set(sys.builtin_module_names)
 module = type(sys)
 PEP440_VERSION_PATTERN = re.compile(r"""
 ^

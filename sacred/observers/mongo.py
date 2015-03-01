@@ -18,10 +18,9 @@ SON_MANIPULATORS = []
 
 
 class PickleNumpyArrays(SONManipulator):
-    """
-    Helper that makes sure numpy arrays get pickled and stored in the
-    database as binary strings.
-    """
+
+    """Make sure numpy arrays get pickled and stored as binary strings."""
+
     def transform_incoming(self, son, collection):
         for (key, value) in son.items():
             if isinstance(value, opt.np.ndarray):

@@ -20,20 +20,22 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class CircularDependencyError(Exception):
-    """
-    This exception is thrown if the ingredients of the current experiment form
-    a circular dependency.
-    """
+
+    """The ingredients of the current experiment form a circular dependency."""
 
 
 class Ingredient(object):
+
     """
-    Ingredients are reusable parts of experiments. Each Ingredient can have its
-    own configuration (visible as an entry in the parents configuration),
-    named configurations, captured functions and commands.
+    Ingredients are reusable parts of experiments.
+
+    Each Ingredient can have its own configuration (visible as an entry in the
+    parents configuration), named configurations, captured functions and
+    commands.
 
     Ingredients can themselves use ingredients.
     """
+
     def __init__(self, path, ingredients=(), _generate_seed=False,
                  _caller_globals=None):
         self.path = path
@@ -76,8 +78,10 @@ class Ingredient(object):
 
     def config(self, function):
         """
-        Decorator to turn a function into a
-        :class:`~sacred.config_scope.ConfigScope` and add it to the
+        Decorator to add a function to the configuration of the Experiment.
+
+        The decorated function is turned into a
+        :class:`~sacred.config_scope.ConfigScope` and added to the
         Ingredient/Experiment.
 
         When the experiment is run, this function will also be executed and
@@ -90,6 +94,7 @@ class Ingredient(object):
     def named_config(self, func):
         """
         Decorator to turn a function into a named configuration.
+
         See :ref:`named_configurations`.
         """
         config_scope = ConfigScope(func)
@@ -123,8 +128,9 @@ class Ingredient(object):
 
     def add_config(self, cfg=None, **kw_conf):
         """
-        Add a configuration entry to this ingredient/experiment. Can be called
-        either with a dictionary or with keyword arguments.
+        Add a configuration entry to this ingredient/experiment.
+
+        Can be called either with a dictionary or with keyword arguments.
 
         The dictionary or the keyword arguments will be converted into a
         :class:`~sacred.config_scope.ConfigDict`.
@@ -149,9 +155,9 @@ class Ingredient(object):
 
     def add_config_file(self, filename):
         """
-        Add the contents of a configuration file to the configuration of this
-        experiment. Supported formats so far are: ``json``, ``pickle`` and
-        ``yaml``.
+        Read and add a configuration file to the configuration.
+
+        Supported formats so far are: ``json``, ``pickle`` and ``yaml``.
 
         :param filename: The filename of the configuration file to be loaded.
                          Has to have the appropriate file-ending.
@@ -165,8 +171,7 @@ class Ingredient(object):
 
     def add_source_file(self, filename):
         """
-        Add a file as additional source dependency to this experiment or
-        ingredient.
+        Add a file as source dependency to this experiment/ingredient.
 
         :param filename: filename of the source to be added as dependency
         :type filename: str
@@ -226,17 +231,20 @@ class Ingredient(object):
 
 
 class Experiment(Ingredient):
+
     """
-    An instance of this class builds the central piece of every experiment run
-    in Sacred. It manages the configuration, the main function,
-    captured methods, observers, commands, and further ingredients.
+    The central class for each experiment in Sacred.
+
+    It manages the configuration, the main function, captured methods,
+    observers, commands, and further ingredients.
 
     An Experiment instance should be created as one of the first
     things in any experiment-file.
     """
+
     def __init__(self, name, ingredients=()):
         """
-        Creates a new experiment with the given name and optional ingredients.
+        Create a new experiment with the given name and optional ingredients.
 
         :param name: name of this experiment
         :type name: str
@@ -273,19 +281,14 @@ class Experiment(Ingredient):
 
     def automain(self, function):
         """
-        Decorator that defines the main function of the experiment and
-        automatically runs the experiments command-line when the file is
-        executed.
+        Decorator that defines *and runs* the main function of the experiment.
 
-        The method decorated by this should be last in the file because:
+        The decorated function is marked as the default command for this
+        experiment, and the command-line interface is automatically run when
+        the file is executed.
 
-        .. code-block:: python
-
-            @ex.automain
-            def my_main():
-                pass
-
-        is equivalent to:
+        The method decorated by this should be last in the file because is
+        equivalent to:
 
         .. code-block:: python
 
@@ -324,8 +327,9 @@ class Experiment(Ingredient):
 
     def run_commandline(self, argv=None):
         """
-        Run the command-line interface of this experiment. If ``argv`` is
-        omitted it defaults to ``sys.argv``.
+        Run the command-line interface of this experiment.
+
+        If ``argv`` is omitted it defaults to ``sys.argv``.
 
         :param argv: split command-line like ``sys.argv``.
         :type argv: list[str]

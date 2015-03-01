@@ -4,13 +4,13 @@ from __future__ import division, print_function, unicode_literals
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ['RunObserver', 'DebugObserver']
+__all__ = ('RunObserver', 'DebugObserver')
 
 
 class RunObserver(object):
-    """
-    Base class, that defines the interface for all run observers.
-    """
+
+    """ Defines the interface for all run observers."""
+
     def started_event(self, ex_info, host_info, start_time, config):
         pass
 

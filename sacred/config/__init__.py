@@ -9,6 +9,6 @@ from sacred.config.captured_function import create_captured_function
 from sacred.config.utils import (
     chain_evaluate_config_scopes, dogmatize, undogmatize)
 
-__all__ = ['ConfigDict', 'ConfigScope', 'load_config_file',
+__all__ = ('ConfigDict', 'ConfigScope', 'load_config_file',
            'create_captured_function', 'chain_evaluate_config_scopes',
-           'dogmatize', 'undogmatize']
+           'dogmatize', 'undogmatize')

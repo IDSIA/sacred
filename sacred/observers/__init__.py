@@ -10,4 +10,4 @@ if opt.has_pymongo:
 else:
     MongoObserver = opt.MissingDependencyMock('pymongo')
 
-__all__ = ['RunObserver', 'DebugObserver', 'MongoObserver']
+__all__ = ('RunObserver', 'DebugObserver', 'MongoObserver')

@@ -85,9 +85,11 @@ def tee_output():
 
 def iterate_flattened_separately(dictionary):
     """
-    Iterate over the items of a dictionary. First iterate over all items that
-    are non-dictionary values (sorted by keys), then over the rest
-    (sorted by keys), providing full dotted paths for every leaf.
+    Recursively iterate over the items of a dictionary in a special order.
+
+    First iterate over all items that are non-dictionary values
+    (sorted by keys), then over the rest (sorted by keys), providing full
+    dotted paths for every leaf.
     """
     single_line_keys = [key for key in dictionary.keys() if
                         not dictionary[key] or
@@ -101,27 +103,29 @@ def iterate_flattened_separately(dictionary):
     for key in sorted(multi_line_keys):
         yield key, PATHCHANGE
         for k, val in iterate_flattened_separately(dictionary[key]):
-            yield join_paths(key,  k), val
+            yield join_paths(key, k), val
 
 
 def iterate_flattened(d):
     """
-    Iterate over a dictionary recursively, providing full dotted
-    paths for every leaf.
+    Recursively iterate over the items of a dictionary.
+
+    Provides a full dotted paths for every leaf.
     """
     for key in sorted(d.keys()):
         value = d[key]
         if isinstance(value, dict):
             for k, v in iterate_flattened(d[key]):
-                yield join_paths(key,  k), v
+                yield join_paths(key, k), v
         else:
             yield key, value
 
 
 def set_by_dotted_path(d, path, value):
     """
-    Set an entry in a nested dict using a dotted path. Will create dictionaries
-    as needed.
+    Set an entry in a nested dict using a dotted path.
+
+    Will create dictionaries as needed.
 
     Examples:
     >>> d = {'foo': {'bar': 7}}
@@ -162,8 +166,9 @@ def get_by_dotted_path(d, path):
 
 def iter_path_splits(path):
     """
-    Iterate over possible splits of a dotted path. The first part can be empty
-    the second should not be.
+    Iterate over possible splits of a dotted path.
+
+    The first part can be empty the second should not be.
 
     Example:
     >>> list(iter_path_splits('foo.bar.baz'))
@@ -192,26 +197,19 @@ def iter_prefixes(path):
 
 
 def join_paths(*parts):
-    """
-    Join different parts together to a valid dotted path.
-    """
+    """Join different parts together to a valid dotted path."""
     return '.'.join(p.strip('.') for p in parts if p)
 
 
 def is_prefix(pre_path, path):
-    """
-    Returns True if pre_path is a path-prefix of path.
-    """
+    """Return True if pre_path is a path-prefix of path."""
     pre_path = pre_path.strip('.')
     path = path.strip('.')
     return not pre_path or path.startswith(pre_path + '.')
 
 
 def convert_to_nested_dict(dotted_dict):
-    """
-    Convert a dictionary where some of the keys might be dotted paths to the
-    corresponding nested dictionary.
-    """
+    """Convert a dict with dotted path keys to corresponding nested dict."""
     nested_dict = {}
     for k, v in iterate_flattened(dotted_dict):
         set_by_dotted_path(nested_dict, k, v)

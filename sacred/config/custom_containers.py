@@ -9,10 +9,9 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class FallbackDict(dict):
-    """
-    This dictionary either returns the value assigned to a given key or it
-    returns the value for that key from the fallback dict.
-    """
+
+    """Dictionary that defaults to a fallback dict for missing keys."""
+
     def __init__(self, fallback, **kwargs):
         super(FallbackDict, self).__init__(**kwargs)
         self.fallback = fallback
