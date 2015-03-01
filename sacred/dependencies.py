@@ -10,6 +10,7 @@ import sys
 
 import pkg_resources
 import six
+import sacred.optional as opt
 from sacred.utils import is_subdir, iter_prefixes
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -171,5 +172,9 @@ def gather_sources_and_dependencies(globs):
             mod = sys.modules.get(modname)
             create_source_or_dep(modname, mod, dependencies, sources,
                                  experiment_path)
+
+    if opt.has_numpy:
+        # Add numpy as a dependency because it might be used for randomness
+        dependencies.add(PackageDependency.create(opt.np))
 
     return sources, dependencies
