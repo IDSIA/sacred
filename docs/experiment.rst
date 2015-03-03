@@ -1,7 +1,7 @@
 Experiment Overview
 *******************
 ``Experiment`` is the central class of the Sacred framework. This section
-should give you an overview on how to use it and all of its main mechanisms.
+gives you an overview on what it does and how to use it.
 
 Create an Experiment
 ====================
@@ -20,7 +20,7 @@ The function decorated with ``@ex.main`` is the main function of the experiment.
 It is executed if you run the experiment and it is also used to determine
 the source-file of the experiment.
 
-Instead of ``@ex.main`` you can use ``@ex.automain``. This will
+Instead of ``@ex.main`` it is recommended to use ``@ex.automain``. This will
 automatically run the experiment if you execute the file. It is equivalent to
 the following.
 
@@ -83,8 +83,9 @@ You can also specify the log-level while calling ``run`` like so. See
 .. note::
 
     Under the hood a ``Run`` object is created every time you run an
-    ``Experiment``. This object holds some information about that run (e.g. the
-    final configuration) and is responsible for emitting all the events for the
+    ``Experiment`` (this is also the object that ``ex.run()`` returns).
+    It holds some information about that run (e.g. final configuration and
+    later the result) and is responsible for emitting all the events for the
     :doc:`observers`. You can access it by accepting the special `_run` argument
     in any of your :ref:`captured_functions`. It is also used for
     :ref:`custom_info`.
@@ -92,13 +93,10 @@ You can also specify the log-level while calling ``run`` like so. See
 
 Configuration
 =============
-The easiest way to add configuration to an experiment is through a
-:doc:`configuration`:
+There are multiple ways of adding configuration to your experiment.
+The easiest way is through a :doc:`configuration`:
 
 .. code-block:: python
-
-    from sacred import Experiment
-    ex = Experiment('my_experiment')
 
     @ex.config
     def my_config():
@@ -114,8 +112,32 @@ the configuration that way. The parameters can even depend on each other.
     lists, tuples, dictionaries) become part of the configuration. Other
     variables are ignored.
 
-    Also all variables starting with an underscore will be ignored.
+If you think that is too much magic going on, you can always use a plain
+dictionary to add configuration:
 
+.. code-block:: python
+
+    ex.add_config({
+      'foo': 42,
+      'bar': 'baz
+    })
+    # or equivalently
+    ex.add_config(
+        foo=42,
+        bar='baz'
+    )
+
+If you prefer, you can also directly load configuration entries from a file:
+
+.. code-block:: python
+
+    ex.add_config_file('conf.json')
+    ex.add_config_file('conf.pickle')  # if configuration was stored as dict
+    ex.add_config_file('conf.yaml')  # requires PyYAML
+
+And of course you can combine all of them and even have several of each kind.
+They will be executed in the order that you added them,
+and possibly overwrite each others values.
 
 Capture Functions
 =================
@@ -145,6 +167,8 @@ To see how that works we need to *capture* some function:
         some_function(1, bar=12)   #  1  42  12
         some_function()            #  TypeError: missing value for 'a'
 
+More on this in the :ref:`captured_functions` Section.
+
 .. note::
     Configuration values are preferred over default values. So in the example
     above, ``bar=10`` is never used because there is a value of ``bar = 'baz'``
@@ -162,17 +186,17 @@ Experiments in Sacred collect lots of information about their runs like:
   - packages the experiment depends on and their versions
   - the source code of the experiment
 
-To access these informations you can use the observer interface. First you need to
+To access this information you can use the observer interface. First you need to
 add an observer like this:
 
 .. code-block:: python
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver())
+    ex.observers.append(MongoObserver.create())
 
-At the moment ``MongoObserver`` is the only observer that is shipped with
-Sacred. It connects to a MongoDB and puts all these information into a document in a
+At the moment ``MongoObserver`` is the only observer shipped with Sacred.
+It connects to a MongoDB and puts all these information into a document in a
 collection called ``experiments``. You can also add this observer from the
 :doc:`command-line` like this::
 

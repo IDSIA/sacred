@@ -31,6 +31,21 @@ want to play around with this you can just execute ``my_config``::
              'bar': 'my_string10'}
     }
 
+Or use the ``print_config`` command from the :doc:`command-line`::
+
+    > python config_demo.py print_config
+    INFO - config_demo - Running command 'print_config'
+    INFO - config_demo - started
+    Configuration:
+      a = 10
+      e = 5
+      seed = 746486301
+      foo:
+        a_squared = 100
+        bar = 'my_string10'
+    INFO - config_demo - finished after 0:00:00.
+
+
 Fixing Values
 =============
 We can also *fix* some value and see how the configuration changes::
@@ -44,6 +59,12 @@ We can also *fix* some value and see how the configuration changes::
 Note that all the values that depend on ``a`` change accordingly, while ``a``
 itself is being protected from any change.
 
+.. note::
+    This might make you wonder about what is going. So let me briefly explain:
+    Sacred extracts body of the function decorated with ``@ex.config`` and
+    runs it using the ``exec`` statement. That allows it to provide a locals
+    dictionary which can block certain changes.
+
 We can also fix any of the other values, even nested ones::
 
     >>> my_config(fixed={'foo': {'bar': 'baobab'}})
@@ -55,12 +76,8 @@ We can also fix any of the other values, even nested ones::
 
 Ignored Values
 ==============
-Two kinds of variables inside a config scope are ignored:
-
-    - All variables that are **not** JSON serializable
-    - Variables that start with an underscore
-
-So the following config scope would result in an empty configuration:
+All variables that are **not** JSON serializable inside a config scope are
+ignored. So the following config scope would result in an empty configuration:
 
 .. code-block:: python
 
@@ -68,8 +85,7 @@ So the following config scope would result in an empty configuration:
     def empty_config():
         import re                           # not JSON serializable
         pattern = re.compile('[iI]gnored')   # not JSON serializable
-        _test_string = 'this is ignored'     # starts with an _
-        match = pattern.match(_test_string)  # not JSON serializable
+        match = pattern.match('this is ignored')  # not JSON serializable
 
 
 .. _multiple_config_scopes:
@@ -132,7 +148,6 @@ named ConfigScope is run first and its values are treated as fixed, so you can
 have other values that are computed from them.
 
 .. note::
-
     You can have multiple named configurations, and you can use as many of them
     as you like for any given run. But notice that the order in which you
     include them matters: The ones you put first will be evaluated first and
