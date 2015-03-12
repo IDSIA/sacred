@@ -57,7 +57,7 @@ it from there an run it like this:
 
     from my_experiment import ex
 
-    ex.run()
+    r = ex.run()
 
 The ``run`` function accepts ``config_updates`` to specify how the configuration
 should be changed for this run. It should be (possibly nested) dictionary
@@ -68,7 +68,7 @@ containing all the values that you wish to update. For more information see
 
     from my_experiment import ex
 
-    ex.run(config_updates={'foo': 23})
+    r = ex.run(config_updates={'foo': 23})
 
 You can also specify the log-level while calling ``run`` like so. See
 :doc:`logging` for more information:
@@ -77,7 +77,7 @@ You can also specify the log-level while calling ``run`` like so. See
 
     from my_experiment import ex
 
-    ex.run(loglevel='DEBUG')
+    r = ex.run(loglevel='DEBUG')
 
 
 .. note::
@@ -86,15 +86,17 @@ You can also specify the log-level while calling ``run`` like so. See
     ``Experiment`` (this is also the object that ``ex.run()`` returns).
     It holds some information about that run (e.g. final configuration and
     later the result) and is responsible for emitting all the events for the
-    :doc:`observers`. You can access it by accepting the special `_run` argument
-    in any of your :ref:`captured_functions`. It is also used for
-    :ref:`custom_info`.
+    :doc:`observers`.
+
+    While the experiment is running you can access it by
+    accepting the special `_run` argument in any of your
+    :ref:`captured_functions`. That is also used for :ref:`custom_info`.
 
 
 Configuration
 =============
 There are multiple ways of adding configuration to your experiment.
-The easiest way is through a :doc:`configuration`:
+The easiest way is through :ref:`config_scopes`:
 
 .. code-block:: python
 
@@ -113,27 +115,8 @@ the configuration that way. The parameters can even depend on each other.
     variables are ignored.
 
 If you think that is too much magic going on, you can always use a plain
-dictionary to add configuration:
-
-.. code-block:: python
-
-    ex.add_config({
-      'foo': 42,
-      'bar': 'baz
-    })
-    # or equivalently
-    ex.add_config(
-        foo=42,
-        bar='baz'
-    )
-
-If you prefer, you can also directly load configuration entries from a file:
-
-.. code-block:: python
-
-    ex.add_config_file('conf.json')
-    ex.add_config_file('conf.pickle')  # if configuration was stored as dict
-    ex.add_config_file('conf.yaml')  # requires PyYAML
+dictionary to add configuration or, if you prefer, you can also directly
+load configuration entries from a file.
 
 And of course you can combine all of them and even have several of each kind.
 They will be executed in the order that you added them,
@@ -184,7 +167,9 @@ Experiments in Sacred collect lots of information about their runs like:
   - the result or any errors that occurred
   - basic information about the machine it runs on
   - packages the experiment depends on and their versions
-  - the source code of the experiment
+  - all imported local source-files
+  - files opened with ``ex.open_resource``
+  - files added with ``ex.add_artifact``
 
 To access this information you can use the observer interface. First you need to
 add an observer like this:
