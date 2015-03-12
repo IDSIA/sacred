@@ -3,11 +3,10 @@ Release History
 
 0.6 (2015-02-??)
 ++++++++++++++++
+* Feature: Collections used by the MongoObserver can now have a custom prefix
 * Feature: Automatically collect imported sources and dependencies also from
            ingredients
 * Feature: added print_dependencies command
-* Documentation: greatly improved the examples and added them to the docs
-* Bugfix: fixed coloring of seeds modified by or entries added by named configs
 * Feature: With the ``--debug`` flag Sacred now automatically enters
            post-mortem debugging after an exception.
 * Feature: Only filter the stacktrace if exception originated outside of Sacred
@@ -18,6 +17,8 @@ Release History
 * Feature: MongoObserver now tries to reconnect to the MongoDB if connection
            is lost, and at the end of an experiment writes the entry to a
            tempfile if the reconnects failed.
+* Bugfix: fixed coloring of seeds modified by or entries added by named configs
+* Documentation: greatly improved the examples and added them to the docs
 
 0.5.2 (2015-02-09)
 ++++++++++++++++++

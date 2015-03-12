@@ -9,6 +9,7 @@ import pytest
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies,
                                  get_digest, get_py_file_if_possible)
+import sacred.optional as opt
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
 EXAMPLE_DIGEST = 'e3e5102d21897ad2bfa1140e359075e1'
@@ -146,7 +147,14 @@ def test_gather_sources_and_dependencies():
         Source.create('tests/foo/bar.py')
     }
     assert sources == expected_sources
-    assert deps == {
-        PackageDependency.create(pytest),
-        PackageDependency.create(mock)
-    }
+
+    assert PackageDependency.create(pytest) in deps
+    assert PackageDependency.create(mock) in deps
+    # If numpy is installed on the test system it will automatically be added
+    # as an additional dependency, so test for that:
+    if opt.has_numpy:
+        assert PackageDependency.create(opt.np) in deps
+        assert len(deps) == 3
+    else:
+        assert len(deps) == 2
+
