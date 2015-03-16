@@ -157,4 +157,3 @@ def test_gather_sources_and_dependencies():
         assert len(deps) == 3
     else:
         assert len(deps) == 2
-

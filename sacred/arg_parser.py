@@ -93,7 +93,8 @@ def get_observers(args):
     if args['--mongo_db']:
         url, db_name, prefix = _parse_mongo_db_arg(args['--mongo_db'])
         if prefix:
-            mongo = MongoObserver.create(db_name=db_name, url=url, prefix=prefix)
+            mongo = MongoObserver.create(db_name=db_name, url=url,
+                                         prefix=prefix)
         else:
             mongo = MongoObserver.create(db_name=db_name, url=url)
 

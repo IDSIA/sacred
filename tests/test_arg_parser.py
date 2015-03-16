@@ -11,6 +11,7 @@ from sacred.arg_parser import (_convert_value, _parse_mongo_db_arg,
 def test_parse_mongo_db_arg():
     assert _parse_mongo_db_arg('foo') == ('localhost:27017', 'foo', '')
 
+
 def test_parse_mongo_db_arg_collection():
     assert _parse_mongo_db_arg('foo.bar') == ('localhost:27017', 'foo', 'bar')
 
@@ -46,6 +47,7 @@ def test_parse_mongo_db_arg_hostname_dbname_collection_name():
 
     assert _parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
         ('123.45.67.89:27017', 'baz', 'foo')
+
 
 @pytest.mark.parametrize("argv,expected", [
     ('',                 {}),

@@ -9,7 +9,7 @@ __all__ = ('RunObserver', 'DebugObserver')
 
 class RunObserver(object):
 
-    """ Defines the interface for all run observers."""
+    """Defines the interface for all run observers."""
 
     def started_event(self, ex_info, host_info, start_time, config):
         pass
