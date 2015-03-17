@@ -237,20 +237,70 @@ with that filename.
 Saving Custom Information
 =========================
 Sometimes you want to add custom information about the run of an experiment,
-like the error curves during training. The easiest way of doing that is by using
-the special ``_run`` parameter in any captured function. This gives you access
-to the current ``Run`` object. You can then just add whatever information you
-like to ``_run.info``. This ``info`` dict will be sent to all the observers
-every 10 sec as part of the heartbeat_event.
+like the error curves during training. That's what the ``info`` dictionary is
+for. While the experiment is *running* it can be accessed via ``ex.info``.
+Another way is by ``_run.info`` using the special ``_run`` parameter in any
+captured function, which gives you access to the current ``Run`` object.
 
-.. note::
-    It is recommended to only store information in ``info`` that is
+You can add whatever information you like to ``_run.info``. This ``info`` dict
+will be sent to all the observers every 10 sec as part of the heartbeat_event.
+
+.. warning::
+    Note that it is recommended to only store information in ``info`` that is
     JSON-serializable and contains only valid python identifiers as keys in
-    dictionaries. That way you make sure that it can be saved to the database by
-    the MongoObserver.
+    dictionaries. Otherwise the Observer might not be able to store it in the
+    Database and crash.
+
+Another way of having information saved to the database is by adding
+*resources* or *artifacts*.
+
+Resources
+---------
+Generally speaking a resource is a file that your experiment needs to read
+during a run. When you open a file using  ``ex.open_resource(filename)`` then
+a ``resource_event`` will be fired and the MongoObserver will check whether
+that file is in the database already. If not it will store it there.
+In any case the filename along with its MD5 hash is logged.
+
+Artifacts
+---------
+An artifact is a file created during the run. With
+``ex.add_artifact(filename)`` such a file can be added, which will fire an
+``artifact_event``. The MongoObserver will then in turn again, store that file
+in the database and log it in the run entry.
+
 
 .. _custom_observer:
 
 Custom Observer
 ===============
+
+The easiest way to implement a custom observer is to inherit from
+``sacred.observers.RunObserver`` and override some or all of the events:
+
+.. code-block:: python
+
+    from sacred.observer import RunObserver
+
+    class MyObserver(RunObserver):
+        def started_event(self, ex_info, host_info, start_time, config):
+            pass
+
+        def heartbeat_event(self, info, captured_out, beat_time):
+            pass
+
+        def completed_event(self, stop_time, result):
+            pass
+
+        def interrupted_event(self, interrupt_time):
+            pass
+
+        def failed_event(self, fail_time, fail_trace):
+            pass
+
+        def resource_event(self, filename):
+            pass
+
+        def artifact_event(self, filename):
+            pass
 

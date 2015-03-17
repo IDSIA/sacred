@@ -262,7 +262,6 @@ class Experiment(Ingredient):
         self.observers = []
         self.command(print_config)
         self.command(print_dependencies)
-        self.info = None
 
     # =========================== Decorators ==================================
 
@@ -374,6 +373,10 @@ class Experiment(Ingredient):
     def add_artifact(self, filename):
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.add_artifact(filename)
+
+    @property
+    def info(self):
+        return self.current_run.info
 
     # =========================== Private Helpers =============================
 
