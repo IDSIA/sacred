@@ -67,7 +67,7 @@ setup(
     tests_require=['mock', 'mongomock', 'pytest'],
     cmdclass={'test': PyTest},
 
-    classifiers=filter(None, classifiers.split('\n')),
+    classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',
     long_description=open('README.rst').read()
 )
