@@ -14,7 +14,7 @@ box. All you have to do to use it is to either have a method decorated with
 Configuration Updates
 =====================
 You can easily change any configuration entry using the powerful
-``with`` command on the command-line. Just put ``with config=update`` after
+``with`` argument on the command-line. Just put ``with config=update`` after
 your experiment call like this::
 
     >>> ./example.py with 'a=10'
@@ -66,10 +66,65 @@ this::
 
     >>> ./example.py with 'd.foo=100'
 
-.. warning::
-    This assumes that all the keys in the dict are strings and do not contain
-    any dots. It is strongly recommended to only use *valid python identifiers*
-    as keys. Other choices might cause errors!
+Named Updates
+=============
+If there are any :ref:`named_configurations` set up for an experiment, then you
+can apply them using the ``with`` argument. So for this experiment:
+
+.. code-block:: python
+
+    ex = Experiment('named_configs_demo')
+
+    @ex.config
+    def cfg():
+        a = 10
+        b = 3 * a
+        c = "foo"
+
+    @ex.named_config
+    def variant1():
+        a = 100
+        c = "bar"
+
+The named configuration ``variant1`` can be applied like this::
+
+    >>> ./named_configs_demo.py with variant1
+
+
+Multiple Named Updates
+----------------------
+You can have multiple named configurations, and you can use as many of them
+as you like for any given run. But notice that the order in which you
+include them matters: The ones you put first will be evaluated first and
+the values they set might be overwritten by further named configurations.
+
+Combination With Regular Updates
+--------------------------------
+If you combine named updates with regular updates, and the latter have
+precedence. Sacred will first set an fix all regular updates and then run
+through all named updates in order, while keeping the regular updates fixed.
+The resulting configuration is then kept fixed and sacred runs through all
+normal configurations.
+
+The following will set ``a=23`` first and then execute ``variant1`` treating
+``a`` as fixed::
+
+    >>> ./named_configs_demo.py with variant1 'a=23'
+
+So this configuration becomes ``{'a':23, 'b':69, 'c':"bar"}``.
+
+Config Files As Named Updates
+-----------------------------
+Config files can be used as named updates, by just passing their name to the
+``with`` argument. So assuming there is a ``variant2.json`` this works::
+
+    >>> ./named_configs_demo.py with variant2.json
+
+Supported formats are the same as with :ref:`config_files`.
+
+If there should ever be a name-collision between a named config and a config
+file the latter takes precedence.
+
 
 Print Config
 ============

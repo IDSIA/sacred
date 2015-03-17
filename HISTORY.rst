@@ -1,13 +1,21 @@
 Release History
 ---------------
 
-0.6 (2015-02-??)
+0.6 (2015-03-12)
 ++++++++++++++++
+* Feature: With the new ``add_artifact`` function files can be added to a run
+           That will fire an ``artifact event`` and they will also be stored
+           in the database by the MongoObserver.
+* Feature: Files can be opened through the experiment using ``open_resource``,
+           which will fire a ``resource_event`` and the file is automatically
+           saved to the database by the MongoObserver
+* Feature: Collections used by the MongoObserver can now have a custom prefix
+* Feature: MongoObserver saves all sources as separate files to the database
+           using GridFS
+* Feature: Sources and package dependencies can now also be manually added
 * Feature: Automatically collect imported sources and dependencies also from
            ingredients
 * Feature: added print_dependencies command
-* Documentation: greatly improved the examples and added them to the docs
-* Bugfix: fixed coloring of seeds modified by or entries added by named configs
 * Feature: With the ``--debug`` flag Sacred now automatically enters
            post-mortem debugging after an exception.
 * Feature: Only filter the stacktrace if exception originated outside of Sacred
@@ -18,6 +26,11 @@ Release History
 * Feature: MongoObserver now tries to reconnect to the MongoDB if connection
            is lost, and at the end of an experiment writes the entry to a
            tempfile if the reconnects failed.
+* Bugfix: Invalid config keys could crash the MongoObserver or the
+          print_config command. Now they are checked at the beginning and an
+          exception is thrown.
+* Bugfix: fixed coloring of seeds modified by or entries added by named configs
+* Documentation: greatly improved the examples and added them to the docs
 
 0.5.2 (2015-02-09)
 ++++++++++++++++++

@@ -16,7 +16,7 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 class Run(object):
 
-    """ Represent and manage a single run of an experiment."""
+    """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
                  logger, experiment_info, host_info):

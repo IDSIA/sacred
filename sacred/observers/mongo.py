@@ -52,7 +52,7 @@ if opt.has_numpy:
 
 class MongoObserver(RunObserver):
     @staticmethod
-    def create(url, db_name='sacred', prefix='sr', **kwargs):
+    def create(url='localhost', db_name='sacred', prefix='default', **kwargs):
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         for manipulator in SON_MANIPULATORS:

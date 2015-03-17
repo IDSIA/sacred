@@ -44,7 +44,7 @@ your actual experiment in order to:
 - save configurations for individual runs in a database
 - reproduce your results
 
-In Sacred we achieve this through the following main mechanisms:
+Sacred achieves this through the following main mechanisms:
 
 -  **ConfigScopes** A very convenient way of the local variables in a function
    to define the parameters your experiment uses.

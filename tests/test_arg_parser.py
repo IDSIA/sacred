@@ -9,29 +9,44 @@ from sacred.arg_parser import (_convert_value, _parse_mongo_db_arg,
 
 
 def test_parse_mongo_db_arg():
-    assert _parse_mongo_db_arg('foo') == ('localhost:27017', 'foo')
+    assert _parse_mongo_db_arg('foo') == ('localhost:27017', 'foo', '')
+
+
+def test_parse_mongo_db_arg_collection():
+    assert _parse_mongo_db_arg('foo.bar') == ('localhost:27017', 'foo', 'bar')
 
 
 def test_parse_mongo_db_arg_hostname():
     assert _parse_mongo_db_arg('localhost:28017') == \
-        ('localhost:28017', 'sacred')
+        ('localhost:28017', 'sacred', '')
 
     assert _parse_mongo_db_arg('www.mymongo.db:28017') == \
-        ('www.mymongo.db:28017', 'sacred')
+        ('www.mymongo.db:28017', 'sacred', '')
 
     assert _parse_mongo_db_arg('123.45.67.89:27017') == \
-        ('123.45.67.89:27017', 'sacred')
+        ('123.45.67.89:27017', 'sacred', '')
 
 
 def test_parse_mongo_db_arg_hostname_dbname():
     assert _parse_mongo_db_arg('localhost:28017:foo') == \
-        ('localhost:28017', 'foo')
+        ('localhost:28017', 'foo', '')
 
     assert _parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
-        ('www.mymongo.db:28017', 'bar')
+        ('www.mymongo.db:28017', 'bar', '')
 
     assert _parse_mongo_db_arg('123.45.67.89:27017:baz') == \
-        ('123.45.67.89:27017', 'baz')
+        ('123.45.67.89:27017', 'baz', '')
+
+
+def test_parse_mongo_db_arg_hostname_dbname_collection_name():
+    assert _parse_mongo_db_arg('localhost:28017:foo.bar') == \
+        ('localhost:28017', 'foo', 'bar')
+
+    assert _parse_mongo_db_arg('www.mymongo.db:28017:bar.baz') == \
+        ('www.mymongo.db:28017', 'bar', 'baz')
+
+    assert _parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
+        ('123.45.67.89:27017', 'baz', 'foo')
 
 
 @pytest.mark.parametrize("argv,expected", [
