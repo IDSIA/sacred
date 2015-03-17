@@ -1,20 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
+
+import os
 from collections import OrderedDict, defaultdict
 from copy import copy
-from sacred.config_scope import chain_evaluate_config_scopes
-from sacred.custom_containers import dogmatize
+
+from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
+                           load_config_file)
+from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
+from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
-from sacred.utils import (
-    get_seed, create_rnd, is_prefix, set_by_dotted_path, iterate_flattened,
-    iter_prefixes, iter_path_splits, create_basic_stream_logger, join_paths,
-    get_by_dotted_path, convert_to_nested_dict)
+from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
+                          get_by_dotted_path, is_prefix, iter_path_splits,
+                          iterate_flattened, set_by_dotted_path)
 
-
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class Scaffold(object):
@@ -35,6 +37,7 @@ class Scaffold(object):
         self._captured_functions = captured_functions
         self.commands = commands
         self.config_mods = None
+        self.summaries = []
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -47,7 +50,7 @@ class Scaffold(object):
             self.config['seed'] = self.seed
 
         if 'seed' in self.config and 'seed' in self.config_mods.added:
-            self.config_mods.updated.add('seed')
+            self.config_mods.modified.add('seed')
             self.config_mods.added -= {'seed'}
 
         # Hierarchically set the seed of proper subrunners
@@ -76,14 +79,21 @@ class Scaffold(object):
         self.config = {}
 
         # named configs first
-        self.config_updates = chain_evaluate_config_scopes(
-            [self.named_configs[n] for n in self.named_configs_to_use],
+        cfg_list = []
+        for ncfg in self.named_configs_to_use:
+            if os.path.exists(ncfg):
+                cfg_list.append(ConfigDict(load_config_file(ncfg)))
+            else:
+                cfg_list.append(self.named_configs[ncfg])
+
+        self.config_updates, _ = chain_evaluate_config_scopes(
+            cfg_list,
             fixed=self.config_updates,
             preset=self.config,
             fallback=const_fallback)
 
         # unnamed (default) configs second
-        self.config = chain_evaluate_config_scopes(
+        self.config, self.summaries = chain_evaluate_config_scopes(
             self.config_scopes,
             fixed=self.config_updates,
             preset=self.config,
@@ -92,16 +102,9 @@ class Scaffold(object):
         self.get_config_modifications()
 
     def get_config_modifications(self):
-        typechanges = {}
-        added = {p for k, _ in iterate_flattened(self.config_updates)
-                 for p in iter_prefixes(k)}
-        updated = set()
-        for config in self.config_scopes:
-            added &= config.added_values
-            typechanges.update(config.typechanges)
-            updated |= config.modified
-
-        self.config_mods = ConfigModifications(added, updated, typechanges)
+        self.config_mods = ConfigSummary()
+        for cfg_summary in self.summaries:
+            self.config_mods.update_from(cfg_summary)
 
     def get_fixture(self):
         if self.fixture is not None:
@@ -137,7 +140,7 @@ class Scaffold(object):
         for add in sorted(self.config_mods.added):
             self.logger.warning('Added new config entry: "%s"' % add)
 
-        for key, (type_old, type_new) in self.config_mods.typechanges.items():
+        for key, (type_old, type_new) in self.config_mods.typechanged.items():
             if (isinstance(type_old, type(None)) or
                     (type_old in (int, float) and type_new in (int, float))):
                 continue
@@ -145,8 +148,8 @@ class Scaffold(object):
                 'Changed type of config entry "%s" from %s to %s' %
                 (key, type_old.__name__, type_new.__name__))
 
-        for config in self.config_scopes:
-            for key in config.ignored_fallback_writes:
+        for cfg_summary in self.summaries:
+            for key in cfg_summary.ignored_fallbacks:
                 self.logger.warning(
                     'Ignored attempt to set value of "%s", because it is an '
                     'ingredient.' % key
@@ -179,10 +182,14 @@ def distribute_config_updates(scaffolding, config_updates):
 
 def distribute_named_configs(scaffolding, named_configs):
     for ncfg in named_configs:
-        path, _, cfg_name = ncfg.rpartition('.')
-        if path not in scaffolding:
-            raise KeyError('Ingredient for named config "%s" not found' % ncfg)
-        scaffolding[path].named_configs_to_use.append(cfg_name)
+        if os.path.exists(ncfg):
+            scaffolding[''].named_configs_to_use.append(ncfg)
+        else:
+            path, _, cfg_name = ncfg.rpartition('.')
+            if path not in scaffolding:
+                raise KeyError('Ingredient for named config "{}" not found'
+                               .format(ncfg))
+            scaffolding[path].named_configs_to_use.append(cfg_name)
 
 
 def initialize_logging(experiment, scaffolding, loglevel=None):
@@ -225,42 +232,13 @@ def create_scaffolding(experiment):
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
-    for ingredient, depth in ingredient.traverse_ingredients():
+    for ingredient, depth in ingredient._traverse_ingredients():
         sub_ingredients[ingredient] = max(sub_ingredients[ingredient], depth)
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
-class ConfigModifications():
-    def __init__(self, added=(), updated=(), typechanges=()):
-        self.added = set(added)
-        self.updated = set(updated)
-        self.typechanges = dict(typechanges)
-        self.ensure_coherence()
-
-    def update_from(self, config_mod, path=''):
-        added = config_mod.added
-        updated = config_mod.updated
-        typechanges = config_mod.typechanges
-        self.added |= {join_paths(path, a) for a in added}
-        self.updated |= {join_paths(path, u) for u in updated}
-        self.typechanges.update({join_paths(path, k): v
-                                 for k, v in typechanges.items()})
-        self.ensure_coherence()
-
-    def ensure_coherence(self):
-        # make sure parent paths show up as updated appropriately
-        self.updated |= {p for a in self.added for p in iter_prefixes(a)}
-        self.updated |= {p for u in self.updated for p in iter_prefixes(u)}
-        self.updated |= {p for t in self.typechanges for p in iter_prefixes(t)}
-
-        # make sure there is no overlap
-        self.added -= set(self.typechanges.keys())
-        self.updated -= set(self.typechanges.keys())
-        self.updated -= self.added
-
-
 def get_config_modifications(scaffolding):
-    config_modifications = ConfigModifications()
+    config_modifications = ConfigSummary()
     for sc_path, scaffold in scaffolding.items():
         config_modifications.update_from(scaffold.config_mods, path=sc_path)
     return config_modifications
@@ -284,7 +262,6 @@ def get_command(scaffolding, command_path):
 def create_run(experiment, command_name, config_updates=None, log_level=None,
                named_configs=()):
     scaffolding = create_scaffolding(experiment)
-    logger = initialize_logging(experiment, scaffolding, log_level)
 
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)
@@ -296,20 +273,15 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
-
     config_modifications = get_config_modifications(scaffolding)
 
-    # only get experiment and host info if there are observers
-    if experiment.observers:
-        experiment_info = experiment.get_info()
-        host_info = get_host_info()
-    else:
-        experiment_info = host_info = dict()
-
+    experiment_info = experiment._get_info()
+    host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
 
+    logger = initialize_logging(experiment, scaffolding, log_level)
     run = Run(config, config_modifications, main_function,
-              experiment.observers, logger, experiment.name, experiment_info,
+              experiment.observers, logger, experiment_info,
               host_info)
 
     for scaffold in scaffolding.values():

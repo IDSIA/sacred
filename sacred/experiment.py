@@ -1,51 +1,57 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict
+
 import inspect
 import os.path
 import sys
+from collections import OrderedDict
 
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
-from sacred.captured_function import create_captured_function
-from sacred.commands import print_config
-from sacred.config_scope import ConfigScope, ConfigDict
-from sacred.host_info import get_dependencies, fill_missing_versions
+from sacred.commands import print_config, print_dependencies
+from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
+                           load_config_file)
+from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
+                                 Source, gather_sources_and_dependencies)
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
 
-
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class CircularDependencyError(Exception):
-    pass
+
+    """The ingredients of the current experiment form a circular dependency."""
 
 
 class Ingredient(object):
-    def __init__(self, path, ingredients=(), gen_seed=False,
-                 caller_globals=None):
+
+    """
+    Ingredients are reusable parts of experiments.
+
+    Each Ingredient can have its own configuration (visible as an entry in the
+    parents configuration), named configurations, captured functions and
+    commands.
+
+    Ingredients can themselves use ingredients.
+    """
+
+    def __init__(self, path, ingredients=(), _generate_seed=False,
+                 _caller_globals=None):
         self.path = path
         self.cfgs = []
         self.named_configs = dict()
         self.ingredients = list(ingredients)
-        self.gen_seed = gen_seed
+        self.gen_seed = _generate_seed
         self.captured_functions = []
         self._is_traversing = False
         self.commands = OrderedDict()
         # capture some context information
-        caller_globals = caller_globals or inspect.stack()[1][0].f_globals
-        self.doc = caller_globals.get('__doc__') or ""
-        self.mainfile = caller_globals.get('__file__') or ""
-        if self.mainfile:
-            self.mainfile = os.path.abspath(self.mainfile)
-            if self.mainfile.endswith('.pyc'):
-                non_compiled_mainfile = self.mainfile[:-1]
-                if os.path.exists(non_compiled_mainfile):
-                    self.mainfile = non_compiled_mainfile
-
-        self.dependencies = get_dependencies(caller_globals)
+        _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
+        self.doc = _caller_globals.get('__doc__', "")
+        self.sources, self.dependencies = \
+            gather_sources_and_dependencies(_caller_globals)
+        self.current_run = None
 
     # =========================== Decorators ==================================
     def command(self, function=None, prefix=None):
@@ -53,9 +59,12 @@ class Ingredient(object):
         Decorator to define a new command for this Ingredient or Experiment.
 
         The name of the command will be the name of the function. It can be
-        called from the commandline or by using the run_command function.
+        called from the command-line or by using the run_command function.
 
         Commands are automatically also captured functions.
+
+        The command can be given a prefix, to restrict its configuration space
+        to a subtree. (see ``capture`` for more information)
         """
         def _command(func):
             captured_f = self.capture(func, prefix=prefix)
@@ -69,29 +78,25 @@ class Ingredient(object):
 
     def config(self, function):
         """
-        Decorator to turn a function into a ConfigScope and add it to the
+        Decorator to add a function to the configuration of the Experiment.
+
+        The decorated function is turned into a
+        :class:`~sacred.config_scope.ConfigScope` and added to the
         Ingredient/Experiment.
+
+        When the experiment is run, this function will also be executed and
+        all json-serializable local variables inside it will end up as entries
+        in the configuration of the experiment.
         """
         self.cfgs.append(ConfigScope(function))
         return self.cfgs[-1]
 
-    def add_config(self, cfg=None, **kw_conf):
-        # TODO: write documentation for this function
-        if cfg is not None and kw_conf:
-            raise ValueError("cannot combine keyword config with "
-                             "positional argument")
-        if cfg is None:
-            if not kw_conf:
-                raise ValueError("attempted to add empty config")
-            self.cfgs.append(ConfigDict(kw_conf))
-        elif inspect.isfunction(cfg):
-            self.config(cfg)
-        elif isinstance(cfg, dict):
-            self.cfgs.append(ConfigDict(cfg))
-        else:
-            raise TypeError("Invalid argument type {}".format(type(cfg)))
-
     def named_config(self, func):
+        """
+        Decorator to turn a function into a named configuration.
+
+        See :ref:`named_configurations`.
+        """
         config_scope = ConfigScope(func)
         self.named_configs[func.__name__] = config_scope
         return config_scope
@@ -99,6 +104,13 @@ class Ingredient(object):
     def capture(self, function=None, prefix=None):
         """
         Decorator to turn a function into a captured function.
+
+        The missing arguments of captured functions are automatically filled
+        from the configuration if possible.
+        See :ref:`captured_functions` for more information.
+
+        If a ``prefix`` is specified, the search for suitable
+        entries is performed in the corresponding subtree of the configuration.
         """
         def _capture(func):
             if func in self.captured_functions:
@@ -112,48 +124,144 @@ class Ingredient(object):
         else:
             return _capture
 
-    # ======================== protected helpers ==============================
-    def traverse_ingredients(self):
+    # =========================== Public Interface ============================
+
+    def add_config(self, cfg=None, **kw_conf):
+        """
+        Add a configuration entry to this ingredient/experiment.
+
+        Can be called either with a dictionary or with keyword arguments.
+
+        The dictionary or the keyword arguments will be converted into a
+        :class:`~sacred.config_scope.ConfigDict`.
+
+        :param cfg: Configuration dictionary to add to this
+                    ingredient/experiment.
+        :type cfg: dict
+        :param kw_conf: Configuration entries to be added to this
+                        ingredient/experiment.
+        """
+        if cfg is not None and kw_conf:
+            raise ValueError("cannot combine keyword config with "
+                             "positional argument")
+        if cfg is None:
+            if not kw_conf:
+                raise ValueError("attempted to add empty config")
+            self.cfgs.append(ConfigDict(kw_conf))
+        elif isinstance(cfg, dict):
+            self.cfgs.append(ConfigDict(cfg))
+        else:
+            raise TypeError("Invalid argument type {}".format(type(cfg)))
+
+    def add_config_file(self, filename):
+        """
+        Read and add a configuration file to the configuration.
+
+        Supported formats so far are: ``json``, ``pickle`` and ``yaml``.
+
+        :param filename: The filename of the configuration file to be loaded.
+                         Has to have the appropriate file-ending.
+        :type filename: str
+        """
+        if not os.path.exists(filename):
+            raise IOError('File not found {}'.format(filename))
+        abspath = os.path.abspath(filename)
+        conf_dict = load_config_file(abspath)
+        self.add_config(conf_dict)
+
+    def add_source_file(self, filename):
+        """
+        Add a file as source dependency to this experiment/ingredient.
+
+        :param filename: filename of the source to be added as dependency
+        :type filename: str
+        """
+        self.sources.add(Source.create(filename))
+
+    def add_package_dependency(self, package_name, version):
+        """
+        Add a package to the list of dependencies.
+
+        :param package_name: The name of the package dependency
+        :type package_name: str
+        :param version: The (minimum) version of the package
+        :type version: str
+        """
+        if not PEP440_VERSION_PATTERN.match(version):
+            raise ValueError('Invalid Version: "{}"'.format(version))
+        self.dependencies.add(PackageDependency(package_name, version))
+
+    # ======================== Private Helpers ================================
+
+    def _traverse_ingredients(self):
         if self._is_traversing:
             raise CircularDependencyError()
         else:
             self._is_traversing = True
         yield self, 0
         for ingredient in self.ingredients:
-            for ingred, depth in ingredient.traverse_ingredients():
+            for ingred, depth in ingredient._traverse_ingredients():
                 yield ingred, depth + 1
         self._is_traversing = False
 
-    def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), loglevel=None):
+    def create_run_for_command(self, command_name, config_updates=None,
+                               named_configs_to_use=(), loglevel=None):
         run = create_run(self, command_name, config_updates,
                          log_level=loglevel,
                          named_configs=named_configs_to_use)
-        run.logger.info("Running command '%s'" % command_name)
-        return run()
+        return run
 
-    def gather_commands(self):
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), loglevel=None):
+        run = self.create_run_for_command(
+            command_name, config_updates, named_configs_to_use, loglevel)
+        self.current_run = run
+        self.current_run.logger.info("Running command '%s'" % command_name)
+        run()
+        self.current_run = None
+        return run
+
+    def _gather_commands(self):
         for cmd_name, cmd in self.commands.items():
             yield self.path + '.' + cmd_name, cmd
 
         for ingred in self.ingredients:
-            for cmd_name, cmd in ingred.gather_commands():
+            for cmd_name, cmd in ingred._gather_commands():
                 yield cmd_name, cmd
 
 
 class Experiment(Ingredient):
+
+    """
+    The central class for each experiment in Sacred.
+
+    It manages the configuration, the main function, captured methods,
+    observers, commands, and further ingredients.
+
+    An Experiment instance should be created as one of the first
+    things in any experiment-file.
+    """
+
     def __init__(self, name, ingredients=()):
+        """
+        Create a new experiment with the given name and optional ingredients.
+
+        :param name: name of this experiment
+        :type name: str
+        :param ingredients: a list of ingredients to be used with this
+                            experiment.
+        """
         caller_globals = inspect.stack()[1][0].f_globals
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
-                                         gen_seed=True,
-                                         caller_globals=caller_globals)
+                                         _generate_seed=True,
+                                         _caller_globals=caller_globals)
         self.name = name
         self.default_command = None
         self.logger = None
         self.observers = []
         self.command(print_config)
-        self.info = None
+        self.command(print_dependencies)
 
     # =========================== Decorators ==================================
 
@@ -163,6 +271,8 @@ class Experiment(Ingredient):
 
         The main function of an experiment is the default command that is being
         run when no command is specified, or when calling the run() method.
+
+        Usually it is more convenient to use ``automain`` instead.
         """
         captured = self.command(function)
         self.default_command = captured.__name__
@@ -170,19 +280,14 @@ class Experiment(Ingredient):
 
     def automain(self, function):
         """
-        Decorator that defines the main function of the experiment and
-        automatically runs the experiment commandline when the file is
-        executed.
+        Decorator that defines *and runs* the main function of the experiment.
 
-        The method decorated by this should be last in the file because:
+        The decorated function is marked as the default command for this
+        experiment, and the command-line interface is automatically run when
+        the file is executed.
 
-        .. code-block:: python
-
-            @ex.automain
-            def my_main():
-                pass
-
-        is equivalent to:
+        The method decorated by this should be last in the file because is
+        equivalent to:
 
         .. code-block:: python
 
@@ -198,15 +303,7 @@ class Experiment(Ingredient):
             self.run_commandline()
         return captured
 
-    # =========================== public interface ============================
-
-    def get_info(self):
-        fill_missing_versions(self.dependencies)
-
-        return dict(
-            mainfile=self.mainfile,
-            dependencies=self.dependencies.items(),
-            doc=self.doc)
+    # =========================== Public Interface ============================
 
     def run(self, config_updates=None, named_configs=(), loglevel=None):
         """
@@ -216,7 +313,7 @@ class Experiment(Ingredient):
                                dictionary
         :type config_updates: dict
         :param named_configs: list of names of named_configs to use
-        :type named_configs: list
+        :type named_configs: list[str]
         :param loglevel: Changes to the log-level for this run.
         :type loglevel: int | str
 
@@ -228,9 +325,18 @@ class Experiment(Ingredient):
                                 loglevel=loglevel)
 
     def run_commandline(self, argv=None):
+        """
+        Run the command-line interface of this experiment.
+
+        If ``argv`` is omitted it defaults to ``sys.argv``.
+
+        :param argv: split command-line like ``sys.argv``.
+        :type argv: list[str]
+        :return: The result of the command that was run.
+        """
         if argv is None:
             argv = sys.argv
-        all_commands = self.gather_commands()
+        all_commands = self._gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
@@ -253,14 +359,47 @@ class Experiment(Ingredient):
                                     loglevel=loglevel)
         except:
             if args['--debug']:
-                raise
+                import traceback
+                import pdb
+                traceback.print_exception(*sys.exc_info())
+                pdb.post_mortem()
             else:
                 print_filtered_stacktrace()
 
-    def gather_commands(self):
+    def open_resource(self, filename):
+        assert self.current_run is not None, "Can only be called during a run."
+        return self.current_run.open_resource(filename)
+
+    def add_artifact(self, filename):
+        assert self.current_run is not None, "Can only be called during a run."
+        return self.current_run.add_artifact(filename)
+
+    @property
+    def info(self):
+        return self.current_run.info
+
+    # =========================== Private Helpers =============================
+
+    def _gather_commands(self):
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
 
         for ingred in self.ingredients:
-            for cmd_name, cmd in ingred.gather_commands():
+            for cmd_name, cmd in ingred._gather_commands():
                 yield cmd_name, cmd
+
+    def _get_info(self):
+        dependencies = set()
+        sources = set()
+        for ing, _ in self._traverse_ingredients():
+            dependencies |= ing.dependencies
+            sources |= ing.sources
+
+        for dep in dependencies:
+            dep.fill_missing_version()
+
+        return dict(
+            name=self.name,
+            sources=[s.to_tuple() for s in sorted(sources)],
+            dependencies=[d.to_tuple() for d in sorted(dependencies)],
+            doc=self.doc)

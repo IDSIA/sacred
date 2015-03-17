@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+import sacred.optional as opt
 from sacred.utils import join_paths
 
-
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class FallbackDict(dict):
-    """
-    This dictionary either returns the value assigned to a given key or it
-    returns the value for that key from the fallback dict.
-    """
+
+    """Dictionary that defaults to a fallback dict for missing keys."""
+
     def __init__(self, fallback, **kwargs):
         super(FallbackDict, self).__init__(**kwargs)
         self.fallback = fallback
@@ -249,8 +249,8 @@ except NameError:
 
 # if numpy is available we also want to ignore typechanges from numpy
 # datatypes to the corresponding python datatype
-try:
-    import numpy as np
+if opt.has_numpy:
+    from sacred.optional import np
     NP_FLOATS = [np.float, np.float16, np.float32, np.float64, np.float128]
     for npf in NP_FLOATS:
         SIMPLIFY_TYPE[npf] = float
@@ -261,31 +261,7 @@ try:
         SIMPLIFY_TYPE[npi] = int
 
     SIMPLIFY_TYPE[np.bool_] = bool
-except ImportError:
-    pass
 
 
 def type_changed(old_type, new_type):
     return SIMPLIFY_TYPE[type(old_type)] != SIMPLIFY_TYPE[type(new_type)]
-
-
-def dogmatize(obj):
-    if isinstance(obj, dict):
-        return DogmaticDict({key: dogmatize(val) for key, val in obj.items()})
-    elif isinstance(obj, list):
-        return DogmaticList([dogmatize(value) for value in obj])
-    elif isinstance(obj, tuple):
-        return tuple(dogmatize(value) for value in obj)
-    else:
-        return obj
-
-
-def undogmatize(obj):
-    if isinstance(obj, DogmaticDict):
-        return dict({key: undogmatize(value) for key, value in obj.items()})
-    elif isinstance(obj, DogmaticList):
-        return list([undogmatize(value) for value in obj])
-    elif isinstance(obj, tuple):
-        return tuple(undogmatize(value) for value in obj)
-    else:
-        return obj

@@ -63,7 +63,7 @@ dataset ingredient::
         normalize = True
     INFO - my_experiment - Completed after 0:00:00
 
-And we could of course set these parameters from the commandline using
+And we could of course set these parameters from the command-line using
 ``with 'dataset.filename="other.npy" 'dataset.normalize=False'``.
 
 Overwriting the Default Configuration

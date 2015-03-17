@@ -1,12 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
-from sacred.utils import (recursive_update, iterate_flattened_separately,
-                          iterate_flattened, set_by_dotted_path,
-                          get_by_dotted_path, iter_path_splits, iter_prefixes,
-                          join_paths, is_prefix, convert_to_nested_dict,
-                          PATHCHANGE)
+
+import pytest
+from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
+                          get_by_dotted_path, is_prefix, is_subdir,
+                          iter_path_splits, iter_prefixes, iterate_flattened,
+                          iterate_flattened_separately, join_paths,
+                          recursive_update, set_by_dotted_path)
 
 
 def test_recursive_update():
@@ -54,8 +55,8 @@ def test_get_by_dotted_path():
 
 def test_iter_path_splits():
     assert list(iter_path_splits('foo.bar.baz')) ==\
-        [('',        'foo.bar.baz'),
-         ('foo',     'bar.baz'),
+        [('', 'foo.bar.baz'),
+         ('foo', 'bar.baz'),
          ('foo.bar', 'baz')]
 
 
@@ -91,6 +92,24 @@ def test_convert_to_nested_dict():
 
 
 def test_convert_to_nested_dict_nested():
-    dotted_dict = {'a.b': {'foo.bar': 8},  'a.b.foo.baz': 7}
+    dotted_dict = {'a.b': {'foo.bar': 8}, 'a.b.foo.baz': 7}
     assert convert_to_nested_dict(dotted_dict) == \
         {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}
+
+
+@pytest.mark.parametrize('path,parent,expected', [
+    ('/var/test2', '/var/test', False),
+    ('/var/test', '/var/test2', False),
+    ('var/test2', 'var/test', False),
+    ('var/test', 'var/test2', False),
+    ('/var/test/sub', '/var/test', True),
+    ('/var/test', '/var/test/sub', False),
+    ('var/test/sub', 'var/test', True),
+    ('var/test', 'var/test', True),
+    ('var/test', 'var/test/fake_sub/..', True),
+    ('var/test/sub/sub2/sub3/../..', 'var/test', True),
+    ('var/test/sub', 'var/test/fake_sub/..', True),
+    ('var/test', 'var/test/sub', False)
+])
+def test_is_subdirectory(path, parent, expected):
+    assert is_subdir(path, parent) == expected

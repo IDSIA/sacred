@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from collections import OrderedDict
+
 import inspect
+from collections import OrderedDict
 
-
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class Signature(object):
+
     """
-    Contains information about the signature of a function.
+    Extracts and stores information about the signature of a function.
+
     name : the functions name
     arguments : list of all arguments
     vararg_name : name of the *args variable
@@ -18,6 +20,7 @@ class Signature(object):
     positional_args : list of all positional-only arguments
     kwargs : dict of all keyword arguments mapped to their default
     """
+
     def __init__(self, f):
         self.name = f.__name__
         args, vararg_name, kw_wildcard_name, defaults = inspect.getargspec(f)
@@ -33,7 +36,9 @@ class Signature(object):
 
     def construct_arguments(self, args, kwargs, options):
         """
-        Construct args list and kwargs dictionary for this signature such that:
+        Construct args list and kwargs dictionary for this signature.
+
+        They are created such that:
           - the original explicit call arguments (args, kwargs) are preserved
           - missing arguments are filled in by name using options (if possible)
           - default arguments are overridden by options

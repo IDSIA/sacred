@@ -8,14 +8,14 @@ Experiment
 .. autoclass:: sacred.Experiment
     :members:
     :inherited-members:
-    :undoc-members:
+    :special-members: __init__
 
 Ingredient
 ==========
 
 .. autoclass:: sacred.Ingredient
     :members:
-    :undoc-members:
+    :special-members: __init__
 
 
 The Run Object
@@ -28,6 +28,12 @@ The Run Object
 ConfigScope
 ===========
 .. autoclass:: sacred.config_scope.ConfigScope
+    :members:
+    :undoc-members:
+
+ConfigDict
+==========
+.. autoclass:: sacred.config_scope.ConfigDict
     :members:
     :undoc-members:
 

@@ -14,7 +14,7 @@ Sacred
     :target: http://choosealicense.com/licenses/mit/
     :alt: MIT licensed
 
-.. image:: https://readthedocs.org/projects/sacred/badge/?version=latest
+.. image:: https://readthedocs.org/projects/sacred/badge/?version=latest&style=flat
     :target: http://sacred.readthedocs.org/
     :alt: ReadTheDocs
 
@@ -22,7 +22,7 @@ Sacred
     :target: https://travis-ci.org/Qwlouse/sacred
     :alt: Travis-CI Status
 
-.. image:: https://coveralls.io/repos/Qwlouse/sacred/badge.png
+.. image:: https://coveralls.io/repos/Qwlouse/sacred/badge.svg
     :target: https://coveralls.io/r/Qwlouse/sacred
     :alt: Coverage Report
 
@@ -30,7 +30,7 @@ Sacred
     :target: https://scrutinizer-ci.com/g/Qwlouse/sacred/
     :alt: Code Scrutinizer Quality
 
-.. image:: https://pypip.in/wheel/sacred/badge.png
+.. image:: https://pypip.in/wheel/sacred/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/sacred/
     :alt: Wheel Status
 
@@ -44,7 +44,7 @@ your actual experiment in order to:
 - save configurations for individual runs in a database
 - reproduce your results
 
-In Sacred we achieve this through the following main mechanisms:
+Sacred achieves this through the following main mechanisms:
 
 -  **ConfigScopes** A very convenient way of the local variables in a function
    to define the parameters your experiment uses.

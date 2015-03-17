@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
-from collections import namedtuple
+
 import pprint
 import pydoc
 import re
+from collections import namedtuple
 
-from sacred.utils import iterate_flattened_separately, PATHCHANGE
+from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 BLUE = '\033[94m'
 GREEN = '\033[92m'
@@ -18,8 +19,9 @@ ENDC = '\033[0m'
 
 def non_unicode_repr(objekt, context, maxlevels, level):
     """
-    Used to override the pprint format method in order to get rid of
-    unnecessary unicode prefixes. E.g.: 'John' instead of u'John'.
+    Used to override the pprint format method to get rid of unicode prefixes.
+
+    E.g.: 'John' instead of u'John'.
     """
     repr_string, isreadable, isrecursive = pprint._safe_repr(objekt, context,
                                                              maxlevels, level)
@@ -30,8 +32,8 @@ def non_unicode_repr(objekt, context, maxlevels, level):
 PRINTER = pprint.PrettyPrinter()
 PRINTER.format = non_unicode_repr
 
-ConfigEntry = namedtuple('ConfigEntry', 'key value added updated typechange')
-PathEntry = namedtuple('PathEntry', 'key added updated typechange')
+ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged')
+PathEntry = namedtuple('PathEntry', 'key added modified typechanged')
 
 
 def iterate_marked(cfg, config_mods):
@@ -40,24 +42,24 @@ def iterate_marked(cfg, config_mods):
             yield path, PathEntry(
                 key=path.rpartition('.')[2],
                 added=path in config_mods.added,
-                updated=path in config_mods.updated,
-                typechange=config_mods.typechanges.get(path))
+                modified=path in config_mods.modified,
+                typechanged=config_mods.typechanged.get(path))
         else:
             yield path, ConfigEntry(
                 key=path.rpartition('.')[2],
                 value=value,
                 added=path in config_mods.added,
-                updated=path in config_mods.updated,
-                typechange=config_mods.typechanges.get(path))
+                modified=path in config_mods.modified,
+                typechanged=config_mods.typechanged.get(path))
 
 
 def format_entry(entry):
     color = ""
-    if entry.typechange:
+    if entry.typechanged:
         color = RED
     elif entry.added:
         color = GREEN
-    elif entry.updated:
+    elif entry.modified:
         color = BLUE
     end = ENDC if color else ""
     if isinstance(entry, ConfigEntry):
@@ -83,9 +85,9 @@ def print_config(_run):
     Print the updated configuration and exit.
 
     Text is highlighted:
-      green:  value updated
+      green:  value modified
       blue:   value added
-      red:    value updated but type changed
+      red:    value modified but type changed
     """
     final_config = _run.config
     config_mods = _run.config_modifications
@@ -96,3 +98,14 @@ def help_for_command(command):
     help_text = pydoc.text.document(command)
     # remove backspaces
     return re.subn('.\\x08', '', help_text)[0]
+
+
+def print_dependencies(_run):
+    """Print the detected source-files and dependencies."""
+    print('Sources:')
+    for source, digest in _run.experiment_info['sources']:
+        print('  {:<43}  {}'.format(source, digest))
+
+    print('\nDependencies:')
+    for pack, version in _run.experiment_info['dependencies']:
+        print('  {:<20} >= {}'.format(pack, version))

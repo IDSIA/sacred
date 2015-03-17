@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from sacred.config_scope import ConfigScope
-from sacred.experiment import Ingredient, Experiment
+
+from sacred.config.config_scope import ConfigScope
+from sacred.experiment import Experiment, Ingredient
 
 
 def test_ingredient_config():
@@ -40,7 +41,7 @@ def test_experiment_run():
     def main():
         return 12
 
-    assert ex.run() == 12
+    assert ex.run().result == 12
 
 
 def test_experiment_run_access_subingredient():
@@ -57,7 +58,7 @@ def test_experiment_run_access_subingredient():
     def main(somemod):
         return somemod
 
-    r = ex.run()
+    r = ex.run().result
     assert r['a'] == 5
     assert r['b'] == 'foo'
 
@@ -80,4 +81,4 @@ def test_experiment_run_subingredient_function():
     def main():
         return get_answer()
 
-    assert ex.run() == 'foo'
+    assert ex.run().result == 'foo'

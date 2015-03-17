@@ -13,8 +13,9 @@ from sacred.commands import help_for_command
 from sacred.observers import MongoObserver
 from sacred.utils import set_by_dotted_path
 
+__sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ['parse_args', 'get_config_updates', 'get_observers']
+__all__ = ('parse_args', 'get_config_updates', 'get_observers')
 
 
 USAGE_TEMPLATE = """Usage:
@@ -29,10 +30,11 @@ Options:
   -h --help                Print this help message and exit
   -m DB --mongo_db=DB      Add a MongoDB Observer to the experiment
   -l LEVEL --logging=LEVEL Adjust the loglevel
-  -d --debug               Don't filter the stacktrace
+  -d --debug               Don't filter the stacktrace and automatically enter
+                           post-mortem debugging with pdb
 
 Arguments:
-  DB        Database specification. Can be [host:port:]db_name
+  DB        Database specification. Can be [host:port:]db_name[.prefix]
   UPDATE    Configuration assignments of the form foo.bar=17
   COMMAND   Custom command to run
   LEVEL     Loglevel either as 0 - 50 or as string:
@@ -40,7 +42,7 @@ Arguments:
 """
 
 
-DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}]{0,63}"
+DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
 HOSTNAME_PATTERN = \
     r"(?=.{1,255}$)"\
     r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
@@ -89,8 +91,13 @@ def get_config_updates(updates):
 def get_observers(args):
     observers = []
     if args['--mongo_db']:
-        url, db_name = _parse_mongo_db_arg(args['--mongo_db'])
-        mongo = MongoObserver(db_name=db_name, url=url)
+        url, db_name, prefix = _parse_mongo_db_arg(args['--mongo_db'])
+        if prefix:
+            mongo = MongoObserver.create(db_name=db_name, url=url,
+                                         prefix=prefix)
+        else:
+            mongo = MongoObserver.create(db_name=db_name, url=url)
+
         observers.append(mongo)
 
     return observers
@@ -99,7 +106,7 @@ def get_observers(args):
 def _format_usage(program_name, description, commands=None):
     usage = USAGE_TEMPLATE.format(
         program_name=program_name,
-        description=description.strip())
+        description=description.strip() if description else '')
 
     if commands:
         usage += "\nCommands:\n"
@@ -126,12 +133,14 @@ def _convert_value(value):
 
 def _parse_mongo_db_arg(mongo_db):
     if DB_NAME.match(mongo_db):
-        return 'localhost:27017', mongo_db
+        db_name, _, prefix = mongo_db.partition('.')
+        return 'localhost:27017', db_name, prefix
     elif URL.match(mongo_db):
-        return mongo_db, 'sacred'
+        return mongo_db, 'sacred', ''
     elif URL_DB_NAME.match(mongo_db):
         match = URL_DB_NAME.match(mongo_db)
-        return match.group('url'), match.group('db_name')
+        db_name, _, prefix = match.group('db_name').partition('.')
+        return match.group('url'), db_name, prefix
     else:
         raise ValueError('mongo_db argument must have the form "db_name" or '
                          '"host:port[:db_name]" but was %s' % mongo_db)

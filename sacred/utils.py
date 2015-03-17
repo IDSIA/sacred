@@ -1,22 +1,16 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 from __future__ import division, print_function, unicode_literals
+
 import collections
-from contextlib import contextmanager
 import logging
+import os.path
 import re
 import sys
 import traceback as tb
+from contextlib import contextmanager
 
-try:
-    from numpy.random import randint
-    from numpy.random import RandomState as Random
-except ImportError:
-    from random import randint
-    from random import Random
-
-__sacred__ = True  # marker for filtering stacktraces when run from commandline
+__sacred__ = True  # marks files that should be filtered from stack traces
 
 
 if sys.version_info[0] == 3:
@@ -27,7 +21,6 @@ else:
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
-SEEDRANGE = (1, 1e9)
 
 PATHCHANGE = object()
 
@@ -90,23 +83,13 @@ def tee_output():
     out.close()
 
 
-def get_seed(rnd=None):
-    if rnd is None:
-        return randint(*SEEDRANGE)
-    return rnd.randint(*SEEDRANGE)
-
-
-def create_rnd(seed):
-    assert isinstance(seed, int), "Seed has to be integer but was %s %s" % \
-                                  (repr(seed), type(seed))
-    return Random(seed)
-
-
 def iterate_flattened_separately(dictionary):
     """
-    Iterate over the items of a dictionary. First iterate over all items that
-    are non-dictionary values (sorted by keys), then over the rest
-    (sorted by keys), providing full dotted paths for every leaf.
+    Recursively iterate over the items of a dictionary in a special order.
+
+    First iterate over all items that are non-dictionary values
+    (sorted by keys), then over the rest (sorted by keys), providing full
+    dotted paths for every leaf.
     """
     single_line_keys = [key for key in dictionary.keys() if
                         not dictionary[key] or
@@ -120,27 +103,29 @@ def iterate_flattened_separately(dictionary):
     for key in sorted(multi_line_keys):
         yield key, PATHCHANGE
         for k, val in iterate_flattened_separately(dictionary[key]):
-            yield join_paths(key,  k), val
+            yield join_paths(key, k), val
 
 
 def iterate_flattened(d):
     """
-    Iterate over a dictionary recursively, providing full dotted
-    paths for every leaf.
+    Recursively iterate over the items of a dictionary.
+
+    Provides a full dotted paths for every leaf.
     """
     for key in sorted(d.keys()):
         value = d[key]
         if isinstance(value, dict):
             for k, v in iterate_flattened(d[key]):
-                yield join_paths(key,  k), v
+                yield join_paths(key, k), v
         else:
             yield key, value
 
 
 def set_by_dotted_path(d, path, value):
     """
-    Set an entry in a nested dict using a dotted path. Will create dictionaries
-    as needed.
+    Set an entry in a nested dict using a dotted path.
+
+    Will create dictionaries as needed.
 
     Examples:
     >>> d = {'foo': {'bar': 7}}
@@ -181,8 +166,9 @@ def get_by_dotted_path(d, path):
 
 def iter_path_splits(path):
     """
-    Iterate over possible splits of a dotted path. The first part can be empty
-    the second should not be.
+    Iterate over possible splits of a dotted path.
+
+    The first part can be empty the second should not be.
 
     Example:
     >>> list(iter_path_splits('foo.bar.baz'))
@@ -211,26 +197,19 @@ def iter_prefixes(path):
 
 
 def join_paths(*parts):
-    """
-    Join different parts together to a valid dotted path.
-    """
+    """Join different parts together to a valid dotted path."""
     return '.'.join(p.strip('.') for p in parts if p)
 
 
 def is_prefix(pre_path, path):
-    """
-    Returns True if pre_path is a path-prefix of path.
-    """
+    """Return True if pre_path is a path-prefix of path."""
     pre_path = pre_path.strip('.')
     path = path.strip('.')
     return not pre_path or path.startswith(pre_path + '.')
 
 
 def convert_to_nested_dict(dotted_dict):
-    """
-    Convert a dictionary where some of the keys might be dotted paths to the
-    corresponding nested dictionary.
-    """
+    """Convert a dict with dotted path keys to corresponding nested dict."""
     nested_dict = {}
     for k, v in iterate_flattened(dotted_dict):
         set_by_dotted_path(nested_dict, k, v)
@@ -239,11 +218,28 @@ def convert_to_nested_dict(dotted_dict):
 
 def print_filtered_stacktrace():
     exc_type, exc_value, exc_traceback = sys.exc_info()
-    print("Traceback (most recent calls WITHOUT sacred internals):",
-          file=sys.stderr)
+    # determine if last exception is from sacred
     current_tb = exc_traceback
-    while current_tb is not None:
-        if '__sacred__' not in current_tb.tb_frame.f_globals:
-            tb.print_tb(current_tb, 1)
+    while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
-    tb.print_exception(exc_type, exc_value, None)
+    if '__sacred__' in current_tb.tb_frame.f_globals:
+        print("Exception originated from within Sacred.\n"
+              "Traceback (most recent calls):", file=sys.stderr)
+        tb.print_tb(exc_traceback)
+        tb.print_exception(exc_type, exc_value, None)
+    else:
+        print("Traceback (most recent calls WITHOUT Sacred internals):",
+              file=sys.stderr)
+        current_tb = exc_traceback
+        while current_tb is not None:
+            if '__sacred__' not in current_tb.tb_frame.f_globals:
+                tb.print_tb(current_tb, 1)
+            current_tb = current_tb.tb_next
+        tb.print_exception(exc_type, exc_value, None)
+
+
+def is_subdir(path, directory):
+    path = os.path.abspath(os.path.realpath(path)) + os.sep
+    directory = os.path.abspath(os.path.realpath(directory)) + os.sep
+
+    return path.startswith(directory)

@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+# coding=utf-8
+from __future__ import division, print_function, unicode_literals
+
+import datetime
+
+import mock
+import mongomock
+import pytest
+from sacred.observers import MongoObserver
+
+T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
+T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+
+
+@pytest.fixture
+def mongo_obs():
+    db = mongomock.Connection().db
+    runs = db.runs
+    fs = mock.MagicMock()
+    return MongoObserver(runs, fs)
+
+
+def test_mongo_observer_started_event_creates_run(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    del db_run['_id']
+    assert db_run == {
+        'experiment': exp,
+        'host': host,
+        'start_time': T1,
+        'heartbeat': None,
+        'info': {},
+        'captured_out': '',
+        'artifacts': [],
+        'config': config,
+        'status': 'RUNNING',
+        'resources': []
+    }
+
+
+def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['heartbeat'] == T2
+    assert db_run['info'] == info
+    assert db_run['captured_out'] == outp
+
+
+def test_mongo_observer_completed_event_updates_run(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    mongo_obs.completed_event(stop_time=T2, result=42)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['stop_time'] == T2
+    assert db_run['result'] == 42
+    assert db_run['status'] == 'COMPLETED'
+
+
+def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    mongo_obs.interrupted_event(interrupt_time=T2)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['stop_time'] == T2
+    assert db_run['status'] == 'INTERRUPTED'
+
+
+def test_mongo_observer_failed_event_updates_run(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    fail_trace = "lots of errors and\nso\non..."
+    mongo_obs.failed_event(fail_time=T2,
+                           fail_trace=fail_trace)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['stop_time'] == T2
+    assert db_run['status'] == 'FAILED'
+    assert db_run['fail_trace'] == fail_trace

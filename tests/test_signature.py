@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import re
+
 import pytest
-from sacred.signature import Signature
+from sacred.config.signature import Signature
 
 
 # #############  function definitions to test on ##############################

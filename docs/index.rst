@@ -46,11 +46,12 @@ Contents
    experiment
    configuration
    config_injection
-   commandline
+   command-line
    observers
    randomness
    logging
    ingredients
+   examples
    apidoc
 
 
