@@ -9,7 +9,7 @@ You can get Sacred directly from pypi like this::
 
 But you can of course also clone the git repo and install it from there::
 
-    git clone https://github.com/Qwlouse/sacred.git
+    git clone https://github.com/IDSIA/sacred.git
     cd sacred
     [sudo] python setup.py install
 

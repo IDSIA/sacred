@@ -10,4 +10,4 @@ __version__ = "0.6"
 __author__ = 'Klaus Greff'
 __author_email__ = 'qwlouse@gmail.com'
 
-__url__ = "https://github.com/Qwlouse/sacred"
+__url__ = "https://github.com/IDSIA/sacred"

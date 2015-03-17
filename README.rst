@@ -18,16 +18,16 @@ Sacred
     :target: http://sacred.readthedocs.org/
     :alt: ReadTheDocs
 
-.. image:: https://travis-ci.org/Qwlouse/sacred.svg
-    :target: https://travis-ci.org/Qwlouse/sacred
+.. image:: https://travis-ci.org/IDSIA/sacred.svg
+    :target: https://travis-ci.org/IDSIA/sacred
     :alt: Travis-CI Status
 
-.. image:: https://coveralls.io/repos/Qwlouse/sacred/badge.svg
-    :target: https://coveralls.io/r/Qwlouse/sacred
+.. image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
+    :target: https://coveralls.io/r/IDSIA/sacred
     :alt: Coverage Report
 
-.. image:: https://scrutinizer-ci.com/g/Qwlouse/sacred/badges/quality-score.png?b=master
-    :target: https://scrutinizer-ci.com/g/Qwlouse/sacred/
+.. image:: https://scrutinizer-ci.com/g/IDSIA/sacred/badges/quality-score.png?b=master
+    :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
 .. image:: https://pypip.in/wheel/sacred/badge.svg?style=flat
@@ -73,7 +73,7 @@ You can directly install it from the Python Package Index with pip:
 Or if you want to do it manually you can checkout the current version from git
 and install it yourself:
 
-   | git clone https://github.com/Qwlouse/sacred.git
+   | git clone https://github.com/IDSIA/sacred.git
    | cd sacred
    | python setup.py install
 
