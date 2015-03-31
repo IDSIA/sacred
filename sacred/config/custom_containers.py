@@ -251,14 +251,16 @@ except NameError:
 # datatypes to the corresponding python datatype
 if opt.has_numpy:
     from sacred.optional import np
-    NP_FLOATS = [np.float, np.float16, np.float32, np.float64, np.float128]
+    NP_FLOATS = ['float', 'float16', 'float32', 'float64', 'float128']
     for npf in NP_FLOATS:
-        SIMPLIFY_TYPE[npf] = float
+        if hasattr(np, npf):
+            SIMPLIFY_TYPE[getattr(np, npf)] = float
 
-    NP_INTS = [np.int, np.int8, np.int16, np.int32, np.int64,
-               np.uint8, np.uint16, np.uint32, np.uint64]
+    NP_INTS = ['int', 'int8', 'int16', 'int32', 'int64',
+               'uint', 'uint8', 'uint16', 'uint32', 'uint64']
     for npi in NP_INTS:
-        SIMPLIFY_TYPE[npi] = int
+        if hasattr(np, npi):
+            SIMPLIFY_TYPE[getattr(np, npi)] = int
 
     SIMPLIFY_TYPE[np.bool_] = bool
 
