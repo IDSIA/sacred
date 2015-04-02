@@ -14,14 +14,9 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
 from sacred.initialize import create_run
-from sacred.utils import print_filtered_stacktrace
+from sacred.utils import print_filtered_stacktrace, CircularDependencyError
 
 __sacred__ = True  # marks files that should be filtered from stack traces
-
-
-class CircularDependencyError(Exception):
-
-    """The ingredients of the current experiment form a circular dependency."""
 
 
 class Ingredient(object):

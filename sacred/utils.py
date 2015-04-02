@@ -27,6 +27,17 @@ PATHCHANGE = object()
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z][_a-zA-Z0-9]*$")
 
 
+class CircularDependencyError(Exception):
+
+    """The ingredients of the current experiment form a circular dependency."""
+
+
+class ObserverError(Exception):
+
+    """Error that an observer raises but that should not make the run fail."""
+
+
+
 def create_basic_stream_logger(name, level=None):
     level = level if level is not None else logging.INFO
     logger = logging.getLogger(name)

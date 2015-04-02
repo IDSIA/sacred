@@ -11,10 +11,11 @@ import bson
 import gridfs
 import pymongo
 import sacred.optional as opt
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, InvalidDocument
 from pymongo.son_manipulator import SONManipulator
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.utils import ObserverError
 
 SON_MANIPULATORS = []
 
@@ -71,6 +72,9 @@ class MongoObserver(RunObserver):
             self.runs.save(self.run_entry)
         except AutoReconnect:
             pass  # just wait for the next save
+        except InvalidDocument:
+            raise ObserverError('Run contained an unserializable entry.'
+                                '(most likely in the info)')
 
     def final_save(self, attempts=10):
         for i in range(attempts):
@@ -80,6 +84,16 @@ class MongoObserver(RunObserver):
             except AutoReconnect:
                 if i < attempts - 1:
                     time.sleep(1)
+            except InvalidDocument:
+                # The result might be the problematic entry so lets try
+                # turning it into a string
+                if 'result' in self.run_entry and \
+                        not isinstance(self.run_entry['result'], str):
+                    self.run_entry['result'] = str(self.run_entry['result'])
+                else:
+                    raise ObserverError("Couldn't save the final data."
+                                        "Some entry of the run was not "
+                                        "serializable. (probably the info)")
 
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(suffix='.pickle', delete=False,
