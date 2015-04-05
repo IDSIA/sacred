@@ -51,6 +51,33 @@ if opt.has_numpy:
     SON_MANIPULATORS.append(PickleNumpyArrays())
 
 
+def force_valid_bson_key(key):
+    key = str(key)
+    if key.startswith('$'):
+        key = '@' + key[1:]
+    key = key.replace('.', ',')
+    return key
+
+
+def force_bson_encodeable(obj):
+    if isinstance(obj, dict):
+        try:
+            bson.BSON.encode(obj, check_keys=True)
+            return obj
+        except bson.InvalidDocument:
+            return {force_valid_bson_key(k): force_bson_encodeable(v)
+                    for k, v in obj.items()}
+
+    elif opt.has_numpy and isinstance(obj, opt.np.ndarray):
+        return obj
+    else:
+        try:
+            bson.BSON.encode({'dict_just_for_testing': obj})
+            return obj
+        except bson.InvalidDocument:
+            return str(obj)
+
+
 class MongoObserver(RunObserver):
     @staticmethod
     def create(url='localhost', db_name='sacred', prefix='default', **kwargs):
@@ -85,21 +112,17 @@ class MongoObserver(RunObserver):
                 if i < attempts - 1:
                     time.sleep(1)
             except InvalidDocument:
-                # The result might be the problematic entry so lets try
-                # turning it into a string
-                if 'result' in self.run_entry and \
-                        not isinstance(self.run_entry['result'], str):
-                    self.run_entry['result'] = str(self.run_entry['result'])
-                else:
-                    raise ObserverError("Couldn't save the final data."
-                                        "Some entry of the run was not "
-                                        "serializable. (probably the info)")
+                self.run_entry = force_bson_encodeable(self.run_entry)
+                print("Warning: Some of the entries of the run were not "
+                      "BSON-serializable!\n They have been altered such that "
+                      "they can be stored, but you should fix your experiment!"
+                      "Most likely it is either the 'info' or the 'result'.",
+                      file=sys.stderr)
 
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(suffix='.pickle', delete=False,
                                 prefix='sacred_mongo_fail_') as f:
             pickle.dump(self.run_entry, f)
-
             print("Warning: saving to MongoDB failed! "
                   "Stored experiment entry in '%s'" % f.name,
                   file=sys.stderr)
