@@ -37,7 +37,6 @@ class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
 
 
-
 def create_basic_stream_logger(name, level=None):
     level = level if level is not None else logging.INFO
     logger = logging.getLogger(name)

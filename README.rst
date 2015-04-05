@@ -6,6 +6,10 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
+    :target: http://dx.doi.org/10.5281/zenodo.16386
+    :alt: DOI for this release
+
 .. image:: http://img.shields.io/pypi/v/sacred.png
     :target: https://pypi.python.org/pypi/sacred
     :alt: Current PyPi Version
