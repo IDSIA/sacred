@@ -8,9 +8,12 @@ import mock
 import mongomock
 import pytest
 from sacred.observers import MongoObserver
+from sacred.observers.mongo import force_bson_encodeable
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+
+pymongo = pytest.importorskip("pymongo")
 
 
 @pytest.fixture
@@ -106,3 +109,43 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs):
     assert db_run['stop_time'] == T2
     assert db_run['status'] == 'FAILED'
     assert db_run['fail_trace'] == fail_trace
+
+
+def test_force_bson_encodable_doesnt_change_valid_document():
+    d = {'int': 1, 'string': 'foo', 'float': 23.87, 'list': ['a', 1, True],
+         'bool': True, 'cr4zy: _but_ [legal) Key!': '$illegal.key.as.value',
+         'datetime': datetime.datetime.now(), 'tuple': (1, 2.0, 'three'),
+         'none': None}
+    assert force_bson_encodeable(d) == d
+
+
+def test_force_bson_encodable_substitutes_illegal_value_with_strings():
+    d = {
+        'a_module': datetime,
+        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
+        'nested': {
+            'dict': {
+                'with': {
+                    'illegal_module': mock
+                }
+            }
+        },
+        '$illegal': 'because it starts with a $',
+        'il.legal': 'because it contains a .',
+        12.7: 'illegal because it is not a string key'
+    }
+    expected = {
+        'a_module': str(datetime),
+        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
+        'nested': {
+            'dict': {
+                'with': {
+                    'illegal_module': str(mock)
+                }
+            }
+        },
+        '@illegal': 'because it starts with a $',
+        'il,legal': 'because it contains a .',
+        '12,7': 'illegal because it is not a string key'
+    }
+    assert force_bson_encodeable(d) == expected

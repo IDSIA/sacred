@@ -9,7 +9,7 @@ import threading
 import traceback
 
 from sacred.randomness import set_global_seed
-from sacred.utils import tee_output
+from sacred.utils import tee_output, ObserverError
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -24,6 +24,7 @@ class Run(object):
         self.main_function = main_function
         self.config_modifications = config_modifications
         self._observers = observers
+        self._failed_observers = set()
         self.logger = logger
         self.experiment_info = experiment_info
         self.host_info = host_info
@@ -64,6 +65,8 @@ class Run(object):
                 self._stop_heartbeat()
                 self._emit_failed(exc_type, exc_value, trace.tb_next)
                 raise
+            finally:
+                self._warn_about_failed_observers()
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -80,27 +83,24 @@ class Run(object):
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
         for observer in self._observers:
-            try:
+            if hasattr(observer, 'started_event'):
                 observer.started_event(
                     ex_info=self.experiment_info,
                     host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config)
-            except AttributeError:
-                pass
+                # do not catch any exceptions on startup the experiment should
+                # fail if any of the observers fails
 
     def _emit_heatbeat(self):
         if self.start_time is None or self.stop_time is not None:
             return
         beat_time = datetime.datetime.now()
         for observer in self._observers:
-            try:
-                observer.heartbeat_event(
-                    info=self.info,
-                    captured_out=self.captured_out.getvalue(),
-                    beat_time=beat_time)
-            except AttributeError:
-                pass
+            self._safe_call(observer, 'heartbeat_event',
+                            info=self.info,
+                            captured_out=self.captured_out.getvalue(),
+                            beat_time=beat_time)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.now()
@@ -112,45 +112,54 @@ class Run(object):
         stop_time = self._stop_time()
         self.logger.info('Completed after %s' % self.elapsed_time)
         for observer in self._observers:
-            try:
-                observer.completed_event(
-                    stop_time=stop_time,
-                    result=result)
-            except AttributeError:
-                pass
+            self._final_call(self, observer, 'completed_event',
+                             stop_time=stop_time,
+                             result=result)
 
     def _emit_interrupted(self):
         interrupt_time = self._stop_time()
         self.logger.warning("Aborted after %s!" % self.elapsed_time)
         for observer in self._observers:
-            try:
-                observer.interrupted_event(
-                    interrupt_time=interrupt_time)
-            except AttributeError:
-                pass
+            self._final_call(self, observer, 'interrupted_event',
+                             interrupt_time=interrupt_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
         fail_time = self._stop_time()
         self.logger.error("Failed after %s!" % self.elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
         for observer in self._observers:
-            try:
-                observer.failed_event(
-                    fail_time=fail_time,
-                    fail_trace=fail_trace)
-            except:  # _emit_failed should never throw
-                pass
+            self._final_call(self, observer, 'failed_event',
+                             fail_time=fail_time,
+                             fail_trace=fail_trace)
 
     def _emit_resource_added(self, filename):
         for observer in self._observers:
-            try:
-                observer.resource_event(filename=filename)
-            except AttributeError:
-                pass
+            self._safe_call(observer, 'resource_event', filename=filename)
 
     def _emit_artifact_added(self, filename):
         for observer in self._observers:
+            self._safe_call(observer, 'artifact_event', filename=filename)
+
+    def _safe_call(self, obs, method, **kwargs):
+        if obs not in self._failed_observers and hasattr(obs, method):
             try:
-                observer.artifact_event(filename=filename)
-            except AttributeError:
-                pass
+                getattr(obs, method)(**kwargs)
+            except ObserverError as e:
+                self._failed_observers.add(obs)
+                self.logger.warning("An error ocurred in the '{}' "
+                                    "observer: {}".format(obs, e))
+
+    def _final_call(self, observer, method, **kwargs):
+        if hasattr(observer, method):
+            try:
+                getattr(observer, method)(**kwargs)
+            except Exception:
+                # Feels dirty to catch all exceptions, but it is just for
+                # finishing up, so we don't want one observer to kill the
+                # others
+                self.logger.error(traceback.format_exc())
+
+    def _warn_about_failed_observers(self):
+        for observer in self._failed_observers:
+            self.logger.warning("The observer '{}' failed at some point "
+                                "during the run.".format(observer))

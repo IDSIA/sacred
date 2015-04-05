@@ -13,6 +13,10 @@ class MissingDependencyMock(object):
         raise ImportError('Depends on missing "{}" package.'
                           .format(object.__getattribute__(self, 'depends_on')))
 
+    def __call__(self, *args, **kwargs):
+        raise ImportError('Depends on missing "{}" package.'
+                          .format(object.__getattribute__(self, 'depends_on')))
+
 
 try:
     import numpy as np

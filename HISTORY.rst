@@ -1,6 +1,16 @@
 Release History
 ---------------
 
+0.6.1 (2015-04-05)
+++++++++++++++++++
+* Bugfix: fixed a crash when some numpy datatypes were not present
+          (like numpy.float128)
+* Bugfix: Made MissingDependencyMock callable so it would also correctly
+          report the missing dependency when called
+* Bugfix: MongoObserver would just crash the experiment if the result or the
+          info are not serializable. Now it warns and tries to alter
+          problematic entries such that they can be stored.
+
 0.6 (2015-03-12)
 ++++++++++++++++
 * Feature: With the new ``add_artifact`` function files can be added to a run
