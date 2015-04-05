@@ -163,4 +163,3 @@ class Run(object):
         for observer in self._failed_observers:
             self.logger.warning("The observer '{}' failed at some point "
                                 "during the run.".format(observer))
-

@@ -13,6 +13,8 @@ from sacred.observers.mongo import force_bson_encodeable
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
+pymongo = pytest.importorskip("pymongo")
+
 
 @pytest.fixture
 def mongo_obs():
