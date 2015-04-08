@@ -188,7 +188,7 @@ class MongoObserver(RunObserver):
             head, tail = os.path.split(filename)
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(
-                self.run_entry['name'], run_id, tail)
+                self.run_entry['experiment']['name'], run_id, tail)
             file_id = self.fs.put(f, filename=db_filename)
         self.run_entry['artifacts'].append(file_id)
         self.save()
