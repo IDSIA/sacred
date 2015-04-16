@@ -1,6 +1,11 @@
 Release History
 ---------------
 
+0.6.2 (2015-04-16)
+++++++++++++++++++
+* Bugfix: fixed crash when using artifacts
+* Bugfix: added resources are now saved immediately
+
 0.6.1 (2015-04-05)
 ++++++++++++++++++
 * Bugfix: fixed a crash when some numpy datatypes were not present
