@@ -177,11 +177,13 @@ class MongoObserver(RunObserver):
                 resource = (filename, md5hash)
                 if resource not in self.run_entry['resources']:
                     self.run_entry['resources'].append(resource)
+                    self.save()
                 return
         with open(filename, 'rb') as f:
             file_id = self.fs.put(f, filename=filename)
         md5hash = self.fs.get(file_id).md5
         self.run_entry['resources'].append((filename, md5hash))
+        self.save()
 
     def artifact_event(self, filename):
         with open(filename, 'rb') as f:

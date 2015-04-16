@@ -7,6 +7,7 @@ import datetime
 import mock
 import mongomock
 import pytest
+from sacred.dependencies import get_digest
 from sacred.observers import MongoObserver
 from sacred.observers.mongo import force_bson_encodeable
 
@@ -109,6 +110,41 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs):
     assert db_run['stop_time'] == T2
     assert db_run['status'] == 'FAILED'
     assert db_run['fail_trace'] == fail_trace
+
+
+def test_mongo_observer_artifact_event(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    filename = "setup.py"
+
+    mongo_obs.artifact_event(filename)
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['filename'].endswith(filename)
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']
+
+
+def test_mongo_observer_resource_event(mongo_obs):
+    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
+    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
+    mongo_obs.started_event(exp, host, T1, config)
+
+    filename = "setup.py"
+    md5 = get_digest(filename)
+
+    mongo_obs.resource_event(filename)
+
+    assert mongo_obs.fs.exists.called
+    mongo_obs.fs.exists.assert_any_call(filename=filename)
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['resources'] == [(filename, md5)]
 
 
 def test_force_bson_encodable_doesnt_change_valid_document():
