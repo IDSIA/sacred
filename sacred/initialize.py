@@ -275,7 +275,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     config = get_configuration(scaffolding)
     config_modifications = get_config_modifications(scaffolding)
 
-    experiment_info = experiment._get_info()
+    experiment_info = experiment.get_experiment_info()
     host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
 

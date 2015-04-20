@@ -186,6 +186,31 @@ class Ingredient(object):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), log_level=None):
+        """ Run the command with the given name.
+
+        :param command_name: Name of the command to be run
+        :type command_name: str
+        :param config_updates: a dictionary of parameter values that should
+                               be updates (optional)
+        :type config_updates: dict
+        :param named_configs_to_use: list of names of named configurations to
+                                     use (optional)
+        :type named_configs_to_use: list[str]
+        :param log_level: the log-level to use for this run either as integers
+                         or strings (10 DEBUG - 50 CRITICAL)
+        :type log_level: int | str
+        :returns: whatever the command returned
+        """
+        run = self._create_run_for_command(
+            command_name, config_updates, named_configs_to_use, log_level)
+        self.current_run = run
+        self.current_run.logger.info("Running command '%s'" % command_name)
+        run()
+        self.current_run = None
+        return run
+
     # ======================== Private Helpers ================================
 
     def _traverse_ingredients(self):
@@ -199,21 +224,11 @@ class Ingredient(object):
                 yield ingred, depth + 1
         self._is_traversing = False
 
-    def create_run_for_command(self, command_name, config_updates=None,
-                               named_configs_to_use=(), loglevel=None):
+    def _create_run_for_command(self, command_name, config_updates=None,
+                                named_configs_to_use=(), log_level=None):
         run = create_run(self, command_name, config_updates,
-                         log_level=loglevel,
+                         log_level=log_level,
                          named_configs=named_configs_to_use)
-        return run
-
-    def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), loglevel=None):
-        run = self.create_run_for_command(
-            command_name, config_updates, named_configs_to_use, loglevel)
-        self.current_run = run
-        self.current_run.logger.info("Running command '%s'" % command_name)
-        run()
-        self.current_run = None
         return run
 
     def _gather_commands(self):
@@ -252,7 +267,7 @@ class Experiment(Ingredient):
                                          _generate_seed=True,
                                          _caller_globals=caller_globals)
         self.name = name
-        self.default_command = None
+        self.default_command = ""
         self.logger = None
         self.observers = []
         self.command(print_config)
@@ -314,10 +329,11 @@ class Experiment(Ingredient):
 
         :return: The result of the main function.
         """
+        assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
                                 named_configs_to_use=named_configs,
-                                loglevel=loglevel)
+                                log_level=loglevel)
 
     def run_commandline(self, argv=None):
         """
@@ -351,7 +367,7 @@ class Experiment(Ingredient):
             return self.run_command(cmd_name,
                                     config_updates=config_updates,
                                     named_configs_to_use=named_configs,
-                                    loglevel=loglevel)
+                                    log_level=loglevel)
         except:
             if args['--debug']:
                 import traceback
@@ -362,28 +378,67 @@ class Experiment(Ingredient):
                 print_filtered_stacktrace()
 
     def open_resource(self, filename):
+        """ Open a file and also save it as a resource.
+
+        Opens a file, reports it to the observers as a resource, and returns
+        the opened file.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        This function can only be called during a run.
+
+        :param filename: name of the file that should be opened
+        :type filename: str
+        :return: the opened file-object
+        :rtype: file
+        """
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename)
 
     def add_artifact(self, filename):
+        """ Add a file as an artifact.
+
+        In Sacred terminology an artifact is a file produced by the experiment
+        run. In case of a MongoObserver that means storing the file in the
+        database.
+
+        This function can only be called during a run.
+
+        :param filename: name of the file to be stored as artifact
+        :type filename: str
+        """
         assert self.current_run is not None, "Can only be called during a run."
-        return self.current_run.add_artifact(filename)
+        self.current_run.add_artifact(filename)
 
     @property
     def info(self):
+        """ Access the info-dict for storing custom information.
+
+        Only works during a run and is essentially a shortcut to:
+
+            @ex.capture
+            def my_captured_function(_run)
+                ...
+                _run.info   # == ex.info
+
+        """
         return self.current_run.info
 
-    # =========================== Private Helpers =============================
+    def get_experiment_info(self):
+        """ Get a dictionary with information about this experiment.
 
-    def _gather_commands(self):
-        for cmd_name, cmd in self.commands.items():
-            yield cmd_name, cmd
+        Contains:
+          * *name*: the name
+          * *sources*: a list of sources (filename, md5)
+          * *dependencies*: a list of package dependencies (name, version)
+          * *doc*: the docstring
 
-        for ingred in self.ingredients:
-            for cmd_name, cmd in ingred._gather_commands():
-                yield cmd_name, cmd
-
-    def _get_info(self):
+        :return: experiment information
+        :rtype: dict
+        """
         dependencies = set()
         sources = set()
         for ing, _ in self._traverse_ingredients():
@@ -398,3 +453,13 @@ class Experiment(Ingredient):
             sources=[s.to_tuple() for s in sorted(sources)],
             dependencies=[d.to_tuple() for d in sorted(dependencies)],
             doc=self.doc)
+
+    # =========================== Private Helpers =============================
+
+    def _gather_commands(self):
+        for cmd_name, cmd in self.commands.items():
+            yield cmd_name, cmd
+
+        for ingred in self.ingredients:
+            for cmd_name, cmd in ingred._gather_commands():
+                yield cmd_name, cmd
