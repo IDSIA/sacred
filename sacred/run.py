@@ -112,7 +112,7 @@ class Run(object):
         stop_time = self._stop_time()
         self.logger.info('Completed after %s' % self.elapsed_time)
         for observer in self._observers:
-            self._final_call(self, observer, 'completed_event',
+            self._final_call(observer, 'completed_event',
                              stop_time=stop_time,
                              result=result)
 
@@ -120,7 +120,7 @@ class Run(object):
         interrupt_time = self._stop_time()
         self.logger.warning("Aborted after %s!" % self.elapsed_time)
         for observer in self._observers:
-            self._final_call(self, observer, 'interrupted_event',
+            self._final_call(observer, 'interrupted_event',
                              interrupt_time=interrupt_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
@@ -128,7 +128,7 @@ class Run(object):
         self.logger.error("Failed after %s!" % self.elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
         for observer in self._observers:
-            self._final_call(self, observer, 'failed_event',
+            self._final_call(observer, 'failed_event',
                              fail_time=fail_time,
                              fail_trace=fail_trace)
 
