@@ -188,7 +188,7 @@ class Ingredient(object):
 
     def run_command(self, command_name, config_updates=None,
                     named_configs_to_use=(), log_level=None):
-        """ Run the command with the given name.
+        """Run the command with the given name.
 
         :param command_name: Name of the command to be run
         :type command_name: str
@@ -378,7 +378,7 @@ class Experiment(Ingredient):
                 print_filtered_stacktrace()
 
     def open_resource(self, filename):
-        """ Open a file and also save it as a resource.
+        """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
         the opened file.
@@ -399,7 +399,7 @@ class Experiment(Ingredient):
         return self.current_run.open_resource(filename)
 
     def add_artifact(self, filename):
-        """ Add a file as an artifact.
+        """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
         run. In case of a MongoObserver that means storing the file in the
@@ -415,7 +415,7 @@ class Experiment(Ingredient):
 
     @property
     def info(self):
-        """ Access the info-dict for storing custom information.
+        """Access the info-dict for storing custom information.
 
         Only works during a run and is essentially a shortcut to:
 
@@ -428,7 +428,7 @@ class Experiment(Ingredient):
         return self.current_run.info
 
     def get_experiment_info(self):
-        """ Get a dictionary with information about this experiment.
+        """Get a dictionary with information about this experiment.
 
         Contains:
           * *name*: the name

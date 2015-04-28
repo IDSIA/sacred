@@ -8,7 +8,8 @@ import mock
 import pytest
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies,
-                                 get_digest, get_py_file_if_possible)
+                                 get_digest, get_py_file_if_possible,
+                                 is_local_source)
 import sacred.optional as opt
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
@@ -157,3 +158,25 @@ def test_gather_sources_and_dependencies():
         assert len(deps) == 3
     else:
         assert len(deps) == 2
+
+
+@pytest.mark.parametrize('f_name, mod_name, ex_path, is_local', [
+    ('./foo.py', 'bar', '.', False),
+    ('./foo.pyc', 'bar', '.', False),
+    ('./bar.py', 'bar', '.', True),
+    ('./bar.pyc', 'bar', '.', True),
+    ('./venv/py/bar.py', 'bar', '.', False),
+    ('./venv/py/bar.py', 'venv.py.bar', '.', True),
+    ('./venv/py/bar.pyc', 'venv.py.bar', '.', True),
+    ('foo.py', 'bar', '.', False),
+    ('bar.py', 'bar', '.', True),
+    ('bar.pyc', 'bar', '.', True),
+    ('bar.pyc', 'some.bar', '.', False),
+    ('/home/user/bar.py', 'user.bar', '/home/user/', True),
+    ('bar/__init__.py', 'bar', '.', True),
+    ('bar/__init__.py', 'foo', '.', False),
+    ('/home/user/bar/__init__.py', 'home.user.bar', '/home/user/', True),
+    ('/home/user/bar/__init__.py', 'home.user.foo', '/home/user/', False),
+])
+def test_is_local_source(f_name, mod_name, ex_path, is_local):
+    assert is_local_source(f_name, mod_name, ex_path) == is_local
