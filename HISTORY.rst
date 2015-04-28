@@ -1,6 +1,13 @@
 Release History
 ---------------
 
+0.6.3 (2015-04-28)
+++++++++++++++++++
+* Bugfix: fixed a bug in the mongo observer that would always crash the final
+          save
+* Bugfix: automatic detection of local source files no longer wrongly detects
+          non-local files in subdirectories.
+
 0.6.2 (2015-04-16)
 ++++++++++++++++++
 * Bugfix: fixed crash when using artifacts
