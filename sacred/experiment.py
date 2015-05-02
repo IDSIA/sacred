@@ -388,7 +388,8 @@ class Experiment(Ingredient):
         sure the file is stored in the database (but avoiding duplicates) along
         its path and md5 sum.
 
-        This function can only be called during a run.
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.open_resource` method.
 
         :param filename: name of the file that should be opened
         :type filename: str
@@ -405,7 +406,8 @@ class Experiment(Ingredient):
         run. In case of a MongoObserver that means storing the file in the
         database.
 
-        This function can only be called during a run.
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.add_artifact` method.
 
         :param filename: name of the file to be stored as artifact
         :type filename: str
@@ -419,11 +421,12 @@ class Experiment(Ingredient):
 
         Only works during a run and is essentially a shortcut to:
 
-            @ex.capture
-            def my_captured_function(_run)
-                ...
-                _run.info   # == ex.info
+        .. code-block:: python
 
+            @ex.capture
+            def my_captured_function(_run):
+                # [...]
+                _run.info   # == ex.info
         """
         return self.current_run.info
 

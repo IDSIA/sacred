@@ -20,32 +20,93 @@ class Run(object):
 
     def __init__(self, config, config_modifications, main_function, observers,
                  logger, experiment_info, host_info):
-        self.config = config
-        self.main_function = main_function
-        self.config_modifications = config_modifications
-        self._observers = observers
-        self._failed_observers = set()
-        self.logger = logger
-        self.experiment_info = experiment_info
-        self.host_info = host_info
-        self.info = {}
-        self._heartbeat = None
+
         self.captured_out = None
-        self.start_time = None
-        self.stop_time = None
-        self.elapsed_time = None
+        """Captured stdout and stderr"""
+
+        self.config = config
+        """The final configuration used for this run"""
+
+        self.config_modifications = config_modifications
+        """A ConfigSummary object with information about config changes"""
+
+        self.experiment_info = experiment_info
+        """A dictionary with information about the experiment"""
+
+        self.host_info = host_info
+        """A dictionary with information about the host"""
+
+        self.info = {}
+        """Custom info dict that will be sent to the observers"""
+
+        self.logger = logger
+        """The logger that is used for this run"""
+
+        self.main_function = main_function
+        """The main function that is executed with this run"""
+
+        self._observers = observers
+        """A list of all observers that observe this run"""
+
         self.result = None
+        """The return value of the main function"""
+
+        self.start_time = None
+        """The datetime when this run was started"""
+
+        self.stop_time = None
+        """The datetime when this run stopped."""
+
+        self._heartbeat = None
+        self._failed_observers = set()
 
     def open_resource(self, filename):
+        """Open a file and also save it as a resource.
+
+        Opens a file, reports it to the observers as a resource, and returns
+        the opened file.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        See also :py:meth:`sacred.Experiment.open_resource`.
+
+        :param filename: name of the file that should be opened
+        :type filename: str
+        :return: the opened file-object
+        :rtype: file
+        """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
         return open(filename, 'r')  # TODO: How to deal with binary mode?
 
     def add_artifact(self, filename):
+        """Add a file as an artifact.
+
+        In Sacred terminology an artifact is a file produced by the experiment
+        run. In case of a MongoObserver that means storing the file in the
+        database.
+
+        See also :py:meth:`sacred.Experiment.add_artifact`.
+
+        :param filename: name of the file to be stored as artifact
+        :type filename: str
+        """
         filename = os.path.abspath(filename)
         self._emit_artifact_added(filename)
 
     def __call__(self, *args):
+        """Start this run.
+
+        :param args: parameters passed to the main function
+        :return: the return value of the main function
+        """
+        if self.start_time is not None:
+            raise RuntimeError('A run can only be started once. '
+                               '(Last start was {})'.format(self.start_time))
+
         set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
             self.logger.info('Started')
@@ -104,32 +165,32 @@ class Run(object):
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.now()
-        self.elapsed_time = datetime.timedelta(
+        elapsed_time = datetime.timedelta(
             seconds=round((self.stop_time - self.start_time).total_seconds()))
-        return self.stop_time
+        return elapsed_time
 
     def _emit_completed(self, result):
-        stop_time = self._stop_time()
-        self.logger.info('Completed after %s' % self.elapsed_time)
+        elapsed_time = self._stop_time()
+        self.logger.info('Completed after %s' % elapsed_time)
         for observer in self._observers:
             self._final_call(observer, 'completed_event',
-                             stop_time=stop_time,
+                             stop_time=self.stop_time,
                              result=result)
 
     def _emit_interrupted(self):
-        interrupt_time = self._stop_time()
-        self.logger.warning("Aborted after %s!" % self.elapsed_time)
+        elapsed_time = self._stop_time()
+        self.logger.warning("Aborted after %s!" % elapsed_time)
         for observer in self._observers:
             self._final_call(observer, 'interrupted_event',
-                             interrupt_time=interrupt_time)
+                             interrupt_time=self.stop_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
-        fail_time = self._stop_time()
-        self.logger.error("Failed after %s!" % self.elapsed_time)
+        elapsed_time = self._stop_time()
+        self.logger.error("Failed after %s!" % elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
         for observer in self._observers:
             self._final_call(observer, 'failed_event',
-                             fail_time=fail_time,
+                             fail_time=self.stop_time,
                              fail_trace=fail_trace)
 
     def _emit_resource_added(self, filename):

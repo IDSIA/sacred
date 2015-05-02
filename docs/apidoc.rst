@@ -24,16 +24,17 @@ The Run Object
 .. autoclass:: sacred.run.Run
     :members:
     :undoc-members:
+    :special-members: __call__
 
 ConfigScope
 ===========
-.. autoclass:: sacred.config_scope.ConfigScope
+.. autoclass:: sacred.config.config_scope.ConfigScope
     :members:
     :undoc-members:
 
 ConfigDict
 ==========
-.. autoclass:: sacred.config_scope.ConfigDict
+.. autoclass:: sacred.config.config_dict.ConfigDict
     :members:
     :undoc-members:
 
