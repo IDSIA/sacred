@@ -128,6 +128,8 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
+                self.captured_out = self.captured_out.getvalue()
+                self.final = True
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -209,6 +211,9 @@ class Run(object):
                 self._failed_observers.add(obs)
                 self.logger.warning("An error ocurred in the '{}' "
                                     "observer: {}".format(obs, e))
+            except:
+                self._failed_observers.add(obs)
+                raise
 
     def _final_call(self, observer, method, **kwargs):
         if hasattr(observer, method):
