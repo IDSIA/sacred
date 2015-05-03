@@ -203,13 +203,7 @@ class DogmaticList(list):
     def __setitem__(self, key, value):
         pass
 
-    def __setslice__(self, i, j, sequence):
-        pass
-
     def __delitem__(self, key):
-        pass
-
-    def __delslice__(self, i, j):
         pass
 
     def pop(self, index=None):

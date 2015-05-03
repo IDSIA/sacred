@@ -32,6 +32,20 @@ def test_ingredient_captured_functions():
     assert f == get_answer
 
 
+def test_ingredient_command():
+    m = Ingredient("somemod")
+
+    m.add_config(a=42, b='foo{}')
+
+    @m.command
+    def transmogrify(a, b):
+        return b.format(a)
+
+    assert 'transmogrify' in m.commands
+    assert m.commands['transmogrify'] == transmogrify
+    assert m.run_command('transmogrify').result == 'foo42'
+
+
 # ############# Experiment ####################################################
 
 def test_experiment_run():
