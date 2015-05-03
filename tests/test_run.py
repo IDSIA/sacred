@@ -115,7 +115,7 @@ def test_run_artifact_event(run):
 
 def test_run_resource_event(run):
     observer = run._observers[0]
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises((OSError, IOError)):
         run.open_resource('/tmp/my_artifact.dat')
     observer.resource_event.assert_called_with(filename='/tmp/my_artifact.dat')
 
