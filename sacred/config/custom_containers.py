@@ -27,12 +27,9 @@ class FallbackDict(dict):
 
     def get(self, k, d=None):
         if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)()
+            return dict.__getitem__(self, k)
         else:
             return self.fallback.get(k, d)
-
-    def has_key(self, item):
-        return self.__contains__(item)
 
     def items(self):
         raise NotImplementedError()
