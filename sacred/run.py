@@ -128,6 +128,7 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
+                self.captured_out.flush()
                 self.captured_out = self.captured_out.getvalue()
                 self.final = True
 

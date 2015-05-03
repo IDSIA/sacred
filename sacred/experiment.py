@@ -368,7 +368,7 @@ class Experiment(Ingredient):
                                     config_updates=config_updates,
                                     named_configs_to_use=named_configs,
                                     log_level=loglevel)
-        except:
+        except Exception:
             if args['--debug']:
                 import traceback
                 import pdb
