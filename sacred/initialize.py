@@ -214,8 +214,7 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
     return root_logger.getChild(experiment.name)
 
 
-def create_scaffolding(experiment):
-    sorted_ingredients = gather_ingredients_topological(experiment)
+def create_scaffolding(experiment, sorted_ingredients):
     scaffolding = OrderedDict()
     for ingredient in sorted_ingredients:
         scaffolding[ingredient] = Scaffold(
@@ -259,9 +258,23 @@ def get_command(scaffolding, command_path):
             raise KeyError('Command "%s" not found' % command_name)
 
 
+def execute_pre_runs(ingredients, command_name, config_updates, named_configs):
+    args = (command_name, config_updates, named_configs)
+    for ingred in ingredients:
+        if ingred._pre_run:
+            args = ingred._pre_run(*args)
+    return args
+
+
 def create_run(experiment, command_name, config_updates=None, log_level=None,
                named_configs=()):
-    scaffolding = create_scaffolding(experiment)
+
+    sorted_ingredients = gather_ingredients_topological(experiment)
+    scaffolding = create_scaffolding(experiment, sorted_ingredients)
+
+    command_name, config_updates, named_configs = \
+        execute_pre_runs(sorted_ingredients, command_name, config_updates,
+                         named_configs)
 
     distribute_config_updates(scaffolding, config_updates)
     distribute_named_configs(scaffolding, named_configs)

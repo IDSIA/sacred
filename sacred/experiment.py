@@ -34,6 +34,7 @@ class Ingredient(object):
     def __init__(self, path, ingredients=(), _generate_seed=False,
                  _caller_globals=None):
         self.path = path
+        self._pre_run = None
         self.cfgs = []
         self.named_configs = dict()
         self.ingredients = list(ingredients)
@@ -49,6 +50,12 @@ class Ingredient(object):
         self.current_run = None
 
     # =========================== Decorators ==================================
+    def pre_run(self, func):
+        if self._pre_run is None:
+            self._pre_run = func
+        else:
+            raise RuntimeError('Can only have one pre_run!')
+
     def command(self, function=None, prefix=None):
         """
         Decorator to define a new command for this Ingredient or Experiment.
