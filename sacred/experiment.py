@@ -34,7 +34,7 @@ class Ingredient(object):
     def __init__(self, path, ingredients=(), _generate_seed=False,
                  _caller_globals=None):
         self.path = path
-        self._pre_run = None
+        self.config_hooks = []
         self.cfgs = []
         self.named_configs = dict()
         self.ingredients = list(ingredients)
@@ -50,11 +50,10 @@ class Ingredient(object):
         self.current_run = None
 
     # =========================== Decorators ==================================
-    def pre_run(self, func):
-        if self._pre_run is None:
-            self._pre_run = func
-        else:
-            raise RuntimeError('Can only have one pre_run!')
+    def config_hook(self, func):
+        """Decorator for the new config hook mechanism"""
+        self.config_hooks.append(ConfigScope(func))
+        return self.config_hooks[-1]
 
     def command(self, function=None, prefix=None):
         """
