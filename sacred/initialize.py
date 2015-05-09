@@ -115,8 +115,10 @@ class Scaffold(object):
         cfg_upup, _ = chain_evaluate_config_scopes(
             self.config_hooks,
             fixed=config_updates,
-            preset=config,
-            fallback={})
+            preset={},
+            fallback=config)
+        
+        print('additional config_updates:', cfg_upup)
 
         return cfg_upup
 
