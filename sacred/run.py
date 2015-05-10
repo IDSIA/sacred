@@ -138,9 +138,8 @@ class Run(object):
         self._heartbeat.start()
 
     def _stop_heartbeat(self):
-        if self._heartbeat is None:
-            return
-        self._heartbeat.cancel()
+        if self._heartbeat is not None:
+            self._heartbeat.cancel()
         self._heartbeat = None
         self._emit_heatbeat()  # one final beat to flush pending changes
 
@@ -157,8 +156,6 @@ class Run(object):
                 # fail if any of the observers fails
 
     def _emit_heatbeat(self):
-        if self.start_time is None or self.stop_time is not None:
-            return
         beat_time = datetime.datetime.now()
         for observer in self._observers:
             self._safe_call(observer, 'heartbeat_event',
