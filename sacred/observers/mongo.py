@@ -40,10 +40,9 @@ class PickleNumpyArrays(SONManipulator):
         for (key, value) in son.items():
             if isinstance(value, dict):
                 if "_type" in value and value["_type"] == "ndarray":
-                    son[key] = pickle.loads(str(value["_value"]))
+                    son[key] = pickle.loads(value["_value"])
                 else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value,
-                                                       collection)
+                    son[key] = self.transform_outgoing(value, collection)
         return son
 
 

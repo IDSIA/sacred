@@ -219,12 +219,12 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
         else:
             scaffold.logger = root_logger
 
-    return root_logger.getChild(experiment.name)
+    return root_logger.getChild(experiment.path)
 
 
 def create_scaffolding(experiment, sorted_ingredients):
     scaffolding = OrderedDict()
-    for ingredient in sorted_ingredients:
+    for ingredient in sorted_ingredients[:-1]:
         scaffolding[ingredient] = Scaffold(
             config_scopes=ingredient.cfgs,
             subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
@@ -234,14 +234,25 @@ def create_scaffolding(experiment, sorted_ingredients):
             commands=ingredient.commands,
             named_configs=ingredient.named_configs,
             config_hooks=ingredient.config_hooks,
-            generate_seed=ingredient.gen_seed)
+            generate_seed=False)
+
+    scaffolding[experiment] = Scaffold(
+        experiment.cfgs,
+        subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
+                                for m in experiment.ingredients]),
+        path=experiment.path if experiment != experiment else '',
+        captured_functions=experiment.captured_functions,
+        commands=experiment.commands,
+        named_configs=experiment.named_configs,
+        config_hooks=experiment.config_hooks,
+        generate_seed=True)
     return OrderedDict([(sc.path, sc) for sc in scaffolding.values()])
 
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
-    for ingredient, depth in ingredient._traverse_ingredients():
-        sub_ingredients[ingredient] = max(sub_ingredients[ingredient], depth)
+    for sub_ing, depth in ingredient._traverse_ingredients():
+        sub_ingredients[sub_ing] = max(sub_ingredients[sub_ing], depth)
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
