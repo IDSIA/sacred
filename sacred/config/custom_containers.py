@@ -84,9 +84,9 @@ class DogmaticDict(dict):
     def __init__(self, fixed=None, fallback=None):
         super(DogmaticDict, self).__init__()
         self.typechanges = {}
-        self.ignored_fallback_writes = []
+        self.fallback_writes = []
         self.modified = set()
-        self._fixed = fixed or {}
+        self.fixed = fixed or {}
         self._fallback = {}
         if fallback:
             self.fallback = fallback
@@ -97,10 +97,14 @@ class DogmaticDict(dict):
 
     @fallback.setter
     def fallback(self, newval):
-        ffkeys = set(self._fixed.keys()).intersection(set(newval.keys()))
-        if ffkeys:
-            raise ValueError("Keys %s appear are both fixed and fallback keys"
-                             % ffkeys)
+        ffkeys = set(self.fixed.keys()).intersection(set(newval.keys()))
+        for k in ffkeys:
+            if isinstance(self.fixed[k], DogmaticDict):
+                self.fixed[k].fallback = newval[k]
+            elif isinstance(self.fixed[k], dict):
+                self.fixed[k] = DogmaticDict(self.fixed[k])
+                self.fixed[k].fallback = newval[k]
+
         self._fallback = newval
 
     def _log_blocked_setitem(self, key, value, fixed_value):
@@ -118,12 +122,12 @@ class DogmaticDict(dict):
             self.modified |= {join_paths(key, m) for m in fixed_value.modified}
 
     def __setitem__(self, key, value):
-        if key not in self._fixed:
-            if key in self._fallback:
-                self.ignored_fallback_writes.append(key)
+        if key not in self.fixed:
+            if key in self.fallback:
+                self.fallback_writes.append(key)
             return dict.__setitem__(self, key, value)
 
-        fixed_value = self._fixed[key]
+        fixed_value = self.fixed[key]
         dict.__setitem__(self, key, fixed_value)
         # if both are dicts do a recursive update
         if isinstance(fixed_value, DogmaticDict) and isinstance(value, dict):
@@ -136,8 +140,8 @@ class DogmaticDict(dict):
         if dict.__contains__(self, item):
             return dict.__getitem__(self, item)
         elif item in self.fallback:
-            if item in self._fixed:
-                return self._fixed[item]
+            if item in self.fixed:
+                return self.fixed[item]
             else:
                 return self.fallback[item]
         raise KeyError(item)
@@ -155,7 +159,7 @@ class DogmaticDict(dict):
         return self.__contains__(item)
 
     def __delitem__(self, key):
-        if key not in self._fixed:
+        if key not in self.fixed:
             dict.__delitem__(self, key)
 
     def update(self, iterable=None, **kwargs):
@@ -171,9 +175,9 @@ class DogmaticDict(dict):
 
     def revelation(self):
         missing = set()
-        for key in self._fixed:
+        for key in self.fixed:
             if not dict.__contains__(self, key):
-                self[key] = self._fixed[key]
+                self[key] = self.fixed[key]
                 missing.add(key)
 
             if isinstance(self[key], (DogmaticDict, DogmaticList)):

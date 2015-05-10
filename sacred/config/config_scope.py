@@ -73,7 +73,7 @@ class ConfigScope(object):
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(added, cfg_locals.modified,
                                        cfg_locals.typechanges,
-                                       cfg_locals.ignored_fallback_writes)
+                                       cfg_locals.fallback_writes)
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 

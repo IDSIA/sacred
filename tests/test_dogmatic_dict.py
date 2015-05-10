@@ -133,10 +133,22 @@ def test_overwrite_fallback():
     assert list(d.items()) == [('a', 0)]
 
 
-def test_fixed_fallback_prohibited():
-    with pytest.raises(ValueError):
-        d = DogmaticDict(fixed={'a': 10}, fallback={'a': 23})
+def test_fixed_has_precedence_over_fallback():
+    d = DogmaticDict(fixed={'a': 0}, fallback={'a': 23})
+    assert d['a'] == 0
 
-    with pytest.raises(ValueError):
-        d = DogmaticDict(fixed={'a': 10})
-        d.fallback = {'a': 100}
+
+def test_nested_fixed_merges_with_fallback():
+    d = DogmaticDict(fixed={'foo': {'bar': 20}},
+                     fallback={'foo': {'bar': 10, 'c': 5}})
+    assert d['foo']['bar'] == 20
+    assert d['foo']['c'] == 5
+
+
+def test_nested_fixed_with_fallback_madness():
+    d = DogmaticDict(fixed={'foo': {'bar': 20}},
+                     fallback={'foo': {'bar': 10, 'c': 5}})
+    d['foo'] = {'bar': 30, 'a': 1}
+    assert d['foo']['bar'] == 20
+    assert d['foo']['a'] == 1
+    assert d['foo']['c'] == 5
