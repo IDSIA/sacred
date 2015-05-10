@@ -115,7 +115,7 @@ class PackageDependency(object):
         return self.name.__le__(other.name)
 
     def __repr__(self):
-        return '<PackageDependency: {}>={}>'.format(self.name, self.version)
+        return '<PackageDependency: {}={}>'.format(self.name, self.version)
 
     @staticmethod
     def get_version_heuristic(mod):
@@ -209,7 +209,7 @@ def gather_sources_and_dependencies(globs):
         elif hasattr(glob, '__module__'):
             mod_path = glob.__module__
         else:
-            continue
+            continue  # pragma: no cover
 
         for modname in iter_prefixes(mod_path):
             mod = sys.modules.get(modname)

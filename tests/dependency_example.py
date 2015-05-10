@@ -16,3 +16,5 @@ from tests.foo import bar
 
 
 def some_func(): pass
+
+ignore_this = 17

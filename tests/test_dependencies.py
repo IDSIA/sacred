@@ -66,6 +66,11 @@ def test_get_py_file_if_possible_with_pyc_file():
     assert get_py_file_if_possible(EXAMPLE_SOURCE + 'c') == EXAMPLE_SOURCE
 
 
+def test_source_repr():
+    s = Source.create(EXAMPLE_SOURCE)
+    assert repr(s) == "<Source: {}>".format(os.path.abspath(EXAMPLE_SOURCE))
+
+
 def test_get_py_file_if_possible_with_pyc_but_nonexistent_py_file():
     assert get_py_file_if_possible('doesnotexist.pyc') == 'doesnotexist.pyc'
 
@@ -134,6 +139,11 @@ def test_package_dependency_fill_missing_version():
     pd = PackageDependency('pytest', None)
     pd.fill_missing_version()
     assert pd.version == pytest.__version__
+
+
+def test_package_dependency_repr():
+    pd = PackageDependency('pytest', '12.4')
+    assert repr(pd) == '<PackageDependency: pytest=12.4>'
 
 
 def test_gather_sources_and_dependencies():
