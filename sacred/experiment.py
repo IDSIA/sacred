@@ -51,7 +51,7 @@ class Ingredient(object):
 
     # =========================== Decorators ==================================
     def config_hook(self, func):
-        """Decorator for the new config hook mechanism"""
+        """Decorator for the new config hook mechanism."""
         self.config_hooks.append(ConfigScope(func))
         return self.config_hooks[-1]
 
