@@ -90,7 +90,8 @@ class Scaffold(object):
 
     def use_named_config(self, config_name):
         if os.path.exists(config_name):
-            self.named_configs_to_use.append(ConfigDict(load_config_file(config_name)))
+            self.named_configs_to_use.append(
+                ConfigDict(load_config_file(config_name)))
         else:
             self.named_configs_to_use.append(self.named_configs[config_name])
 
@@ -117,8 +118,6 @@ class Scaffold(object):
             fixed=config_updates,
             preset={},
             fallback=config)
-        
-        print('additional config_updates:', cfg_upup)
 
         return cfg_upup
 
@@ -268,14 +267,6 @@ def get_command(scaffolding, command_path):
             raise KeyError('Command "%s" not found' % command_name)
 
 
-def execute_pre_runs(ingredients, command_name, config_updates, named_configs):
-    args = (command_name, config_updates, named_configs)
-    for ingred in ingredients:
-        if ingred._pre_run:
-            args = ingred._pre_run(*args)
-    return args
-
-
 def create_run(experiment, command_name, config_updates=None, log_level=None,
                named_configs=()):
 
@@ -297,7 +288,8 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         # update global config
         config = get_configuration(scaffolding)
         # run config hooks
-        config_updates_update = scaffold.run_config_hooks(config, config_updates)
+        config_updates_update = scaffold.run_config_hooks(config,
+                                                          config_updates)
         recursive_update(config_updates, config_updates_update)
 
     for scaffold in reversed(list(scaffolding.values())):
