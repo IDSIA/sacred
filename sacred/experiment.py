@@ -40,6 +40,7 @@ class Ingredient(object):
         self.logger = None
         self.observers = []
         self.captured_functions = []
+        self.post_runs = []
         self._is_traversing = False
         self.commands = OrderedDict()
         # capture some context information
@@ -54,6 +55,12 @@ class Ingredient(object):
         """Decorator for the new config hook mechanism."""
         self.config_hooks.append(ConfigScope(func))
         return self.config_hooks[-1]
+
+    def post_run(self, func):
+        """Decorator for the new post-run hook mechanism."""
+        cf = self.capture(func)
+        self.post_runs.append(cf)
+        return cf
 
     def command(self, function=None, prefix=None):
         """

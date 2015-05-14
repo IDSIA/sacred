@@ -15,8 +15,8 @@ def run():
     config_mod = ConfigSummary()
     main_function = mock.Mock(return_value=123)
     logger = mock.Mock()
-    observer = mock.Mock()
-    return Run(config, config_mod, main_function, [observer], logger, {}, {})
+    observer = [mock.Mock()]
+    return Run(config, config_mod, main_function, observer, logger, {}, {}, [])
 
 
 def test_run_attributes(run):

@@ -19,7 +19,7 @@ class Run(object):
     """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_info, host_info):
+                 logger, experiment_info, host_info, post_runs):
 
         self.captured_out = None
         """Captured stdout and stderr"""
@@ -47,6 +47,8 @@ class Run(object):
 
         self._observers = observers
         """A list of all observers that observe this run"""
+
+        self.post_runs = post_runs
 
         self.result = None
         """The return value of the main function"""
@@ -114,6 +116,7 @@ class Run(object):
             self._start_heartbeat()
             try:
                 self.result = self.main_function(*args)
+                self.execute_post_runs()
                 self._stop_heartbeat()
                 self._emit_completed(self.result)
                 return self.result
@@ -227,3 +230,7 @@ class Run(object):
         for observer in self._failed_observers:
             self.logger.warning("The observer '{}' failed at some point "
                                 "during the run.".format(observer))
+
+    def execute_post_runs(self):
+        for pr in self.post_runs:
+            pr()
