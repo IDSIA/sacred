@@ -211,6 +211,9 @@ def gather_sources_and_dependencies(globs):
         else:
             continue  # pragma: no cover
 
+        if not mod_path:
+            continue
+
         for modname in iter_prefixes(mod_path):
             mod = sys.modules.get(modname)
             create_source_or_dep(modname, mod, dependencies, sources,
