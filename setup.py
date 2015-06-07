@@ -59,7 +59,8 @@ setup(
 
     url=about['__url__'],
 
-    packages=['sacred', 'sacred.observers', 'sacred.config'],
+    packages=['sacred', 'sacred.observers', 'sacred.config',
+              'sacred.ingredients'],
     scripts=[],
     install_requires=[
         'docopt', 'six', 'wrapt'
