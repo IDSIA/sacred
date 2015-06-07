@@ -230,6 +230,7 @@ class DogmaticList(list):
 
 
 SIMPLIFY_TYPE = {
+    type(None): type(None),
     bool: bool,
     float: float,
     int: int,
