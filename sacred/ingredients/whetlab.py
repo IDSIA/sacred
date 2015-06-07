@@ -2,8 +2,8 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import whetlab
 from sacred.experiment import Ingredient
+from sacred.optional import whetlab
 
 whet = Ingredient('whet')
 
@@ -11,17 +11,18 @@ whet = Ingredient('whet')
 @whet.config
 def cfg():
     name = ''
-    api_key = None
-    result_name = ''
+    access_token = None
+    result_name = 'result'
     searchspace = {}
     description = ''  # optional
+    suggest = False
 
 
 @whet.command
-def init(name, searchspace, description, result_name, api_key):
+def init(name, searchspace, description, result_name, access_token):
     """Initialize a whetlab hyperparameter search for this experiment.
 
-    Requires the whet.name, whet.api_key and whet.result_name and
+    Requires the whet.name, whet.access_token and whet.result_name and
     whet.searchspace config entries to be set.
     """
     print("Setting up a Whetlab experiment:")
@@ -34,26 +35,24 @@ def init(name, searchspace, description, result_name, api_key):
                                    description=description,
                                    parameters=searchspace,
                                    outcome={'name': result_name},
-                                   api_key=api_key)
+                                   access_token=access_token)
     print("success!")
 
 
-@whet.command
+@whet.config_hook
 def mod(whet):
-    scientist = whetlab.Experiment(whet['name'])
-    job = scientist.suggest()
-    locals().update(job)
+    if whet['suggest'] and whet['name']:
+        scientist = whetlab.Experiment(whet['name'])
+        job = scientist.suggest()
+        locals().update(job)
+        del job
 
 
 @whet.post_run
 def update_with_result(name, searchspace, _run):
-    print('Sending result "{}" to whetlab... '.format(_run.result), end='')
-    scientist = whetlab.Experiment(name)
-    job = {k: _run.config[k] for k in searchspace}
-    scientist.update(job, _run.result)
-    print('done')
-
-
-
-
-
+    if name and _run.result is not None:
+        print('Sending result "{}" to whetlab... '.format(_run.result))
+        scientist = whetlab.Experiment(name)
+        job = {k: _run.config[k] for k in searchspace}
+        scientist.update(job, _run.result)
+        print('done')
