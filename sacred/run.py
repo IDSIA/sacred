@@ -58,7 +58,7 @@ class Run(object):
         """The datetime when this run stopped."""
 
         self._heartbeat = None
-        self._failed_observers = set()
+        self._failed_observers = []
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -209,11 +209,11 @@ class Run(object):
             try:
                 getattr(obs, method)(**kwargs)
             except ObserverError as e:
-                self._failed_observers.add(obs)
+                self._failed_observers.append(obs)
                 self.logger.warning("An error ocurred in the '{}' "
                                     "observer: {}".format(obs, e))
             except:
-                self._failed_observers.add(obs)
+                self._failed_observers.append(obs)
                 raise
 
     def _final_call(self, observer, method, **kwargs):
