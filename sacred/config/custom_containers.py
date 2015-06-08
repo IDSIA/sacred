@@ -226,6 +226,7 @@ class DogmaticList(list):
 
 
 SIMPLIFY_TYPE = {
+    type(None): type(None),
     bool: bool,
     float: float,
     int: int,
@@ -262,5 +263,7 @@ if opt.has_numpy:
     SIMPLIFY_TYPE[np.bool_] = bool
 
 
-def type_changed(old_type, new_type):
-    return SIMPLIFY_TYPE[type(old_type)] != SIMPLIFY_TYPE[type(new_type)]
+def type_changed(old_value, new_value):
+    sot = SIMPLIFY_TYPE.get(type(old_value), type(old_value))
+    snt = SIMPLIFY_TYPE.get(type(new_value), type(new_value))
+    return sot != snt
