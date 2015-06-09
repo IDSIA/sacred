@@ -13,10 +13,10 @@ from sacred.utils import ObserverError
 def run():
     config = {'a': 17, 'foo': {'bar': True, 'baz': False}, 'seed': 1234}
     config_mod = ConfigSummary()
-    main_function = mock.Mock(return_value=123)
+    main_func = mock.Mock(return_value=123)
     logger = mock.Mock()
     observer = [mock.Mock()]
-    return Run(config, config_mod, main_function, observer, logger, {}, {}, [])
+    return Run(config, config_mod, main_func, observer, logger, {}, {}, [], [])
 
 
 def test_run_attributes(run):

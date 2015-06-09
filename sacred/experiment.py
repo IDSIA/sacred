@@ -40,7 +40,8 @@ class Ingredient(object):
         self.logger = None
         self.observers = []
         self.captured_functions = []
-        self.post_runs = []
+        self.post_run_hooks = []
+        self.pre_run_hooks = []
         self._is_traversing = False
         self.commands = OrderedDict()
         # capture some context information
@@ -75,10 +76,26 @@ class Ingredient(object):
         self.config_hooks.append(func)
         return self.config_hooks[-1]
 
-    def post_run(self, func):
-        """Decorator for the new post-run hook mechanism."""
+    def pre_run_hook(self, func):
+        """
+        Decorator to add a pre-run hook to this ingredient.
+
+        Pre-run hooks are captured functions that are run, just before the
+        main function is executed.
+        """
         cf = self.capture(func)
-        self.post_runs.append(cf)
+        self.pre_run_hooks.append(cf)
+        return cf
+
+    def post_run_hook(self, func):
+        """
+        Decorator to add a post-run hook to this ingredient.
+
+        Post-run hooks are captured functions that are run, just after the
+        main function is executed.
+        """
+        cf = self.capture(func)
+        self.post_run_hooks.append(cf)
         return cf
 
     def command(self, function=None, prefix=None):

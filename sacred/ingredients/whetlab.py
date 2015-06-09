@@ -41,7 +41,7 @@ def suggest(config, command_name, logger):
         return job
 
 
-@whet.post_run
+@whet.post_run_hook
 def update_with_result(suggest_for, searchspace, _run):
     if suggest_for and _run.result is not None:
         print('Sending result "{}" to whetlab... '.format(_run.result))

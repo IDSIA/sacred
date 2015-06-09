@@ -314,11 +314,12 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     experiment_info = experiment.get_experiment_info()
     host_info = get_host_info()
     main_function = get_command(scaffolding, command_name)
-    post_runs = [pr for ing in sorted_ingredients for pr in ing.post_runs]
+    pre_runs = [pr for ing in sorted_ingredients for pr in ing.pre_run_hooks]
+    post_runs = [pr for ing in sorted_ingredients for pr in ing.post_run_hooks]
 
     run = Run(config, config_modifications, main_function,
               experiment.observers, logger, experiment_info,
-              host_info, post_runs)
+              host_info, pre_runs, post_runs)
 
     for scaffold in scaffolding.values():
         scaffold.finalize_initialization(run=run)
