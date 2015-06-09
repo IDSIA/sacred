@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 import os
 from collections import OrderedDict, defaultdict
-from copy import copy
+from copy import copy, deepcopy
 
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
                            load_config_file)
@@ -112,14 +112,14 @@ class Scaffold(object):
 
         self.get_config_modifications()
 
-    def run_config_hooks(self, config, config_updates):
-        cfg_upup, _ = chain_evaluate_config_scopes(
-            self.config_hooks,
-            fixed=config_updates,
-            preset={},
-            fallback=config)
-
-        return cfg_upup
+    def run_config_hooks(self, config, config_updates, command_name, logger):
+        final_cfg_updates = {}
+        for ch in self.config_hooks:
+            cfg_upup = ch(deepcopy(config), command_name, logger)
+            if cfg_upup:
+                recursive_update(final_cfg_updates, cfg_upup)
+        recursive_update(final_cfg_updates, config_updates)
+        return final_cfg_updates
 
     def get_config_modifications(self):
         self.config_mods = ConfigSummary()
@@ -288,6 +288,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     distribute_named_configs(scaffolding, named_configs)
     config_updates = config_updates or {}
     config_updates = convert_to_nested_dict(config_updates)
+    logger = initialize_logging(experiment, scaffolding, log_level)
 
     past_paths = set()
     for scaffold in scaffolding.values():
@@ -299,9 +300,8 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         # update global config
         config = get_configuration(scaffolding)
         # run config hooks
-        config_updates_update = scaffold.run_config_hooks(config,
-                                                          config_updates)
-        recursive_update(config_updates, config_updates_update)
+        config_updates = scaffold.run_config_hooks(config, config_updates,
+                                                   command_name, logger)
 
     for scaffold in reversed(list(scaffolding.values())):
         scaffold.set_up_seed()  # partially recursive
@@ -316,7 +316,6 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     main_function = get_command(scaffolding, command_name)
     post_runs = [pr for ing in sorted_ingredients for pr in ing.post_runs]
 
-    logger = initialize_logging(experiment, scaffolding, log_level)
     run = Run(config, config_modifications, main_function,
               experiment.observers, logger, experiment_info,
               host_info, post_runs)

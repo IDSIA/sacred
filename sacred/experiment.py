@@ -52,8 +52,27 @@ class Ingredient(object):
 
     # =========================== Decorators ==================================
     def config_hook(self, func):
-        """Decorator for the new config hook mechanism."""
-        self.config_hooks.append(ConfigScope(func))
+        """
+        Decorator to add a config hook to this ingredient.
+
+        Config hooks need to be a function that takes 3 parameters and returns
+        a dictionary:
+        (config, command_name, logger) --> dict
+
+        Config hooks are run after the configuration of this Ingredient, but
+        before any further ingredient-configurations are run.
+        The dictionary returned by a config hook is used to update the
+        config updates.
+        Note that they are not restricted to the local namespace of the
+        ingredient.
+        """
+        argspec = inspect.getargspec(func)
+        args = ['config', 'command_name', 'logger']
+        if not (argspec.args == args and argspec.varargs is None and
+                argspec.keywords is None and argspec.defaults is None):
+            raise ValueError('Wrong signature for config_hook. Expected: '
+                             '(config, command_name, logger)')
+        self.config_hooks.append(func)
         return self.config_hooks[-1]
 
     def post_run(self, func):

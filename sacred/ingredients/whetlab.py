@@ -10,49 +10,42 @@ whet = Ingredient('whet')
 
 @whet.config
 def cfg():
-    name = ''
+    suggest_for = ''
     access_token = None
-    result_name = 'result'
     searchspace = {}
+    result_name = 'result'
     description = ''  # optional
-    suggest = False
-
-
-@whet.command
-def init(name, searchspace, description, result_name, access_token):
-    """Initialize a whetlab hyperparameter search for this experiment.
-
-    Requires the whet.name, whet.access_token and whet.result_name and
-    whet.searchspace config entries to be set.
-    """
-    print("Setting up a Whetlab experiment:")
-    print("  * name:", name)
-    print("  * parameters:", searchspace)
-    print("  * description:", description)
-    print("  * result name:", result_name)
-    print("... ", end='')
-    scientist = whetlab.Experiment(name,
-                                   description=description,
-                                   parameters=searchspace,
-                                   outcome={'name': result_name},
-                                   access_token=access_token)
-    print("success!")
 
 
 @whet.config_hook
-def mod(whet):
-    if whet['suggest'] and whet['name']:
-        scientist = whetlab.Experiment(whet['name'])
+def suggest(config, command_name, logger):
+    whet = config['whet']
+    if whet['suggest_for']:
+        try:
+            scientist = whetlab.Experiment(whet['suggest_for'], resume=True)
+        except ValueError:
+            print("Setting up a Whetlab experiment:")
+            print("  * name:", whet['suggest_for'])
+            print("  * parameters:", whet['searchspace'])
+            print("  * description:", whet['description'])
+            print("  * result name:", whet['result_name'])
+            print("... ", end='')
+            scientist = whetlab.Experiment(
+                whet['suggest_for'],
+                description=whet['description'],
+                parameters=whet['searchspace'],
+                outcome={'name': whet['result_name']},
+                access_token=whet['access_token'])
+            print("Success")
         job = scientist.suggest()
-        locals().update(job)
-        del job
+        return job
 
 
 @whet.post_run
-def update_with_result(name, searchspace, _run):
-    if name and _run.result is not None:
+def update_with_result(suggest_for, searchspace, _run):
+    if suggest_for and _run.result is not None:
         print('Sending result "{}" to whetlab... '.format(_run.result))
-        scientist = whetlab.Experiment(name)
+        scientist = whetlab.Experiment(suggest_for, resume=True)
         job = {k: _run.config[k] for k in searchspace}
         scientist.update(job, _run.result)
         print('done')
