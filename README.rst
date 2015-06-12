@@ -6,15 +6,15 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
-    :target: http://dx.doi.org/10.5281/zenodo.16386
-    :alt: DOI for this release
-
-.. image:: http://img.shields.io/pypi/v/sacred.png
+.. image:: https://img.shields.io/pypi/v/sacred.svg
     :target: https://pypi.python.org/pypi/sacred
     :alt: Current PyPi Version
 
-.. image:: http://img.shields.io/badge/license-MIT-blue.png
+.. image:: https://img.shields.io/pypi/pyversions/sacred.svg
+    :target: https://pypi.python.org/pypi/sacred
+    :alt: Supported Python Versions
+
+.. image:: https://img.shields.io/badge/license-MIT-blue.png
     :target: http://choosealicense.com/licenses/mit/
     :alt: MIT licensed
 
@@ -34,10 +34,9 @@ Sacred
     :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
-.. image:: https://pypip.in/wheel/sacred/badge.svg?style=flat
-    :target: https://pypi.python.org/pypi/sacred/
-    :alt: Wheel Status
-
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
+    :target: http://dx.doi.org/10.5281/zenodo.16386
+    :alt: DOI for this release
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around

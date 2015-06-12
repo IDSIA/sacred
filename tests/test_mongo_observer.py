@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+from copy import deepcopy
 import datetime
 
 import mock
@@ -9,7 +10,7 @@ import mongomock
 import pytest
 from sacred.dependencies import get_digest
 from sacred.observers import MongoObserver
-from sacred.observers.mongo import force_bson_encodeable
+from sacred.observers.mongo import force_bson_encodeable, PickleNumpyArrays
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -46,6 +47,17 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
         'status': 'RUNNING',
         'resources': []
     }
+
+
+def test_mongo_observer_equality(mongo_obs):
+    runs = mongo_obs.runs
+    fs = mock.MagicMock()
+    m = MongoObserver(runs, fs)
+    assert mongo_obs == m
+    assert not mongo_obs != m
+
+    assert not mongo_obs == 'foo'
+    assert mongo_obs != 'foo'
 
 
 def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
@@ -185,3 +197,22 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
         '12,7': 'illegal because it is not a string key'
     }
     assert force_bson_encodeable(d) == expected
+
+
+def test_pickle_numpy_arrays_son_manipulator():
+    np = pytest.importorskip("numpy")
+    sonm = PickleNumpyArrays()
+    document = {
+        'foo': 'bar',
+        'some_array': np.eye(3),
+        'nested': {
+            'ones': np.ones(7)
+        }
+    }
+
+    mod_doc = sonm.transform_incoming(deepcopy(document), 'fake_collection')
+    mod_doc = force_bson_encodeable(mod_doc)
+    redoc = sonm.transform_outgoing(mod_doc, 'fake_collection')
+    assert redoc['foo'] == document['foo']
+    assert np.all(redoc['some_array'] == document['some_array'])
+    assert np.all(redoc['nested']['ones'] == document['nested']['ones'])

@@ -15,4 +15,5 @@ script:
 branches:
   only:
     - master
+    - develop
     - /^release.*$/

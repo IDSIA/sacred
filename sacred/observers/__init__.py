@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-from sacred.observers.base import RunObserver, DebugObserver
+from sacred.observers.base import RunObserver
 import sacred.optional as opt
 
 if opt.has_pymongo:
@@ -10,4 +10,4 @@ if opt.has_pymongo:
 else:
     MongoObserver = opt.MissingDependencyMock('pymongo')
 
-__all__ = ('RunObserver', 'DebugObserver', 'MongoObserver')
+__all__ = ('RunObserver', 'MongoObserver')

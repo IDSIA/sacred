@@ -31,13 +31,13 @@ class Ingredient(object):
     Ingredients can themselves use ingredients.
     """
 
-    def __init__(self, path, ingredients=(), _generate_seed=False,
-                 _caller_globals=None):
+    def __init__(self, path, ingredients=(), _caller_globals=None):
         self.path = path
         self.cfgs = []
         self.named_configs = dict()
         self.ingredients = list(ingredients)
-        self.gen_seed = _generate_seed
+        self.logger = None
+        self.observers = []
         self.captured_functions = []
         self._is_traversing = False
         self.commands = OrderedDict()
@@ -211,6 +211,33 @@ class Ingredient(object):
         self.current_run = None
         return run
 
+    def get_experiment_info(self):
+        """Get a dictionary with information about this experiment.
+
+        Contains:
+          * *name*: the name
+          * *sources*: a list of sources (filename, md5)
+          * *dependencies*: a list of package dependencies (name, version)
+          * *doc*: the docstring
+
+        :return: experiment information
+        :rtype: dict
+        """
+        dependencies = set()
+        sources = set()
+        for ing, _ in self._traverse_ingredients():
+            dependencies |= ing.dependencies
+            sources |= ing.sources
+
+        for dep in dependencies:
+            dep.fill_missing_version()
+
+        return dict(
+            name=self.path,
+            sources=[s.to_tuple() for s in sorted(sources)],
+            dependencies=[d.to_tuple() for d in sorted(dependencies)],
+            doc=self.doc)
+
     # ======================== Private Helpers ================================
 
     def _traverse_ingredients(self):
@@ -264,12 +291,8 @@ class Experiment(Ingredient):
         caller_globals = inspect.stack()[1][0].f_globals
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
-                                         _generate_seed=True,
                                          _caller_globals=caller_globals)
-        self.name = name
         self.default_command = ""
-        self.logger = None
-        self.observers = []
         self.command(print_config)
         self.command(print_dependencies)
 
@@ -368,7 +391,7 @@ class Experiment(Ingredient):
                                     config_updates=config_updates,
                                     named_configs_to_use=named_configs,
                                     log_level=loglevel)
-        except:
+        except Exception:
             if args['--debug']:
                 import traceback
                 import pdb
@@ -388,7 +411,8 @@ class Experiment(Ingredient):
         sure the file is stored in the database (but avoiding duplicates) along
         its path and md5 sum.
 
-        This function can only be called during a run.
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.open_resource` method.
 
         :param filename: name of the file that should be opened
         :type filename: str
@@ -405,7 +429,8 @@ class Experiment(Ingredient):
         run. In case of a MongoObserver that means storing the file in the
         database.
 
-        This function can only be called during a run.
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.add_artifact` method.
 
         :param filename: name of the file to be stored as artifact
         :type filename: str
@@ -419,40 +444,14 @@ class Experiment(Ingredient):
 
         Only works during a run and is essentially a shortcut to:
 
-            @ex.capture
-            def my_captured_function(_run)
-                ...
-                _run.info   # == ex.info
+        .. code-block:: python
 
+            @ex.capture
+            def my_captured_function(_run):
+                # [...]
+                _run.info   # == ex.info
         """
         return self.current_run.info
-
-    def get_experiment_info(self):
-        """Get a dictionary with information about this experiment.
-
-        Contains:
-          * *name*: the name
-          * *sources*: a list of sources (filename, md5)
-          * *dependencies*: a list of package dependencies (name, version)
-          * *doc*: the docstring
-
-        :return: experiment information
-        :rtype: dict
-        """
-        dependencies = set()
-        sources = set()
-        for ing, _ in self._traverse_ingredients():
-            dependencies |= ing.dependencies
-            sources |= ing.sources
-
-        for dep in dependencies:
-            dep.fill_missing_version()
-
-        return dict(
-            name=self.name,
-            sources=[s.to_tuple() for s in sorted(sources)],
-            dependencies=[d.to_tuple() for d in sorted(dependencies)],
-            doc=self.doc)
 
     # =========================== Private Helpers =============================
 
