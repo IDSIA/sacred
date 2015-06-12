@@ -1,6 +1,15 @@
 Release History
 ---------------
 
+0.6.4 (2015-06-12)
+++++++++++++++++++
+* Bugfix: fixed a problem where some config modification would be displayed as
+          added if there where multiple ConfigScopes involved
+* Bugfix: fixed a problem with tracking typechanges related to None-type
+* Bugfix: fixed a crash related to MongoObserver being an unhashable type
+* Bugfix: added back setslice and delslice methods to DogmaticList for
+          python 2.7 compatibility
+
 0.6.3 (2015-04-28)
 ++++++++++++++++++
 * Bugfix: fixed a bug in the mongo observer that would always crash the final
