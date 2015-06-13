@@ -6,6 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
+import wrapt
 
 from sacred.arg_parser import get_config_updates, get_observers, parse_args
 from sacred.commands import print_config, print_dependencies
@@ -17,6 +18,16 @@ from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, CircularDependencyError
 
 __sacred__ = True  # marks files that should be filtered from stack traces
+
+@wrapt.decorator
+def optional_kwargs_decorator(wrapped, instance, args, kwargs):
+    def _decorated(func):
+        return wrapped(func, **kwargs)
+
+    if args:
+        return _decorated(*args)
+    else:
+        return _decorated
 
 
 class Ingredient(object):
@@ -52,52 +63,49 @@ class Ingredient(object):
         self.current_run = None
 
     # =========================== Decorators ==================================
-    def config_hook(self, func):
+    @optional_kwargs_decorator
+    def capture(self, function=None, prefix=None):
         """
-        Decorator to add a config hook to this ingredient.
+        Decorator to turn a function into a captured function.
 
-        Config hooks need to be a function that takes 3 parameters and returns
-        a dictionary:
-        (config, command_name, logger) --> dict
+        The missing arguments of captured functions are automatically filled
+        from the configuration if possible.
+        See :ref:`captured_functions` for more information.
 
-        Config hooks are run after the configuration of this Ingredient, but
-        before any further ingredient-configurations are run.
-        The dictionary returned by a config hook is used to update the
-        config updates.
-        Note that they are not restricted to the local namespace of the
-        ingredient.
+        If a ``prefix`` is specified, the search for suitable
+        entries is performed in the corresponding subtree of the configuration.
         """
-        argspec = inspect.getargspec(func)
-        args = ['config', 'command_name', 'logger']
-        if not (argspec.args == args and argspec.varargs is None and
-                argspec.keywords is None and argspec.defaults is None):
-            raise ValueError('Wrong signature for config_hook. Expected: '
-                             '(config, command_name, logger)')
-        self.config_hooks.append(func)
-        return self.config_hooks[-1]
+        if function in self.captured_functions:
+            return function
+        captured_function = create_captured_function(function, prefix=prefix)
+        self.captured_functions.append(captured_function)
+        return captured_function
 
-    def pre_run_hook(self, func):
+    @optional_kwargs_decorator
+    def pre_run_hook(self, func, prefix=None):
         """
         Decorator to add a pre-run hook to this ingredient.
 
         Pre-run hooks are captured functions that are run, just before the
         main function is executed.
         """
-        cf = self.capture(func)
+        cf = self.capture(func, prefix=prefix)
         self.pre_run_hooks.append(cf)
         return cf
 
-    def post_run_hook(self, func):
+    @optional_kwargs_decorator
+    def post_run_hook(self, func, prefix=None):
         """
         Decorator to add a post-run hook to this ingredient.
 
         Post-run hooks are captured functions that are run, just after the
         main function is executed.
         """
-        cf = self.capture(func)
+        cf = self.capture(func, prefix=prefix)
         self.post_run_hooks.append(cf)
         return cf
 
+    @optional_kwargs_decorator
     def command(self, function=None, prefix=None):
         """
         Decorator to define a new command for this Ingredient or Experiment.
@@ -110,15 +118,9 @@ class Ingredient(object):
         The command can be given a prefix, to restrict its configuration space
         to a subtree. (see ``capture`` for more information)
         """
-        def _command(func):
-            captured_f = self.capture(func, prefix=prefix)
-            self.commands[func.__name__] = captured_f
-            return captured_f
-
-        if function is not None:
-            return _command(function)
-        else:
-            return _command
+        captured_f = self.capture(function, prefix=prefix)
+        self.commands[function.__name__] = captured_f
+        return captured_f
 
     def config(self, function):
         """
@@ -145,28 +147,29 @@ class Ingredient(object):
         self.named_configs[func.__name__] = config_scope
         return config_scope
 
-    def capture(self, function=None, prefix=None):
+    def config_hook(self, func):
         """
-        Decorator to turn a function into a captured function.
+        Decorator to add a config hook to this ingredient.
 
-        The missing arguments of captured functions are automatically filled
-        from the configuration if possible.
-        See :ref:`captured_functions` for more information.
+        Config hooks need to be a function that takes 3 parameters and returns
+        a dictionary:
+        (config, command_name, logger) --> dict
 
-        If a ``prefix`` is specified, the search for suitable
-        entries is performed in the corresponding subtree of the configuration.
+        Config hooks are run after the configuration of this Ingredient, but
+        before any further ingredient-configurations are run.
+        The dictionary returned by a config hook is used to update the
+        config updates.
+        Note that they are not restricted to the local namespace of the
+        ingredient.
         """
-        def _capture(func):
-            if func in self.captured_functions:
-                return func
-            captured_function = create_captured_function(func, prefix=prefix)
-            self.captured_functions.append(captured_function)
-            return captured_function
-
-        if function is not None:
-            return _capture(function)
-        else:
-            return _capture
+        argspec = inspect.getargspec(func)
+        args = ['config', 'command_name', 'logger']
+        if not (argspec.args == args and argspec.varargs is None and
+                argspec.keywords is None and argspec.defaults is None):
+            raise ValueError('Wrong signature for config_hook. Expected: '
+                             '(config, command_name, logger)')
+        self.config_hooks.append(func)
+        return self.config_hooks[-1]
 
     # =========================== Public Interface ============================
 
