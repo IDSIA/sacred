@@ -122,7 +122,9 @@ class Scaffold(object):
         return final_cfg_updates
 
     def get_config_modifications(self):
-        self.config_mods = ConfigSummary(added={key for key, value in iterate_flattened(self.config_updates)})
+        self.config_mods = ConfigSummary(
+            added={key
+                   for key, value in iterate_flattened(self.config_updates)})
         for cfg_summary in self.summaries:
             self.config_mods.update_from(cfg_summary)
 
@@ -307,7 +309,8 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
-    config_modifications = get_config_modifications(scaffolding, config_updates)
+    config_modifications = get_config_modifications(scaffolding,
+                                                    config_updates)
 
     # ----------------------------------------------------
 
