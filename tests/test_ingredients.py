@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
+from sacred.config import ConfigScope
 
 from sacred.dependencies import Source
 from sacred.experiment import Ingredient
@@ -44,7 +45,6 @@ def test_capture_function_twice(ing):
     assert ing.captured_functions == [foo]
     ing.capture(foo)
     assert ing.captured_functions == [foo]
-
 
 
 def test_add_pre_run_hook(ing):
@@ -109,6 +109,24 @@ def test_add_config_hook(ing):
     ch = ing.config_hook(foo)
     assert ch == foo
     assert foo in ing.config_hooks
+
+
+def test_add_config(ing):
+    @ing.config
+    def cfg():
+        pass
+
+    assert isinstance(cfg, ConfigScope)
+    assert cfg in ing.configurations
+
+
+def test_add_named_config(ing):
+    @ing.named_config
+    def foo():
+        pass
+    assert isinstance(foo, ConfigScope)
+    assert 'foo' in ing.named_configs
+    assert ing.named_configs['foo'] == foo
 
 
 def test_add_config_hook_with_invalid_signature_raises(ing):

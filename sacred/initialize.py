@@ -226,7 +226,7 @@ def create_scaffolding(experiment, sorted_ingredients):
     scaffolding = OrderedDict()
     for ingredient in sorted_ingredients[:-1]:
         scaffolding[ingredient] = Scaffold(
-            config_scopes=ingredient.cfgs,
+            config_scopes=ingredient.configurations,
             subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                     for m in ingredient.ingredients]),
             path=ingredient.path if ingredient != experiment else '',
@@ -237,7 +237,7 @@ def create_scaffolding(experiment, sorted_ingredients):
             generate_seed=False)
 
     scaffolding[experiment] = Scaffold(
-        experiment.cfgs,
+        experiment.configurations,
         subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                 for m in experiment.ingredients]),
         path=experiment.path if experiment != experiment else '',

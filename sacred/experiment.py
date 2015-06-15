@@ -45,7 +45,7 @@ class Ingredient(object):
     def __init__(self, path, ingredients=(), _caller_globals=None):
         self.path = path
         self.config_hooks = []
-        self.cfgs = []
+        self.configurations = []
         self.named_configs = dict()
         self.ingredients = list(ingredients)
         self.logger = None
@@ -134,8 +134,8 @@ class Ingredient(object):
         all json-serializable local variables inside it will end up as entries
         in the configuration of the experiment.
         """
-        self.cfgs.append(ConfigScope(function))
-        return self.cfgs[-1]
+        self.configurations.append(ConfigScope(function))
+        return self.configurations[-1]
 
     def named_config(self, func):
         """
@@ -194,9 +194,9 @@ class Ingredient(object):
         if cfg is None:
             if not kw_conf:
                 raise ValueError("attempted to add empty config")
-            self.cfgs.append(ConfigDict(kw_conf))
+            self.configurations.append(ConfigDict(kw_conf))
         elif isinstance(cfg, dict):
-            self.cfgs.append(ConfigDict(cfg))
+            self.configurations.append(ConfigDict(cfg))
         else:
             raise TypeError("Invalid argument type {}".format(type(cfg)))
 
