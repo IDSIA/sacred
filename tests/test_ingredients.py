@@ -3,8 +3,10 @@
 """global docstring"""
 from __future__ import division, print_function, unicode_literals
 
+import tempfile
+import json
 import pytest
-from sacred.config import ConfigScope
+from sacred.config import ConfigScope, ConfigDict
 
 from sacred.dependencies import Source
 from sacred.experiment import Ingredient
@@ -134,3 +136,52 @@ def test_add_config_hook_with_invalid_signature_raises(ing):
         @ing.config_hook
         def foo(wrong, signature):
             pass
+
+
+def test_add_config_dict(ing):
+    ing.add_config({'foo': 12, 'bar': 4})
+    assert len(ing.configurations) == 1
+    assert isinstance(ing.configurations[0], ConfigDict)
+    assert ing.configurations[0]() == {'foo': 12, 'bar': 4}
+
+
+def test_add_config_kwargs(ing):
+    ing.add_config(foo=18, bar=3)
+    assert len(ing.configurations) == 1
+    assert isinstance(ing.configurations[0], ConfigDict)
+    assert ing.configurations[0]() == {'foo': 18, 'bar': 3}
+
+
+def test_add_config_kwargs_and_dict_raises(ing):
+    with pytest.raises(ValueError):
+        ing.add_config({'foo': 12}, bar=3)
+
+
+def test_add_config_empty_raises(ing):
+    with pytest.raises(ValueError):
+        ing.add_config()
+
+
+def test_add_config_non_dict_raises(ing):
+    with pytest.raises(TypeError):
+        ing.add_config(12)
+
+    with pytest.raises(TypeError):
+        ing.add_config('foo')
+
+
+def test_add_config_file(ing):
+    with tempfile.NamedTemporaryFile('w+', suffix='.json') as f:
+        json.dump({'foo': 15, 'bar': 7}, f)
+        f.seek(0)  # simulates closing and reopening
+        f.flush()
+        ing.add_config_file(f.name)
+
+    assert len(ing.configurations) == 1
+    assert isinstance(ing.configurations[0], ConfigDict)
+    assert ing.configurations[0]() == {'foo': 15, 'bar': 7}
+
+
+def test_add_config_file_nonexisting_raises(ing):
+    with pytest.raises(IOError):
+        ing.add_config_file("nonexistens.json")
