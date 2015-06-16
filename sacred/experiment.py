@@ -19,6 +19,7 @@ from sacred.utils import print_filtered_stacktrace, CircularDependencyError
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
+
 @wrapt.decorator
 def optional_kwargs_decorator(wrapped, instance, args, kwargs):
     def _decorated(func):
