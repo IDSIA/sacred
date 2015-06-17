@@ -48,7 +48,6 @@ class Signature(object):
             * conflicting values for a parameter in both args and kwargs
             * there is an unfilled parameter at the end of this process
         """
-
         expected_args = self._get_expected_args(bound)
         self._assert_no_unexpected_args(expected_args, args)
         self._assert_no_unexpected_kwargs(expected_args, kwargs)
