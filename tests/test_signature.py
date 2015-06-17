@@ -74,6 +74,11 @@ pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
 kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}, {}]
 
 
+class SomeClass:
+    def bla(self, a, b, c):
+        return a, b, c
+
+
 # #######################  Tests  #############################################
 
 @pytest.mark.parametrize("function, name", zip(functions, names), ids=ids)
@@ -237,7 +242,6 @@ def test_construct_arguments_completes_kwargs_from_options():
     args, kwargs = s.construct_arguments([2, 4], {}, {'c': 6})
     assert args == [2, 4]
     assert kwargs == {'c': 6}
-
     s = Signature(complex_function_name)
     args, kwargs = s.construct_arguments([], {'c': 6, 'b': 7}, {'a': 1})
     assert args == []
@@ -300,6 +304,13 @@ def test_construct_arguments_does_not_raise_if_all_args_filled():
 def test_construct_arguments_does_not_raise_for_missing_defaults():
     s = Signature(complex_function_name)
     s.construct_arguments([], {}, {})
+
+
+def test_construct_arguments_for_bound_method():
+    s = Signature(SomeClass.bla)
+    args, kwargs = s.construct_arguments([1], {'b': 2}, {'c': 3}, bound=True)
+    assert args == [1]
+    assert kwargs == {'b': 2, 'c': 3}
 
 
 @pytest.mark.parametrize('func,expected', [
