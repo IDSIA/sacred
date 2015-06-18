@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 
 # example_test will be parametrized by the test generation hook in conftest.py
-def notest_example(capsys, example_test):
+def test_example(capsys, example_test):
     ex, call, out = example_test
     ex.run_commandline(call)
     captured_out, captured_err = capsys.readouterr()
