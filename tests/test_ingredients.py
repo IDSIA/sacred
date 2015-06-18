@@ -8,7 +8,7 @@ import json
 import pytest
 from sacred.config import ConfigScope, ConfigDict
 
-from sacred.dependencies import Source
+from sacred.dependencies import Source, PackageDependency
 from sacred.experiment import Ingredient
 
 
@@ -173,8 +173,8 @@ def test_add_config_non_dict_raises(ing):
 def test_add_config_file(ing):
     with tempfile.NamedTemporaryFile('w+', suffix='.json') as f:
         json.dump({'foo': 15, 'bar': 7}, f)
-        f.seek(0)  # simulates closing and reopening
         f.flush()
+        f.seek(0)  # simulates closing and reopening
         ing.add_config_file(f.name)
 
     assert len(ing.configurations) == 1
@@ -185,3 +185,27 @@ def test_add_config_file(ing):
 def test_add_config_file_nonexisting_raises(ing):
     with pytest.raises(IOError):
         ing.add_config_file("nonexistens.json")
+
+
+def test_add_source_file(ing):
+    with tempfile.NamedTemporaryFile('w+', suffix='.py') as f:
+        f.write("print('Hello World')")
+        f.flush()
+        f.seek(0)  # simulates closing and reopening
+        ing.add_source_file(f.name)
+        assert Source.create(f.name) in ing.sources
+
+
+def test_add_source_file_nonexisting_raises(ing):
+    with pytest.raises(ValueError):
+        ing.add_source_file('nonexisting.py')
+
+
+def test_add_package_dependency(ing):
+    ing.add_package_dependency('django', '1.8.2')
+    assert PackageDependency('django', '1.8.2') in ing.dependencies
+
+
+def test_add_package_dependency_invalid_version_raises(ing):
+    with pytest.raises(ValueError):
+        ing.add_package_dependency('django', 'foobar')
