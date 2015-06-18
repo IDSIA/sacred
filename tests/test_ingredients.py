@@ -226,6 +226,7 @@ def test_get_experiment_info_circular_dependency_raises(ing):
     with pytest.raises(CircularDependencyError):
         ing.get_experiment_info()
 
+
 def test_gather_commands(ing):
     ing2 = Ingredient('other', ingredients=[ing])
 
@@ -240,4 +241,3 @@ def test_gather_commands(ing):
     commands = list(ing2._gather_commands())
     assert ('other.bar', bar) in commands
     assert ('tickle.foo', foo) in commands
-
