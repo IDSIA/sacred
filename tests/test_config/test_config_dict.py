@@ -47,7 +47,7 @@ def test_config_dict_raises_on_invalid_keys(key):
 
 
 @pytest.mark.parametrize("value", [lambda x:x, pytest, test_fixing_values])
-def test_config_dict_raises_on_invalid_keys(value):
+def test_config_dict_raises_on_invalid_values(value):
     with pytest.raises(ValueError):
         ConfigDict({"invalid": value})
 
