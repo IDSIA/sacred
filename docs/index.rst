@@ -53,6 +53,7 @@ Contents
    ingredients
    examples
    apidoc
+   internals
 
 
 Index

@@ -14,8 +14,8 @@ def test_ingredient_config():
         a = 5
         b = 'foo'
 
-    assert len(m.cfgs) == 1
-    cfg = m.cfgs[0]
+    assert len(m.configurations) == 1
+    cfg = m.configurations[0]
     assert isinstance(cfg, ConfigScope)
     assert cfg() == {'a': 5, 'b': 'foo'}
 

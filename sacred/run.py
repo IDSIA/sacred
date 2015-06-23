@@ -19,7 +19,8 @@ class Run(object):
     """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_info, host_info):
+                 logger, experiment_info, host_info, pre_run_hooks,
+                 post_run_hooks):
 
         self.captured_out = None
         """Captured stdout and stderr"""
@@ -47,6 +48,10 @@ class Run(object):
 
         self._observers = observers
         """A list of all observers that observe this run"""
+
+        self.pre_run_hooks = pre_run_hooks
+
+        self.post_run_hooks = post_run_hooks
 
         self.result = None
         """The return value of the main function"""
@@ -113,7 +118,9 @@ class Run(object):
             self._emit_started()
             self._start_heartbeat()
             try:
+                self.execute_pre_run_hooks()
                 self.result = self.main_function(*args)
+                self.execute_post_run_hooks()
                 self._stop_heartbeat()
                 self._emit_completed(self.result)
                 return self.result
@@ -138,9 +145,8 @@ class Run(object):
         self._heartbeat.start()
 
     def _stop_heartbeat(self):
-        if self._heartbeat is None:
-            return
-        self._heartbeat.cancel()
+        if self._heartbeat is not None:
+            self._heartbeat.cancel()
         self._heartbeat = None
         self._emit_heatbeat()  # one final beat to flush pending changes
 
@@ -157,8 +163,6 @@ class Run(object):
                 # fail if any of the observers fails
 
     def _emit_heatbeat(self):
-        if self.start_time is None or self.stop_time is not None:
-            return
         beat_time = datetime.datetime.now()
         for observer in self._observers:
             self._safe_call(observer, 'heartbeat_event',
@@ -230,3 +234,11 @@ class Run(object):
         for observer in self._failed_observers:
             self.logger.warning("The observer '{}' failed at some point "
                                 "during the run.".format(observer))
+
+    def execute_pre_run_hooks(self):
+        for pr in self.pre_run_hooks:
+            pr()
+
+    def execute_post_run_hooks(self):
+        for pr in self.post_run_hooks:
+            pr()

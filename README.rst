@@ -6,37 +6,9 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
-.. image:: https://img.shields.io/pypi/v/sacred.svg
-    :target: https://pypi.python.org/pypi/sacred
-    :alt: Current PyPi Version
+|pypi| |py_versions| |license| |doi|
 
-.. image:: https://img.shields.io/pypi/pyversions/sacred.svg
-    :target: https://pypi.python.org/pypi/sacred
-    :alt: Supported Python Versions
-
-.. image:: https://img.shields.io/badge/license-MIT-blue.png
-    :target: http://choosealicense.com/licenses/mit/
-    :alt: MIT licensed
-
-.. image:: https://readthedocs.org/projects/sacred/badge/?version=latest&style=flat
-    :target: http://sacred.readthedocs.org/
-    :alt: ReadTheDocs
-
-.. image:: https://travis-ci.org/IDSIA/sacred.svg
-    :target: https://travis-ci.org/IDSIA/sacred
-    :alt: Travis-CI Status
-
-.. image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
-    :target: https://coveralls.io/r/IDSIA/sacred
-    :alt: Coverage Report
-
-.. image:: https://scrutinizer-ci.com/g/IDSIA/sacred/badges/quality-score.png?b=master
-    :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
-    :alt: Code Scrutinizer Quality
-
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
-    :target: http://dx.doi.org/10.5281/zenodo.16386
-    :alt: DOI for this release
+|unix_build| |windows_build| |coverage| |code_quality| |codacy|
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around
@@ -101,3 +73,45 @@ can automatically run the tests for various python versions like this:
 License
 -------
 This project is released under the terms of the `MIT license <http://opensource.org/licenses/MIT>`_.
+
+.. |pypi| image:: https://img.shields.io/pypi/v/sacred.svg
+    :target: https://pypi.python.org/pypi/sacred
+    :alt: Current PyPi Version
+
+.. |py_versions| image:: https://img.shields.io/pypi/pyversions/sacred.svg
+    :target: https://pypi.python.org/pypi/sacred
+    :alt: Supported Python Versions
+
+.. |license| image:: https://img.shields.io/badge/license-MIT-blue.png
+    :target: http://choosealicense.com/licenses/mit/
+    :alt: MIT licensed
+
+.. |rtfd| image:: https://readthedocs.org/projects/sacred/badge/?version=latest&style=flat
+    :target: http://sacred.readthedocs.org/
+    :alt: ReadTheDocs
+
+.. |doi| image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
+    :target: http://dx.doi.org/10.5281/zenodo.16386
+    :alt: DOI for this release
+
+.. |unix_build| image:: https://img.shields.io/travis/IDSIA/sacred.svg?branch=master&style=flat&label=unix%20build
+    :target: https://travis-ci.org/IDSIA/sacred
+    :alt: Travis-CI Status
+
+.. |windows_build| image:: https://img.shields.io/appveyor/ci/qwlouse/sacred.svg?style=flat&label=windows%20build
+    :target: https://travis-ci.org/IDSIA/sacred
+    :alt: Travis-CI Status
+
+.. |coverage| image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
+    :target: https://coveralls.io/r/IDSIA/sacred
+    :alt: Coverage Report
+
+.. |code_quality| image:: https://scrutinizer-ci.com/g/IDSIA/sacred/badges/quality-score.png?b=master
+    :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
+    :alt: Code Scrutinizer Quality
+
+.. |codacy| image:: https://img.shields.io/codacy/acb7bba4467e47deaf260d6df5c0279f.svg?style=flat
+    :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
+    :alt: Code Scrutinizer Quality
+
+

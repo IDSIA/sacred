@@ -7,6 +7,8 @@ to be copied to every single experiment.
 
 Ingredients are a way of defining a configuration with associated functions and
 possibly commands that can be reused by many different experiments.
+Furthermore they can influence the configuration and execution of experiments
+by using certain hooks.
 
 Simple Example
 ==============
@@ -160,4 +162,16 @@ The only exception is, that if you want to access the configuration from another
 Ingredient you can leave away their common prefix. So accessing ``dataset.path``
 from ``dataset`` you could just directly access ``path`` in captured functions
 and ConfigScopes.
+
+Hooks
+=====
+Hooks are advanced mechanisms that allow the ingredient to affect the normal
+execution of the experiment.
+
+Pre- and Post-Run Hooks
+-----------------------
+
+
+Configuration Hooks
+-------------------
 

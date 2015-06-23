@@ -32,7 +32,6 @@ def conf_scope():
 
         ignored3 = int
 
-
     cfg()
     return cfg
 
@@ -45,7 +44,7 @@ def test_result_of_config_scope_is_dict(conf_scope):
 def test_result_of_config_scope_contains_keys(conf_scope):
     cfg = conf_scope()
     assert set(cfg.keys()) == {'a', 'b', 'c', 'd', 'e', 'f',
-                                      'composit1', 'composit2', 'deriv'}
+                               'composit1', 'composit2', 'deriv'}
 
     assert cfg['a'] == 1
     assert cfg['b'] == 2.0
@@ -81,8 +80,8 @@ def test_adding_values(conf_scope):
 def test_typechange(conf_scope):
     cfg = conf_scope({'a': 'bar', 'b': 'foo', 'c': 1})
     assert cfg.typechanged == {'a': (int, type('bar')),
-                                      'b': (float, type('foo')),
-                                      'c': (bool, int)}
+                               'b': (float, type('foo')),
+                               'c': (bool, int)}
 
 
 def test_nested_typechange(conf_scope):
