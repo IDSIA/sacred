@@ -115,6 +115,7 @@ def test_run_artifact_event(run):
     handle, f_name = tempfile.mkstemp()
     run.add_artifact(f_name)
     observer.artifact_event.assert_called_with(filename=f_name)
+    os.close(handle)
     os.remove(f_name)
 
 
@@ -123,6 +124,7 @@ def test_run_resource_event(run):
     handle, f_name = tempfile.mkstemp()
     run.open_resource(f_name)
     observer.resource_event.assert_called_with(filename=f_name)
+    os.close(handle)
     os.remove(f_name)
 
 
