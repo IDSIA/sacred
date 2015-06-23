@@ -99,8 +99,8 @@ This project is released under the terms of the `MIT license <http://opensource.
     :alt: Travis-CI Status
 
 .. |windows_build| image:: https://img.shields.io/appveyor/ci/qwlouse/sacred.svg?style=flat&label=windows%20build
-    :target: https://travis-ci.org/IDSIA/sacred
-    :alt: Travis-CI Status
+    :target: https://ci.appveyor.com/project/Qwlouse/sacred
+    :alt: appveyor-CI Status
 
 .. |coverage| image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
     :target: https://coveralls.io/r/IDSIA/sacred
@@ -111,7 +111,7 @@ This project is released under the terms of the `MIT license <http://opensource.
     :alt: Code Scrutinizer Quality
 
 .. |codacy| image:: https://img.shields.io/codacy/acb7bba4467e47deaf260d6df5c0279f.svg?style=flat
-    :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
-    :alt: Code Scrutinizer Quality
+    :target: https://www.codacy.com/app/qwlouse/sacred
+    :alt: Codacity rating
 
 
