@@ -15,13 +15,7 @@ environment:
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.x" # currently 3.4.3
-
 build: false
-
-environment:
-  matrix:
-    - PYTHON: "C:/Python27"
-    - PYTHON: "C:/Python34"
 init:
   - "ECHO %PYTHON%"
   - ps: "ls C:/Python*"
