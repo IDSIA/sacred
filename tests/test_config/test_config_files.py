@@ -2,9 +2,10 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import os
 import tempfile
-
 import pytest
+
 from sacred.config.config_files import HANDLER_BY_EXT, load_config_file
 
 data = {
@@ -27,8 +28,10 @@ def test_save_and_load(handler):
 
 @pytest.mark.parametrize('ext, handler', HANDLER_BY_EXT.items())
 def test_load_config_file(ext, handler):
-    with tempfile.NamedTemporaryFile('w+' + handler.mode, suffix=ext) as f:
-        handler.dump(data, f)
-        f.seek(0)
-        d = load_config_file(f.name)
-        assert d == data
+    handle, f_name = tempfile.mkstemp(suffix=ext)
+    f = os.fdopen(handle, "w" + handler.mode)
+    handler.dump(data, f)
+    f.close()
+    d = load_config_file(f_name)
+    assert d == data
+    os.remove(f_name)

@@ -3,7 +3,10 @@
 from __future__ import division, print_function, unicode_literals
 from datetime import datetime
 import mock
+import os
 import pytest
+import tempfile
+
 from sacred.run import Run
 from sacred.config.config_summary import ConfigSummary
 from sacred.utils import ObserverError
@@ -109,15 +112,18 @@ def test_run_heartbeat_event(run):
 
 def test_run_artifact_event(run):
     observer = run._observers[0]
-    run.add_artifact('/tmp/my_artifact.dat')
-    observer.artifact_event.assert_called_with(filename='/tmp/my_artifact.dat')
+    handle, f_name = tempfile.mkstemp()
+    run.add_artifact(f_name)
+    observer.artifact_event.assert_called_with(filename=f_name)
+    os.remove(f_name)
 
 
 def test_run_resource_event(run):
     observer = run._observers[0]
-    with pytest.raises((OSError, IOError)):
-        run.open_resource('/tmp/my_artifact.dat')
-    observer.resource_event.assert_called_with(filename='/tmp/my_artifact.dat')
+    handle, f_name = tempfile.mkstemp()
+    run.open_resource(f_name)
+    observer.resource_event.assert_called_with(filename=f_name)
+    os.remove(f_name)
 
 
 def test_run_cannot_be_started_twice(run):

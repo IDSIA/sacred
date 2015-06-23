@@ -3,11 +3,12 @@
 """global docstring"""
 from __future__ import division, print_function, unicode_literals
 
-import tempfile
 import json
+import os
 import pytest
-from sacred.config import ConfigScope, ConfigDict
+import tempfile
 
+from sacred.config import ConfigScope, ConfigDict
 from sacred.dependencies import Source, PackageDependency
 from sacred.experiment import Ingredient
 
@@ -171,15 +172,16 @@ def test_add_config_non_dict_raises(ing):
 
 
 def test_add_config_file(ing):
-    with tempfile.NamedTemporaryFile('w+', suffix='.json') as f:
-        json.dump({'foo': 15, 'bar': 7}, f)
-        f.flush()
-        f.seek(0)  # simulates closing and reopening
-        ing.add_config_file(f.name)
+    handle, f_name = tempfile.mkstemp(suffix='.json')
+    f = os.fdopen(handle, "w")
+    json.dump({'foo': 15, 'bar': 7}, f)
+    f.close()
+    ing.add_config_file(f_name)
 
     assert len(ing.configurations) == 1
     assert isinstance(ing.configurations[0], ConfigDict)
     assert ing.configurations[0]() == {'foo': 15, 'bar': 7}
+    os.remove(f_name)
 
 
 def test_add_config_file_nonexisting_raises(ing):
@@ -188,12 +190,13 @@ def test_add_config_file_nonexisting_raises(ing):
 
 
 def test_add_source_file(ing):
-    with tempfile.NamedTemporaryFile('w+', suffix='.py') as f:
-        f.write("print('Hello World')")
-        f.flush()
-        f.seek(0)  # simulates closing and reopening
-        ing.add_source_file(f.name)
-        assert Source.create(f.name) in ing.sources
+    handle, f_name = tempfile.mkstemp(suffix='.py')
+    f = os.fdopen(handle, "w")
+    f.write("print('Hello World')")
+    f.close()
+    ing.add_source_file(f_name)
+    assert Source.create(f_name) in ing.sources
+    os.remove(f_name)
 
 
 def test_add_source_file_nonexisting_raises(ing):
