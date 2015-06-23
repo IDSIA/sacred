@@ -1,0 +1,10 @@
+docopt
+six
+wrapt
+pytest
+mock
+mongomock
+pymongo
+numpy
+pyyaml
+pytest-cov
