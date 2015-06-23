@@ -9,6 +9,7 @@ import re
 import sys
 import traceback as tb
 from contextlib import contextmanager
+import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -253,3 +254,14 @@ def is_subdir(path, directory):
     directory = os.path.abspath(os.path.realpath(directory)) + os.sep
 
     return path.startswith(directory)
+
+
+@wrapt.decorator
+def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
+    def _decorated(func):
+        return wrapped(func, **kwargs)
+
+    if args:
+        return _decorated(*args)
+    else:
+        return _decorated

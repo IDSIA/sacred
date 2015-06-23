@@ -10,7 +10,8 @@ import tempfile
 
 from sacred.config import ConfigScope, ConfigDict
 from sacred.dependencies import Source, PackageDependency
-from sacred.experiment import Ingredient
+from sacred.ingredient import Ingredient
+from sacred.utils import CircularDependencyError
 
 
 @pytest.fixture
@@ -212,3 +213,34 @@ def test_add_package_dependency(ing):
 def test_add_package_dependency_invalid_version_raises(ing):
     with pytest.raises(ValueError):
         ing.add_package_dependency('django', 'foobar')
+
+
+def test_get_experiment_info(ing):
+    info = ing.get_experiment_info()
+    assert info['name'] == 'tickle'
+    assert info['doc'] == 'global docstring'
+    assert 'dependencies' in info
+    assert 'sources' in info
+
+
+def test_get_experiment_info_circular_dependency_raises(ing):
+    ing2 = Ingredient('other', ingredients=[ing])
+    ing.ingredients = [ing2]
+    with pytest.raises(CircularDependencyError):
+        ing.get_experiment_info()
+
+
+def test_gather_commands(ing):
+    ing2 = Ingredient('other', ingredients=[ing])
+
+    @ing.command
+    def foo():
+        pass
+
+    @ing2.command
+    def bar():
+        pass
+
+    commands = list(ing2._gather_commands())
+    assert ('other.bar', bar) in commands
+    assert ('tickle.foo', foo) in commands

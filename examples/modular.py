@@ -11,7 +11,7 @@ s = Ingredient("settings")
 
 
 @s.config
-def cfg():
+def cfg1():
     verbose = True
 
 
@@ -20,7 +20,7 @@ data_paths = Ingredient("dataset.paths", ingredients=[s])
 
 
 @data_paths.config
-def cfg(settings):
+def cfg2(settings):
     v = not settings['verbose']
     base = '/home/sacred/'
 
@@ -30,7 +30,7 @@ data = Ingredient("dataset", ingredients=[data_paths, s])
 
 
 @data.config
-def cfg(paths):
+def cfg3(paths):
     basepath = paths['base'] + 'datasets/'
     filename = "foo.hdf5"
 

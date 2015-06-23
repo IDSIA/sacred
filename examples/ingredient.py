@@ -11,7 +11,7 @@ data_ingredient = Ingredient('dataset')
 
 
 @data_ingredient.config
-def cfg():
+def cfg1():
     filename = 'my_dataset.npy'
     normalize = True
 
@@ -34,7 +34,7 @@ def stats(filename):
 # ================== Experiment ===============================================
 
 @data_ingredient.config
-def cfg():
+def cfg2():
     filename = 'foo.npy'
 
 # add the Ingredient while creating the experiment
