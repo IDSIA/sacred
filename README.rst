@@ -37,7 +37,7 @@ Sacred achieves this through the following main mechanisms:
 Example
 -------
 +------------------------------------------------+--------------------------------------------+
-| **Script to train an SVM on the Iris Dataset** | **The same Script as a Sacred Experiment** |
+| **Script to train an SVM on the iris dataset** | **The same script as a Sacred experiment** |
 +------------------------------------------------+--------------------------------------------+
 | .. code:: python                               | .. code:: python                           |
 |                                                |                                            |
@@ -48,20 +48,20 @@ Example
 |                                                |                                            |
 |                                                |   @ex.config                               |
 |                                                |   def cfg():                               |
-|  C = 1.0                                       |       C = 1.0                              |
-|  gamma = 0.7                                   |       gamma = 0.7                          |
+|  C = 1.0                                       |     C = 1.0                                |
+|  gamma = 0.7                                   |     gamma = 0.7                            |
 |                                                |                                            |
 |                                                |   @ex.automain                             |
 |                                                |   def run(C, gamma):                       |
-|  iris = datasets.load_iris()                   |       iris = datasets.load_iris()          |
-|  perm = permutation(iris.target.size)          |       per = permutation(iris.target.size)  |
-|  iris.data = iris.data[perm]                   |       iris.data = iris.data[per]           |
-|  iris.target = iris.target[perm]               |       iris.target = iris.target[per]       |
-|  clf = svm.SVC(C, 'rbf', gamma=gamma)          |       clf = svm.SVC(C, 'rbf', gamma=gamma) |
-|  clf.fit(iris.data[:90],                       |       clf.fit(iris.data[:90],              |
-|          iris.target[:90])                     |               iris.target[:90])            |
-|  print(clf.score(iris.data[90:],               |       return clf.score(iris.data[90:],     |
-|                  iris.target[90:]))            |                        iris.target[90:])   |
+|  iris = datasets.load_iris()                   |     iris = datasets.load_iris()            |
+|  perm = permutation(iris.target.size)          |     per = permutation(iris.target.size)    |
+|  iris.data = iris.data[perm]                   |     iris.data = iris.data[per]             |
+|  iris.target = iris.target[perm]               |     iris.target = iris.target[per]         |
+|  clf = svm.SVC(C, 'rbf', gamma=gamma)          |     clf = svm.SVC(C, 'rbf', gamma=gamma)   |
+|  clf.fit(iris.data[:90],                       |     clf.fit(iris.data[:90],                |
+|          iris.target[:90])                     |             iris.target[:90])              |
+|  print(clf.score(iris.data[90:],               |     return clf.score(iris.data[90:],       |
+|                  iris.target[90:]))            |                      iris.target[90:])     |
 +------------------------------------------------+--------------------------------------------+
 
 Documentation
