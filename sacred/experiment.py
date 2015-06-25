@@ -100,7 +100,8 @@ class Experiment(Ingredient):
         :param loglevel: Changes to the log-level for this run.
         :type loglevel: int | str
 
-        :return: The result of the main function.
+        :returns: the Run object corresponding to the finished run
+        :rtype: sacred.run.Run
         """
         assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
@@ -116,7 +117,8 @@ class Experiment(Ingredient):
 
         :param argv: split command-line like ``sys.argv``.
         :type argv: list[str]
-        :return: The result of the command that was run.
+        :returns: the Run object corresponding to the finished run
+        :rtype: sacred.run.Run
         """
         if argv is None:
             argv = sys.argv

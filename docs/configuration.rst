@@ -96,7 +96,6 @@ Or equivalently:
 
 .. code-block:: python
 
-    # or equivalently
     ex.add_config(
         foo=42,
         bar='baz'

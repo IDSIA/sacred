@@ -242,7 +242,8 @@ class Ingredient(object):
         :param log_level: the log-level to use for this run either as integers
                          or strings (10 DEBUG - 50 CRITICAL)
         :type log_level: int | str
-        :returns: whatever the command returned
+        :returns: the Run object corresponding to the finished run
+        :rtype: sacred.run.Run
         """
         run = self._create_run_for_command(
             command_name, config_updates, named_configs_to_use, log_level)
