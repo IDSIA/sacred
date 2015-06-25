@@ -15,6 +15,7 @@ from tests.foo import bar
 # import tests.foo.bar
 
 
-def some_func(): pass
+def some_func():
+    pass
 
 ignore_this = 17

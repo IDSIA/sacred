@@ -177,6 +177,8 @@ class Run(object):
         return elapsed_time
 
     def _emit_completed(self, result):
+        if result is not None:
+            self.logger.info('Result: {}'.format(result))
         elapsed_time = self._stop_time()
         self.logger.info('Completed after %s' % elapsed_time)
         for observer in self._observers:

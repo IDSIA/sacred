@@ -74,7 +74,7 @@ pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
 kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}, {}]
 
 
-class SomeClass:
+class SomeClass(object):
     def bla(self, a, b, c):
         return a, b, c
 
