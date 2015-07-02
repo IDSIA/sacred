@@ -169,7 +169,7 @@ def test_add_config_non_dict_raises(ing):
         ing.add_config(12)
 
     with pytest.raises(TypeError):
-        ing.add_config('foo')
+        ing.add_config(True)
 
 
 def test_add_config_file(ing):
@@ -177,7 +177,7 @@ def test_add_config_file(ing):
     f = os.fdopen(handle, "w")
     json.dump({'foo': 15, 'bar': 7}, f)
     f.close()
-    ing.add_config_file(f_name)
+    ing.add_config(f_name)
 
     assert len(ing.configurations) == 1
     assert isinstance(ing.configurations[0], ConfigDict)
@@ -187,7 +187,7 @@ def test_add_config_file(ing):
 
 def test_add_config_file_nonexisting_raises(ing):
     with pytest.raises(IOError):
-        ing.add_config_file("nonexistens.json")
+        ing.add_config("nonexistens.json")
 
 
 def test_add_source_file(ing):

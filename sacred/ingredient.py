@@ -6,6 +6,7 @@ import inspect
 import os.path
 
 from collections import OrderedDict
+from six import string_types
 
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
@@ -133,7 +134,7 @@ class Ingredient(object):
         See :ref:`named_configurations`.
         """
         config_scope = ConfigScope(func)
-        self.named_configs[func.__name__] = config_scope
+        self._add_named_config(func.__name__, config_scope)
         return config_scope
 
     def config_hook(self, func):
@@ -162,48 +163,73 @@ class Ingredient(object):
 
     # =========================== Public Interface ============================
 
-    def add_config(self, cfg=None, **kw_conf):
+    def add_config(self, cfg_or_file=None, **kw_conf):
         """
         Add a configuration entry to this ingredient/experiment.
 
-        Can be called either with a dictionary or with keyword arguments.
+        Can be called with a filename, a dictionary xor with keyword arguments.
+        Supported formats for the config-file so far are: ``json``, ``pickle``
+        and ``yaml``.
 
-        The dictionary or the keyword arguments will be converted into a
-        :class:`~sacred.config_scope.ConfigDict`.
+        The resulting dictionary will be converted into a
+         :class:`~sacred.config_scope.ConfigDict`.
 
-        :param cfg: Configuration dictionary to add to this
-                    ingredient/experiment.
-        :type cfg: dict
+        :param cfg_or_file: Configuration dictionary of filename of config file
+                            to add to this ingredient/experiment.
+        :type cfg_or_file: dict or str
         :param kw_conf: Configuration entries to be added to this
                         ingredient/experiment.
         """
-        if cfg is not None and kw_conf:
+        self.configurations.append(self._create_config_dict(cfg_or_file,
+                                                            kw_conf))
+
+    def _add_named_config(self, name, conf):
+        if name in self.named_configs:
+            raise KeyError('Configuration name "{}" already in use!')
+        self.named_configs[name] = conf
+
+    @staticmethod
+    def _create_config_dict(cfg_or_file, kw_conf):
+        if cfg_or_file is not None and kw_conf:
             raise ValueError("cannot combine keyword config with "
                              "positional argument")
-        if cfg is None:
+        if cfg_or_file is None:
             if not kw_conf:
                 raise ValueError("attempted to add empty config")
-            self.configurations.append(ConfigDict(kw_conf))
-        elif isinstance(cfg, dict):
-            self.configurations.append(ConfigDict(cfg))
+            return ConfigDict(kw_conf)
+        elif isinstance(cfg_or_file, dict):
+            return ConfigDict(cfg_or_file)
+        elif isinstance(cfg_or_file, string_types):
+            if not os.path.exists(cfg_or_file):
+                raise IOError('File not found {}'.format(cfg_or_file))
+            abspath = os.path.abspath(cfg_or_file)
+            return ConfigDict(load_config_file(abspath))
         else:
-            raise TypeError("Invalid argument type {}".format(type(cfg)))
+            raise TypeError("Invalid argument type {}"
+                            .format(type(cfg_or_file)))
 
-    def add_config_file(self, filename):
+    def add_named_config(self, name, cfg_or_file=None, **kw_conf):
         """
-        Read and add a configuration file to the configuration.
+        Add a **named** configuration entry to this ingredient/experiment.
+        (See :ref:`named_configurations`)
 
-        Supported formats so far are: ``json``, ``pickle`` and ``yaml``.
+        Can be called with a filename, a dictionary xor with keyword arguments.
+        Supported formats for the config-file so far are: ``json``, ``pickle``
+        and ``yaml``.
 
-        :param filename: The filename of the configuration file to be loaded.
-                         Has to have the appropriate file-ending.
-        :type filename: str
+        The resulting dictionary will be converted into a
+         :class:`~sacred.config_scope.ConfigDict`.
+
+        :param name: name of the configuration
+        :type name: str
+        :param cfg_or_file: Configuration dictionary of filename of config file
+                            to add to this ingredient/experiment.
+        :type cfg_or_file: dict or str
+        :param kw_conf: Configuration entries to be added to this
+                        ingredient/experiment.
         """
-        if not os.path.exists(filename):
-            raise IOError('File not found {}'.format(filename))
-        abspath = os.path.abspath(filename)
-        conf_dict = load_config_file(abspath)
-        self.add_config(conf_dict)
+        self._add_named_config(name, self._create_config_dict(cfg_or_file,
+                                                              kw_conf))
 
     def add_source_file(self, filename):
         """
