@@ -27,4 +27,3 @@ def optional_import(package_name):
 has_pymongo, pymongo = optional_import('pymongo')
 has_numpy, np = optional_import('numpy')
 has_yaml, yaml = optional_import('yaml')
-has_whetlab, whetlab = optional_import('whetlab')
