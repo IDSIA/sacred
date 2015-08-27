@@ -144,7 +144,10 @@ def create_source_or_dep(modname, mod, dependencies, sources, experiment_path):
     if modname in MODULE_BLACKLIST or modname in dependencies:
         return
 
-    filename = os.path.abspath(mod.__file__) if mod is not None else ''
+    filename = ''
+    if mod is not None and hasattr(mod, '__file__'):
+        filename = os.path.abspath(mod.__file__)
+
     if filename and filename not in sources and \
             is_local_source(filename, modname, experiment_path):
         s = Source.create(filename)
