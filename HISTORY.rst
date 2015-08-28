@@ -1,6 +1,12 @@
 Release History
 ---------------
 
+0.6.5 (2015-08-28)
+++++++++++++++++++
+* Feature: Support ``@ex.capture`` on methods (thanks to @Treora)
+* Bugfix: fixed an error that occurred when a dependency module didn't have a
+          the '__file__' attribute
+
 0.6.4 (2015-06-12)
 ++++++++++++++++++
 * Bugfix: fixed a problem where some config modification would be displayed as
