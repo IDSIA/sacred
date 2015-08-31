@@ -16,9 +16,7 @@ class CommandLineOption(object):
 
 
 def get_inheritors(cls):
-    """
-    Get a set of all classes that inherit from the given class.
-    """
+    """Get a set of all classes that inherit from the given class."""
     subclasses = set()
     work = [cls]
     while work:
@@ -62,5 +60,3 @@ class LoglevelOption(CommandLineOption):
     @classmethod
     def execute(cls, args, experiment):
         experiment.loglevel = args
-
-

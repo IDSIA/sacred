@@ -14,7 +14,7 @@ from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ('parse_args', 'get_config_updates', 'get_observers')
+__all__ = ('parse_args', 'get_config_updates')
 
 
 USAGE_TEMPLATE = """Usage:
@@ -77,12 +77,13 @@ def _format_options_usage(options):
         else:
             flag = "-{short} --{long}".format(short=op.short, long=op.long)
 
-        wrapped_description = "\n".join(textwrap.wrap(op.description,
-                                                      width=80,
-                                                      initial_indent=' ' * 32,
-                                                      subsequent_indent=' ' * 32))
+        wrapped_description = textwrap.wrap(op.description,
+                                            width=80,
+                                            initial_indent=' ' * 32,
+                                            subsequent_indent=' ' * 32)
+        wrapped_description = "\n".join(wrapped_description).strip()
 
-        options_usage += "  {0:28}  {1}\n".format(flag, wrapped_description.strip())
+        options_usage += "  {0:28}  {1}\n".format(flag, wrapped_description)
     return options_usage
 
 
@@ -90,11 +91,13 @@ def _format_arguments_usage(options):
     argument_usage = ""
     for op in options:
         if op.arg and op.arg_description:
-            wrapped_description = "\n".join(textwrap.wrap(op.arg_description,
-                                                          width=80,
-                                                          initial_indent=' ' * 12,
-                                                          subsequent_indent=' ' * 12))
-            argument_usage += "  {0:8}  {1}\n".format(op.arg, wrapped_description.strip())
+            wrapped_description = textwrap.wrap(op.arg_description,
+                                                width=80,
+                                                initial_indent=' ' * 12,
+                                                subsequent_indent=' ' * 12)
+            wrapped_description = "\n".join(wrapped_description).strip()
+            argument_usage += "  {0:8}  {1}\n".format(op.arg,
+                                                      wrapped_description)
     return argument_usage
 
 
@@ -109,7 +112,7 @@ def _format_command_usage(commands):
     for cmd_name, cmd_doc in command_doc.items():
         command_usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
     return command_usage
-        
+
 
 def _format_usage(program_name, description, commands=None, options=()):
     usage = USAGE_TEMPLATE.format(

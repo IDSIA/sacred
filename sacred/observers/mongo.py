@@ -228,7 +228,7 @@ class MongoOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, experiment):
-        url, db_name, prefix = cls._parse_mongo_db_arg(args)
+        url, db_name, prefix = cls.parse_mongo_db_arg(args)
         if prefix:
             mongo = MongoObserver.create(db_name=db_name, url=url,
                                          prefix=prefix)
@@ -238,7 +238,7 @@ class MongoOption(CommandLineOption):
         experiment.observers.append(mongo)
 
     @classmethod
-    def _parse_mongo_db_arg(cls, mongo_db):
+    def parse_mongo_db_arg(cls, mongo_db):
         if cls.DB_NAME.match(mongo_db):
             db_name, _, prefix = mongo_db.partition('.')
             return 'localhost:27017', db_name, prefix

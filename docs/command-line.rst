@@ -251,11 +251,11 @@ It is equivalent to typing just ``help``.
 
 **Logging Level**
 
-+---------------------+-----------------------------+
-| ``-l LEVEL``        |  control the logging level  |
-+---------------------+                             |
-| ``--logging=LEVEL`` |                             |
-+---------------------+-----------------------------+
++----------------------+-----------------------------+
+| ``-l LEVEL``         |  control the logging level  |
++----------------------+                             |
+| ``--loglevel=LEVEL`` |                             |
++----------------------+-----------------------------+
 
 With this flag you can adjust the logging level.
 
