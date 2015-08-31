@@ -132,7 +132,7 @@ class Experiment(Ingredient):
         config_updates, named_configs = get_config_updates(args['UPDATE'])
 
         for option in gather_command_line_options():
-            op_name = '--' + option.long
+            op_name = '--' + option.flag
             if args.get(op_name):
                 option.execute(args[op_name], self)
 

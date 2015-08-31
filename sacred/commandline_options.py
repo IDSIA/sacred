@@ -4,11 +4,18 @@ from __future__ import division, print_function, unicode_literals
 
 
 class CommandLineOption(object):
-    short = None
-    long = None
-    description = None
+    short_flag = None
+    flag = None
     arg = None
     arg_description = None
+
+    @classmethod
+    def get_flag(cls):
+        if cls.short_flag is None:
+            assert cls.flag, "No flag specified for {}!\n".format(cls.__name__)
+            return cls.flag[:1], cls.flag
+        else:
+            return cls.short_flag, cls.flag
 
     @classmethod
     def execute(cls, args, experiment):
@@ -33,16 +40,22 @@ def gather_command_line_options():
 
 
 class HelpOption(CommandLineOption):
-    short = 'h'
-    long = 'help'
-    description = 'Print this help message and exit.'
+
+    """Print this help message and exit."""
+
+    flag = 'help'
 
 
 class DebugOption(CommandLineOption):
-    short = 'd'
-    long = 'debug'
-    description = "Don't filter the stacktrace and automatically enter " \
-                  "post-mortem debugging with pdb."
+
+    """
+    Run in debug mode.
+
+    Don't filter the stacktrace and automatically enter post-mortem debugging
+    with pdb.
+    """
+
+    flag = 'debug'
 
     @classmethod
     def execute(cls, args, experiment):
@@ -50,9 +63,10 @@ class DebugOption(CommandLineOption):
 
 
 class LoglevelOption(CommandLineOption):
-    short = 'l'
-    long = 'loglevel'
-    description = 'Adjust the loglevel.'
+
+    """Adjust the loglevel."""
+
+    flag = 'loglevel'
     arg = 'LEVEL'
     arg_description = 'Loglevel either as 0 - 50 or as string: DEBUG(10), ' \
                       'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'

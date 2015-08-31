@@ -206,9 +206,11 @@ class MongoObserver(RunObserver):
 
 
 class MongoOption(CommandLineOption):
-    short = 'm'
-    long = 'mongo_db'
-    description = "Add a MongoDB Observer to the experiment."
+
+    """Add a MongoDB Observer to the experiment."""
+
+    short_flag = 'm'
+    flag = 'mongo_db'
     arg = 'DB'
     arg_description = "Database specification. Can be " \
                       "[host:port:]db_name[.prefix]"

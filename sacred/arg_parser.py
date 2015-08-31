@@ -5,7 +5,7 @@ import ast
 from collections import OrderedDict
 import textwrap
 import sys
-
+import inspect
 from docopt import docopt
 
 from sacred.commandline_options import gather_command_line_options
@@ -71,14 +71,15 @@ def get_config_updates(updates):
 def _format_options_usage(options):
     options_usage = ""
     for op in options:
+        short, long = op.get_flag()
         if op.arg:
             flag = "-{short} {arg} --{long}={arg}".format(
-                short=op.short, long=op.long, arg=op.arg)
+                short=short, long=long, arg=op.arg)
         else:
-            flag = "-{short} --{long}".format(short=op.short, long=op.long)
+            flag = "-{short} --{long}".format(short=short, long=long)
 
-        wrapped_description = textwrap.wrap(op.description,
-                                            width=80,
+        wrapped_description = textwrap.wrap(inspect.cleandoc(op.__doc__),
+                                            width=79,
                                             initial_indent=' ' * 32,
                                             subsequent_indent=' ' * 32)
         wrapped_description = "\n".join(wrapped_description).strip()
@@ -92,7 +93,7 @@ def _format_arguments_usage(options):
     for op in options:
         if op.arg and op.arg_description:
             wrapped_description = textwrap.wrap(op.arg_description,
-                                                width=80,
+                                                width=79,
                                                 initial_indent=' ' * 12,
                                                 subsequent_indent=' ' * 12)
             wrapped_description = "\n".join(wrapped_description).strip()
