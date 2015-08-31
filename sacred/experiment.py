@@ -6,8 +6,8 @@ import inspect
 import sys
 from collections import OrderedDict
 
-
-from sacred.arg_parser import get_config_updates, get_observers, parse_args
+from sacred.arg_parser import get_config_updates, parse_args
+from sacred.commandline_options import gather_command_line_options
 from sacred.commands import print_config, print_dependencies
 from sacred.ingredient import Ingredient
 from sacred.utils import print_filtered_stacktrace
@@ -45,6 +45,8 @@ class Experiment(Ingredient):
         self.default_command = ""
         self.command(print_config)
         self.command(print_dependencies)
+        self.loglevel = None
+        self.debug = False
 
     # =========================== Decorators ==================================
 
@@ -128,10 +130,11 @@ class Experiment(Ingredient):
                           description=self.doc,
                           commands=OrderedDict(all_commands))
         config_updates, named_configs = get_config_updates(args['UPDATE'])
-        loglevel = args.get('--logging')
-        for obs in get_observers(args):
-            if obs not in self.observers:
-                self.observers.append(obs)
+
+        for option in gather_command_line_options():
+            op_name = '--' + option.long
+            if args.get(op_name):
+                option.execute(args[op_name], self)
 
         if args['COMMAND']:
             cmd_name = args['COMMAND']
@@ -142,9 +145,9 @@ class Experiment(Ingredient):
             return self.run_command(cmd_name,
                                     config_updates=config_updates,
                                     named_configs_to_use=named_configs,
-                                    log_level=loglevel)
+                                    log_level=self.loglevel)
         except Exception:
-            if args['--debug']:
+            if self.debug:
                 import traceback
                 import pdb
                 traceback.print_exception(*sys.exc_info())

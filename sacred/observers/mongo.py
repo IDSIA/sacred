@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 import os.path
 import pickle
+import re
 import sys
 import time
 
@@ -13,6 +14,7 @@ import pymongo
 import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument
 from pymongo.son_manipulator import SONManipulator
+from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.utils import ObserverError
@@ -201,3 +203,51 @@ class MongoObserver(RunObserver):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class MongoOption(CommandLineOption):
+    short = 'm'
+    long = 'mongo_db'
+    description = "Add a MongoDB Observer to the experiment."
+    arg = 'DB'
+    arg_description = "Database specification. Can be " \
+                      "[host:port:]db_name[.prefix]"
+
+    DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
+    HOSTNAME_PATTERN = \
+        r"(?=.{1,255}$)"\
+        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
+        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
+        r"\.?"
+    URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
+
+    DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
+    URL = re.compile("^" + URL_PATTERN + "$")
+    URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
+                             "(?P<db_name>" + DB_NAME_PATTERN + ")$")
+
+    @classmethod
+    def execute(cls, args, experiment):
+        url, db_name, prefix = cls._parse_mongo_db_arg(args)
+        if prefix:
+            mongo = MongoObserver.create(db_name=db_name, url=url,
+                                         prefix=prefix)
+        else:
+            mongo = MongoObserver.create(db_name=db_name, url=url)
+
+        experiment.observers.append(mongo)
+
+    @classmethod
+    def _parse_mongo_db_arg(cls, mongo_db):
+        if cls.DB_NAME.match(mongo_db):
+            db_name, _, prefix = mongo_db.partition('.')
+            return 'localhost:27017', db_name, prefix
+        elif cls.URL.match(mongo_db):
+            return mongo_db, 'sacred', ''
+        elif cls.URL_DB_NAME.match(mongo_db):
+            match = cls.URL_DB_NAME.match(mongo_db)
+            db_name, _, prefix = match.group('db_name').partition('.')
+            return match.group('url'), db_name, prefix
+        else:
+            raise ValueError('mongo_db argument must have the form "db_name" '
+                             'or "host:port[:db_name]" but was %s' % mongo_db)

@@ -241,7 +241,7 @@ class Ingredient(object):
         :type named_configs_to_use: list[str]
         :param log_level: the log-level to use for this run either as integers
                          or strings (10 DEBUG - 50 CRITICAL)
-        :type log_level: int | str
+        :type log_level: int | str | None
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
         """
