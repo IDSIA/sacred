@@ -264,3 +264,16 @@ def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
         return _decorated(*args)
     else:
         return _decorated
+
+
+def get_inheritors(cls):
+    """Get a set of all classes that inherit from the given class."""
+    subclasses = set()
+    work = [cls]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            if child not in subclasses:
+                subclasses.add(child)
+                work.append(child)
+    return subclasses

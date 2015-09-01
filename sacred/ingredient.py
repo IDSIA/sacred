@@ -38,7 +38,6 @@ class Ingredient(object):
         self.named_configs = dict()
         self.ingredients = list(ingredients)
         self.logger = None
-        self.observers = []
         self.captured_functions = []
         self.post_run_hooks = []
         self.pre_run_hooks = []
@@ -49,7 +48,6 @@ class Ingredient(object):
         self.doc = _caller_globals.get('__doc__', "")
         self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals)
-        self.current_run = None
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
@@ -226,29 +224,6 @@ class Ingredient(object):
         if not PEP440_VERSION_PATTERN.match(version):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
-
-    def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=()):
-        """Run the command with the given name.
-
-        :param command_name: Name of the command to be run
-        :type command_name: str
-        :param config_updates: a dictionary of parameter values that should
-                               be updates (optional)
-        :type config_updates: dict
-        :param named_configs_to_use: list of names of named configurations to
-                                     use (optional)
-        :type named_configs_to_use: list[str]
-        :returns: the Run object corresponding to the finished run
-        :rtype: sacred.run.Run
-        """
-        run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs_to_use)
-        self.current_run = run
-        self.current_run.run_logger.info("Running command '%s'" % command_name)
-        run()
-        self.current_run = None
-        return run
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.

@@ -1,13 +1,36 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+from sacred.utils import get_inheritors
 
 
 class CommandLineOption(object):
-    short_flag = None
+
+    """
+    Base class for all command-line options.
+
+    To implement a new command-line option just inherit from this class.
+    Then add the `flag` class-attribute to specify the name and a class
+    docstring with the description.
+    If your command-line option should take an argument you must also provide
+    its name via the `arg` class attribute and its description as
+    `arg_description`.
+    Finally you need to implement the `execute` classmethod. It receives the
+    value of the argument (if applicable) and the current run. You can modify
+    the run object in any way.
+    """
+
     flag = None
+    """ The full name of the command line option."""
+
+    short_flag = None
+    """ The (one-letter) short form (defaults to first letter of flag) """
+
     arg = None
+    """ Name of the argument (optional) """
+
     arg_description = None
+    """ Description of the argument (optional) """
 
     @classmethod
     def get_flag(cls):
@@ -19,20 +42,19 @@ class CommandLineOption(object):
 
     @classmethod
     def execute(cls, args, run):
+        """
+        Modify the current Run base on this command-line option.
+
+        This function is executed after contstructing the Run object, but
+        before actually starting it.
+        :param args: If this command-line option accepts an argument this will
+                     be value of that argument if set or None.
+                     Otherwise it is either True or False.
+        :type args: bool | str
+        :param run: The current run to be modified
+        :type run: sacred.run.Run
+        """
         pass
-
-
-def get_inheritors(cls):
-    """Get a set of all classes that inherit from the given class."""
-    subclasses = set()
-    work = [cls]
-    while work:
-        parent = work.pop()
-        for child in parent.__subclasses__():
-            if child not in subclasses:
-                subclasses.add(child)
-                work.append(child)
-    return subclasses
 
 
 def gather_command_line_options():
@@ -59,7 +81,7 @@ class DebugOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
-        run.debug = args
+        run.debug = bool(args)
 
 
 class LoglevelOption(CommandLineOption):
@@ -73,6 +95,8 @@ class LoglevelOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
+        if args is None:
+            return
         try:
             lvl = int(args)
         except ValueError:
@@ -90,4 +114,6 @@ class MessageOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
+        if args is None:
+            return
         run.comment = args
