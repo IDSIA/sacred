@@ -192,6 +192,8 @@ observers. It contains the following information:
                     * Operating System
                     * Python version
                     * Python compiler
+
+    comment      A custom comment given for this run
     ===========  ===============================================================
 
 
@@ -283,7 +285,7 @@ The easiest way to implement a custom observer is to inherit from
     from sacred.observer import RunObserver
 
     class MyObserver(RunObserver):
-        def started_event(self, ex_info, host_info, start_time, config):
+        def started_event(self, ex_info, host_info, start_time, config, comment):
             pass
 
         def heartbeat_event(self, info, captured_out, beat_time):

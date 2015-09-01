@@ -19,8 +19,8 @@ class Run(object):
     """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_info, host_info, pre_run_hooks,
-                 post_run_hooks):
+                 root_logger, run_logger, experiment_info, host_info,
+                 pre_run_hooks, post_run_hooks):
 
         self.captured_out = None
         """Captured stdout and stderr"""
@@ -40,7 +40,10 @@ class Run(object):
         self.info = {}
         """Custom info dict that will be sent to the observers"""
 
-        self.logger = logger
+        self.root_logger = root_logger
+        """The root logger that was used to create all the others"""
+
+        self.run_logger = run_logger
         """The logger that is used for this run"""
 
         self.main_function = main_function
@@ -64,6 +67,10 @@ class Run(object):
 
         self._heartbeat = None
         self._failed_observers = []
+
+        self.debug = False
+
+        self.comment = ''
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -114,7 +121,7 @@ class Run(object):
 
         set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
-            self.logger.info('Started')
+            self.run_logger.info('Started')
             self._emit_started()
             self._start_heartbeat()
             try:
@@ -158,7 +165,9 @@ class Run(object):
                     ex_info=self.experiment_info,
                     host_info=self.host_info,
                     start_time=self.start_time,
-                    config=self.config)
+                    config=self.config,
+                    comment=self.comment
+                )
                 # do not catch any exceptions on startup the experiment should
                 # fail if any of the observers fails
 
@@ -178,9 +187,9 @@ class Run(object):
 
     def _emit_completed(self, result):
         if result is not None:
-            self.logger.info('Result: {}'.format(result))
+            self.run_logger.info('Result: {}'.format(result))
         elapsed_time = self._stop_time()
-        self.logger.info('Completed after %s' % elapsed_time)
+        self.run_logger.info('Completed after %s' % elapsed_time)
         for observer in self._observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,
@@ -188,14 +197,14 @@ class Run(object):
 
     def _emit_interrupted(self):
         elapsed_time = self._stop_time()
-        self.logger.warning("Aborted after %s!" % elapsed_time)
+        self.run_logger.warning("Aborted after %s!" % elapsed_time)
         for observer in self._observers:
             self._final_call(observer, 'interrupted_event',
                              interrupt_time=self.stop_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
         elapsed_time = self._stop_time()
-        self.logger.error("Failed after %s!" % elapsed_time)
+        self.run_logger.error("Failed after %s!" % elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
         for observer in self._observers:
             self._final_call(observer, 'failed_event',
@@ -216,8 +225,8 @@ class Run(object):
                 getattr(obs, method)(**kwargs)
             except ObserverError as e:
                 self._failed_observers.append(obs)
-                self.logger.warning("An error ocurred in the '{}' "
-                                    "observer: {}".format(obs, e))
+                self.run_logger.warning("An error ocurred in the '{}' "
+                                        "observer: {}".format(obs, e))
             except:
                 self._failed_observers.append(obs)
                 raise
@@ -230,12 +239,12 @@ class Run(object):
                 # Feels dirty to catch all exceptions, but it is just for
                 # finishing up, so we don't want one observer to kill the
                 # others
-                self.logger.error(traceback.format_exc())
+                self.run_logger.error(traceback.format_exc())
 
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:
-            self.logger.warning("The observer '{}' failed at some point "
-                                "during the run.".format(observer))
+            self.run_logger.warning("The observer '{}' failed at some point "
+                                    "during the run.".format(observer))
 
     def execute_pre_run_hooks(self):
         for pr in self.pre_run_hooks:

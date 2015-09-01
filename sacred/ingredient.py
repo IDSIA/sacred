@@ -228,7 +228,7 @@ class Ingredient(object):
         self.dependencies.add(PackageDependency(package_name, version))
 
     def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), log_level=None):
+                    named_configs_to_use=()):
         """Run the command with the given name.
 
         :param command_name: Name of the command to be run
@@ -239,16 +239,13 @@ class Ingredient(object):
         :param named_configs_to_use: list of names of named configurations to
                                      use (optional)
         :type named_configs_to_use: list[str]
-        :param log_level: the log-level to use for this run either as integers
-                         or strings (10 DEBUG - 50 CRITICAL)
-        :type log_level: int | str | None
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
         """
-        run = self._create_run_for_command(
-            command_name, config_updates, named_configs_to_use, log_level)
+        run = self._create_run_for_command(command_name, config_updates,
+                                           named_configs_to_use)
         self.current_run = run
-        self.current_run.logger.info("Running command '%s'" % command_name)
+        self.current_run.run_logger.info("Running command '%s'" % command_name)
         run()
         self.current_run = None
         return run
@@ -294,9 +291,8 @@ class Ingredient(object):
         self._is_traversing = False
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs_to_use=(), log_level=None):
+                                named_configs_to_use=()):
         run = create_run(self, command_name, config_updates,
-                         log_level=log_level,
                          named_configs=named_configs_to_use)
         return run
 

@@ -128,12 +128,13 @@ class MongoObserver(RunObserver):
                   "Stored experiment entry in '%s'" % f.name,
                   file=sys.stderr)
 
-    def started_event(self, ex_info, host_info, start_time, config):
+    def started_event(self, ex_info, host_info, start_time, config, comment):
         self.run_entry = {
             'experiment': dict(ex_info),
             'host': dict(host_info),
             'start_time': start_time,
             'config': config,
+            'comment': comment,
             'status': 'RUNNING',
             'resources': [],
             'artifacts': [],

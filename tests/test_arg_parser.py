@@ -31,7 +31,8 @@ def test_parse_individual_arguments(argv, expected):
         'UPDATE': [],
         'help': False,
         'with': False,
-        '--debug': False
+        '--debug': False,
+        '--comment': None
     }
     plain.update(expected)
 
@@ -49,7 +50,8 @@ def test_parse_compound_arglist1():
         'COMMAND': 'run',
         'UPDATE': ['a=17', 'b=1'],
         'help': False,
-        'with': True
+        'with': True,
+        '--comment': None
     }
     assert args == expected
 
@@ -65,7 +67,8 @@ def test_parse_compound_arglist2():
         'COMMAND': 'evaluate',
         'UPDATE': ['a=18', 'b=2'],
         'help': False,
-        'with': True
+        'with': True,
+        '--comment': None
     }
     assert args == expected
 

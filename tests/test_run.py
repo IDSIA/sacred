@@ -19,7 +19,8 @@ def run():
     main_func = mock.Mock(return_value=123)
     logger = mock.Mock()
     observer = [mock.Mock()]
-    return Run(config, config_mod, main_func, observer, logger, {}, {}, [], [])
+    return Run(config, config_mod, main_func, observer, logger, logger, {},
+               {}, [], [])
 
 
 def test_run_attributes(run):
@@ -87,7 +88,8 @@ def test_run_started_event(run):
         ex_info=run.experiment_info,
         host_info=run.host_info,
         start_time=run.start_time,
-        config=run.config
+        config=run.config,
+        comment=''
     )
 
 

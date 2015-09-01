@@ -202,18 +202,11 @@ def distribute_named_configs(scaffolding, named_configs):
             scaffolding[path].use_named_config(cfg_name)
 
 
-def initialize_logging(experiment, scaffolding, loglevel=None):
+def initialize_logging(experiment, scaffolding):
     if experiment.logger is None:
-        if loglevel:
-            try:
-                loglevel = int(loglevel)
-            except ValueError:
-                pass
-        root_logger = create_basic_stream_logger('', level=loglevel)
+        root_logger = create_basic_stream_logger()
     else:
         root_logger = experiment.logger
-        if loglevel:
-            root_logger.setLevel(loglevel)
 
     for sc_path, scaffold in scaffolding.items():
         if sc_path:
@@ -221,7 +214,7 @@ def initialize_logging(experiment, scaffolding, loglevel=None):
         else:
             scaffold.logger = root_logger
 
-    return root_logger.getChild(experiment.path)
+    return root_logger, root_logger.getChild(experiment.path)
 
 
 def create_scaffolding(experiment, sorted_ingredients):
@@ -280,7 +273,7 @@ def get_command(scaffolding, command_path):
             raise KeyError('Command "%s" not found' % command_name)
 
 
-def create_run(experiment, command_name, config_updates=None, log_level=None,
+def create_run(experiment, command_name, config_updates=None,
                named_configs=()):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
@@ -290,7 +283,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     distribute_named_configs(scaffolding, named_configs)
     config_updates = config_updates or {}
     config_updates = convert_to_nested_dict(config_updates)
-    logger = initialize_logging(experiment, scaffolding, log_level)
+    root_logger, run_logger = initialize_logging(experiment, scaffolding)
 
     past_paths = set()
     for scaffold in scaffolding.values():
@@ -303,7 +296,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
         config = get_configuration(scaffolding)
         # run config hooks
         config_updates = scaffold.run_config_hooks(config, config_updates,
-                                                   command_name, logger)
+                                                   command_name, run_logger)
 
     for scaffold in reversed(list(scaffolding.values())):
         scaffold.set_up_seed()  # partially recursive
@@ -321,7 +314,7 @@ def create_run(experiment, command_name, config_updates=None, log_level=None,
     post_runs = [pr for ing in sorted_ingredients for pr in ing.post_run_hooks]
 
     run = Run(config, config_modifications, main_function,
-              experiment.observers, logger, experiment_info,
+              experiment.observers, root_logger, run_logger, experiment_info,
               host_info, pre_runs, post_runs)
 
     for scaffold in scaffolding.values():

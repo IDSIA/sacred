@@ -11,7 +11,7 @@ class RunObserver(object):
 
     """Defines the interface for all run observers."""
 
-    def started_event(self, ex_info, host_info, start_time, config):
+    def started_event(self, ex_info, host_info, start_time, config, comment):
         pass
 
     def heartbeat_event(self, info, captured_out, beat_time):

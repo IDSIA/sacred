@@ -18,7 +18,7 @@ class CommandLineOption(object):
             return cls.short_flag, cls.flag
 
     @classmethod
-    def execute(cls, args, experiment):
+    def execute(cls, args, run):
         pass
 
 
@@ -58,8 +58,8 @@ class DebugOption(CommandLineOption):
     flag = 'debug'
 
     @classmethod
-    def execute(cls, args, experiment):
-        experiment.debug = args
+    def execute(cls, args, run):
+        run.debug = args
 
 
 class LoglevelOption(CommandLineOption):
@@ -72,5 +72,22 @@ class LoglevelOption(CommandLineOption):
                       'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'
 
     @classmethod
-    def execute(cls, args, experiment):
-        experiment.loglevel = args
+    def execute(cls, args, run):
+        try:
+            lvl = int(args)
+        except ValueError:
+            lvl = args
+        run.root_logger.setLevel(lvl)
+
+
+class MessageOption(CommandLineOption):
+
+    """Adds a message to the run."""
+
+    flag = 'comment'
+    arg = 'COMMENT'
+    arg_description = 'A comment that should be stored along with the run.'
+
+    @classmethod
+    def execute(cls, args, run):
+        run.comment = args

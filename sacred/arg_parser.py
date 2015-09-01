@@ -18,9 +18,9 @@ __all__ = ('parse_args', 'get_config_updates')
 
 
 USAGE_TEMPLATE = """Usage:
+  {program_name} [(with UPDATE...)] [options]
   {program_name} help [COMMAND]
   {program_name} (-h | --help)
-  {program_name} [(with UPDATE...)] [options]
   {program_name} COMMAND [(with UPDATE...)] [options]
 
 {description}

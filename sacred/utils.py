@@ -38,13 +38,12 @@ class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
 
 
-def create_basic_stream_logger(name, level=None):
-    level = level if level is not None else logging.INFO
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+def create_basic_stream_logger():
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
     logger.handlers = []
     ch = logging.StreamHandler()
-    ch.setLevel(level)
+    ch.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
