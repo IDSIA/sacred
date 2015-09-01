@@ -53,8 +53,10 @@ class Run(object):
         """A list of all observers that observe this run"""
 
         self.pre_run_hooks = pre_run_hooks
+        """List of pre-run hooks (captured functions called before this run)"""
 
         self.post_run_hooks = post_run_hooks
+        """List of post-run hooks (captured functions called after this run)"""
 
         self.result = None
         """The return value of the main function"""
@@ -63,14 +65,16 @@ class Run(object):
         """The datetime when this run was started"""
 
         self.stop_time = None
-        """The datetime when this run stopped."""
+        """The datetime when this run stopped"""
+
+        self.debug = False
+        """Determines whether this run is executed in debug mode"""
+
+        self.comment = ''
+        """A custom comment for this run"""
 
         self._heartbeat = None
         self._failed_observers = []
-
-        self.debug = False
-
-        self.comment = ''
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -125,9 +129,9 @@ class Run(object):
             self._emit_started()
             self._start_heartbeat()
             try:
-                self.execute_pre_run_hooks()
+                self._execute_pre_run_hooks()
                 self.result = self.main_function(*args)
-                self.execute_post_run_hooks()
+                self._execute_post_run_hooks()
                 self._stop_heartbeat()
                 self._emit_completed(self.result)
                 return self.result
@@ -168,8 +172,8 @@ class Run(object):
                     config=self.config,
                     comment=self.comment
                 )
-                # do not catch any exceptions on startup the experiment should
-                # fail if any of the observers fails
+                # do not catch any exceptions on startup:
+                # the experiment SHOULD fail if any of the observers fails
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
@@ -246,10 +250,10 @@ class Run(object):
             self.run_logger.warning("The observer '{}' failed at some point "
                                     "during the run.".format(observer))
 
-    def execute_pre_run_hooks(self):
+    def _execute_pre_run_hooks(self):
         for pr in self.pre_run_hooks:
             pr()
 
-    def execute_post_run_hooks(self):
+    def _execute_post_run_hooks(self):
         for pr in self.post_run_hooks:
             pr()
