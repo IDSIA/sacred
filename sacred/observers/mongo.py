@@ -206,12 +206,10 @@ class MongoObserver(RunObserver):
         return not self.__eq__(other)
 
 
-class MongoOption(CommandLineOption):
+class MongoDbOption(CommandLineOption):
 
     """Add a MongoDB Observer to the experiment."""
 
-    short_flag = 'm'
-    flag = 'mongo_db'
     arg = 'DB'
     arg_description = "Database specification. Can be " \
                       "[host:port:]db_name[.prefix]"

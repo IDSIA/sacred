@@ -73,6 +73,9 @@ class Run(object):
         self.comment = ''
         """A custom comment for this run"""
 
+        self.beat_interval = 10.0  # sec
+        """The time between two heartbeat events measured in seconds"""
+
         self._heartbeat = None
         self._failed_observers = []
 
@@ -152,8 +155,10 @@ class Run(object):
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
-        self._heartbeat = threading.Timer(10, self._start_heartbeat)
-        self._heartbeat.start()
+        if self.beat_interval > 0:
+            self._heartbeat = threading.Timer(self.beat_interval,
+                                              self._start_heartbeat)
+            self._heartbeat.start()
 
     def _stop_heartbeat(self):
         if self._heartbeat is not None:

@@ -277,3 +277,11 @@ def get_inheritors(cls):
                 subclasses.add(child)
                 work.append(child)
     return subclasses
+
+
+# Credit to Zarathustra and epost from stackoverflow
+# Taken from http://stackoverflow.com/a/1176023/1388435
+def convert_camel_case_to_snake_case(name):
+    """Converts CamelCase to snake_case"""
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

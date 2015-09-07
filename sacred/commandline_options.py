@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-from sacred.utils import get_inheritors
+from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
 
 
 class CommandLineOption(object):
@@ -20,9 +20,6 @@ class CommandLineOption(object):
     the run object in any way.
     """
 
-    flag = None
-    """ The full name of the command line option."""
-
     short_flag = None
     """ The (one-letter) short form (defaults to first letter of flag) """
 
@@ -34,11 +31,16 @@ class CommandLineOption(object):
 
     @classmethod
     def get_flag(cls):
+        # Get the flag name from the class name
+        flag = cls.__name__
+        if flag.endswith("Option"):
+            flag = flag[:-6]
+        flag = convert_camel_case_to_snake_case(flag)
+
         if cls.short_flag is None:
-            assert cls.flag, "No flag specified for {}!\n".format(cls.__name__)
-            return cls.flag[:1], cls.flag
+            return flag[:1], flag
         else:
-            return cls.short_flag, cls.flag
+            return cls.short_flag, flag
 
     @classmethod
     def execute(cls, args, run):
@@ -65,8 +67,6 @@ class HelpOption(CommandLineOption):
 
     """Print this help message and exit."""
 
-    flag = 'help'
-
 
 class DebugOption(CommandLineOption):
 
@@ -77,8 +77,6 @@ class DebugOption(CommandLineOption):
     with pdb.
     """
 
-    flag = 'debug'
-
     @classmethod
     def execute(cls, args, run):
         run.debug = bool(args)
@@ -88,7 +86,6 @@ class LoglevelOption(CommandLineOption):
 
     """Adjust the loglevel."""
 
-    flag = 'loglevel'
     arg = 'LEVEL'
     arg_description = 'Loglevel either as 0 - 50 or as string: DEBUG(10), ' \
                       'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'
@@ -104,11 +101,10 @@ class LoglevelOption(CommandLineOption):
         run.root_logger.setLevel(lvl)
 
 
-class MessageOption(CommandLineOption):
+class CommentOption(CommandLineOption):
 
     """Adds a message to the run."""
 
-    flag = 'comment'
     arg = 'COMMENT'
     arg_description = 'A comment that should be stored along with the run.'
 
@@ -117,3 +113,17 @@ class MessageOption(CommandLineOption):
         if args is None:
             return
         run.comment = args
+
+
+class BeatIntervalOption(CommandLineOption):
+
+    """Control the rate of heartbeat events."""
+
+    arg = 'BEAT_INTERVAL'
+    arg_description = "Time between two heartbeat events measured in seconds."
+
+    @classmethod
+    def execute(cls, args, run):
+        if args is None:
+            return
+        run.beat_interval = float(args)
