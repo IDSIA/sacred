@@ -9,7 +9,7 @@ import mock
 import mongomock
 import pytest
 from sacred.dependencies import get_digest
-from sacred.observers.mongo import (MongoObserver, MongoOption,
+from sacred.observers.mongo import (MongoObserver, MongoDbOption,
                                     force_bson_encodeable, PickleNumpyArrays)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -220,46 +220,46 @@ def test_pickle_numpy_arrays_son_manipulator():
     assert np.all(redoc['nested']['ones'] == document['nested']['ones'])
 
 
-# ###################### MongoOption ##########################################
+# ###################### MongoDbOption ###################################### #
 
 def test_parse_mongo_db_arg():
-    assert MongoOption.parse_mongo_db_arg('foo') == ('localhost:27017', 'foo',
-                                                     '')
+    assert MongoDbOption.parse_mongo_db_arg('foo') == ('localhost:27017',
+                                                       'foo', '')
 
 
 def test_parse_mongo_db_arg_collection():
-    assert MongoOption.parse_mongo_db_arg('foo.bar') == ('localhost:27017',
-                                                         'foo', 'bar')
+    assert MongoDbOption.parse_mongo_db_arg('foo.bar') == ('localhost:27017',
+                                                           'foo', 'bar')
 
 
 def test_parse_mongo_db_arg_hostname():
-    assert MongoOption.parse_mongo_db_arg('localhost:28017') == \
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017') == \
         ('localhost:28017', 'sacred', '')
 
-    assert MongoOption.parse_mongo_db_arg('www.mymongo.db:28017') == \
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017') == \
         ('www.mymongo.db:28017', 'sacred', '')
 
-    assert MongoOption.parse_mongo_db_arg('123.45.67.89:27017') == \
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017') == \
         ('123.45.67.89:27017', 'sacred', '')
 
 
 def test_parse_mongo_db_arg_hostname_dbname():
-    assert MongoOption.parse_mongo_db_arg('localhost:28017:foo') == \
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo') == \
         ('localhost:28017', 'foo', '')
 
-    assert MongoOption.parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
         ('www.mymongo.db:28017', 'bar', '')
 
-    assert MongoOption.parse_mongo_db_arg('123.45.67.89:27017:baz') == \
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz') == \
         ('123.45.67.89:27017', 'baz', '')
 
 
 def test_parse_mongo_db_arg_hostname_dbname_collection_name():
-    assert MongoOption.parse_mongo_db_arg('localhost:28017:foo.bar') == \
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo.bar') == \
         ('localhost:28017', 'foo', 'bar')
 
-    assert MongoOption.parse_mongo_db_arg('www.mymongo.db:28017:bar.baz') == \
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar.baz') ==\
         ('www.mymongo.db:28017', 'bar', 'baz')
 
-    assert MongoOption.parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
         ('123.45.67.89:27017', 'baz', 'foo')
