@@ -22,5 +22,10 @@ else:
             raise ImportError('cannot use -m/--mongo_db flag: '
                               'missing pymongo dependency')
 
+if opt.has_sqlalchemy:
+    from sacred.observers.sql import SqlObserver
+else:
+    SqlObserver = opt.MissingDependencyMock('sqlalchemy')
 
-__all__ = ('RunObserver', 'MongoObserver')
+
+__all__ = ('RunObserver', 'MongoObserver', 'SqlObserver')
