@@ -1,7 +1,7 @@
 Release History
 ---------------
 
-0.6.6 (2015-??-??)
+0.6.6 (2015-09-10)
 ++++++++++++++++++
 * Feature: added -c/--comment commandline option to add a comment to a run
 * Feature: added -b/--beat_interval commandline option to control the
