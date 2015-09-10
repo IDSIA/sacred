@@ -228,10 +228,7 @@ class MongoDbOption(CommandLineOption):
                              "(?P<db_name>" + DB_NAME_PATTERN + ")$")
 
     @classmethod
-    def execute(cls, args, run):
-        if args is None:
-            return
-
+    def apply(cls, args, run):
         url, db_name, prefix = cls.parse_mongo_db_arg(args)
         if prefix:
             mongo = MongoObserver.create(db_name=db_name, url=url,

@@ -43,7 +43,7 @@ class CommandLineOption(object):
             return cls.short_flag, flag
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         """
         Modify the current Run base on this command-line option.
 
@@ -78,7 +78,7 @@ class DebugOption(CommandLineOption):
     """
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         run.debug = True
 
 
@@ -91,7 +91,7 @@ class LoglevelOption(CommandLineOption):
                       'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         try:
             lvl = int(args)
         except ValueError:
@@ -107,7 +107,7 @@ class CommentOption(CommandLineOption):
     arg_description = 'A comment that should be stored along with the run.'
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         run.comment = args
 
 
@@ -119,5 +119,5 @@ class BeatIntervalOption(CommandLineOption):
     arg_description = "Time between two heartbeat events measured in seconds."
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         run.beat_interval = float(args)

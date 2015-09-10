@@ -131,7 +131,7 @@ class Experiment(Ingredient):
         for option in gather_command_line_options():
             op_name = '--' + option.get_flag()[1]
             if op_name in args and args[op_name]:
-                option.execute(args[op_name], run)
+                option.apply(args[op_name], run)
         self.current_run.run_logger.info("Running command '%s'" % command_name)
         run()
         self.current_run = None
