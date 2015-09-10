@@ -1,6 +1,13 @@
 Release History
 ---------------
 
+0.6.6 (2015-??-??)
+++++++++++++++++++
+* Feature: added -c/--comment commandline option to add a comment to a run
+* Feature: added -b/--beat_interval commandline option to control the
+           rate of heartbeat events
+* Feature: introduced an easy way of adding custom commandline options
+
 0.6.5 (2015-08-28)
 ++++++++++++++++++
 * Feature: Support ``@ex.capture`` on methods (thanks to @Treora)

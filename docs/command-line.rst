@@ -241,13 +241,22 @@ Flags
 **Help**
 
 +------------+-----------------------------+
-| ``-h``     |  Print Usage                |
+| ``-h``     |  print usage                |
 +------------+                             |
 | ``--help`` |                             |
 +------------+-----------------------------+
 
 This prints a help/usage message for your experiment.
 It is equivalent to typing just ``help``.
+
+**Comment**
++-----------------------+-----------------------------+
+| ``-c COMMENT``        |  add a comment to this run  |
++-----------------------+                             |
+| ``--comment COMMENT`` |                             |
++-----------------------+-----------------------------+
+
+The ``COMMENT`` can be any text and will be stored with the run.
 
 **Logging Level**
 
@@ -301,3 +310,58 @@ See :ref:`mongo_observer` for more details.
 
 This flag deactivates the stacktrace filtering. You should usually not need
 this. It is mainly used for debugging Sacred.
+
+**Beat Interval**
+
++-----------------------------------------+-----------------------------------------------+
+| ``-b BEAT_INTERVAL``                    |  set the interval between heartbeat events    |
++-----------------------------------------+                                               |
+| ``--beat_interval=BEAT_INTERVAL``       |                                               |
++-----------------------------------------+-----------------------------------------------+
+
+Custom Flags
+============
+It is possible to add custom flags to an experiment by inheriting from
+``sacred.commandline_option.CommandLineOption`` like this:
+
+.. code-block:: python
+
+    from sacred.commandline_option import CommandLineOption
+
+    class OwnFlag(CommandLineOption):
+    """ This is my personal flag """
+
+        @classmethod
+        def apply(cls, args, run):
+            # useless feature: add some string to the info dict
+            run.info['some'] = 'prepopulation of the info dict'
+
+
+The name of the flag is taken from the class name and here would be
+``-o``/``-own_flag``. The short flag can be customized by setting a
+``short_flag`` class variable. The documentation for the flag is taken from
+the docstring. The ``apply`` method of that class is called after the ``Run``
+object has been created, but before it has been started.
+
+In this case the ``args`` parameter will be always be ``True``. But it is also
+possible to add a flag which takes an argument, by specifying the ``arg``
+and ``arg_description`` class variables:
+
+.. code-block:: python
+
+    from sacred.commandline_option import CommandLineOption
+
+    class ImprovedFlag(CommandLineOption):
+    """ This is my even better personal flag """
+
+        short_flag = 'q'
+        arg = 'MESSAGE'
+        arg_description = 'The cool message that gets saved to info'
+
+        @classmethod
+        def apply(cls, args, run):
+            run.info['some'] = args
+
+Here the flag would be ``-q MESSAGE`` / ``-improved_flag=MESSAGE`` and
+the ``args`` parameter of the ``apply`` function would contain the
+``MESSAGE`` as a string.
