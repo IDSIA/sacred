@@ -79,7 +79,7 @@ class DebugOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
-        run.debug = bool(args)
+        run.debug = True
 
 
 class LoglevelOption(CommandLineOption):
@@ -92,8 +92,6 @@ class LoglevelOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
-        if args is None:
-            return
         try:
             lvl = int(args)
         except ValueError:
@@ -110,8 +108,6 @@ class CommentOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
-        if args is None:
-            return
         run.comment = args
 
 
@@ -124,6 +120,4 @@ class BeatIntervalOption(CommandLineOption):
 
     @classmethod
     def execute(cls, args, run):
-        if args is None:
-            return
         run.beat_interval = float(args)
