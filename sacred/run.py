@@ -49,7 +49,7 @@ class Run(object):
         self.main_function = main_function
         """The main function that is executed with this run"""
 
-        self._observers = observers
+        self.observers = observers
         """A list of all observers that observe this run"""
 
         self.pre_run_hooks = pre_run_hooks
@@ -168,7 +168,7 @@ class Run(object):
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
-        for observer in self._observers:
+        for observer in self.observers:
             if hasattr(observer, 'started_event'):
                 observer.started_event(
                     ex_info=self.experiment_info,
@@ -182,7 +182,7 @@ class Run(object):
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out.getvalue(),
@@ -199,7 +199,7 @@ class Run(object):
             self.run_logger.info('Result: {}'.format(result))
         elapsed_time = self._stop_time()
         self.run_logger.info('Completed after %s' % elapsed_time)
-        for observer in self._observers:
+        for observer in self.observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,
                              result=result)
@@ -207,7 +207,7 @@ class Run(object):
     def _emit_interrupted(self):
         elapsed_time = self._stop_time()
         self.run_logger.warning("Aborted after %s!" % elapsed_time)
-        for observer in self._observers:
+        for observer in self.observers:
             self._final_call(observer, 'interrupted_event',
                              interrupt_time=self.stop_time)
 
@@ -215,17 +215,17 @@ class Run(object):
         elapsed_time = self._stop_time()
         self.run_logger.error("Failed after %s!" % elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
-        for observer in self._observers:
+        for observer in self.observers:
             self._final_call(observer, 'failed_event',
                              fail_time=self.stop_time,
                              fail_trace=fail_trace)
 
     def _emit_resource_added(self, filename):
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
     def _emit_artifact_added(self, filename):
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'artifact_event', filename=filename)
 
     def _safe_call(self, obs, method, **kwargs):
