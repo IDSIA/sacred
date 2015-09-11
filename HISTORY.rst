@@ -1,6 +1,10 @@
 Release History
 ---------------
 
+0.6.7 (2015-09-11)
+++++++++++++++++++
+* Bugfix: fixed an error when trying to add a mongo observer via command-line
+
 0.6.6 (2015-09-10)
 ++++++++++++++++++
 * Feature: added -c/--comment commandline option to add a comment to a run
