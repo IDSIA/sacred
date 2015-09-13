@@ -43,8 +43,8 @@ class Experiment(Ingredient):
                                          ingredients=ingredients,
                                          _caller_globals=caller_globals)
         self.default_command = ""
-        self.command(print_config)
-        self.command(print_dependencies)
+        self.command(print_config, unobserved=True)
+        self.command(print_dependencies, unobserved=True)
         self.observers = []
         self.current_run = None
 
@@ -128,6 +128,7 @@ class Experiment(Ingredient):
         run = self._create_run_for_command(command_name, config_updates,
                                            named_configs_to_use)
         self.current_run = run
+
         for option in gather_command_line_options():
             op_name = '--' + option.get_flag()[1]
             if op_name in args and args[op_name]:

@@ -198,3 +198,14 @@ def test_run_exception_in_failed_event_is_caught(run):
         run()
     assert observer.failed_event.called
     assert observer2.failed_event.called
+
+
+def test_unobserved_run_doesnt_emit(run):
+    observer = run.observers[0]
+    run.unobserved = True
+    run()
+    assert not observer.started_event.called
+    assert not observer.heartbeat_event.called
+    assert not observer.completed_event.called
+    assert not observer.interrupted_event.called
+    assert not observer.failed_event.called

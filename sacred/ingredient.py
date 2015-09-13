@@ -93,7 +93,7 @@ class Ingredient(object):
         return cf
 
     @optional_kwargs_decorator
-    def command(self, function=None, prefix=None):
+    def command(self, function=None, prefix=None, unobserved=False):
         """
         Decorator to define a new command for this Ingredient or Experiment.
 
@@ -104,8 +104,12 @@ class Ingredient(object):
 
         The command can be given a prefix, to restrict its configuration space
         to a subtree. (see ``capture`` for more information)
+
+        A command can be made unobserved (i.e. ignoring all observers) by
+        passing the unobserved=True keyword argument.
         """
         captured_f = self.capture(function, prefix=prefix)
+        captured_f.unobserved = unobserved
         self.commands[function.__name__] = captured_f
         return captured_f
 

@@ -235,6 +235,20 @@ And call it like this::
     Hello Bob!
     INFO - custom_command - Completed after 0:00:00
 
+Like other :ref:`captured_functions`, commands also accept the ``prefix``
+keyword-argument.
+
+Many commands like ``print_config`` are helper functions, and should not
+trigger observers. This can be accomplished by passing ``unobserved=True`` to
+the decorator:
+
+.. code-block:: python
+
+    @ex.command(unobserved=True)
+    def helper(name):
+        print('Running this command will not result in a DB entry!')
+
+
 Flags
 =====
 

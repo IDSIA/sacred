@@ -121,3 +121,12 @@ class BeatIntervalOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.beat_interval = float(args)
+
+
+class UnobservedOption(CommandLineOption):
+
+    """Ignore all observers for this run."""
+
+    @classmethod
+    def apply(cls, args, run):
+        run.unobserved = True

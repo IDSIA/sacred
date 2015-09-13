@@ -76,6 +76,9 @@ class Run(object):
         self.beat_interval = 10.0  # sec
         """The time between two heartbeat events measured in seconds"""
 
+        self.unobserved = False
+        """Indicates whether this run should be unobserved"""
+
         self._heartbeat = None
         self._failed_observers = []
 
@@ -125,6 +128,9 @@ class Run(object):
         if self.start_time is not None:
             raise RuntimeError('A run can only be started once. '
                                '(Last start was {})'.format(self.start_time))
+
+        if self.unobserved:
+            self.observers = []
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
@@ -266,5 +272,5 @@ class Run(object):
             pr()
 
     def warn_if_unobserved(self):
-        if not self.observers and not self.debug:
+        if not self.observers and not self.debug and not self.unobserved:
             self.run_logger.warning("No observers have been added to this run")

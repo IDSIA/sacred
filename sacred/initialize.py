@@ -317,6 +317,9 @@ def create_run(experiment, command_name, config_updates=None,
               experiment.observers, root_logger, run_logger, experiment_info,
               host_info, pre_runs, post_runs)
 
+    if hasattr(main_function, 'unobserved'):
+        run.unobserved = main_function.unobserved
+
     for scaffold in scaffolding.values():
         scaffold.finalize_initialization(run=run)
 
