@@ -8,6 +8,7 @@ called like this::
 
   $ ./01_hello_world.py
   INFO - hello_world - Running command 'main'
+  WARNING - hello_world - No observers have been added to this run
   INFO - hello_world - Started
   Hello world!
   INFO - hello_world - Completed after 0:00:00
@@ -16,6 +17,7 @@ As you can see it prints 'Hello world!' as expected, but there is also some
 additional logging. The log-level can be controlled using the ``-l`` argument::
 
   $ ./01_hello_world.py -l WARNING
+  WARNING - hello_world - No observers have been added to this run
   Hello world!
 
 If you want to learn more about the command-line interface try

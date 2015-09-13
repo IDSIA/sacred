@@ -126,9 +126,11 @@ class Run(object):
             raise RuntimeError('A run can only be started once. '
                                '(Last start was {})'.format(self.start_time))
 
+        self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
             self.run_logger.info('Started')
+
             self._emit_started()
             self._start_heartbeat()
             try:
@@ -262,3 +264,7 @@ class Run(object):
     def _execute_post_run_hooks(self):
         for pr in self.post_run_hooks:
             pr()
+
+    def warn_if_unobserved(self):
+        if not self.observers and not self.debug:
+            self.run_logger.warning("No observers have been added to this run")

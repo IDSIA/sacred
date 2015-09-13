@@ -12,6 +12,7 @@ by Sacred. But we can always override that by passing them in explicitly.
 When run, this example will output the following::
 
   $ ./04_captured_functions.py -l WARNING
+  WARNING - captured_functions - No observers have been added to this run
   This is printed by function foo.
   This is printed by function bar.
   Overriding the default message for foo.
