@@ -7,14 +7,14 @@ import pprint
 
 import pytest
 from sacred.commands import (BLUE, ENDC, GREEN, RED, ConfigEntry, PathEntry,
-                             format_config, format_entry, help_for_command,
-                             iterate_marked, non_unicode_repr)
+                             _format_config, _format_entry, help_for_command,
+                             _iterate_marked, _non_unicode_repr)
 from sacred.config.config_summary import ConfigSummary
 
 
 def test_non_unicode_repr():
     p = pprint.PrettyPrinter()
-    p.format = non_unicode_repr
+    p.format = _non_unicode_repr
     # make sure there is no u' in the representation
     assert p.pformat(u'HelloWorld') == "'HelloWorld'"
 
@@ -38,7 +38,7 @@ def cfg():
 
 
 def test_iterate_marked(cfg):
-    assert list(iterate_marked(cfg, ConfigSummary())) == \
+    assert list(_iterate_marked(cfg, ConfigSummary())) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, False, None)),
@@ -53,7 +53,7 @@ def test_iterate_marked(cfg):
 
 def test_iterate_marked_added(cfg):
     added = {'a', 'c.cB', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, ConfigSummary(added=added))) == \
+    assert list(_iterate_marked(cfg, ConfigSummary(added=added))) == \
         [('a', ConfigEntry('a', 0, True, False, None)),
          ('b', ConfigEntry('b', {}, False, False, None)),
          ('c', PathEntry('c', False, True, None)),
@@ -68,7 +68,7 @@ def test_iterate_marked_added(cfg):
 
 def test_iterate_marked_updated(cfg):
     modified = {'b', 'c', 'c.cC.cC1'}
-    assert list(iterate_marked(cfg, ConfigSummary(modified=modified))) == \
+    assert list(_iterate_marked(cfg, ConfigSummary(modified=modified))) == \
         [('a', ConfigEntry('a', 0, False, False, None)),
          ('b', ConfigEntry('b', {}, False, True, None)),
          ('c', PathEntry('c', False, True, None)),
@@ -84,7 +84,7 @@ def test_iterate_marked_updated(cfg):
 def test_iterate_marked_typechanged(cfg):
     typechanged = {'a': (bool, int),
                    'd.dA': (float, int)}
-    result = list(iterate_marked(cfg, ConfigSummary(typechanged=typechanged)))
+    result = list(_iterate_marked(cfg, ConfigSummary(typechanged=typechanged)))
     assert result == \
         [('a', ConfigEntry('a', 0, False, False, (bool, int))),
          ('b', ConfigEntry('b', {}, False, False, None)),
@@ -109,7 +109,7 @@ def test_iterate_marked_typechanged(cfg):
     (PathEntry('f', False, False, None), "f:"),
 ])
 def test_format_entry(entry, expected):
-    assert format_entry(entry) == expected
+    assert _format_entry(entry) == expected
 
 
 @pytest.mark.parametrize("entry,color", [
@@ -130,13 +130,13 @@ def test_format_entry(entry, expected):
     (PathEntry('g', True, True, (bool, int)),   RED),
 ])
 def test_format_entry_colors(entry, color):
-    s = format_entry(entry)
+    s = _format_entry(entry)
     assert s.startswith(color)
     assert s.endswith(ENDC)
 
 
 def test_format_config(cfg):
-    cfg_text = format_config(cfg, ConfigSummary())
+    cfg_text = _format_config(cfg, ConfigSummary())
     lines = cfg_text.split('\n')
     assert lines[0].startswith('Configuration')
     assert lines[1].find(' a = 0') > -1
