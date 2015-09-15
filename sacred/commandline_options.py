@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""
+This module provides the basis for all command-line options (flags) in sacred.
+
+It defines the base class CommandLineOption and the standard supported flags.
+Some further options that add observers to the run are defined alongside those.
+"""
+
 from __future__ import division, print_function, unicode_literals
 from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
 
@@ -31,6 +38,20 @@ class CommandLineOption(object):
 
     @classmethod
     def get_flag(cls):
+        """
+        Return the short and the long version of this option.
+
+        The long flag (e.g. 'foo_bar'; used on the command-line like this:
+        --foo_bar[=ARGS]) is derived from the class-name by stripping away any
+        -Option suffix and converting the rest to snake_case.
+
+        The short flag (e.g. 'f'; used on the command-line like this:
+        -f [ARGS]) the short_flag class-member if that is set, or the first
+        letter of the long flag otherwise.
+
+        :return: tuple of short-flag, and long-flag
+        :rtype: (str, str)
+        """
         # Get the flag name from the class name
         flag = cls.__name__
         if flag.endswith("Option"):
@@ -60,6 +81,7 @@ class CommandLineOption(object):
 
 
 def gather_command_line_options():
+    """Get a sorted list of all CommandLineOption subclasses."""
     return sorted(get_inheritors(CommandLineOption), key=lambda x: x.__name__)
 
 
@@ -79,6 +101,7 @@ class DebugOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
+        """Set this run to debug mode."""
         run.debug = True
 
 
@@ -92,6 +115,7 @@ class LoglevelOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
+        """Adjust the loglevel of the root-logger of this run."""
         try:
             lvl = int(args)
         except ValueError:
@@ -108,6 +132,7 @@ class CommentOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
+        """Add a comment to this run."""
         run.comment = args
 
 
@@ -120,6 +145,7 @@ class BeatIntervalOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
+        """Set the heart-beat interval for this run."""
         run.beat_interval = float(args)
 
 
@@ -129,4 +155,5 @@ class UnobservedOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
+        """Set this run to unobserved mode."""
         run.unobserved = True
