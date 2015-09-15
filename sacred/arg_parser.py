@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""This module contains the command-line parsing and help for experiments."""
 from __future__ import division, print_function, unicode_literals
 import ast
 from collections import OrderedDict
@@ -36,6 +37,24 @@ Arguments:
 
 
 def parse_args(argv, description="", commands=None, print_help=True):
+    """
+    Parse the given commandline-arguments.
+
+
+    :param argv: list of command-line arguments as in ``sys.argv``
+    :type argv: list[str]
+    :param description: description of the experiment (docstring) to be used
+                        in the help text.
+    :type description: str
+    :param commands: list of commands that are supported by this experiment
+    :type commands: dict[str, func] | None
+    :param print_help: if True (default) this function will print the help-text
+                       and exit if that is required by the parsed arguments.
+    :type print_help: bool
+    :return: parsed values for all command-line options.
+             See ``docopt`` for more details.
+    :rtype: dict[str, str | bool | None]
+    """
     options = gather_command_line_options()
     usage = _format_usage(argv[0], description, commands, options)
     args = docopt(usage, [str(a) for a in argv[1:]], help=print_help)
@@ -51,6 +70,15 @@ def parse_args(argv, description="", commands=None, print_help=True):
 
 
 def get_config_updates(updates):
+    """
+    Parse the UPDATES given on the commandline.
+
+    :param updates: list of update-strings of the form NAME=LITERAL or just
+                    NAME.
+    :type updates: list[str]
+    :return: Config updates and named configs to use
+    :rtype: dict, list
+    """
     config_updates = {}
     named_configs = []
     if not updates:
@@ -69,6 +97,7 @@ def get_config_updates(updates):
 
 
 def _format_options_usage(options):
+    """Format the Options-part of the usage text."""
     options_usage = ""
     for op in options:
         short, long = op.get_flag()
@@ -89,6 +118,7 @@ def _format_options_usage(options):
 
 
 def _format_arguments_usage(options):
+    """Construct the Arguments-part of the usage text."""
     argument_usage = ""
     for op in options:
         if op.arg and op.arg_description:
@@ -103,6 +133,7 @@ def _format_arguments_usage(options):
 
 
 def _format_command_usage(commands):
+    """Construct the Commands-part of the usage text."""
     if not commands:
         return ""
     command_usage = "\nCommands:\n"
@@ -116,6 +147,7 @@ def _format_command_usage(commands):
 
 
 def _format_usage(program_name, description, commands=None, options=()):
+    """Construct the usage text."""
     usage = USAGE_TEMPLATE.format(
         program_name=program_name,
         description=description.strip() if description else '',
@@ -131,6 +163,7 @@ def _get_first_line_of_docstring(func):
 
 
 def _convert_value(value):
+    """Parse string as python literal if possible and fallback to string."""
     try:
         return ast.literal_eval(value)
     except (ValueError, SyntaxError):
