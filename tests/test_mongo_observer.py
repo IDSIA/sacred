@@ -9,8 +9,8 @@ import mock
 import mongomock
 import pytest
 from sacred.dependencies import get_digest
-from sacred.observers import MongoObserver
-from sacred.observers.mongo import force_bson_encodeable, PickleNumpyArrays
+from sacred.observers.mongo import (MongoObserver, MongoDbOption,
+                                    force_bson_encodeable, PickleNumpyArrays)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -20,7 +20,7 @@ pymongo = pytest.importorskip("pymongo")
 
 @pytest.fixture
 def mongo_obs():
-    db = mongomock.Connection().db
+    db = mongomock.MongoClient().db
     runs = db.runs
     fs = mock.MagicMock()
     return MongoObserver(runs, fs)
@@ -30,7 +30,8 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    comment = 'test run'
+    mongo_obs.started_event(exp, host, T1, config, comment)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -44,6 +45,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
         'captured_out': '',
         'artifacts': [],
         'config': config,
+        'comment': comment,
         'status': 'RUNNING',
         'resources': []
     }
@@ -65,7 +67,7 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
 
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
@@ -82,7 +84,7 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     mongo_obs.completed_event(stop_time=T2, result=42)
 
@@ -97,7 +99,7 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     mongo_obs.interrupted_event(interrupt_time=T2)
 
@@ -111,7 +113,7 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2,
@@ -128,7 +130,7 @@ def test_mongo_observer_artifact_event(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     filename = "setup.py"
 
@@ -145,7 +147,7 @@ def test_mongo_observer_resource_event(mongo_obs):
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, host, T1, config)
+    mongo_obs.started_event(exp, host, T1, config, 'comment')
 
     filename = "setup.py"
     md5 = get_digest(filename)
@@ -216,3 +218,48 @@ def test_pickle_numpy_arrays_son_manipulator():
     assert redoc['foo'] == document['foo']
     assert np.all(redoc['some_array'] == document['some_array'])
     assert np.all(redoc['nested']['ones'] == document['nested']['ones'])
+
+
+# ###################### MongoDbOption ###################################### #
+
+def test_parse_mongo_db_arg():
+    assert MongoDbOption.parse_mongo_db_arg('foo') == ('localhost:27017',
+                                                       'foo', '')
+
+
+def test_parse_mongo_db_arg_collection():
+    assert MongoDbOption.parse_mongo_db_arg('foo.bar') == ('localhost:27017',
+                                                           'foo', 'bar')
+
+
+def test_parse_mongo_db_arg_hostname():
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017') == \
+        ('localhost:28017', 'sacred', '')
+
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017') == \
+        ('www.mymongo.db:28017', 'sacred', '')
+
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017') == \
+        ('123.45.67.89:27017', 'sacred', '')
+
+
+def test_parse_mongo_db_arg_hostname_dbname():
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo') == \
+        ('localhost:28017', 'foo', '')
+
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
+        ('www.mymongo.db:28017', 'bar', '')
+
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz') == \
+        ('123.45.67.89:27017', 'baz', '')
+
+
+def test_parse_mongo_db_arg_hostname_dbname_collection_name():
+    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo.bar') == \
+        ('localhost:28017', 'foo', 'bar')
+
+    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar.baz') ==\
+        ('www.mymongo.db:28017', 'bar', 'baz')
+
+    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
+        ('123.45.67.89:27017', 'baz', 'foo')

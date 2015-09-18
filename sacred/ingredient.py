@@ -39,7 +39,6 @@ class Ingredient(object):
         self.named_configs = dict()
         self.ingredients = list(ingredients)
         self.logger = None
-        self.observers = []
         self.captured_functions = []
         self.post_run_hooks = []
         self.pre_run_hooks = []
@@ -50,7 +49,6 @@ class Ingredient(object):
         self.doc = _caller_globals.get('__doc__', "")
         self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals)
-        self.current_run = None
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
@@ -96,7 +94,7 @@ class Ingredient(object):
         return cf
 
     @optional_kwargs_decorator
-    def command(self, function=None, prefix=None):
+    def command(self, function=None, prefix=None, unobserved=False):
         """
         Decorator to define a new command for this Ingredient or Experiment.
 
@@ -107,8 +105,12 @@ class Ingredient(object):
 
         The command can be given a prefix, to restrict its configuration space
         to a subtree. (see ``capture`` for more information)
+
+        A command can be made unobserved (i.e. ignoring all observers) by
+        passing the unobserved=True keyword argument.
         """
         captured_f = self.capture(function, prefix=prefix)
+        captured_f.unobserved = unobserved
         self.commands[function.__name__] = captured_f
         return captured_f
 
@@ -253,32 +255,6 @@ class Ingredient(object):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), log_level=None):
-        """Run the command with the given name.
-
-        :param command_name: Name of the command to be run
-        :type command_name: str
-        :param config_updates: a dictionary of parameter values that should
-                               be updates (optional)
-        :type config_updates: dict
-        :param named_configs_to_use: list of names of named configurations to
-                                     use (optional)
-        :type named_configs_to_use: list[str]
-        :param log_level: the log-level to use for this run either as integers
-                         or strings (10 DEBUG - 50 CRITICAL)
-        :type log_level: int | str
-        :returns: the Run object corresponding to the finished run
-        :rtype: sacred.run.Run
-        """
-        run = self._create_run_for_command(
-            command_name, config_updates, named_configs_to_use, log_level)
-        self.current_run = run
-        self.current_run.logger.info("Running command '%s'" % command_name)
-        run()
-        self.current_run = None
-        return run
-
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
 
@@ -320,9 +296,8 @@ class Ingredient(object):
         self._is_traversing = False
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs_to_use=(), log_level=None):
+                                named_configs_to_use=()):
         run = create_run(self, command_name, config_updates,
-                         log_level=log_level,
                          named_configs=named_configs_to_use)
         return run
 

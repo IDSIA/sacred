@@ -19,7 +19,8 @@ def run():
     main_func = mock.Mock(return_value=123)
     logger = mock.Mock()
     observer = [mock.Mock()]
-    return Run(config, config_mod, main_func, observer, logger, {}, {}, [], [])
+    return Run(config, config_mod, main_func, observer, logger, logger, {},
+               {}, [], [])
 
 
 def test_run_attributes(run):
@@ -48,7 +49,7 @@ def test_run_run(run):
 def test_run_emits_events_if_successful(run):
     run()
 
-    observer = run._observers[0]
+    observer = run.observers[0]
     assert observer.started_event.called
     assert observer.heartbeat_event.called
     assert observer.completed_event.called
@@ -57,7 +58,7 @@ def test_run_emits_events_if_successful(run):
 
 
 def test_run_emits_events_if_interrupted(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     run.main_function = mock.Mock(side_effect=KeyboardInterrupt)
     with pytest.raises(KeyboardInterrupt):
         run()
@@ -69,7 +70,7 @@ def test_run_emits_events_if_interrupted(run):
 
 
 def test_run_emits_events_if_failed(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     run.main_function = mock.Mock(side_effect=TypeError)
     with pytest.raises(TypeError):
         run()
@@ -81,18 +82,19 @@ def test_run_emits_events_if_failed(run):
 
 
 def test_run_started_event(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     run()
     observer.started_event.assert_called_with(
         ex_info=run.experiment_info,
         host_info=run.host_info,
         start_time=run.start_time,
-        config=run.config
+        config=run.config,
+        comment=''
     )
 
 
 def test_run_completed_event(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     run()
     observer.completed_event.assert_called_with(
         stop_time=run.stop_time,
@@ -101,7 +103,7 @@ def test_run_completed_event(run):
 
 
 def test_run_heartbeat_event(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     run.info['test'] = 321
     run()
     call_args, call_kwargs = observer.heartbeat_event.call_args_list[0]
@@ -111,7 +113,7 @@ def test_run_heartbeat_event(run):
 
 
 def test_run_artifact_event(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     handle, f_name = tempfile.mkstemp()
     run.add_artifact(f_name)
     observer.artifact_event.assert_called_with(filename=f_name)
@@ -120,7 +122,7 @@ def test_run_artifact_event(run):
 
 
 def test_run_resource_event(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     handle, f_name = tempfile.mkstemp()
     run.open_resource(f_name)
     observer.resource_event.assert_called_with(filename=f_name)
@@ -135,14 +137,14 @@ def test_run_cannot_be_started_twice(run):
 
 
 def test_run_observer_failure_on_startup_not_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer.started_event.side_effect = ObserverError
     with pytest.raises(ObserverError):
         run()
 
 
 def test_run_observer_error_in_heartbeat_is_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer.heartbeat_event.side_effect = ObserverError
     run()
     assert observer in run._failed_observers
@@ -152,7 +154,7 @@ def test_run_observer_error_in_heartbeat_is_caught(run):
 
 
 def test_run_exception_in_heartbeat_is_not_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer.heartbeat_event.side_effect = TypeError
     with pytest.raises(TypeError):
         run()
@@ -165,9 +167,9 @@ def test_run_exception_in_heartbeat_is_not_caught(run):
 
 
 def test_run_exception_in_completed_event_is_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer2 = mock.Mock()
-    run._observers.append(observer2)
+    run.observers.append(observer2)
     observer.completed_event.side_effect = TypeError
     run()
     assert observer.completed_event.called
@@ -175,9 +177,9 @@ def test_run_exception_in_completed_event_is_caught(run):
 
 
 def test_run_exception_in_interrupted_event_is_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer2 = mock.Mock()
-    run._observers.append(observer2)
+    run.observers.append(observer2)
     observer.interrupted_event.side_effect = TypeError
     run.main_function = mock.Mock(side_effect=KeyboardInterrupt)
     with pytest.raises(KeyboardInterrupt):
@@ -187,12 +189,23 @@ def test_run_exception_in_interrupted_event_is_caught(run):
 
 
 def test_run_exception_in_failed_event_is_caught(run):
-    observer = run._observers[0]
+    observer = run.observers[0]
     observer2 = mock.Mock()
-    run._observers.append(observer2)
+    run.observers.append(observer2)
     observer.failed_event.side_effect = TypeError
     run.main_function = mock.Mock(side_effect=AttributeError)
     with pytest.raises(AttributeError):
         run()
     assert observer.failed_event.called
     assert observer2.failed_event.called
+
+
+def test_unobserved_run_doesnt_emit(run):
+    observer = run.observers[0]
+    run.unobserved = True
+    run()
+    assert not observer.started_event.called
+    assert not observer.heartbeat_event.called
+    assert not observer.completed_event.called
+    assert not observer.interrupted_event.called
+    assert not observer.failed_event.called

@@ -7,7 +7,8 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           get_by_dotted_path, is_prefix, is_subdir,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
-                          recursive_update, set_by_dotted_path)
+                          recursive_update, set_by_dotted_path, get_inheritors,
+                          convert_camel_case_to_snake_case)
 
 
 def test_recursive_update():
@@ -113,3 +114,36 @@ def test_convert_to_nested_dict_nested():
 ])
 def test_is_subdirectory(path, parent, expected):
     assert is_subdir(path, parent) == expected
+
+
+def test_get_inheritors():
+    class A(object):
+        pass
+
+    class B(A):
+        pass
+
+    class C(B):
+        pass
+
+    class D(A):
+        pass
+
+    class E(object):
+        pass
+
+    assert get_inheritors(A) == {B, C, D}
+
+
+@pytest.mark.parametrize('name,expected', [
+    ('CamelCase', 'camel_case'),
+    ('snake_case', 'snake_case'),
+    ('CamelCamelCase', 'camel_camel_case'),
+    ('Camel2Camel2Case', 'camel2_camel2_case'),
+    ('getHTTPResponseCode', 'get_http_response_code'),
+    ('get2HTTPResponseCode', 'get2_http_response_code'),
+    ('HTTPResponseCode', 'http_response_code'),
+    ('HTTPResponseCodeXYZ', 'http_response_code_xyz')
+])
+def test_convert_camel_case_to_snake_case(name, expected):
+    assert convert_camel_case_to_snake_case(name) == expected

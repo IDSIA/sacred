@@ -38,13 +38,12 @@ class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
 
 
-def create_basic_stream_logger(name, level=None):
-    level = level if level is not None else logging.INFO
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+def create_basic_stream_logger():
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
     logger.handlers = []
     ch = logging.StreamHandler()
-    ch.setLevel(level)
+    ch.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
@@ -265,3 +264,24 @@ def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
         return _decorated(*args)
     else:
         return _decorated
+
+
+def get_inheritors(cls):
+    """Get a set of all classes that inherit from the given class."""
+    subclasses = set()
+    work = [cls]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            if child not in subclasses:
+                subclasses.add(child)
+                work.append(child)
+    return subclasses
+
+
+# Credit to Zarathustra and epost from stackoverflow
+# Taken from http://stackoverflow.com/a/1176023/1388435
+def convert_camel_case_to_snake_case(name):
+    """Convert CamelCase to snake_case."""
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

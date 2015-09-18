@@ -19,8 +19,8 @@ class Run(object):
     """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
-                 logger, experiment_info, host_info, pre_run_hooks,
-                 post_run_hooks):
+                 root_logger, run_logger, experiment_info, host_info,
+                 pre_run_hooks, post_run_hooks):
 
         self.captured_out = None
         """Captured stdout and stderr"""
@@ -40,18 +40,23 @@ class Run(object):
         self.info = {}
         """Custom info dict that will be sent to the observers"""
 
-        self.logger = logger
+        self.root_logger = root_logger
+        """The root logger that was used to create all the others"""
+
+        self.run_logger = run_logger
         """The logger that is used for this run"""
 
         self.main_function = main_function
         """The main function that is executed with this run"""
 
-        self._observers = observers
+        self.observers = observers
         """A list of all observers that observe this run"""
 
         self.pre_run_hooks = pre_run_hooks
+        """List of pre-run hooks (captured functions called before this run)"""
 
         self.post_run_hooks = post_run_hooks
+        """List of post-run hooks (captured functions called after this run)"""
 
         self.result = None
         """The return value of the main function"""
@@ -60,7 +65,19 @@ class Run(object):
         """The datetime when this run was started"""
 
         self.stop_time = None
-        """The datetime when this run stopped."""
+        """The datetime when this run stopped"""
+
+        self.debug = False
+        """Determines whether this run is executed in debug mode"""
+
+        self.comment = ''
+        """A custom comment for this run"""
+
+        self.beat_interval = 10.0  # sec
+        """The time between two heartbeat events measured in seconds"""
+
+        self.unobserved = False
+        """Indicates whether this run should be unobserved"""
 
         self._heartbeat = None
         self._failed_observers = []
@@ -112,15 +129,20 @@ class Run(object):
             raise RuntimeError('A run can only be started once. '
                                '(Last start was {})'.format(self.start_time))
 
+        if self.unobserved:
+            self.observers = []
+
+        self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
         with tee_output() as self.captured_out:
-            self.logger.info('Started')
+            self.run_logger.info('Started')
+
             self._emit_started()
             self._start_heartbeat()
             try:
-                self.execute_pre_run_hooks()
+                self._execute_pre_run_hooks()
                 self.result = self.main_function(*args)
-                self.execute_post_run_hooks()
+                self._execute_post_run_hooks()
                 self._stop_heartbeat()
                 self._emit_completed(self.result)
                 return self.result
@@ -141,8 +163,10 @@ class Run(object):
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
-        self._heartbeat = threading.Timer(10, self._start_heartbeat)
-        self._heartbeat.start()
+        if self.beat_interval > 0:
+            self._heartbeat = threading.Timer(self.beat_interval,
+                                              self._start_heartbeat)
+            self._heartbeat.start()
 
     def _stop_heartbeat(self):
         if self._heartbeat is not None:
@@ -152,19 +176,21 @@ class Run(object):
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
-        for observer in self._observers:
+        for observer in self.observers:
             if hasattr(observer, 'started_event'):
                 observer.started_event(
                     ex_info=self.experiment_info,
                     host_info=self.host_info,
                     start_time=self.start_time,
-                    config=self.config)
-                # do not catch any exceptions on startup the experiment should
-                # fail if any of the observers fails
+                    config=self.config,
+                    comment=self.comment
+                )
+                # do not catch any exceptions on startup:
+                # the experiment SHOULD fail if any of the observers fails
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out.getvalue(),
@@ -178,36 +204,36 @@ class Run(object):
 
     def _emit_completed(self, result):
         if result is not None:
-            self.logger.info('Result: {}'.format(result))
+            self.run_logger.info('Result: {}'.format(result))
         elapsed_time = self._stop_time()
-        self.logger.info('Completed after %s' % elapsed_time)
-        for observer in self._observers:
+        self.run_logger.info('Completed after %s' % elapsed_time)
+        for observer in self.observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,
                              result=result)
 
     def _emit_interrupted(self):
         elapsed_time = self._stop_time()
-        self.logger.warning("Aborted after %s!" % elapsed_time)
-        for observer in self._observers:
+        self.run_logger.warning("Aborted after %s!" % elapsed_time)
+        for observer in self.observers:
             self._final_call(observer, 'interrupted_event',
                              interrupt_time=self.stop_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
         elapsed_time = self._stop_time()
-        self.logger.error("Failed after %s!" % elapsed_time)
+        self.run_logger.error("Failed after %s!" % elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
-        for observer in self._observers:
+        for observer in self.observers:
             self._final_call(observer, 'failed_event',
                              fail_time=self.stop_time,
                              fail_trace=fail_trace)
 
     def _emit_resource_added(self, filename):
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
     def _emit_artifact_added(self, filename):
-        for observer in self._observers:
+        for observer in self.observers:
             self._safe_call(observer, 'artifact_event', filename=filename)
 
     def _safe_call(self, obs, method, **kwargs):
@@ -216,8 +242,8 @@ class Run(object):
                 getattr(obs, method)(**kwargs)
             except ObserverError as e:
                 self._failed_observers.append(obs)
-                self.logger.warning("An error ocurred in the '{}' "
-                                    "observer: {}".format(obs, e))
+                self.run_logger.warning("An error ocurred in the '{}' "
+                                        "observer: {}".format(obs, e))
             except:
                 self._failed_observers.append(obs)
                 raise
@@ -230,17 +256,21 @@ class Run(object):
                 # Feels dirty to catch all exceptions, but it is just for
                 # finishing up, so we don't want one observer to kill the
                 # others
-                self.logger.error(traceback.format_exc())
+                self.run_logger.error(traceback.format_exc())
 
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:
-            self.logger.warning("The observer '{}' failed at some point "
-                                "during the run.".format(observer))
+            self.run_logger.warning("The observer '{}' failed at some point "
+                                    "during the run.".format(observer))
 
-    def execute_pre_run_hooks(self):
+    def _execute_pre_run_hooks(self):
         for pr in self.pre_run_hooks:
             pr()
 
-    def execute_post_run_hooks(self):
+    def _execute_post_run_hooks(self):
         for pr in self.post_run_hooks:
             pr()
+
+    def warn_if_unobserved(self):
+        if not self.observers and not self.debug and not self.unobserved:
+            self.run_logger.warning("No observers have been added to this run")

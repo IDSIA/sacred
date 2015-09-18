@@ -8,6 +8,7 @@ As with hello_config_dict you can run it like this::
 
   $ ./03_hello_config_scope.py
   INFO - hello_config_scope - Running command 'main'
+  WARNING - hello_config_scope - No observers have been added to this run
   INFO - hello_config_scope - Started
   Hello world!
   INFO - hello_config_scope - Completed after 0:00:00
@@ -17,6 +18,7 @@ argument::
 
   $ ./03_hello_config_scope.py with message='Ciao world!'
   INFO - hello_config_scope - Running command 'main'
+  WARNING - hello_config_scope - No observers have been added to this run
   INFO - hello_config_scope - Started
   Ciao world!
   INFO - hello_config_scope - Completed after 0:00:00
@@ -27,6 +29,7 @@ recipient we can also just modify that::
 
   $ ./03_hello_config_scope.py with recipient='Bob'
   INFO - hello_config_scope - Running command 'main'
+  WARNING - hello_config_scope - No observers have been added to this run
   INFO - hello_config_scope - Started
   Hello Bob!
   INFO - hello_config_scope - Completed after 0:00:00

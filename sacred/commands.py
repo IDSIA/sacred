@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""Defines the stock-commands that every sacred experiment ships with."""
 from __future__ import division, print_function, unicode_literals
 
 import pprint
@@ -16,8 +17,15 @@ GREEN = '\033[92m'
 RED = '\033[91m'
 ENDC = '\033[0m'
 
+LEGEND = '(' + BLUE + 'modified' + ENDC +\
+    ', ' + GREEN + 'added' + ENDC +\
+    ', ' + RED + 'typechanged' + ENDC + ')'
 
-def non_unicode_repr(objekt, context, maxlevels, level):
+ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged')
+PathEntry = namedtuple('PathEntry', 'key added modified typechanged')
+
+
+def _non_unicode_repr(objekt, context, maxlevels, level):
     """
     Used to override the pprint format method to get rid of unicode prefixes.
 
@@ -30,13 +38,42 @@ def non_unicode_repr(objekt, context, maxlevels, level):
     return repr_string, isreadable, isrecursive
 
 PRINTER = pprint.PrettyPrinter()
-PRINTER.format = non_unicode_repr
-
-ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged')
-PathEntry = namedtuple('PathEntry', 'key added modified typechanged')
+PRINTER.format = _non_unicode_repr
 
 
-def iterate_marked(cfg, config_mods):
+def print_config(_run):
+    """
+    Print the updated configuration and exit.
+
+    Text is highlighted:
+      green:  value modified
+      blue:   value added
+      red:    value modified but type changed
+    """
+    final_config = _run.config
+    config_mods = _run.config_modifications
+    print(_format_config(final_config, config_mods))
+
+
+def help_for_command(command):
+    """Get the help text (signature + docstring) for a command (function)."""
+    help_text = pydoc.text.document(command)
+    # remove backspaces
+    return re.subn('.\\x08', '', help_text)[0]
+
+
+def print_dependencies(_run):
+    """Print the detected source-files and dependencies."""
+    print('Sources:')
+    for source, digest in _run.experiment_info['sources']:
+        print('  {:<43}  {}'.format(source, digest))
+
+    print('\nDependencies:')
+    for pack, version in _run.experiment_info['dependencies']:
+        print('  {:<20} >= {}'.format(pack, version))
+
+
+def _iterate_marked(cfg, config_mods):
     for path, value in iterate_flattened_separately(cfg):
         if value is PATHCHANGE:
             yield path, PathEntry(
@@ -53,7 +90,7 @@ def iterate_marked(cfg, config_mods):
                 typechanged=config_mods.typechanged.get(path))
 
 
-def format_entry(entry):
+def _format_entry(entry):
     color = ""
     if entry.typechanged:
         color = RED
@@ -68,44 +105,9 @@ def format_entry(entry):
         return color + entry.key + ":" + end
 
 
-def format_config(cfg, config_mods):
+def _format_config(cfg, config_mods):
     lines = ['Configuration ' + LEGEND + ':']
-    for path, entry in iterate_marked(cfg, config_mods):
+    for path, entry in _iterate_marked(cfg, config_mods):
         indent = '  ' + '  ' * path.count('.')
-        lines.append(indent + format_entry(entry))
+        lines.append(indent + _format_entry(entry))
     return "\n".join(lines)
-
-LEGEND = '(' + BLUE + 'modified' + ENDC +\
-    ', ' + GREEN + 'added' + ENDC +\
-    ', ' + RED + 'typechanged' + ENDC + ')'
-
-
-def print_config(_run):
-    """
-    Print the updated configuration and exit.
-
-    Text is highlighted:
-      green:  value modified
-      blue:   value added
-      red:    value modified but type changed
-    """
-    final_config = _run.config
-    config_mods = _run.config_modifications
-    print(format_config(final_config, config_mods))
-
-
-def help_for_command(command):
-    help_text = pydoc.text.document(command)
-    # remove backspaces
-    return re.subn('.\\x08', '', help_text)[0]
-
-
-def print_dependencies(_run):
-    """Print the detected source-files and dependencies."""
-    print('Sources:')
-    for source, digest in _run.experiment_info['sources']:
-        print('  {:<43}  {}'.format(source, digest))
-
-    print('\nDependencies:')
-    for pack, version in _run.experiment_info['dependencies']:
-        print('  {:<20} >= {}'.format(pack, version))

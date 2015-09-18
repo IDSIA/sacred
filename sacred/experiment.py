@@ -6,8 +6,8 @@ import inspect
 import sys
 from collections import OrderedDict
 
-
-from sacred.arg_parser import get_config_updates, get_observers, parse_args
+from sacred.arg_parser import get_config_updates, parse_args
+from sacred.commandline_options import gather_command_line_options
 from sacred.commands import print_config, print_dependencies
 from sacred.ingredient import Ingredient
 from sacred.utils import print_filtered_stacktrace
@@ -43,8 +43,10 @@ class Experiment(Ingredient):
                                          ingredients=ingredients,
                                          _caller_globals=caller_globals)
         self.default_command = ""
-        self.command(print_config)
-        self.command(print_dependencies)
+        self.command(print_config, unobserved=True)
+        self.command(print_dependencies, unobserved=True)
+        self.observers = []
+        self.current_run = None
 
     # =========================== Decorators ==================================
 
@@ -88,7 +90,7 @@ class Experiment(Ingredient):
 
     # =========================== Public Interface ============================
 
-    def run(self, config_updates=None, named_configs=(), loglevel=None):
+    def run(self, config_updates=None, named_configs=()):
         """
         Run the main function of the experiment.
 
@@ -97,8 +99,6 @@ class Experiment(Ingredient):
         :type config_updates: dict
         :param named_configs: list of names of named_configs to use
         :type named_configs: list[str]
-        :param loglevel: Changes to the log-level for this run.
-        :type loglevel: int | str
 
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
@@ -106,8 +106,37 @@ class Experiment(Ingredient):
         assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
-                                named_configs_to_use=named_configs,
-                                log_level=loglevel)
+                                named_configs_to_use=named_configs)
+
+    def run_command(self, command_name, config_updates=None,
+                    named_configs_to_use=(), args=()):
+        """Run the command with the given name.
+
+        :param command_name: Name of the command to be run
+        :type command_name: str
+        :param config_updates: a dictionary of parameter values that should
+                               be updates (optional)
+        :type config_updates: dict
+        :param named_configs_to_use: list of names of named configurations to
+                                     use (optional)
+        :type named_configs_to_use: list[str]
+        :param args: dictionary of command-line options
+        :type args: dict
+        :returns: the Run object corresponding to the finished run
+        :rtype: sacred.run.Run
+        """
+        run = self._create_run_for_command(command_name, config_updates,
+                                           named_configs_to_use)
+        self.current_run = run
+
+        for option in gather_command_line_options():
+            op_name = '--' + option.get_flag()[1]
+            if op_name in args and args[op_name]:
+                option.apply(args[op_name], run)
+        self.current_run.run_logger.info("Running command '%s'" % command_name)
+        run()
+        self.current_run = None
+        return run
 
     def run_commandline(self, argv=None):
         """
@@ -128,23 +157,13 @@ class Experiment(Ingredient):
                           description=self.doc,
                           commands=OrderedDict(all_commands))
         config_updates, named_configs = get_config_updates(args['UPDATE'])
-        loglevel = args.get('--logging')
-        for obs in get_observers(args):
-            if obs not in self.observers:
-                self.observers.append(obs)
-
-        if args['COMMAND']:
-            cmd_name = args['COMMAND']
-        else:
-            cmd_name = self.default_command
+        cmd_name = args.get('COMMAND') or self.default_command
 
         try:
-            return self.run_command(cmd_name,
-                                    config_updates=config_updates,
-                                    named_configs_to_use=named_configs,
-                                    log_level=loglevel)
+            return self.run_command(cmd_name, config_updates, named_configs,
+                                    args)
         except Exception:
-            if args['--debug']:
+            if self.current_run and self.current_run.debug:
                 import traceback
                 import pdb
                 traceback.print_exception(*sys.exc_info())

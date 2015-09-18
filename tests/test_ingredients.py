@@ -107,6 +107,16 @@ def test_add_command_with_prefix(ing):
     assert foo.prefix == 'bar'
 
 
+def test_add_unobserved_command(ing):
+    @ing.command(unobserved=True)
+    def foo(a, b):
+        pass
+
+    assert 'foo' in ing.commands
+    assert ing.commands['foo'] == foo
+    assert foo.unobserved is True
+
+
 def test_add_config_hook(ing):
     def foo(config, command_name, logger):
         pass

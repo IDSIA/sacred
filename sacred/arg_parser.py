@@ -1,63 +1,62 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""This module contains the command-line parsing and help for experiments."""
 from __future__ import division, print_function, unicode_literals
 import ast
 from collections import OrderedDict
-import re
 import textwrap
 import sys
-
+import inspect
 from docopt import docopt
 
+from sacred.commandline_options import gather_command_line_options
 from sacred.commands import help_for_command
-from sacred.observers import MongoObserver
 from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ('parse_args', 'get_config_updates', 'get_observers')
+__all__ = ('parse_args', 'get_config_updates')
 
 
 USAGE_TEMPLATE = """Usage:
-  {program_name} [(with UPDATE...)] [-m DB] [-l LEVEL] [-d]
+  {program_name} [(with UPDATE...)] [options]
   {program_name} help [COMMAND]
   {program_name} (-h | --help)
-  {program_name} COMMAND [(with UPDATE...)] [-m DB] [-l LEVEL] [-d]
+  {program_name} COMMAND [(with UPDATE...)] [options]
 
 {description}
 
 Options:
-  -h --help                Print this help message and exit
-  -m DB --mongo_db=DB      Add a MongoDB Observer to the experiment
-  -l LEVEL --logging=LEVEL Adjust the loglevel
-  -d --debug               Don't filter the stacktrace and automatically enter
-                           post-mortem debugging with pdb
+{options}
 
 Arguments:
-  DB        Database specification. Can be [host:port:]db_name[.prefix]
+  COMMAND   Name of command to run (see below for list of commands)
   UPDATE    Configuration assignments of the form foo.bar=17
-  COMMAND   Custom command to run
-  LEVEL     Loglevel either as 0 - 50 or as string:
-            DEBUG(10), INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
-"""
-
-
-DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
-HOSTNAME_PATTERN = \
-    r"(?=.{1,255}$)"\
-    r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
-    r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
-    r"\.?"
-URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
-
-DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
-URL = re.compile("^" + URL_PATTERN + "$")
-URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
-                         "(?P<db_name>" + DB_NAME_PATTERN + ")$")
+{arguments}
+{commands}"""
 
 
 def parse_args(argv, description="", commands=None, print_help=True):
-    usage = _format_usage(argv[0], description, commands)
+    """
+    Parse the given commandline-arguments.
+
+
+    :param argv: list of command-line arguments as in ``sys.argv``
+    :type argv: list[str]
+    :param description: description of the experiment (docstring) to be used
+                        in the help text.
+    :type description: str
+    :param commands: list of commands that are supported by this experiment
+    :type commands: dict[str, func] | None
+    :param print_help: if True (default) this function will print the help-text
+                       and exit if that is required by the parsed arguments.
+    :type print_help: bool
+    :return: parsed values for all command-line options.
+             See ``docopt`` for more details.
+    :rtype: dict[str, str | bool | None]
+    """
+    options = gather_command_line_options()
+    usage = _format_usage(argv[0], description, commands, options)
     args = docopt(usage, [str(a) for a in argv[1:]], help=print_help)
     if not args['help'] or not print_help:
         return args
@@ -71,6 +70,15 @@ def parse_args(argv, description="", commands=None, print_help=True):
 
 
 def get_config_updates(updates):
+    """
+    Parse the UPDATES given on the commandline.
+
+    :param updates: list of update-strings of the form NAME=LITERAL or just
+                    NAME.
+    :type updates: list[str]
+    :return: Config updates and named configs to use
+    :rtype: dict, list
+    """
     config_updates = {}
     named_configs = []
     if not updates:
@@ -88,34 +96,65 @@ def get_config_updates(updates):
     return config_updates, named_configs
 
 
-def get_observers(args):
-    observers = []
-    if args['--mongo_db']:
-        url, db_name, prefix = _parse_mongo_db_arg(args['--mongo_db'])
-        if prefix:
-            mongo = MongoObserver.create(db_name=db_name, url=url,
-                                         prefix=prefix)
+def _format_options_usage(options):
+    """Format the Options-part of the usage text."""
+    options_usage = ""
+    for op in options:
+        short, long = op.get_flag()
+        if op.arg:
+            flag = "-{short} {arg} --{long}={arg}".format(
+                short=short, long=long, arg=op.arg)
         else:
-            mongo = MongoObserver.create(db_name=db_name, url=url)
+            flag = "-{short} --{long}".format(short=short, long=long)
 
-        observers.append(mongo)
+        wrapped_description = textwrap.wrap(inspect.cleandoc(op.__doc__),
+                                            width=79,
+                                            initial_indent=' ' * 32,
+                                            subsequent_indent=' ' * 32)
+        wrapped_description = "\n".join(wrapped_description).strip()
 
-    return observers
+        options_usage += "  {0:28}  {1}\n".format(flag, wrapped_description)
+    return options_usage
 
 
-def _format_usage(program_name, description, commands=None):
+def _format_arguments_usage(options):
+    """Construct the Arguments-part of the usage text."""
+    argument_usage = ""
+    for op in options:
+        if op.arg and op.arg_description:
+            wrapped_description = textwrap.wrap(op.arg_description,
+                                                width=79,
+                                                initial_indent=' ' * 12,
+                                                subsequent_indent=' ' * 12)
+            wrapped_description = "\n".join(wrapped_description).strip()
+            argument_usage += "  {0:8}  {1}\n".format(op.arg,
+                                                      wrapped_description)
+    return argument_usage
+
+
+def _format_command_usage(commands):
+    """Construct the Commands-part of the usage text."""
+    if not commands:
+        return ""
+    command_usage = "\nCommands:\n"
+    cmd_len = max([len(c) for c in commands] + [8])
+    command_doc = OrderedDict(
+        [(cmd_name, _get_first_line_of_docstring(cmd_doc))
+         for cmd_name, cmd_doc in commands.items()])
+    for cmd_name, cmd_doc in command_doc.items():
+        command_usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
+    return command_usage
+
+
+def _format_usage(program_name, description, commands=None, options=()):
+    """Construct the usage text."""
     usage = USAGE_TEMPLATE.format(
         program_name=program_name,
-        description=description.strip() if description else '')
-
-    if commands:
-        usage += "\nCommands:\n"
-        cmd_len = max([len(c) for c in commands] + [8])
-        command_doc = OrderedDict(
-            [(cmd_name, _get_first_line_of_docstring(cmd_doc))
-             for cmd_name, cmd_doc in commands.items()])
-        for cmd_name, cmd_doc in command_doc.items():
-            usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
+        description=description.strip() if description else '',
+        options=_format_options_usage(options),
+        arguments=_format_arguments_usage(options),
+        commands=_format_command_usage(commands)
+    )
     return usage
 
 
@@ -124,23 +163,9 @@ def _get_first_line_of_docstring(func):
 
 
 def _convert_value(value):
+    """Parse string as python literal if possible and fallback to string."""
     try:
         return ast.literal_eval(value)
     except (ValueError, SyntaxError):
         # use as string if nothing else worked
         return value
-
-
-def _parse_mongo_db_arg(mongo_db):
-    if DB_NAME.match(mongo_db):
-        db_name, _, prefix = mongo_db.partition('.')
-        return 'localhost:27017', db_name, prefix
-    elif URL.match(mongo_db):
-        return mongo_db, 'sacred', ''
-    elif URL_DB_NAME.match(mongo_db):
-        match = URL_DB_NAME.match(mongo_db)
-        db_name, _, prefix = match.group('db_name').partition('.')
-        return match.group('url'), db_name, prefix
-    else:
-        raise ValueError('mongo_db argument must have the form "db_name" or '
-                         '"host:port[:db_name]" but was %s' % mongo_db)

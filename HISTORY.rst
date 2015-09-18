@@ -1,6 +1,23 @@
 Release History
 ---------------
 
+0.6.7 (2015-09-11)
+++++++++++++++++++
+* Bugfix: fixed an error when trying to add a mongo observer via command-line
+
+0.6.6 (2015-09-10)
+++++++++++++++++++
+* Feature: added -c/--comment commandline option to add a comment to a run
+* Feature: added -b/--beat_interval commandline option to control the
+           rate of heartbeat events
+* Feature: introduced an easy way of adding custom commandline options
+
+0.6.5 (2015-08-28)
+++++++++++++++++++
+* Feature: Support ``@ex.capture`` on methods (thanks to @Treora)
+* Bugfix: fixed an error that occurred when a dependency module didn't have a
+          the '__file__' attribute
+
 0.6.4 (2015-06-12)
 ++++++++++++++++++
 * Bugfix: fixed a problem where some config modification would be displayed as
