@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-
 import collections
 import logging
 import os.path
@@ -9,16 +8,11 @@ import re
 import sys
 import traceback as tb
 from contextlib import contextmanager
+
+from six import StringIO
 import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
-
-
-if sys.version_info[0] == 3:
-    import io
-    StringIO = io.StringIO
-else:
-    from StringIO import StringIO
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1

@@ -133,7 +133,7 @@ class Experiment(Ingredient):
             op_name = '--' + option.get_flag()[1]
             if op_name in args and args[op_name]:
                 option.apply(args[op_name], run)
-        self.current_run.run_logger.info("Running command '%s'" % command_name)
+        self.current_run.run_logger.info("Running command '%s'", command_name)
         run()
         self.current_run = None
         return run
@@ -151,7 +151,7 @@ class Experiment(Ingredient):
         """
         if argv is None:
             argv = sys.argv
-        all_commands = self._gather_commands()
+        all_commands = self.gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
@@ -224,12 +224,10 @@ class Experiment(Ingredient):
         """
         return self.current_run.info
 
-    # =========================== Private Helpers =============================
-
-    def _gather_commands(self):
+    def gather_commands(self):
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
 
         for ingred in self.ingredients:
-            for cmd_name, cmd in ingred._gather_commands():
+            for cmd_name, cmd in ingred.gather_commands():
                 yield cmd_name, cmd

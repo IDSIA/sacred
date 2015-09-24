@@ -59,9 +59,9 @@ class ConfigScope(object):
 
         for arg in self.arg_spec.args:
             if arg not in available_entries:
-                raise KeyError("'%s' not in preset for ConfigScope. "
-                               "Available options are: %s" %
-                               (arg, available_entries))
+                raise KeyError("'{}' not in preset for ConfigScope. "
+                               "Available options are: {}"
+                               .format(arg, available_entries))
             if arg in preset:
                 cfg_locals[arg] = preset[arg]
             else:  # arg in fallback

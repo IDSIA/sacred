@@ -11,7 +11,7 @@ def test_example(capsys, example_test):
     captured_out = captured_out.split('\n')
     captured_err = captured_err.split('\n')
     for out_line in out:
-        assert out_line == captured_out[0] or out_line == captured_err[0]
+        assert out_line in [captured_out[0], captured_err[0]]
         if out_line == captured_out[0]:
             captured_out.pop(0)
         else:

@@ -61,7 +61,8 @@ class Signature(object):
     def __unicode__(self):
         pos_args = self.positional_args
         varg = ["*" + self.vararg_name] if self.vararg_name else []
-        kwargs = ["%s=%s" % (n, v.__repr__()) for n, v in self.kwargs.items()]
+        kwargs = ["{}={}".format(n, v.__repr__())
+                  for n, v in self.kwargs.items()]
         kw_wc = ["**" + self.kw_wildcard_name] if self.kw_wildcard_name else []
         arglist = pos_args + varg + kwargs + kw_wc
         return "{}({})".format(self.name, ", ".join(arglist))

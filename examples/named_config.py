@@ -10,13 +10,13 @@ ex = Experiment('hello_config')
 @ex.named_config
 def rude():
     recipient = "bastard"
-    message = "Fuck off you %s!" % recipient
+    message = "Fuck off you {}!".format(recipient)
 
 
 @ex.config
 def cfg():
     recipient = "world"
-    message = "Hello %s!" % recipient
+    message = "Hello {}!".format(recipient)
 
 
 @ex.automain
