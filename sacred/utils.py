@@ -64,6 +64,9 @@ def recursive_update(d, u):
 
 class Tee(object):
     def __init__(self, out1, out2):
+        for attr in ['encoding', 'errors', 'name', 'mode', 'closed', 'line_buffering',
+                     'newlines', 'softspace']:
+            setattr(self, attr, getattr(out1, attr, None))
         self.out1 = out1
         self.out2 = out2
 
