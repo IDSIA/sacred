@@ -44,4 +44,4 @@ ex = Experiment('my_experiment', ingredients=[data_ingredient])
 @ex.automain
 def run():
     data = load_data()  # just use the function
-    print('data=%d' % data)
+    print('data={}'.format(data))

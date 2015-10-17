@@ -251,4 +251,5 @@ class MongoDbOption(CommandLineOption):
             return match.group('url'), db_name, prefix
         else:
             raise ValueError('mongo_db argument must have the form "db_name" '
-                             'or "host:port[:db_name]" but was %s' % mongo_db)
+                             'or "host:port[:db_name]" but was {}'
+                             .format(mongo_db))
