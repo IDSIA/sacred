@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import datetime
 import mock
 import random
 from sacred.config.captured_function import create_captured_function
@@ -30,8 +31,9 @@ def test_call_captured_function():
     cf.config = {'a': 11, 'b': 12, 'd': 14}
 
     assert cf(21, c=23, f=26) == (21, 12, 23, 14, 5, 26)
-    cf.logger.debug.assert_has_calls([mock.call("Started"),
-                                      mock.call("Finished after 0:00:00.")])
+    cf.logger.debug.assert_has_calls([
+        mock.call("Started"),
+        mock.call("Finished after %s.", datetime.timedelta(0))])
 
 
 def test_captured_function_randomness():
