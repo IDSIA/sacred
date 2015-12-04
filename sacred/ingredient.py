@@ -278,7 +278,7 @@ class Ingredient(object):
         self._is_traversing = False
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs_to_use=()):
+                                named_configs=()):
         run = create_run(self, command_name, config_updates,
-                         named_configs=named_configs_to_use)
+                         named_configs=named_configs)
         return run

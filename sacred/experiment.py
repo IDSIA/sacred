@@ -107,10 +107,10 @@ class Experiment(Ingredient):
         assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
-                                named_configs_to_use=named_configs)
+                                named_configs=named_configs)
 
     def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), args=()):
+                    named_configs=(), args=()):
         """Run the command with the given name.
 
         :param command_name: Name of the command to be run
@@ -118,16 +118,16 @@ class Experiment(Ingredient):
         :param config_updates: a dictionary of parameter values that should
                                be updates (optional)
         :type config_updates: dict
-        :param named_configs_to_use: list of names of named configurations to
+        :param named_configs: list of names of named configurations to
                                      use (optional)
-        :type named_configs_to_use: list[str]
+        :type named_configs: list[str]
         :param args: dictionary of command-line options
         :type args: dict
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
         """
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs_to_use)
+                                           named_configs)
         self.current_run = run
 
         for option in gather_command_line_options():
