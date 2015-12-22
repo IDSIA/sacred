@@ -164,7 +164,9 @@ class Experiment(Ingredient):
             return self.run_command(cmd_name, config_updates, named_configs,
                                     args)
         except Exception:
-            if self.current_run and self.current_run.debug:
+            if not self.current_run or self.current_run.debug:
+                raise
+            elif self.current_run.pdb:
                 import traceback
                 import pdb
                 traceback.print_exception(*sys.exc_info())

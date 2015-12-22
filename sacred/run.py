@@ -70,6 +70,9 @@ class Run(object):
         self.debug = False
         """Determines whether this run is executed in debug mode"""
 
+        self.pdb = False
+        """If true the pdb debugger is automatically started after a failure"""
+
         self.comment = ''
         """A custom comment for this run"""
 

@@ -93,16 +93,27 @@ class HelpOption(CommandLineOption):
 class DebugOption(CommandLineOption):
 
     """
-    Run in debug mode.
+    Suppress warnings about missing observers and don't filter the stacktrace.
 
-    Don't filter the stacktrace and automatically enter post-mortem debugging
-    with pdb.
+    Also enables usage with ipython --pdb.
     """
 
     @classmethod
     def apply(cls, args, run):
         """Set this run to debug mode."""
         run.debug = True
+
+
+class PDBOption(CommandLineOption):
+
+    """
+    Automatically enter post-mortem debugging with pdb on failure.
+    """
+    short_flag = 'D'
+
+    @classmethod
+    def apply(cls, args, run):
+        run.pdb = True
 
 
 class LoglevelOption(CommandLineOption):

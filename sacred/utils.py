@@ -242,7 +242,8 @@ def print_filtered_stacktrace():
             if '__sacred__' not in current_tb.tb_frame.f_globals:
                 tb.print_tb(current_tb, 1)
             current_tb = current_tb.tb_next
-        tb.print_exception(exc_type, exc_value, None)
+        print("\n".join(tb.format_exception_only(exc_type, exc_value)).strip(),
+              file=sys.stderr)
 
 
 def is_subdir(path, directory):
