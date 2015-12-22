@@ -18,7 +18,7 @@ def cfg1():
 
 @data_ingredient.capture
 def load_data(filename, normalize):
-    print("loading dataset from '%s'" % filename)
+    print("loading dataset from '{}'".format(filename))
     if normalize:
         print("normalizing dataset")
         return 1
@@ -27,7 +27,7 @@ def load_data(filename, normalize):
 
 @data_ingredient.command
 def stats(filename):
-    print('Statistics for dataset "%s":' % filename)
+    print('Statistics for dataset "{}":'.format(filename))
     print('mean = 42.23')
 
 
@@ -44,4 +44,4 @@ ex = Experiment('my_experiment', ingredients=[data_ingredient])
 @ex.automain
 def run():
     data = load_data()  # just use the function
-    print('data=%d' % data)
+    print('data={}'.format(data))

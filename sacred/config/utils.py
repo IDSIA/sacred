@@ -30,16 +30,22 @@ def normalize_or_die(obj):
         return res
     elif isinstance(obj, (list, tuple)):
         return list([normalize_or_die(value) for value in obj])
-    elif opt.has_numpy and isinstance(obj, opt.np.bool_):
-        # fixes an issue with numpy.bool_ not being json-serializable
-        return bool(obj)
-    else:
+    elif opt.has_numpy and isinstance(obj, opt.np.generic):
         try:
-            json.dumps(obj)
-            return obj
-        except TypeError:
-            raise ValueError("Invalid value '{}'. All values have to be"
-                             "JSON-serializeable".format(obj))
+            obj = opt.np.asscalar(obj)
+        except ValueError:
+            pass
+    elif opt.has_numpy and isinstance(obj, opt.np.ndarray):
+        try:
+            obj = obj.tolist()
+        except (AttributeError, ValueError):
+            pass
+    try:
+        json.dumps(obj)
+        return obj
+    except TypeError:
+        raise ValueError("Invalid value '{}'. All values have to be"
+                         "JSON-serializeable".format(obj))
 
 
 def recursive_fill_in(config, preset):

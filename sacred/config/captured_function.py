@@ -48,6 +48,6 @@ def captured_function(wrapped, instance, args, kwargs):
     # =========================================================================
     stop_time = time.time()
     elapsed_time = timedelta(seconds=round(stop_time - start_time))
-    wrapped.logger.debug("Finished after %s." % elapsed_time)
+    wrapped.logger.debug("Finished after %s.", elapsed_time)
 
     return result

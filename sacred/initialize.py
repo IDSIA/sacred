@@ -30,7 +30,7 @@ class Scaffold(object):
         self.generate_seed = generate_seed
         self.config_hooks = config_hooks
         self.config_updates = {}
-        self.named_configs_to_use = []
+        self.named_configs = []
         self.config = None
         self.fallback = None
         self.fixture = None  # TODO: rename
@@ -90,15 +90,15 @@ class Scaffold(object):
 
     def use_named_config(self, config_name):
         if os.path.exists(config_name):
-            self.named_configs_to_use.append(
+            self.named_configs.append(
                 ConfigDict(load_config_file(config_name)))
         else:
-            self.named_configs_to_use.append(self.named_configs[config_name])
+            self.named_configs.append(self.named_configs[config_name])
 
     def set_up_config(self):
         # named configs go first
         self.config_updates, _ = chain_evaluate_config_scopes(
-            self.named_configs_to_use,
+            self.named_configs,
             fixed=self.config_updates,
             preset={},
             fallback=self.fallback)

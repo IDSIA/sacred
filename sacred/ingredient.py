@@ -255,6 +255,16 @@ class Ingredient(object):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
+    def gather_commands(self):
+        for cmd_name, cmd in self.commands.items():
+            yield self.path + '.' + cmd_name, cmd
+
+        for ingred in self.ingredients:
+            for cmd_name, cmd in ingred.gather_commands():
+                yield cmd_name, cmd
+
+    # ======================== Private Helpers ================================
+
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
 
@@ -282,8 +292,6 @@ class Ingredient(object):
             dependencies=[d.to_tuple() for d in sorted(dependencies)],
             doc=self.doc)
 
-    # ======================== Private Helpers ================================
-
     def _traverse_ingredients(self):
         if self._is_traversing:
             raise CircularDependencyError()
@@ -296,15 +304,7 @@ class Ingredient(object):
         self._is_traversing = False
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs_to_use=()):
+                                named_configs=()):
         run = create_run(self, command_name, config_updates,
-                         named_configs=named_configs_to_use)
+                         named_configs=named_configs)
         return run
-
-    def _gather_commands(self):
-        for cmd_name, cmd in self.commands.items():
-            yield self.path + '.' + cmd_name, cmd
-
-        for ingred in self.ingredients:
-            for cmd_name, cmd in ingred._gather_commands():
-                yield cmd_name, cmd

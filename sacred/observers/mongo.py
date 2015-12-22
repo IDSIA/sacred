@@ -125,7 +125,7 @@ class MongoObserver(RunObserver):
                                 prefix='sacred_mongo_fail_') as f:
             pickle.dump(self.run_entry, f)
             print("Warning: saving to MongoDB failed! "
-                  "Stored experiment entry in '%s'" % f.name,
+                  "Stored experiment entry in '{}'".format(f.name),
                   file=sys.stderr)
 
     def started_event(self, ex_info, host_info, start_time, config, comment):
@@ -251,4 +251,5 @@ class MongoDbOption(CommandLineOption):
             return match.group('url'), db_name, prefix
         else:
             raise ValueError('mongo_db argument must have the form "db_name" '
-                             'or "host:port[:db_name]" but was %s' % mongo_db)
+                             'or "host:port[:db_name]" but was {}'
+                             .format(mongo_db))

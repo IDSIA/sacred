@@ -251,6 +251,6 @@ def test_gather_commands(ing):
     def bar():
         pass
 
-    commands = list(ing2._gather_commands())
+    commands = list(ing2.gather_commands())
     assert ('other.bar', bar) in commands
     assert ('tickle.foo', foo) in commands

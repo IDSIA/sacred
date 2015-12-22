@@ -40,7 +40,6 @@ def parse_args(argv, description="", commands=None, print_help=True):
     """
     Parse the given commandline-arguments.
 
-
     :param argv: list of command-line arguments as in ``sys.argv``
     :type argv: list[str]
     :param description: description of the experiment (docstring) to be used

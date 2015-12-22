@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""This module defines the Experiment class, which is central to sacred."""
 from __future__ import division, print_function, unicode_literals
 
 import inspect
@@ -106,10 +107,10 @@ class Experiment(Ingredient):
         assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
-                                named_configs_to_use=named_configs)
+                                named_configs=named_configs)
 
     def run_command(self, command_name, config_updates=None,
-                    named_configs_to_use=(), args=()):
+                    named_configs=(), args=()):
         """Run the command with the given name.
 
         :param command_name: Name of the command to be run
@@ -117,23 +118,23 @@ class Experiment(Ingredient):
         :param config_updates: a dictionary of parameter values that should
                                be updates (optional)
         :type config_updates: dict
-        :param named_configs_to_use: list of names of named configurations to
+        :param named_configs: list of names of named configurations to
                                      use (optional)
-        :type named_configs_to_use: list[str]
+        :type named_configs: list[str]
         :param args: dictionary of command-line options
         :type args: dict
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
         """
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs_to_use)
+                                           named_configs)
         self.current_run = run
 
         for option in gather_command_line_options():
             op_name = '--' + option.get_flag()[1]
             if op_name in args and args[op_name]:
                 option.apply(args[op_name], run)
-        self.current_run.run_logger.info("Running command '%s'" % command_name)
+        self.current_run.run_logger.info("Running command '%s'", command_name)
         run()
         self.current_run = None
         return run
@@ -151,7 +152,7 @@ class Experiment(Ingredient):
         """
         if argv is None:
             argv = sys.argv
-        all_commands = self._gather_commands()
+        all_commands = self.gather_commands()
 
         args = parse_args(argv,
                           description=self.doc,
@@ -224,12 +225,10 @@ class Experiment(Ingredient):
         """
         return self.current_run.info
 
-    # =========================== Private Helpers =============================
-
-    def _gather_commands(self):
+    def gather_commands(self):
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
 
         for ingred in self.ingredients:
-            for cmd_name, cmd in ingred._gather_commands():
+            for cmd_name, cmd in ingred.gather_commands():
                 yield cmd_name, cmd

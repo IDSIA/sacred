@@ -45,7 +45,7 @@ ex = Experiment('hello_config_scope')
 @ex.config
 def cfg():
     recipient = "world"
-    message = "Hello %s!" % recipient
+    message = "Hello {}!".format(recipient)
 
 
 # again we can access the message here by taking it as an argument

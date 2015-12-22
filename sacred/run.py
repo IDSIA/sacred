@@ -206,7 +206,7 @@ class Run(object):
         if result is not None:
             self.run_logger.info('Result: {}'.format(result))
         elapsed_time = self._stop_time()
-        self.run_logger.info('Completed after %s' % elapsed_time)
+        self.run_logger.info('Completed after %s', elapsed_time)
         for observer in self.observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,
@@ -214,14 +214,14 @@ class Run(object):
 
     def _emit_interrupted(self):
         elapsed_time = self._stop_time()
-        self.run_logger.warning("Aborted after %s!" % elapsed_time)
+        self.run_logger.warning("Aborted after %s!", elapsed_time)
         for observer in self.observers:
             self._final_call(observer, 'interrupted_event',
                              interrupt_time=self.stop_time)
 
     def _emit_failed(self, exc_type, exc_value, trace):
         elapsed_time = self._stop_time()
-        self.run_logger.error("Failed after %s!" % elapsed_time)
+        self.run_logger.error("Failed after %s!", elapsed_time)
         fail_trace = traceback.format_exception(exc_type, exc_value, trace)
         for observer in self.observers:
             self._final_call(observer, 'failed_event',

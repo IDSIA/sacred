@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-
 import collections
 import logging
 import os.path
@@ -9,16 +8,11 @@ import re
 import sys
 import traceback as tb
 from contextlib import contextmanager
+
+from six import StringIO
 import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
-
-
-if sys.version_info[0] == 3:
-    import io
-    StringIO = io.StringIO
-else:
-    from StringIO import StringIO
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -70,6 +64,9 @@ def recursive_update(d, u):
 
 class Tee(object):
     def __init__(self, out1, out2):
+        for attr in ['encoding', 'errors', 'name', 'mode', 'closed', 'line_buffering',
+                     'newlines', 'softspace']:
+            setattr(self, attr, getattr(out1, attr, None))
         self.out1 = out1
         self.out2 = out2
 
