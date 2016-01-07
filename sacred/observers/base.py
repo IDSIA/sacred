@@ -19,7 +19,7 @@ class RunObserver(object):
     def completed_event(self, stop_time, result):
         pass
 
-    def interrupted_event(self, interrupt_time):
+    def interrupted_event(self, interrupt_time, status):
         pass
 
     def failed_event(self, fail_time, fail_trace):
