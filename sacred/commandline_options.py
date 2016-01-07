@@ -67,7 +67,7 @@ class CommandLineOption(object):
         """
         Modify the current Run base on this command-line option.
 
-        This function is executed after contstructing the Run object, but
+        This function is executed after constructing the Run object, but
         before actually starting it.
         :param args: If this command-line option accepts an argument this will
                      be value of that argument if set or None.
@@ -159,3 +159,13 @@ class UnobservedOption(CommandLineOption):
     def apply(cls, args, run):
         """Set this run to unobserved mode."""
         run.unobserved = True
+
+
+class QueueOption(CommandLineOption):
+
+    """ Only queue this run, do not start it."""
+
+    @classmethod
+    def apply(cls, args, run):
+        """Set this run to queue only mode."""
+        run.queue_only = True
