@@ -128,11 +128,27 @@ class MongoObserver(RunObserver):
                   "Stored experiment entry in '{}'".format(f.name),
                   file=sys.stderr)
 
+    def queued_event(self, ex_info, queue_time, config, comment):
+        self.run_entry = {
+            'experiment': dict(ex_info),
+            'queue_time': queue_time,
+            'config': config,
+            'comment': comment,
+            'status': 'QUEUED'
+        }
+
+        self.final_save(attempts=1)
+        for source_name, md5 in ex_info['sources']:
+            if not self.fs.exists(filename=source_name, md5=md5):
+                with open(source_name, 'rb') as f:
+                    self.fs.put(f, filename=source_name)
+
     def started_event(self, ex_info, host_info, start_time, config, comment):
         self.run_entry = {
             'experiment': dict(ex_info),
             'host': dict(host_info),
             'start_time': start_time,
+            'queue_time': start_time,
             'config': config,
             'comment': comment,
             'status': 'RUNNING',

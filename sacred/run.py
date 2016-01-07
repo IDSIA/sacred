@@ -82,6 +82,9 @@ class Run(object):
         self.unobserved = False
         """Indicates whether this run should be unobserved"""
 
+        self.queue_only = False
+        """If true then this run will only fire the queued_event and quit"""
+
         self._heartbeat = None
         self._failed_observers = []
 
@@ -137,6 +140,12 @@ class Run(object):
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
+
+        if self.queue_only:
+            self._emit_queued()
+            self.run_logger.info('Queued')
+            return
+
         with tee_output() as self.captured_out:
             self.run_logger.info('Started')
 
@@ -180,6 +189,19 @@ class Run(object):
             self._heartbeat.cancel()
         self._heartbeat = None
         self._emit_heatbeat()  # one final beat to flush pending changes
+
+    def _emit_queued(self):
+        queue_time = datetime.datetime.now()
+        for observer in self.observers:
+            if hasattr(observer, 'queued_event'):
+                observer.queued_event(
+                    ex_info=self.experiment_info,
+                    queue_time=queue_time,
+                    config=self.config,
+                    comment=self.comment
+                )
+                # do not catch any exceptions on startup:
+                # the experiment SHOULD fail if any of the observers fails
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
