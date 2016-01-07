@@ -81,18 +81,20 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     @staticmethod
-    def create(url='localhost', db_name='sacred', prefix='default', **kwargs):
+    def create(url='localhost', db_name='sacred', prefix='default',
+               overwrite=None, **kwargs):
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         for manipulator in SON_MANIPULATORS:
             database.add_son_manipulator(manipulator)
         runs_collection = database[prefix + '.runs']
         fs = gridfs.GridFS(database, collection=prefix)
-        return MongoObserver(runs_collection, fs)
+        return MongoObserver(runs_collection, fs, overwrite=overwrite)
 
-    def __init__(self, runs_collection, fs):
+    def __init__(self, runs_collection, fs, overwrite=None):
         self.runs = runs_collection
         self.fs = fs
+        self.overwrite = overwrite
         self.run_entry = None
 
     def save(self):
@@ -129,6 +131,8 @@ class MongoObserver(RunObserver):
                   file=sys.stderr)
 
     def queued_event(self, ex_info, queue_time, config, comment):
+        if self.overwrite is not None:
+            raise RuntimeError("Can't overwrite with QUEUED run.")
         self.run_entry = {
             'experiment': dict(ex_info),
             'queue_time': queue_time,
@@ -144,11 +148,22 @@ class MongoObserver(RunObserver):
                     self.fs.put(f, filename=source_name)
 
     def started_event(self, ex_info, host_info, start_time, config, comment):
-        self.run_entry = {
+        if self.overwrite is None:
+            self.run_entry = {
+                'queue_time': start_time
+            }
+        else:
+            if self.run_entry is not None:
+                raise RuntimeError("Cannot overwrite more than once!")
+            # sanity checks
+            if self.overwrite['experiment']['sources'] != ex_info['sources']:
+                raise RuntimeError("Sources don't match")
+            self.run_entry = self.overwrite
+
+        self.run_entry.update({
             'experiment': dict(ex_info),
             'host': dict(host_info),
             'start_time': start_time,
-            'queue_time': start_time,
             'config': config,
             'comment': comment,
             'status': 'RUNNING',
@@ -157,7 +172,7 @@ class MongoObserver(RunObserver):
             'captured_out': '',
             'info': {},
             'heartbeat': None
-        }
+        })
 
         self.save()
         for source_name, md5 in ex_info['sources']:

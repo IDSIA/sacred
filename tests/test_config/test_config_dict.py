@@ -40,7 +40,7 @@ def test_fixing_values(conf_dict):
     assert conf_dict({'a': 100})['a'] == 100
 
 
-@pytest.mark.parametrize("key", ["_underscore", "white space", 12, "12", "$f"])
+@pytest.mark.parametrize("key", ["white space", 12, "12", "$f"])
 def test_config_dict_raises_on_invalid_keys(key):
     with pytest.raises(KeyError):
         ConfigDict({key: True})
