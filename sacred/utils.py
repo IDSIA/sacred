@@ -19,7 +19,7 @@ NO_LOGGER.disabled = 1
 
 PATHCHANGE = object()
 
-PYTHON_IDENTIFIER = re.compile("^[a-zA-Z][_a-zA-Z0-9]*$")
+PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
 
 class CircularDependencyError(Exception):
