@@ -32,6 +32,15 @@ class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
 
 
+class TimeoutInterrupt(Exception):
+
+    """Signal a that the experiment timed out.
+
+    This exception can be used in client code to indicate that the run
+    exceeded its time limit and has been interrupted because of that.
+    """
+
+
 def create_basic_stream_logger():
     logger = logging.getLogger('')
     logger.setLevel(logging.INFO)

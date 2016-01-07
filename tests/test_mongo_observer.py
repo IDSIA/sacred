@@ -101,7 +101,7 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     mongo_obs.started_event(exp, host, T1, config, 'comment')
 
-    mongo_obs.interrupted_event(interrupt_time=T2)
+    mongo_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()

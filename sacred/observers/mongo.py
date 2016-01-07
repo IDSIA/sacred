@@ -161,9 +161,9 @@ class MongoObserver(RunObserver):
         self.run_entry['status'] = 'COMPLETED'
         self.final_save(attempts=10)
 
-    def interrupted_event(self, interrupt_time):
+    def interrupted_event(self, interrupt_time, status):
         self.run_entry['stop_time'] = interrupt_time
-        self.run_entry['status'] = 'INTERRUPTED'
+        self.run_entry['status'] = status
         self.final_save(attempts=3)
 
     def failed_event(self, fail_time, fail_trace):

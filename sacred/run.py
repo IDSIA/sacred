@@ -9,7 +9,7 @@ import threading
 import traceback
 
 from sacred.randomness import set_global_seed
-from sacred.utils import tee_output, ObserverError
+from sacred.utils import tee_output, ObserverError, TimeoutInterrupt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -151,7 +151,11 @@ class Run(object):
                 return self.result
             except KeyboardInterrupt:
                 self._stop_heartbeat()
-                self._emit_interrupted()
+                self._emit_interrupted("INTERRUPTED")
+                raise
+            except TimeoutInterrupt:
+                self._stop_heartbeat()
+                self._emit_interrupted("TIMEOUT")
                 raise
             except:
                 exc_type, exc_value, trace = sys.exc_info()
@@ -215,12 +219,13 @@ class Run(object):
                              stop_time=self.stop_time,
                              result=result)
 
-    def _emit_interrupted(self):
+    def _emit_interrupted(self, status):
         elapsed_time = self._stop_time()
         self.run_logger.warning("Aborted after %s!", elapsed_time)
         for observer in self.observers:
             self._final_call(observer, 'interrupted_event',
-                             interrupt_time=self.stop_time)
+                             interrupt_time=self.stop_time,
+                             status=status)
 
     def _emit_failed(self, exc_type, exc_value, trace):
         elapsed_time = self._stop_time()
