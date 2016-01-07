@@ -169,6 +169,7 @@ class MongoObserver(RunObserver):
             'experiment': dict(ex_info),
             'host': dict(host_info),
             'start_time': start_time,
+            'queue_time': start_time,
             'config': config,
             'comment': comment,
             'status': 'RUNNING',
