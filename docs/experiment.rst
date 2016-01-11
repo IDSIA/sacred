@@ -189,3 +189,29 @@ collection called ``experiments``. You can also add this observer from the
 
 For more information see :doc:`observers`
 
+
+.. _debugging:
+
+Debugging
+=========
+If an Exception occurs, sacred by default filters the stacktrace by removing
+all sacred-internal calls. The stacktrace is of course also saved in the
+database (if appropriate observer is added).
+This helps to quickly spot errors in your own code.
+However, if you want to use a debugger, stacktrace filtering needs to be
+disabled, because it doesn't play well with debuggers like ``pdb``.
+
+If you want to use a debugger with your experiment, you have two options:
+
+Disable Stacktrace Filtering
+----------------------------
+Stacktrace filtering can be deactivated via the ``-d`` flag.
+Sacred then does not interfere with the exception and it can be properly
+handled by any debugger.
+
+Post-Mortem Debugging
+---------------------
+For convenience Sacred also supports directly attaching a post-mortem ``pdb``
+debugger via the ``-D`` flag.
+If this option is set and an exception occurs, sacred will automatically start
+``pdb`` debugger to investigate the error, and interact with the stack.

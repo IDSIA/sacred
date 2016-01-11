@@ -264,6 +264,7 @@ This prints a help/usage message for your experiment.
 It is equivalent to typing just ``help``.
 
 **Comment**
+
 +-----------------------+-----------------------------+
 | ``-c COMMENT``        |  add a comment to this run  |
 +-----------------------+                             |
@@ -323,7 +324,21 @@ See :ref:`mongo_observer` for more details.
 +-------------------+-------------------------------+
 
 This flag deactivates the stacktrace filtering. You should usually not need
-this. It is mainly used for debugging Sacred.
+this. It is mainly used for debugging experiments using a debugger
+(see :ref:`debugging`).
+
+
+**PDB Debugging**
+
++-------------------+----------------------------------------------------+
+| ``-D``            |  Enter post-mortem debugging with pdb on failure.  |
++-------------------+                                                    |
+| ``--pdb``         |                                                    |
++-------------------+----------------------------------------------------+
+
+If this flag is set and an exception occurs, sacred automatically starts a
+``pdb`` post-mortem debugger to investigate the error and interact with the
+stack (see :ref:`debugging`).
 
 **Beat Interval**
 
