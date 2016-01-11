@@ -26,9 +26,10 @@ def load_data(filename, normalize):
 
 
 @data_ingredient.command
-def stats(filename):
+def stats(filename, foo=12):
     print('Statistics for dataset "{}":'.format(filename))
     print('mean = 42.23')
+    print('foo=', foo)
 
 
 # ================== Experiment ===============================================

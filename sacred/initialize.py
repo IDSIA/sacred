@@ -15,7 +15,7 @@ from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           get_by_dotted_path, is_prefix, iter_path_splits,
                           iterate_flattened, set_by_dotted_path,
-                          recursive_update)
+                          recursive_update, join_paths)
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -41,6 +41,9 @@ class Scaffold(object):
         self.commands = commands
         self.config_mods = None
         self.summaries = []
+        self.captured_args = {n  #join_paths(self.path, n)
+                              for cf in self._captured_functions
+                              for n in cf.signature.arguments}
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -160,7 +163,11 @@ class Scaffold(object):
 
     def _warn_about_suspicious_changes(self):
         for add in sorted(self.config_mods.added):
-            self.logger.warning('Added new config entry: "%s"' % add)
+            if add not in self.captured_args:
+                raise KeyError('Added a new config entry "{}" that is not used'
+                               ' anywhere'.format(add))
+            else:
+                self.logger.warning('Added new config entry: "%s"' % add)
 
         for key, (type_old, type_new) in self.config_mods.typechanged.items():
             if (isinstance(type_old, type(None)) or
