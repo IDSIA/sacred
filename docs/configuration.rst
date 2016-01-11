@@ -186,6 +186,13 @@ We can also fix any of the other values, even nested ones:
     >>> r.config
     {'foo': {'bar': 'baobab', 'a_squared': 100}, 'a': 10, 'e': 5}
 
+To prevent accidentally wrong config updates sacred implements a few basic
+checks:
+
+  * If you change the type of a config entry it will issue a warning
+  * If you add a new config entry but that is used in some captured function, it will issue a warning
+  * If you add a new config entry that is not used anywhere it will raise a KeyError.
+
 .. _multiple_config_scopes:
 
 Multiple Config Scopes

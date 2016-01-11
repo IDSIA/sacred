@@ -15,7 +15,7 @@ from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           get_by_dotted_path, is_prefix, iter_path_splits,
                           iterate_flattened, set_by_dotted_path,
-                          recursive_update, join_paths)
+                          recursive_update, join_paths, iter_prefixes)
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -163,7 +163,7 @@ class Scaffold(object):
 
     def _warn_about_suspicious_changes(self):
         for add in sorted(self.config_mods.added):
-            if add not in self.captured_args:
+            if not set(iter_prefixes(add)).intersection(self.captured_args):
                 raise KeyError('Added a new config entry "{}" that is not used'
                                ' anywhere'.format(add))
             else:
