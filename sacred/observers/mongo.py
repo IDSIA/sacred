@@ -22,34 +22,41 @@ from sacred.utils import ObserverError
 SON_MANIPULATORS = []
 
 
-class PickleNumpyArrays(SONManipulator):
-
-    """Make sure numpy arrays get pickled and stored as binary strings."""
-
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, opt.np.ndarray):
-                son[key] = {
-                    "_type": "ndarray",
-                    "_value": bson.Binary(pickle.dumps(value, protocol=2))
-                }
-            elif isinstance(value, dict):
-                # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
-
-    def transform_outgoing(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, dict):
-                if "_type" in value and value["_type"] == "ndarray":
-                    son[key] = pickle.loads(value["_value"])
-                else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value, collection)
-        return son
-
-
 if opt.has_numpy:
-    SON_MANIPULATORS.append(PickleNumpyArrays())
+    class NumpyArraysToList(SONManipulator):
+
+        """Turn numpy array into nested lists to save human readable in json"""
+
+        def transform_incoming(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, opt.np.ndarray):
+                    son[key] = value.tolist()
+                elif isinstance(value, dict):
+                    # Make sure we recurse into sub-docs
+                    son[key] = self.transform_incoming(value, collection)
+            return son
+
+    SON_MANIPULATORS.append(NumpyArraysToList())
+
+
+if opt.has_pandas:
+    pd = opt.pandas
+    import json
+
+    class PandasToJson(SONManipulator):
+
+        """Turn numpy array into nested lists to save human readable in json"""
+
+        def transform_incoming(self, son, collection):
+            for (key, value) in son.items():
+                if isinstance(value, (pd.Series, pd.DataFrame, pd.Panel)):
+                    son[key] = json.loads(value.to_json())
+                elif isinstance(value, dict):
+                    # Make sure we recurse into sub-docs
+                    son[key] = self.transform_incoming(value, collection)
+            return son
+
+    SON_MANIPULATORS.append(PandasToJson())
 
 
 def force_valid_bson_key(key):
