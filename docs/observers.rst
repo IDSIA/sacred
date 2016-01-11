@@ -227,12 +227,12 @@ Failed:
 Resources
 ---------
 Every time ``ex.open_resource(filename)`` is called an event will be fired
-with that filename.
+with that filename (see :ref:`resources`).
 
 Artifacts
 ---------
 Every time ``ex.add_artifact(filename)`` is called an event will be fired
-with that filename.
+with that filename (see :ref:`artifacts`).
 
 
 .. _custom_info:
@@ -240,22 +240,40 @@ with that filename.
 Saving Custom Information
 =========================
 Sometimes you want to add custom information about the run of an experiment,
-like the error curves during training. That's what the ``info`` dictionary is
-for. While the experiment is *running* it can be accessed via ``ex.info``.
-Another way is by ``_run.info`` using the special ``_run`` parameter in any
+like the dataset, error curves during training, or the final trained model.
+To allow this sacred offers three different mechanisms.
+
+Info Dict
+---------
+The ``info`` dictionary is meant to store small amounts of information about
+the experiment, like training loss for each epoch or the total number of
+parameters. It is updated on each heartbeat, such that its content is
+accessible in the database already during runtime.
+
+To store information in the ``info`` dict it can be accessed via ``ex.info``,
+but only while the experiment is *running*.
+Another way is to access it directly through the run with ``_run.info``.
+This can be done conveniently using the special ``_run`` parameter in any
 captured function, which gives you access to the current ``Run`` object.
 
 You can add whatever information you like to ``_run.info``. This ``info`` dict
 will be sent to all the observers every 10 sec as part of the heartbeat_event.
 
 .. warning::
-    Note that it is recommended to only store information in ``info`` that is
-    JSON-serializable and contains only valid python identifiers as keys in
-    dictionaries. Otherwise the Observer might not be able to store it in the
-    Database and crash.
+    You can only store information in ``info`` that is JSON-serializable and
+    contains only valid python identifiers as keys in dictionaries. Otherwise
+    the Observer might not be able to store it in the Database and crash.
+    ``numpy`` arrays and ``pandas`` datastructures are an exception to that
+    rule as they converted automatically (see below).
 
-Another way of having information saved to the database is by adding
-*resources* or *artifacts*.
+If the info dict contains ``numpy`` arrays or ``pandas`` Series/DataFrame/Panel
+then these will be converted to json automatically. The result is human
+readable (nested lists for ``numpy`` and a dict for ``pandas``). Note that this
+process looses information about the precise datatypes
+(e.g. uint8 will be just int afterwards).
+
+
+.. _resources:
 
 Resources
 ---------
@@ -265,9 +283,12 @@ a ``resource_event`` will be fired and the MongoObserver will check whether
 that file is in the database already. If not it will store it there.
 In any case the filename along with its MD5 hash is logged.
 
+.. _artifacts:
+
 Artifacts
 ---------
-An artifact is a file created during the run. With
+An artifact is a file created during the run. This mechanism is meant to store
+big custom chunks of data like a trained model. With
 ``ex.add_artifact(filename)`` such a file can be added, which will fire an
 ``artifact_event``. The MongoObserver will then in turn again, store that file
 in the database and log it in the run entry.

@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-from copy import deepcopy
 import datetime
 
 import mock
@@ -10,7 +9,8 @@ import mongomock
 import pytest
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, MongoDbOption,
-                                    force_bson_encodeable, PickleNumpyArrays)
+                                    force_bson_encodeable)
+from sacred import optional as opt
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -201,23 +201,46 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
     assert force_bson_encodeable(d) == expected
 
 
-def test_pickle_numpy_arrays_son_manipulator():
-    np = pytest.importorskip("numpy")
-    sonm = PickleNumpyArrays()
+@pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
+def test_numpy_array_to_list_son_manipulator():
+    from sacred.observers.mongo import NumpyArraysToList
+    import numpy as np
+    sonm = NumpyArraysToList()
     document = {
         'foo': 'bar',
         'some_array': np.eye(3),
         'nested': {
-            'ones': np.ones(7)
+            'ones': np.ones(5)
         }
     }
+    mod_doc = sonm.transform_incoming(document, 'fake_collection')
+    assert mod_doc['foo'] == 'bar'
+    assert mod_doc['some_array'] == [[1.0, 0.0, 0.0],
+                                     [0.0, 1.0, 0.0],
+                                     [0.0, 0.0, 1.0]]
+    assert mod_doc['nested']['ones'] == [1.0, 1.0, 1.0, 1.0, 1.0]
 
-    mod_doc = sonm.transform_incoming(deepcopy(document), 'fake_collection')
-    mod_doc = force_bson_encodeable(mod_doc)
-    redoc = sonm.transform_outgoing(mod_doc, 'fake_collection')
-    assert redoc['foo'] == document['foo']
-    assert np.all(redoc['some_array'] == document['some_array'])
-    assert np.all(redoc['nested']['ones'] == document['nested']['ones'])
+
+@pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
+def test_pandas_to_json_son_manipulator():
+    from sacred.observers.mongo import PandasToJson
+    import numpy as np
+    import pandas as pd
+    sonm = PandasToJson()
+    document = {
+        'foo': 'bar',
+        'some_array': pd.DataFrame(np.eye(3), columns=list('ABC')),
+        'nested': {
+            'ones': pd.Series(np.ones(5))
+        }
+    }
+    mod_doc = sonm.transform_incoming(document, 'fake_collection')
+    assert mod_doc['foo'] == 'bar'
+    assert mod_doc['some_array'] == {'A': {'0': 1.0, '1': 0.0, '2': 0.0},
+                                     'B': {'0': 0.0, '1': 1.0, '2': 0.0},
+                                     'C': {'0': 0.0, '1': 0.0, '2': 1.0}}
+    assert mod_doc['nested']['ones'] == {"0": 1.0, "1": 1.0, "2": 1.0,
+                                         "3": 1.0, "4": 1.0}
 
 
 # ###################### MongoDbOption ###################################### #
