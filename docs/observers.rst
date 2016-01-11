@@ -196,6 +196,7 @@ observers. It contains the following information:
     comment      A custom comment given for this run
     ===========  ===============================================================
 
+.. _heartbeat:
 
 Heartbeat
 ---------
