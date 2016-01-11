@@ -1,6 +1,18 @@
 Release History
 ---------------
 
+0.6.8 (2016-??-??)
+++++++++++++++++++
+* Feature: Added a warning if no observers were added to the experiment.
+           Added also an `unobserved` keyword to commands and a `--unobserved`
+           commandline option to silence that warning
+* API change: renamed `named_configs_to_use` kwarg in `ex.run_command` method
+              to `named_configs`
+* Feature: Split the debug flag `-d` into two flags: `-d` now only disables
+           stacktrace filtering, while `-D` adds post-mortem debugging.
+* Bugfix: Fixed a problem with debugging experiments.
+* Bugfix: Fixed a problem with numpy datatypes in the configuration
+
 0.6.7 (2015-09-11)
 ++++++++++++++++++
 * Bugfix: fixed an error when trying to add a mongo observer via command-line
