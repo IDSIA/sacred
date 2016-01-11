@@ -58,3 +58,36 @@ def test_automain_script_runs_main(ex):
             assert main_called[0] is True
     finally:
         __name__ = oldname
+
+
+def test_fails_on_unused_config_updates(ex):
+    @ex.config
+    def cfg():
+        b = 3
+        f = {'oo': 1}
+        g = {'a': 'l'}
+
+    @ex.main
+    def foo(f, a=10):
+        assert f
+        return a
+
+    # normal config updates work
+    assert ex.run(config_updates={'a': 3, 'b': 2}).result == 3
+
+    # unused config updates raise
+    with pytest.raises(KeyError):
+        ex.run(config_updates={'c': 3})
+
+    # unused but in config updates work
+    ex.run(config_updates={'g': 3})
+    ex.run(config_updates={'g': {'a': 'r'}})
+
+    # nested unused config updates raise
+    with pytest.raises(KeyError):
+        ex.run(config_updates={'g': {'u': 'p'}})
+
+    # nested unused but parent used updates work
+    assert ex.run(config_updates={'f': {'uzz': 8}})
+
+
