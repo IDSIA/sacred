@@ -348,6 +348,24 @@ stack (see :ref:`debugging`).
 | ``--beat_interval=BEAT_INTERVAL``       |                                               |
 +-----------------------------------------+-----------------------------------------------+
 
+A running experiment regularly fires a :ref:`heartbeat` event to synchronize
+the ``info`` dict (see :ref:`custom_info`).
+This flag can be used to change the interval from 10 sec (default) to
+``BEAT_INTERVAL`` sec.
+
+
+**Unobserved**
+
++------------------+--------------------------------------+
+| ``-u``           |  Ignore all observers for this run.  |
++------------------+                                      |
+| ``--unobserved`` |                                      |
++------------------+--------------------------------------+
+
+If this flag is set, sacred will remove all observers from the current run and
+also silence the warning for having no observers. This is useful for some quick
+tests or debugging runs.
+
 Custom Flags
 ============
 It is possible to add custom flags to an experiment by inheriting from
