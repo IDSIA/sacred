@@ -3,13 +3,18 @@ Release History
 
 0.6.8 (2016-??-??)
 ++++++++++++++++++
+* Feature: Added automatic conversion of `pandas` datastructures in the custom
+           info dict to json-format in the MongoObserver.
+* Feature: Fail if a new config entry is added but it is not used anywhere
 * Feature: Added a warning if no observers were added to the experiment.
            Added also an `unobserved` keyword to commands and a `--unobserved`
            commandline option to silence that warning
-* API change: renamed `named_configs_to_use` kwarg in `ex.run_command` method
-              to `named_configs`
 * Feature: Split the debug flag `-d` into two flags: `-d` now only disables
            stacktrace filtering, while `-D` adds post-mortem debugging.
+* API change: renamed `named_configs_to_use` kwarg in `ex.run_command` method
+              to `named_configs`
+* API change: changed the automatic conversion of numpy arrays in the
+              MongoObserver from pickle to human readable nested lists.
 * Bugfix: Fixed a problem with debugging experiments.
 * Bugfix: Fixed a problem with numpy datatypes in the configuration
 
