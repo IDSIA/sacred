@@ -24,8 +24,7 @@ SON_MANIPULATORS = []
 
 if opt.has_numpy:
     class NumpyArraysToList(SONManipulator):
-
-        """Turn numpy array into nested lists to save human readable in json"""
+        """Turn numpy array into nested lists to save in json."""
 
         def transform_incoming(self, son, collection):
             for (key, value) in son.items():
@@ -44,8 +43,7 @@ if opt.has_pandas:
     import json
 
     class PandasToJson(SONManipulator):
-
-        """Turn numpy array into nested lists to save human readable in json"""
+        """Turn pandas structures into dictionaries to save in json."""
 
         def transform_incoming(self, son, collection):
             for (key, value) in son.items():
@@ -245,7 +243,6 @@ class MongoObserver(RunObserver):
 
 
 class MongoDbOption(CommandLineOption):
-
     """Add a MongoDB Observer to the experiment."""
 
     arg = 'DB'

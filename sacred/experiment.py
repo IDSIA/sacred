@@ -19,7 +19,6 @@ __all__ = ('Experiment',)
 
 
 class Experiment(Ingredient):
-
     """
     The central class for each experiment in Sacred.
 

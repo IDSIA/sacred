@@ -21,7 +21,6 @@ __all__ = ('Ingredient',)
 
 
 class Ingredient(object):
-
     """
     Ingredients are reusable parts of experiments.
 
@@ -213,7 +212,6 @@ class Ingredient(object):
     def add_named_config(self, name, cfg_or_file=None, **kw_conf):
         """
         Add a **named** configuration entry to this ingredient/experiment.
-        (See :ref:`named_configurations`)
 
         Can be called with a filename, a dictionary xor with keyword arguments.
         Supported formats for the config-file so far are: ``json``, ``pickle``
@@ -221,6 +219,8 @@ class Ingredient(object):
 
         The resulting dictionary will be converted into a
          :class:`~sacred.config_scope.ConfigDict`.
+
+        See :ref:`named_configurations`
 
         :param name: name of the configuration
         :type name: str

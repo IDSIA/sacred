@@ -21,6 +21,19 @@ def assert_is_valid_key(key):
         raise KeyError('Key "{}" is not a valid python identifier'.format(key))
 
 
+def normalize_numpy(obj):
+    if isinstance(obj, opt.np.generic):
+        try:
+            return opt.np.asscalar(obj)
+        except ValueError:
+            return obj
+    elif isinstance(obj, opt.np.ndarray):
+        try:
+            return obj.tolist()
+        except (AttributeError, ValueError):
+            return obj
+
+
 def normalize_or_die(obj):
     if isinstance(obj, dict):
         res = dict()
@@ -30,16 +43,8 @@ def normalize_or_die(obj):
         return res
     elif isinstance(obj, (list, tuple)):
         return list([normalize_or_die(value) for value in obj])
-    elif opt.has_numpy and isinstance(obj, opt.np.generic):
-        try:
-            obj = opt.np.asscalar(obj)
-        except ValueError:
-            pass
-    elif opt.has_numpy and isinstance(obj, opt.np.ndarray):
-        try:
-            obj = obj.tolist()
-        except (AttributeError, ValueError):
-            pass
+    elif opt.has_numpy:
+        obj = normalize_numpy(obj)
     try:
         json.dumps(obj)
         return obj

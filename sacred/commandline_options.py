@@ -12,7 +12,6 @@ from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
 
 
 class CommandLineOption(object):
-
     """
     Base class for all command-line options.
 
@@ -86,12 +85,10 @@ def gather_command_line_options():
 
 
 class HelpOption(CommandLineOption):
-
     """Print this help message and exit."""
 
 
 class DebugOption(CommandLineOption):
-
     """
     Suppress warnings about missing observers and don't filter the stacktrace.
 
@@ -105,10 +102,8 @@ class DebugOption(CommandLineOption):
 
 
 class PDBOption(CommandLineOption):
+    """Automatically enter post-mortem debugging with pdb on failure."""
 
-    """
-    Automatically enter post-mortem debugging with pdb on failure.
-    """
     short_flag = 'D'
 
     @classmethod
@@ -117,7 +112,6 @@ class PDBOption(CommandLineOption):
 
 
 class LoglevelOption(CommandLineOption):
-
     """Adjust the loglevel."""
 
     arg = 'LEVEL'
@@ -135,7 +129,6 @@ class LoglevelOption(CommandLineOption):
 
 
 class CommentOption(CommandLineOption):
-
     """Adds a message to the run."""
 
     arg = 'COMMENT'
@@ -148,7 +141,6 @@ class CommentOption(CommandLineOption):
 
 
 class BeatIntervalOption(CommandLineOption):
-
     """Control the rate of heartbeat events."""
 
     arg = 'BEAT_INTERVAL'
@@ -161,7 +153,6 @@ class BeatIntervalOption(CommandLineOption):
 
 
 class UnobservedOption(CommandLineOption):
-
     """Ignore all observers for this run."""
 
     @classmethod

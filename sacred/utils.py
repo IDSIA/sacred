@@ -23,12 +23,10 @@ PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
 
 class CircularDependencyError(Exception):
-
     """The ingredients of the current experiment form a circular dependency."""
 
 
 class ObserverError(Exception):
-
     """Error that an observer raises but that should not make the run fail."""
 
 
