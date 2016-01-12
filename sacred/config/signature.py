@@ -9,7 +9,6 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class Signature(object):
-
     """
     Extracts and stores information about the signature of a function.
 

@@ -9,7 +9,6 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 
 
 class FallbackDict(dict):
-
     """Dictionary that defaults to a fallback dict for missing keys."""
 
     def __init__(self, fallback, **kwargs):
