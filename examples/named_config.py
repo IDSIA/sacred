@@ -18,9 +18,9 @@ def cfg():
     recipient = "world"
     message = "Hello {}!".format(recipient)
 
+
 @ex.automain
 def main(message):
     print(__name__)
     print(message)
     return 1/0
-
