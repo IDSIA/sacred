@@ -89,5 +89,3 @@ def test_fails_on_unused_config_updates(ex):
 
     # nested unused but parent used updates work
     assert ex.run(config_updates={'f': {'uzz': 8}})
-
-
