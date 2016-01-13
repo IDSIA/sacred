@@ -1,7 +1,7 @@
 Release History
 ---------------
 
-0.6.8 (2016-??-??)
+0.6.8 (2016-01-14)
 ++++++++++++++++++
 * Feature: Added automatic conversion of ``pandas`` datastructures in the
            custom info dict to json-format in the MongoObserver.
@@ -19,6 +19,7 @@ Release History
 * Bugfix: Fixed a problem with numpy datatypes in the configuration
 * Bugfix: More helpful error messages when using ``return`` or ``yield`` in a
           config scope
+* Bugfix: Be more helpful when using -m/--mongo_db and pymongo is not installed
 
 0.6.7 (2015-09-11)
 ++++++++++++++++++
