@@ -41,14 +41,13 @@ lint:
 	flake8 sacred
 
 test: clean-pyc clean-test
-	python setup.py test
+	py.test
 
 test-all: clean-pyc
 	tox
 
 coverage: clean-pyc
-	coverage run --source sacred setup.py test
-	coverage report -m
+	py.test --cov sacred
 	coverage html
 	xdg-open htmlcov/index.html
 
