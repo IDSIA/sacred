@@ -134,7 +134,21 @@ def get_function_body_code(func):
     filename = inspect.getfile(func)
     func_body, line_offset = get_function_body(func)
     body_source = dedent_function_body(func_body)
-    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
-    body_code = ast.increment_lineno(body_code, n=line_offset)
-    body_code = compile(body_code, filename, "exec")
+    try:
+        body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
+        body_code = ast.increment_lineno(body_code, n=line_offset)
+        body_code = compile(body_code, filename, "exec")
+    except SyntaxError as e:
+        if e.args[0] == "'return' outside function":
+            filename, lineno, _, statement = e.args[1]
+            raise SyntaxError('No return statements allowed in ConfigScopes\n'
+                              '(\'{}\' in File "{}", line {})'.format(
+                                  statement.strip(), filename, lineno))
+        elif e.args[0] == "'yield' outside function":
+            filename, lineno, _, statement = e.args[1]
+            raise SyntaxError('No yield statements allowed in ConfigScopes\n'
+                              '(\'{}\' in File "{}", line {})'.format(
+                                  statement.strip(), filename, lineno))
+        else:
+            raise
     return body_code

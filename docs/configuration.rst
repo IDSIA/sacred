@@ -78,6 +78,11 @@ ignored. So the following config scope would result in an empty configuration:
         match = pattern.match('this is ignored')  # not JSON serializable
 
 
+.. warning::
+    Functions used as a config scopes **cannot** contain any ``return`` or
+    ``yield`` statements!
+
+
 .. _config_dictionaries:
 
 Dictionaries
