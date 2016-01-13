@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import sys
-
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 
 classifiers = """
 Development Status :: 5 - Production/Stable
@@ -25,29 +22,9 @@ try:
     about = __about__.__dict__
 except ImportError:
     # installing - dependencies are not there yet
-    ext_modules = []
     # Manually extract the __about__
     about = dict()
     exec(open("sacred/__about__.py").read(), about)
-
-
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        del self.test_args[:]
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
 
 
 setup(
@@ -65,7 +42,6 @@ setup(
         'docopt', 'six', 'wrapt'
     ],
     tests_require=['mock', 'mongomock', 'pytest'],
-    cmdclass={'test': PyTest},
 
     classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',
