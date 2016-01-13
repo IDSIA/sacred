@@ -26,12 +26,13 @@ def normalize_numpy(obj):
         try:
             return opt.np.asscalar(obj)
         except ValueError:
-            return obj
+            pass
     elif isinstance(obj, opt.np.ndarray):
         try:
             return obj.tolist()
         except (AttributeError, ValueError):
-            return obj
+            pass
+    return obj
 
 
 def normalize_or_die(obj):
