@@ -6,7 +6,7 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 classifiers = """
-Development Status :: 4 - Beta
+Development Status :: 5 - Production/Stable
 Intended Audience :: Science/Research
 Natural Language :: English
 Operating System :: OS Independent
