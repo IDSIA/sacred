@@ -263,8 +263,6 @@ class Ingredient(object):
             for cmd_name, cmd in ingred.gather_commands():
                 yield cmd_name, cmd
 
-    # ======================== Private Helpers ================================
-
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
 
@@ -279,7 +277,7 @@ class Ingredient(object):
         """
         dependencies = set()
         sources = set()
-        for ing, _ in self._traverse_ingredients():
+        for ing, _ in self.traverse_ingredients():
             dependencies |= ing.dependencies
             sources |= ing.sources
 
@@ -292,16 +290,18 @@ class Ingredient(object):
             dependencies=[d.to_tuple() for d in sorted(dependencies)],
             doc=self.doc)
 
-    def _traverse_ingredients(self):
+    def traverse_ingredients(self):
         if self._is_traversing:
             raise CircularDependencyError()
         else:
             self._is_traversing = True
         yield self, 0
         for ingredient in self.ingredients:
-            for ingred, depth in ingredient._traverse_ingredients():
+            for ingred, depth in ingredient.traverse_ingredients():
                 yield ingred, depth + 1
         self._is_traversing = False
+
+    # ======================== Private Helpers ================================
 
     def _create_run_for_command(self, command_name, config_updates=None,
                                 named_configs=()):

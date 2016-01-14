@@ -252,12 +252,12 @@ def create_scaffolding(experiment, sorted_ingredients):
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
-    for sub_ing, depth in ingredient._traverse_ingredients():
+    for sub_ing, depth in ingredient.traverse_ingredients():
         sub_ingredients[sub_ing] = max(sub_ingredients[sub_ing], depth)
     return sorted(sub_ingredients, key=lambda x: -sub_ingredients[x])
 
 
-def get_config_modifications(scaffolding, config_updates):
+def get_config_modifications(scaffolding):
     config_modifications = ConfigSummary()
     for sc_path, scaffold in scaffolding.items():
         config_modifications.update_add(scaffold.config_mods, path=sc_path)
@@ -308,8 +308,7 @@ def create_run(experiment, command_name, config_updates=None,
         scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
-    config_modifications = get_config_modifications(scaffolding,
-                                                    config_updates)
+    config_modifications = get_config_modifications(scaffolding)
 
     # ----------------------------------------------------
 

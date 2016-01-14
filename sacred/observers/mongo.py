@@ -225,7 +225,7 @@ class MongoObserver(RunObserver):
 
     def artifact_event(self, filename):
         with open(filename, 'rb') as f:
-            head, tail = os.path.split(filename)
+            _, tail = os.path.split(filename)
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(
                 self.run_entry['experiment']['name'], run_id, tail)

@@ -41,12 +41,12 @@ def get_py_file_if_possible(pyc_name):
 
 
 def get_digest(filename):
-        h = hashlib.md5()
-        with open(filename, 'rb') as f:
+    h = hashlib.md5()
+    with open(filename, 'rb') as f:
+        data = f.read(1 * MB)
+        while data:
+            h.update(data)
             data = f.read(1 * MB)
-            while data:
-                h.update(data)
-                data = f.read(1 * MB)
         return h.hexdigest()
 
 
@@ -181,7 +181,7 @@ def get_relevant_path_parts(path):
     if path_parts[-1] in ['__init__.py', '__init__.pyc']:
         path_parts = path_parts[:-1]
     else:
-        path_parts[-1], ext = os.path.splitext(path_parts[-1])
+        path_parts[-1], _ = os.path.splitext(path_parts[-1])
     return path_parts
 
 
