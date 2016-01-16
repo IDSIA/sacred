@@ -1,6 +1,12 @@
 Release History
 ---------------
 
+0.6.9 (2016-01-16)
+++++++++++++++++++
+* Bugfix: fixed support for ``@ex.named_config`` (was broken by 0.6.8)
+* Bugfix: fixed handling of captured functions with prefix for failing on
+          added unused config entries
+
 0.6.8 (2016-01-14)
 ++++++++++++++++++
 * Feature: Added automatic conversion of ``pandas`` datastructures in the
