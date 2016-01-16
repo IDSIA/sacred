@@ -63,29 +63,84 @@ def test_automain_script_runs_main(ex):
 def test_fails_on_unused_config_updates(ex):
     @ex.config
     def cfg():
-        b = 3
-        f = {'oo': 1}
-        g = {'a': 'l'}
+        a = 1
+        c = 3
 
     @ex.main
-    def foo(f, a=10):
-        assert f
-        return a
+    def foo(a, b=2):
+        return a + b
 
     # normal config updates work
-    assert ex.run(config_updates={'a': 3, 'b': 2}).result == 3
+    assert ex.run(config_updates={'a': 3}).result == 5
+    # not in config but used works
+    assert ex.run(config_updates={'b': 8}).result == 9
+    # unused but in config updates work
+    assert ex.run(config_updates={'c': 9}).result == 3
 
     # unused config updates raise
     with pytest.raises(KeyError):
+        ex.run(config_updates={'d': 3})
+
+
+def test_fails_on_nested_unused_config_updates(ex):
+    @ex.config
+    def cfg():
+        a = {'b': 1}
+        d = {'e': 3}
+
+    @ex.main
+    def foo(a):
+        return a['b']
+
+    # normal config updates work
+    assert ex.run(config_updates={'a': {'b': 2}}).result == 2
+    # not in config but parent is works
+    assert ex.run(config_updates={'a': {'c': 5}}).result == 1
+    # unused but in config works
+    assert ex.run(config_updates={'d': {'e': 7}}).result == 1
+
+    # unused nested config updates raise
+    with pytest.raises(KeyError):
+        ex.run(config_updates={'d': {'f': 3}})
+
+
+def test_considers_captured_functions_for_fail_on_unused_config(ex):
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.capture
+    def transmogrify(a, b=0):
+        return a + b
+
+    @ex.main
+    def foo():
+        return transmogrify()
+
+    assert ex.run(config_updates={'a': 7}).result == 7
+    assert ex.run(config_updates={'b': 3}).result == 4
+
+    with pytest.raises(KeyError):
         ex.run(config_updates={'c': 3})
 
-    # unused but in config updates work
-    ex.run(config_updates={'g': 3})
-    ex.run(config_updates={'g': {'a': 'r'}})
 
-    # nested unused config updates raise
+def test_used_prefix_for_fail_on_unused_config(ex):
+    @ex.config
+    def cfg():
+        a = {'b': 1}
+
+    @ex.capture(prefix='a')
+    def transmogrify(b):
+        return b
+
+    @ex.main
+    def foo():
+        return transmogrify()
+
+    assert ex.run(config_updates={'a': {'b': 3}}).result == 3
+
     with pytest.raises(KeyError):
-        ex.run(config_updates={'g': {'u': 'p'}})
+        ex.run(config_updates={'b': 5})
 
-    # nested unused but parent used updates work
-    assert ex.run(config_updates={'f': {'uzz': 8}})
+    with pytest.raises(KeyError):
+        ex.run(config_updates={'a': {'c': 5}})

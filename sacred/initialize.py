@@ -16,6 +16,7 @@ from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           get_by_dotted_path, is_prefix, iter_path_splits,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes)
+from utils import join_paths
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -41,7 +42,7 @@ class Scaffold(object):
         self.commands = commands
         self.config_mods = None
         self.summaries = []
-        self.captured_args = {n for cf in self._captured_functions
+        self.captured_args = {join_paths(cf.prefix, n) for cf in self._captured_functions
                               for n in cf.signature.arguments}
 
     def set_up_seed(self, rnd=None):
