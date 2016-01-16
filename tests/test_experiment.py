@@ -144,3 +144,20 @@ def test_used_prefix_for_fail_on_unused_config(ex):
 
     with pytest.raises(KeyError):
         ex.run(config_updates={'a': {'c': 5}})
+
+
+def test_using_a_named_config(ex):
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.named_config
+    def ncfg():
+        a = 10
+
+    @ex.main
+    def run(a):
+        return a
+
+    assert ex.run().result == 1
+    assert ex.run(named_configs=['ncfg']).result == 10
