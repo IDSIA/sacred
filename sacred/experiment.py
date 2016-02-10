@@ -8,7 +8,7 @@ import sys
 from collections import OrderedDict
 
 from sacred.arg_parser import get_config_updates, parse_args
-from sacred.commandline_options import gather_command_line_options
+from sacred.commandline_options import gather_command_line_options, DisableSuspiciousChangesWarningsOption
 from sacred.commands import print_config, print_dependencies
 from sacred.ingredient import Ingredient
 from sacred.utils import print_filtered_stacktrace
@@ -125,8 +125,11 @@ class Experiment(Ingredient):
         :returns: the Run object corresponding to the finished run
         :rtype: sacred.run.Run
         """
+        disable_suspicious_changes_warnings_flag = '--' + DisableSuspiciousChangesWarningsOption.get_flag()[1]
+        disable_suspicious_changes_warnings = args[disable_suspicious_changes_warnings_flag] if disable_suspicious_changes_warnings_flag in args else False
+
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs)
+                                           named_configs, disable_suspicious_changes_warnings=disable_suspicious_changes_warnings)
         self.current_run = run
 
         for option in gather_command_line_options():
