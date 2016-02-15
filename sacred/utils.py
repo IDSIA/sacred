@@ -44,7 +44,6 @@ def create_basic_stream_logger():
     logger.setLevel(logging.INFO)
     logger.handlers = []
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)

@@ -1,6 +1,10 @@
 Release History
 ---------------
 
+0.6.10 (2016-??-??)
++++++++++++++++++++
+* Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
+
 0.6.9 (2016-01-16)
 ++++++++++++++++++
 * Bugfix: fixed support for ``@ex.named_config`` (was broken by 0.6.8)
