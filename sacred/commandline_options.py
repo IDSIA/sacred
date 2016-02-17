@@ -161,10 +161,10 @@ class UnobservedOption(CommandLineOption):
         run.unobserved = True
 
 
-class DisableSuspiciousChangesWarningsOption(CommandLineOption):
+class ForceOption(CommandLineOption):
     """Disable warnings about suspicious changes for this run."""
 
     @classmethod
     def apply(cls, args, run):
         """Set this run to not warn about suspicous changes."""
-        run.disable_suspicious_changes_warnings = True
+        run.force = True

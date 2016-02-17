@@ -159,7 +159,7 @@ class Scaffold(object):
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run
 
-        if not run.disable_suspicious_changes_warnings:
+        if not run.force:
             self._warn_about_suspicious_changes()
 
     def _warn_about_suspicious_changes(self):
@@ -282,7 +282,7 @@ def get_command(scaffolding, command_path):
 
 
 def create_run(experiment, command_name, config_updates=None,
-               named_configs=(), disable_suspicious_changes_warnings=False):
+               named_configs=(), force=False):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = create_scaffolding(experiment, sorted_ingredients)
@@ -327,7 +327,7 @@ def create_run(experiment, command_name, config_updates=None,
     if hasattr(main_function, 'unobserved'):
         run.unobserved = main_function.unobserved
 
-    run.disable_suspicious_changes_warnings = disable_suspicious_changes_warnings
+    run.force = force
 
     for scaffold in scaffolding.values():
         scaffold.finalize_initialization(run=run)
