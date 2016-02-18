@@ -20,6 +20,7 @@ from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
     ('--mongo_db=bar',   {'--mongo_db': 'bar'}),
     ('-l 10',            {'--loglevel': '10'}),
     ('--loglevel=30',    {'--loglevel': '30'}),
+    ('--force', {'--force': True}),
 ])
 def test_parse_individual_arguments(argv, expected):
     args = parse_args(['test_prog.py'] + argv.split(), print_help=False)

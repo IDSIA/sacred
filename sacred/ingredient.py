@@ -304,7 +304,7 @@ class Ingredient(object):
     # ======================== Private Helpers ================================
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs=()):
+                                named_configs=(), force=False):
         run = create_run(self, command_name, config_updates,
-                         named_configs=named_configs)
+                         named_configs=named_configs, force=force)
         return run
