@@ -294,23 +294,24 @@ def create_run(experiment, command_name, config_updates=None,
 
     past_paths = set()
     for scaffold in scaffolding.values():
-        scaffold.pick_relevant_config_updates(config_updates, past_paths)
-        past_paths.add(scaffold.path)
+        # get global config
         scaffold.gather_fallbacks()
         scaffold.set_up_config()
-
-        # update global config
         config = get_configuration(scaffolding)
         # run config hooks
         config_updates = scaffold.run_config_hooks(config, config_updates,
                                                    command_name, run_logger)
+        # update global config
+        scaffold.pick_relevant_config_updates(config_updates, past_paths)
+        scaffold.gather_fallbacks()
+        scaffold.set_up_config()
+        past_paths.add(scaffold.path)
 
     for scaffold in reversed(list(scaffolding.values())):
         scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
     config_modifications = get_config_modifications(scaffolding)
-
     # ----------------------------------------------------
 
     experiment_info = experiment.get_experiment_info()
