@@ -109,7 +109,7 @@ class Experiment(Ingredient):
                                 named_configs=named_configs)
 
     def run_command(self, command_name, config_updates=None,
-                    named_configs=(), args=()):
+                    named_configs=(), args={}):
         """Run the command with the given name.
 
         :param command_name: Name of the command to be run
@@ -126,7 +126,7 @@ class Experiment(Ingredient):
         :rtype: sacred.run.Run
         """
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs)
+                                           named_configs, args)
         self.current_run = run
 
         for option in gather_command_line_options():

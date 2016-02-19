@@ -154,11 +154,11 @@ class Ingredient(object):
         ingredient.
         """
         argspec = inspect.getargspec(func)
-        args = ['config', 'command_name', 'logger']
+        args = ['config', 'command_name', 'logger', 'args']
         if not (argspec.args == args and argspec.varargs is None and
                 argspec.keywords is None and argspec.defaults is None):
             raise ValueError('Wrong signature for config_hook. Expected: '
-                             '(config, command_name, logger)')
+                             '(config, command_name, logger, args)')
         self.config_hooks.append(func)
         return self.config_hooks[-1]
 
@@ -304,7 +304,7 @@ class Ingredient(object):
     # ======================== Private Helpers ================================
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs=()):
+                                named_configs=(), args={}):
         run = create_run(self, command_name, config_updates,
-                         named_configs=named_configs)
+                         named_configs=named_configs, args=args)
         return run

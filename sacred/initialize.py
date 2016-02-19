@@ -115,10 +115,10 @@ class Scaffold(object):
 
         self.get_config_modifications()
 
-    def run_config_hooks(self, config, config_updates, command_name, logger):
+    def run_config_hooks(self, config, config_updates, command_name, logger, args):
         final_cfg_updates = {}
         for ch in self.config_hooks:
-            cfg_upup = ch(deepcopy(config), command_name, logger)
+            cfg_upup = ch(deepcopy(config), command_name, logger, args)
             if cfg_upup:
                 recursive_update(final_cfg_updates, cfg_upup)
         recursive_update(final_cfg_updates, config_updates)
@@ -281,7 +281,7 @@ def get_command(scaffolding, command_path):
 
 
 def create_run(experiment, command_name, config_updates=None,
-               named_configs=()):
+                named_configs=(), args={}):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = create_scaffolding(experiment, sorted_ingredients)
@@ -303,7 +303,13 @@ def create_run(experiment, command_name, config_updates=None,
         config = get_configuration(scaffolding)
         # run config hooks
         config_updates = scaffold.run_config_hooks(config, config_updates,
-                                                   command_name, run_logger)
+                                                   command_name, run_logger, 
+                                                   args)
+        # update global config
+        scaffold.pick_relevant_config_updates(config_updates, past_paths)
+        scaffold.gather_fallbacks()
+        scaffold.set_up_config()
+        past_paths.add(scaffold.path)
 
     for scaffold in reversed(list(scaffolding.values())):
         scaffold.set_up_seed()  # partially recursive
