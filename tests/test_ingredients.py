@@ -118,7 +118,7 @@ def test_add_unobserved_command(ing):
 
 
 def test_add_config_hook(ing):
-    def foo(config, command_name, logger):
+    def foo(config, command_name, logger, args):
         pass
     ch = ing.config_hook(foo)
     assert ch == foo
