@@ -169,3 +169,12 @@ class QueueOption(CommandLineOption):
     def apply(cls, args, run):
         """Set this run to queue only mode."""
         run.queue_only = True
+
+
+class ForceOption(CommandLineOption):
+    """Disable warnings about suspicious changes for this run."""
+
+    @classmethod
+    def apply(cls, args, run):
+        """Set this run to not warn about suspicous changes."""
+        run.force = True

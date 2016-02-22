@@ -81,6 +81,9 @@ class Run(object):
         self.unobserved = False
         """Indicates whether this run should be unobserved"""
 
+        self.force = False
+        """Indicates whether warnings about suspicious changes should be disabled"""
+
         self.queue_only = False
         """If true then this run will only fire the queued_event and quit"""
 
