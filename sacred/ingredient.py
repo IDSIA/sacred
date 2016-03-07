@@ -270,7 +270,6 @@ class Ingredient(object):
           * *name*: the name
           * *sources*: a list of sources (filename, md5)
           * *dependencies*: a list of package dependencies (name, version)
-          * *doc*: the docstring
 
         :return: experiment information
         :rtype: dict
@@ -287,8 +286,7 @@ class Ingredient(object):
         return dict(
             name=self.path,
             sources=[s.to_tuple() for s in sorted(sources)],
-            dependencies=[d.to_tuple() for d in sorted(dependencies)],
-            doc=self.doc)
+            dependencies=[d.to_tuple() for d in sorted(dependencies)])
 
     def traverse_ingredients(self):
         if self._is_traversing:
