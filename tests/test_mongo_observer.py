@@ -40,6 +40,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
         'experiment': exp,
         'host': host,
         'start_time': T1,
+        'queue_time': T1,
         'heartbeat': None,
         'info': {},
         'captured_out': '',

@@ -9,7 +9,7 @@ import threading
 import traceback
 
 from sacred.randomness import set_global_seed
-from sacred.utils import tee_output, ObserverError, TimeoutInterrupt
+from sacred.utils import tee_output, ObserverError, TimeoutInterrupt, join_paths
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -208,6 +208,7 @@ class Run(object):
             if hasattr(observer, 'started_event'):
                 observer.started_event(
                     ex_info=self.experiment_info,
+                    command=join_paths(self.main_function.prefix, self.main_function.signature.name),
                     host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config,
