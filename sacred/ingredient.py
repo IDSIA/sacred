@@ -285,8 +285,8 @@ class Ingredient(object):
 
         return dict(
             name=self.path,
-            sources=[s.to_tuple() for s in sorted(sources)],
-            dependencies=[d.to_tuple() for d in sorted(dependencies)])
+            sources=[s.to_json() for s in sorted(sources)],
+            dependencies=[d.to_json() for d in sorted(dependencies)])
 
     def traverse_ingredients(self):
         if self._is_traversing:

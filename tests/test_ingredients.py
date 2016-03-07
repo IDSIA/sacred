@@ -228,7 +228,6 @@ def test_add_package_dependency_invalid_version_raises(ing):
 def test_get_experiment_info(ing):
     info = ing.get_experiment_info()
     assert info['name'] == 'tickle'
-    assert info['doc'] == 'global docstring'
     assert 'dependencies' in info
     assert 'sources' in info
 

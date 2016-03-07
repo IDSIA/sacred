@@ -66,7 +66,7 @@ class Source(object):
 
         return Source(mainfile, get_digest(mainfile))
 
-    def to_tuple(self):
+    def to_json(self):
         return self.filename, self.digest
 
     def __hash__(self):
@@ -99,8 +99,8 @@ class PackageDependency(object):
         except pkg_resources.DistributionNotFound:
             self.version = '<unknown>'
 
-    def to_tuple(self):
-        return self.name, self.version
+    def to_json(self):
+        return '{}=={}'.format(self.name, self.version)
 
     def __hash__(self):
         return hash(self.name)
