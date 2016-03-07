@@ -72,7 +72,7 @@ class Run(object):
         self.pdb = False
         """If true the pdb debugger is automatically started after a failure"""
 
-        self.comment = ''
+        self.meta_info = {}
         """A custom comment for this run"""
 
         self.beat_interval = 10.0  # sec
@@ -197,7 +197,7 @@ class Run(object):
                     ex_info=self.experiment_info,
                     queue_time=queue_time,
                     config=self.config,
-                    comment=self.comment
+                    meta_info=self.meta_info
                 )
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
@@ -211,7 +211,7 @@ class Run(object):
                     host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config,
-                    comment=self.comment
+                    meta_info=self.meta_info
                 )
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails

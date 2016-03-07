@@ -89,7 +89,7 @@ def test_run_started_event(run):
         host_info=run.host_info,
         start_time=run.start_time,
         config=run.config,
-        comment=''
+        meta_info={}
     )
 
 

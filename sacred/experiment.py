@@ -33,10 +33,13 @@ class Experiment(Ingredient):
         """
         Create a new experiment with the given name and optional ingredients.
 
-        :param name: name of this experiment
-        :type name: str
-        :param ingredients: a list of ingredients to be used with this
-                            experiment.
+        Parameters
+        ----------
+        name : str
+            The name of this experiment.
+
+        ingredients : list[sacred.Ingredient]
+            A list of ingredients to be used with this experiment.
         """
         caller_globals = inspect.stack()[1][0].f_globals
         super(Experiment, self).__init__(path=name,
@@ -90,43 +93,60 @@ class Experiment(Ingredient):
 
     # =========================== Public Interface ============================
 
-    def run(self, config_updates=None, named_configs=()):
+    def run(self, config_updates=None, named_configs=(), meta_info=None):
         """
         Run the main function of the experiment.
 
-        :param config_updates: Changes to the configuration as a nested
-                               dictionary
-        :type config_updates: dict
-        :param named_configs: list of names of named_configs to use
-        :type named_configs: list[str]
+        Parameters
+        ----------
+        config_updates : dict
+            Changes to the configuration as a nested dictionary
 
-        :returns: the Run object corresponding to the finished run
-        :rtype: sacred.run.Run
+        named_configs : list[str]
+            list of names of named_configs to use
+
+        meta_info : dict
+            Additional meta information for this run.
+
+        Returns
+        -------
+        sacred.run.Run
+            the Run object corresponding to the finished run
         """
         assert self.default_command, "No main function found"
         return self.run_command(self.default_command,
                                 config_updates=config_updates,
-                                named_configs=named_configs)
+                                named_configs=named_configs,
+                                meta_info=meta_info)
 
     def run_command(self, command_name, config_updates=None,
-                    named_configs=(), args=()):
+                    named_configs=(), args=(), meta_info=None):
         """Run the command with the given name.
 
-        :param command_name: Name of the command to be run
-        :type command_name: str
-        :param config_updates: a dictionary of parameter values that should
-                               be updates (optional)
-        :type config_updates: dict
-        :param named_configs: list of names of named configurations to
-                                     use (optional)
-        :type named_configs: list[str]
-        :param args: dictionary of command-line options
-        :type args: dict
-        :returns: the Run object corresponding to the finished run
-        :rtype: sacred.run.Run
+        Parameters
+        ----------
+        command_name : str
+            Name of the command to be run.
+
+        config_updates : dict
+            A dictionary of parameter values that should be updates. (optional)
+
+        named_configs : list[str]
+            List of names of named configurations to use. (optional)
+
+        args : dict
+            Dictionary of command-line options.
+
+        meta_info : dict
+            Additional meta information for this run.
+
+        Returns
+        -------
+        sacred.run.Run
+            The Run object corresponding to the finished run.
         """
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs)
+                                           named_configs, meta_info)
         self.current_run = run
 
         for option in gather_command_line_options():
@@ -144,10 +164,15 @@ class Experiment(Ingredient):
 
         If ``argv`` is omitted it defaults to ``sys.argv``.
 
-        :param argv: split command-line like ``sys.argv``.
-        :type argv: list[str]
-        :returns: the Run object corresponding to the finished run
-        :rtype: sacred.run.Run
+        Parameters
+        ----------
+        argv : list[str]
+            Split command-line like ``sys.argv``.
+
+        Returns
+        -------
+        sacred.run.Run
+            The Run object corresponding to the finished run.
         """
         if argv is None:
             argv = sys.argv
@@ -187,10 +212,15 @@ class Experiment(Ingredient):
         This function can only be called during a run, and just calls the
         :py:meth:`sacred.run.Run.open_resource` method.
 
-        :param filename: name of the file that should be opened
-        :type filename: str
-        :return: the opened file-object
-        :rtype: file
+        Parameters
+        ----------
+        filename: str
+            name of the file that should be opened
+
+        Returns
+        -------
+        file
+            the opened file-object
         """
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename)
@@ -205,8 +235,10 @@ class Experiment(Ingredient):
         This function can only be called during a run, and just calls the
         :py:meth:`sacred.run.Run.add_artifact` method.
 
-        :param filename: name of the file to be stored as artifact
-        :type filename: str
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as artifact
         """
         assert self.current_run is not None, "Can only be called during a run."
         self.current_run.add_artifact(filename)

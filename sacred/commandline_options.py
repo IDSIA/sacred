@@ -48,8 +48,10 @@ class CommandLineOption(object):
         -f [ARGS]) the short_flag class-member if that is set, or the first
         letter of the long flag otherwise.
 
-        :return: tuple of short-flag, and long-flag
-        :rtype: (str, str)
+        Returns
+        -------
+        (str, str)
+            tuple of short-flag, and long-flag
         """
         # Get the flag name from the class name
         flag = cls.__name__
@@ -69,12 +71,15 @@ class CommandLineOption(object):
 
         This function is executed after constructing the Run object, but
         before actually starting it.
-        :param args: If this command-line option accepts an argument this will
-                     be value of that argument if set or None.
-                     Otherwise it is either True or False.
-        :type args: bool | str
-        :param run: The current run to be modified
-        :type run: sacred.run.Run
+
+        Parameters
+        ----------
+        args : bool | str
+            If this command-line option accepts an argument this will be value
+            of that argument if set or None.
+            Otherwise it is either True or False.
+        run :  sacred.run.Run
+            The current run to be modified
         """
         pass
 
@@ -137,7 +142,7 @@ class CommentOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         """Add a comment to this run."""
-        run.comment = args
+        run.meta_info['comment'] = args
 
 
 class BeatIntervalOption(CommandLineOption):
@@ -169,3 +174,20 @@ class QueueOption(CommandLineOption):
     def apply(cls, args, run):
         """Set this run to queue only mode."""
         run.queue_only = True
+
+
+class PriorityOption(CommandLineOption):
+    """Adds a message to the run."""
+
+    arg = 'PRIORITY'
+    arg_description = 'Sets the priority for a queued up experiment.'
+
+    @classmethod
+    def apply(cls, args, run):
+        """Add priority info for this run."""
+        try:
+            priority = float(args)
+        except ValueError:
+            raise ValueError("The PRIORITY argument must be a number! "
+                             "(but was '{}')".format(args))
+        run.meta_info['priority'] = priority
