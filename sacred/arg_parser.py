@@ -46,20 +46,22 @@ def parse_args(argv, description="", commands=None, print_help=True):
     """
     Parse the given commandline-arguments.
 
-    Args:
-        argv (list[str]):
+    Parameters
+    ----------
+        argv: list[str]
             list of command-line arguments as in ``sys.argv``
-        description (str):
+        description: str:
             description of the experiment (docstring) to be used in the help
             text.
-        commands (Optional[dict[str, func]]):
+        commands: Optional[dict[str, func]]
             list of commands that are supported by this experiment
-        print_help (bool):
+        print_help: bool
             if True (default) this function will print the help-text and exit
             if that is required by the parsed arguments.
 
-    Returns:
-        dict[str, (str | bool | None)]:
+    Returns
+    -------
+        dict[str, (str | bool | None)]
             parsed values for all command-line options.
             See ``docopt`` for more details.
     """
@@ -81,11 +83,13 @@ def get_config_updates(updates):
     """
     Parse the UPDATES given on the commandline.
 
-    Args:
+    Parameters
+    ----------
         updates (list[str]):
             list of update-strings of the form NAME=LITERAL or just NAME.
 
-    Returns:
+    Returns
+    -------
         (dict, list):
             Config updates and named configs to use
     """
@@ -110,12 +114,14 @@ def _format_options_usage(options):
     """
     Format the Options-part of the usage text.
 
-    Args:
-        options (list[sacred.commandline_options.CommandLineOption]):
+    Parameters
+    ----------
+        options : list[sacred.commandline_options.CommandLineOption]
             A list of all supported commandline options.
 
-    Returns:
-        str:
+    Returns
+    -------
+        str
             Text formatted as a description for the commandline options
     """
     options_usage = ""
@@ -141,12 +147,14 @@ def _format_arguments_usage(options):
     """
     Construct the Arguments-part of the usage text.
 
-    Args:
-        options (list[sacred.commandline_options.CommandLineOption]):
+    Parameters
+    ----------
+        options : list[sacred.commandline_options.CommandLineOption]
             A list of all supported commandline options.
 
-    Returns:
-        str:
+    Returns
+    -------
+        str
             Text formatted as a description of the arguments supported by the
             commandline options.
     """
@@ -167,13 +175,15 @@ def _format_command_usage(commands):
     """
     Construct the Commands-part of the usage text.
 
-    Args:
-        commands (list[str, str]):
+    Parameters
+    ----------
+        commands : list[str, str]
             List of supported commands.
             Each entry should be a tuple of (name, description).
 
-    Returns:
-        str:
+    Returns
+    -------
+        str
             Text formatted as a description of the commands.
     """
     if not commands:
@@ -192,19 +202,21 @@ def _format_usage(program_name, description, commands=None, options=()):
     """
     Construct the usage text.
 
-    Args:
-        program_name (str):
+    Parameters
+    ----------
+        program_name : str
             Usually the name of the python file that contains the experiment.
-        description (str):
+        description : str
             description of this experiment (usually the docstring).
-        commands (list[str, str]):
+        commands : list[str, str]
             List of supported commands.
             Each entry should be a tuple of (name, description).
-        options (list[sacred.commandline_options.CommandLineOption]):
+        options : list[sacred.commandline_options.CommandLineOption]
             A list of all supported commandline options.
 
-    Returns:
-        str:
+    Returns
+    -------
+        str
             The complete formatted usage text for this experiment.
             It adheres to the structure required by ``docopt``.
     """
