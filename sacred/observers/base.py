@@ -13,7 +13,8 @@ class RunObserver(object):
     def queued_event(self, ex_info, queue_time, config, meta_info):
         pass
 
-    def started_event(self, ex_info, host_info, start_time, config, meta_info):
+    def started_event(self, ex_info, command, host_info, start_time, config,
+                      meta_info):
         pass
 
     def heartbeat_event(self, info, captured_out, beat_time):

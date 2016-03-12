@@ -152,7 +152,8 @@ class MongoObserver(RunObserver):
                 with open(source_name, 'rb') as f:
                     self.fs.put(f, filename=source_name)
 
-    def started_event(self, ex_info, host_info, start_time, config, meta_info):
+    def started_event(self, ex_info, command, host_info, start_time, config,
+                      meta_info):
         if self.overwrite is None:
             self.run_entry = {}
         else:
