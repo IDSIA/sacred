@@ -86,6 +86,7 @@ class Run(object):
 
         self._heartbeat = None
         self._failed_observers = []
+        self._output_capturer = None
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -139,7 +140,7 @@ class Run(object):
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
-        with tee_output() as self.captured_out:
+        with tee_output() as self._output_capturer:
             self.run_logger.info('Started')
 
             self._emit_started()
@@ -162,9 +163,8 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
-                self.captured_out.flush()
-                self.captured_out = self.captured_out.getvalue()
-                self.final = True
+                self._output_capturer.flush()
+                self.captured_out = self._output_capturer.getvalue()
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -195,10 +195,11 @@ class Run(object):
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
+        self.captured_out = self._output_capturer.getvalue()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            captured_out=self.captured_out.getvalue(),
+                            captured_out=self.captured_out,
                             beat_time=beat_time)
 
     def _stop_time(self):
