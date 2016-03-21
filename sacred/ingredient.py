@@ -270,7 +270,6 @@ class Ingredient(object):
           * *name*: the name
           * *sources*: a list of sources (filename, md5)
           * *dependencies*: a list of package dependencies (name, version)
-          * *doc*: the docstring
 
         :return: experiment information
         :rtype: dict
@@ -286,9 +285,8 @@ class Ingredient(object):
 
         return dict(
             name=self.path,
-            sources=[s.to_tuple() for s in sorted(sources)],
-            dependencies=[d.to_tuple() for d in sorted(dependencies)],
-            doc=self.doc)
+            sources=[s.to_json() for s in sorted(sources)],
+            dependencies=[d.to_json() for d in sorted(dependencies)])
 
     def traverse_ingredients(self):
         if self._is_traversing:
@@ -304,7 +302,9 @@ class Ingredient(object):
     # ======================== Private Helpers ================================
 
     def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs=(), force=False):
+                                named_configs=(), meta_info=None, force=False):
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs, force=force)
+        if meta_info:
+            run.meta_info.update(meta_info)
         return run

@@ -16,7 +16,9 @@ from sacred.utils import ObserverError
 def run():
     config = {'a': 17, 'foo': {'bar': True, 'baz': False}, 'seed': 1234}
     config_mod = ConfigSummary()
-    main_func = mock.Mock(return_value=123)
+    signature = mock.Mock()
+    signature.name = 'main_func'
+    main_func = mock.Mock(return_value=123, prefix='', signature=signature)
     logger = mock.Mock()
     observer = [mock.Mock()]
     return Run(config, config_mod, main_func, observer, logger, logger, {},
@@ -59,7 +61,7 @@ def test_run_emits_events_if_successful(run):
 
 def test_run_emits_events_if_interrupted(run):
     observer = run.observers[0]
-    run.main_function = mock.Mock(side_effect=KeyboardInterrupt)
+    run.main_function.side_effect = KeyboardInterrupt
     with pytest.raises(KeyboardInterrupt):
         run()
     assert observer.started_event.called
@@ -71,7 +73,7 @@ def test_run_emits_events_if_interrupted(run):
 
 def test_run_emits_events_if_failed(run):
     observer = run.observers[0]
-    run.main_function = mock.Mock(side_effect=TypeError)
+    run.main_function.side_effect = TypeError
     with pytest.raises(TypeError):
         run()
     assert observer.started_event.called
@@ -85,11 +87,12 @@ def test_run_started_event(run):
     observer = run.observers[0]
     run()
     observer.started_event.assert_called_with(
+        command='main_func',
         ex_info=run.experiment_info,
         host_info=run.host_info,
         start_time=run.start_time,
         config=run.config,
-        comment=''
+        meta_info={}
     )
 
 
@@ -181,7 +184,7 @@ def test_run_exception_in_interrupted_event_is_caught(run):
     observer2 = mock.Mock()
     run.observers.append(observer2)
     observer.interrupted_event.side_effect = TypeError
-    run.main_function = mock.Mock(side_effect=KeyboardInterrupt)
+    run.main_function.side_effect = KeyboardInterrupt
     with pytest.raises(KeyboardInterrupt):
         run()
     assert observer.interrupted_event.called
@@ -193,7 +196,7 @@ def test_run_exception_in_failed_event_is_caught(run):
     observer2 = mock.Mock()
     run.observers.append(observer2)
     observer.failed_event.side_effect = TypeError
-    run.main_function = mock.Mock(side_effect=AttributeError)
+    run.main_function.side_effect = AttributeError
     with pytest.raises(AttributeError):
         run()
     assert observer.failed_event.called

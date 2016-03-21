@@ -3,7 +3,6 @@
 """This module helps to collect information about the host of an experiment."""
 from __future__ import division, print_function, unicode_literals
 
-import multiprocessing
 import os
 import platform
 import re
@@ -15,18 +14,17 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 def get_host_info():
     """Collect some information about the machine this experiment runs on.
 
-    :return: A dictionary with information about the CPU, the OS and the
-             Python version of this machine.
-    :rtype: dict
+    Returns
+    -------
+    dict
+        A dictionary with information about the CPU, the OS and the
+        Python version of this machine.
     """
     return {
-        "cpu": _get_processor_name(),
-        "cpu_count": multiprocessing.cpu_count(),
         "hostname": platform.node(),
-        "os": platform.system(),
-        "os_info": platform.platform(),
-        "python_version": platform.python_version(),
-        "python_compiler": platform.python_compiler()
+        "cpu": _get_processor_name(),
+        "os": [platform.system(), platform.platform()],
+        "python_version": platform.python_version()
     }
 
 

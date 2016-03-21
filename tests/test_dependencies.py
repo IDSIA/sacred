@@ -53,9 +53,9 @@ def test_source_create_py():
     assert s.digest == EXAMPLE_DIGEST
 
 
-def test_source_to_tuple():
+def test_source_to_json():
     s = Source.create(EXAMPLE_SOURCE)
-    assert s.to_tuple() == (os.path.abspath(EXAMPLE_SOURCE), EXAMPLE_DIGEST)
+    assert s.to_json() == (os.path.abspath(EXAMPLE_SOURCE), EXAMPLE_DIGEST)
 
 
 def test_get_py_file_if_possible_with_py_file():
@@ -117,10 +117,10 @@ def test_package_dependency_create_no_version():
     assert pd.version is None
 
 
-def test_package_dependency_to_tuple():
+def test_package_dependency_to_json():
     mod = mock.Mock(spec=[], __version__='3.2.1', __name__='testmod')
     pd = PackageDependency.create(mod)
-    assert pd.to_tuple() == ('testmod', '3.2.1')
+    assert pd.to_json() == 'testmod==3.2.1'
 
 
 def test_package_dependency_fill_non_missing_version():
