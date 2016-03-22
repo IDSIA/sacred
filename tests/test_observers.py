@@ -8,7 +8,7 @@ from sacred.observers.base import RunObserver
 def test_run_observer():
     # basically to silence coverage
     r = RunObserver()
-    assert r.started_event({}, {}, datetime.now(), {}, 'comment') is None
+    assert r.started_event({}, 'run', {}, datetime.now(), {}, 'comment') is None
     assert r.heartbeat_event({}, '', datetime.now()) is None
     assert r.completed_event(datetime.now(), 123) is None
     assert r.interrupted_event(datetime.now(), "INTERRUPTED") is None

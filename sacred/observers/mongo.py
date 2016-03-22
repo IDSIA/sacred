@@ -135,12 +135,13 @@ class MongoObserver(RunObserver):
                   "Stored experiment entry in '{}'".format(f.name),
                   file=sys.stderr)
 
-    def queued_event(self, ex_info, queue_time, config, meta_info):
+    def queued_event(self, ex_info, command, queue_time, config, meta_info):
         if self.overwrite is not None:
             raise RuntimeError("Can't overwrite with QUEUED run.")
         meta_info['queue_time'] = queue_time
         self.run_entry = {
             'experiment': dict(ex_info),
+            'command': command,
             'config': config,
             'meta': meta_info,
             'status': 'QUEUED'
@@ -166,6 +167,7 @@ class MongoObserver(RunObserver):
 
         self.run_entry.update({
             'experiment': dict(ex_info),
+            'command': command,
             'host': dict(host_info),
             'start_time': start_time,
             'config': config,
