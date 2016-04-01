@@ -34,6 +34,9 @@ Sacred achieves this through the following main mechanisms:
 -  **Automatic seeding** helps controlling the randomness in your experiments,
    such that the results remain reproducible.
 
+*Note: In order to ensure the reproducibility of your experiments, sacred cannot be launched from ipython notebooks (see https://github.com/IDSIA/sacred/issues/100)*
+
+
 Example
 -------
 +------------------------------------------------+--------------------------------------------+
