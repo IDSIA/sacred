@@ -82,7 +82,7 @@ class Run(object):
         """Indicates whether this run should be unobserved"""
 
         self.force = False
-        """Indicates whether warnings about suspicious changes should be disabled"""
+        """Disable warnings about suspicious changes"""
 
         self._heartbeat = None
         self._failed_observers = []
