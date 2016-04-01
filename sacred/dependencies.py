@@ -203,9 +203,19 @@ def is_local_source(filename, modname, experiment_path):
 
 def gather_sources_and_dependencies(globs):
     dependencies = set()
-    main = Source.create(globs.get('__file__'))
-    sources = {main}
-    experiment_path = os.path.dirname(main.filename)
+    filename = globs.get('__file__')
+
+    if filename is None:
+        import warnings
+        warnings.warn("Defining an experiment in interactive mode! "
+                      "The sourcecode cannot be stored and the experiment "
+                      "won't be reproducible")
+        sources = set()
+        experiment_path = os.path.abspath(os.path.curdir)
+    else:
+        main = Source.create(globs.get('__file__'))
+        sources = {main}
+        experiment_path = os.path.dirname(main.filename)
     for glob in globs.values():
         if isinstance(glob, module):
             mod_path = glob.__name__
