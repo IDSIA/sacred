@@ -88,6 +88,15 @@ class Experiment(Ingredient):
         """
         captured = self.main(function)
         if function.__module__ == '__main__':
+            # Ensure that automain is not used in interactive mode.
+            import inspect
+            main_filename = inspect.getfile(function)
+            if (main_filename == '<stdin>' or
+                    (main_filename.startswith('<ipython-input-') and
+                     main_filename.endswith('>'))):
+                raise RuntimeError('Cannot use @ex.automain decorator in '
+                                   'interactive mode. Use @ex.main instead.')
+
             self.run_commandline()
         return captured
 
