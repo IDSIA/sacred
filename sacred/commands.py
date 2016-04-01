@@ -21,8 +21,8 @@ LEGEND = '(' + BLUE + 'modified' + ENDC +\
     ', ' + GREEN + 'added' + ENDC +\
     ', ' + RED + 'typechanged' + ENDC + ')'
 
-ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged')
-PathEntry = namedtuple('PathEntry', 'key added modified typechanged')
+ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged doc')
+PathEntry = namedtuple('PathEntry', 'key added modified typechanged doc')
 
 
 def _non_unicode_repr(objekt, context, maxlevels, level):
@@ -80,18 +80,21 @@ def _iterate_marked(cfg, config_mods):
                 key=path.rpartition('.')[2],
                 added=path in config_mods.added,
                 modified=path in config_mods.modified,
-                typechanged=config_mods.typechanged.get(path))
+                typechanged=config_mods.typechanged.get(path),
+                doc=config_mods.docs.get(path))
         else:
             yield path, ConfigEntry(
                 key=path.rpartition('.')[2],
                 value=value,
                 added=path in config_mods.added,
                 modified=path in config_mods.modified,
-                typechanged=config_mods.typechanged.get(path))
+                typechanged=config_mods.typechanged.get(path),
+                doc=config_mods.docs.get(path))
 
 
-def _format_entry(entry):
+def _format_entry(indent, entry):
     color = ""
+    indent = ' ' * indent
     if entry.typechanged:
         color = RED
     elif entry.added:
@@ -100,14 +103,20 @@ def _format_entry(entry):
         color = BLUE
     end = ENDC if color else ""
     if isinstance(entry, ConfigEntry):
-        return color + entry.key + " = " + PRINTER.pformat(entry.value) + end
+        assign = indent + entry.key + " = " + PRINTER.pformat(entry.value)
     else:  # isinstance(entry, PathEntry):
-        return color + entry.key + ":" + end
+        assign = indent + entry.key + ":"
+    if entry.doc:
+        if len(assign) <= 35:
+            assign = "{:<35}  # {}".format(assign, entry.doc)
+        else:
+            assign += '    # ' + entry.doc
+    return color + assign + end
 
 
 def _format_config(cfg, config_mods):
     lines = ['Configuration ' + LEGEND + ':']
     for path, entry in _iterate_marked(cfg, config_mods):
-        indent = '  ' + '  ' * path.count('.')
-        lines.append(indent + _format_entry(entry))
+        indent = 2 + 2 * path.count('.')
+        lines.append(_format_entry(indent, entry))
     return "\n".join(lines)

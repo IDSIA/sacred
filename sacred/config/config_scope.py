@@ -26,6 +26,7 @@ class ConfigScope(object):
 
         self._func = func
         self._body_code = get_function_body_code(func)
+        self._var_docs = get_config_comments(func)
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -73,7 +74,8 @@ class ConfigScope(object):
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(added, cfg_locals.modified,
                                        cfg_locals.typechanges,
-                                       cfg_locals.fallback_writes)
+                                       cfg_locals.fallback_writes,
+                                       docs=self._var_docs)
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 
@@ -103,6 +105,10 @@ def get_function_body(func):
 def is_empty_or_comment(line):
     sline = line.strip()
     return sline == '' or sline.startswith('#')
+
+
+def iscomment(line):
+    return line.strip().startswith('#')
 
 
 def dedent_line(line, indent):
@@ -152,3 +158,32 @@ def get_function_body_code(func):
         else:
             raise
     return body_code
+
+
+def find_doc_for(ast_entry, body_lines):
+    lineno = ast_entry.lineno - 2
+    while lineno >= 0:
+        if iscomment(body_lines[lineno]):
+            return body_lines[lineno].strip('# ')
+        if not body_lines[lineno].strip() == '':
+            return ''
+        lineno -= 1
+    return ''
+
+
+def get_config_comments(func):
+    filename = inspect.getfile(func)
+    func_body, line_offset = get_function_body(func)
+    body_source = dedent_function_body(func_body)
+    body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
+    body_lines = body_source.split('\n')
+
+    variables = {'seed': 'the random seed for this experiment'}
+
+    for ast_entry in body_code.body:
+        if isinstance(ast_entry, ast.Assign) and isinstance(ast_entry.targets[0], ast.Name):
+            name = ast_entry.targets[0].id
+            if name not in variables:
+                variables[name] = find_doc_for(ast_entry, body_lines)
+
+    return variables

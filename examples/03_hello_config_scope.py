@@ -44,7 +44,10 @@ ex = Experiment('hello_config_scope')
 # All local variables of this function will be put into the configuration
 @ex.config
 def cfg():
+    # The recipient of the geeting
     recipient = "world"
+
+    # The message used for greeting
     message = "Hello {}!".format(recipient)
 
 
