@@ -1,6 +1,17 @@
 Release History
 ---------------
 
+0.7.0 (2016-06-??)
+++++++++++++++++++
+* Feature: added queue flag to just queue a run instead of executing it
+* Feature: added TimeoutInterrupt to signal that a run timed out
+* Feature: experiments can now be run in Jupyter notebook, but will fail with
+           an error by default, which can be deactivated using interactive=True
+* API Change: changed the mongoDB layout
+
+
+
+
 0.6.10 (2016-??-??)
 +++++++++++++++++++
 * Bugfix: fixed a problem when trying  to set the loglevel to DEBUG

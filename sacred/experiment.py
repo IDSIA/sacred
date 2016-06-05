@@ -29,7 +29,7 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name, ingredients=()):
+    def __init__(self, name, ingredients=(), interactive=False):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -40,10 +40,17 @@ class Experiment(Ingredient):
 
         ingredients : list[sacred.Ingredient]
             A list of ingredients to be used with this experiment.
+
+        interactive : bool
+            If set to True will allow the experiment to be run in interactive
+            mode (e.g. IPython or Jupyter notebooks).
+            However, this mode is discouraged since it won't allow storing the
+            source-code or reliable reproduction of the runs.
         """
         caller_globals = inspect.stack()[1][0].f_globals
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
+                                         interactive=interactive,
                                          _caller_globals=caller_globals)
         self.default_command = ""
         self.command(print_config, unobserved=True)

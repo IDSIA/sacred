@@ -201,15 +201,16 @@ def is_local_source(filename, modname, experiment_path):
                                        reversed(mod_parts))])
 
 
-def gather_sources_and_dependencies(globs):
+def gather_sources_and_dependencies(globs, interactive=False):
     dependencies = set()
     filename = globs.get('__file__')
 
     if filename is None:
-        import warnings
-        warnings.warn("Defining an experiment in interactive mode! "
-                      "The sourcecode cannot be stored and the experiment "
-                      "won't be reproducible")
+        if not interactive:
+            raise RuntimeError("Defining an experiment in interactive mode! "
+                               "The sourcecode cannot be stored and the "
+                               "experiment won't be reproducible. If you still"
+                               " want to run it pass interactive=True")
         sources = set()
         experiment_path = os.path.abspath(os.path.curdir)
     else:
