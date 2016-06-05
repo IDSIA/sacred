@@ -31,7 +31,8 @@ class Ingredient(object):
     Ingredients can themselves use ingredients.
     """
 
-    def __init__(self, path, ingredients=(), _caller_globals=None):
+    def __init__(self, path, ingredients=(), interactive=False,
+                 _caller_globals=None):
         self.path = path
         self.config_hooks = []
         self.configurations = []
@@ -47,7 +48,7 @@ class Ingredient(object):
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
         self.doc = _caller_globals.get('__doc__', "")
         self.sources, self.dependencies = \
-            gather_sources_and_dependencies(_caller_globals)
+            gather_sources_and_dependencies(_caller_globals, interactive)
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
