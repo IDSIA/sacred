@@ -98,6 +98,59 @@ can automatically run the tests for various python versions like this:
 
     tox
 
+Frontends
+---------
+At this point there are two frontends to the database entries created by sacred (that I'm aware of).
+They are developed externally as separate projects.
+
+`SacredBrowser <https://github.com/michaelwand/SacredBrowser>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/SacredBrowser.png
+
+SacredBrowser is a PyQt4 application to browse the MongoDB entries created by
+sacred experiments.
+Features include custom queries, sorting of the results,
+access to the stored source-code, and many more.
+No installation is required and it can connect to a local
+database or over the network.
+
+
+`Prophet <https://github.com/Qwlouse/prophet>`_
++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/prophet.png
+
+Prophet is an early prototype of a webinterface to the MongoDB entries created by
+sacred experiments.
+It requires you to run `RestHeart <http://restheart.org>`_ to access the database.
+
+
+Related Projects
+----------------
+
+`Sumatra <https://pythonhosted.org/Sumatra/>`_
+++++++++++++++++++++++++++++++++++++++++++++++
+   | Sumatra is a tool for managing and tracking projects based on numerical
+   | simulation and/or analysis, with the aim of supporting reproducible research.
+   | It can be thought of as an automated electronic lab notebook for
+   | computational projects.
+
+Sumatra takes a different approach by providing commandline tools to initialize
+a project and then run arbitrary code (not just python).
+It tracks information about all runs in a SQL database and even provides a nice browser tool.
+It integrates less tightly with the code to be run, which makes it easily
+applicable to non-python experiments.
+But that also means it requires more setup for each experiment and
+configuration needs to be done using files.
+Use this project if you need to run non-python experiments, or are ok with the additional setup/configuration overhead.
+
+`CDE <https://github.com/pgbovine/CDE/>`_
++++++++++++++++++++++++++++++++++++++++++
+By tracing system calls during program execution CDE creates a snapshot of
+**all** used files and libraries to guarantee the ability to reproduce any unix
+program execution. It *only* solves reproducibility, but it does so thoroughly.
+
+
+
 
 License
 -------
