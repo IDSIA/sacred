@@ -28,4 +28,15 @@ else:
     SqlObserver = opt.MissingDependencyMock('sqlalchemy')
 
 
+    class SqlOption(CommandLineOption):
+        """To use the SqlObserver you need to install sqlalchemy first."""
+
+        arg = 'DB_URL'
+
+        @classmethod
+        def apply(cls, args, run):
+            raise ImportError('cannot use -s/--sql flag: '
+                              'missing sqlalchemy dependency')
+
+
 __all__ = ('RunObserver', 'MongoObserver', 'SqlObserver')

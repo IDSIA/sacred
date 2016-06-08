@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import hashlib
+import json
 import os.path
 
 import sqlalchemy as sa
@@ -19,8 +21,14 @@ class Source(Base):
     __tablename__ = 'source'
 
     @classmethod
-    def create(cls, filename):
-        md5sum = get_digest(filename)
+    def get_or_create(cls, filename, md5sum, session):
+        instance = session.query(cls).filter_by(filename=filename,
+                                                md5sum=md5sum).first()
+        if instance:
+            return instance
+        md5sum_ = get_digest(filename)
+        assert md5sum_ == md5sum, 'Weird: found md5 mismatch for {}: {} != {}'\
+            .format(filename, md5sum, md5sum_)
         with open(filename, 'r') as f:
             return cls(filename=filename, md5sum=md5sum, content=f.read())
 
@@ -34,7 +42,12 @@ class Dependency(Base):
     __tablename__ = 'dependency'
 
     @classmethod
-    def create(cls, name, version):
+    def get_or_create(cls, dep, session):
+        name, _, version = dep.partition('==')
+        instance = session.query(cls).filter_by(name=name,
+                                                version=version).first()
+        if instance:
+            return instance
         return cls(name=name, version=version)
 
     id = sa.Column(sa.Integer, primary_key=True)
@@ -63,8 +76,12 @@ class Resource(Base):
     __tablename__ = 'resource'
 
     @classmethod
-    def create(cls, filename):
+    def get_or_create(cls, filename, session):
         md5sum = get_digest(filename)
+        instance = session.query(cls).filter_by(filename=filename,
+                                                md5sum=md5sum).first()
+        if instance:
+            return instance
         with open(filename, 'rb') as f:
             return cls(filename=filename, md5sum=md5sum, content=f.read())
 
@@ -77,14 +94,25 @@ class Resource(Base):
 class Host(Base):
     __tablename__ = 'host'
 
+    @classmethod
+    def get_or_create(cls, host_info, session):
+        h = dict(
+            hostname=host_info['hostname'],
+            cpu=host_info['cpu'],
+            os=host_info['os'][0],
+            os_info=host_info['os'][1],
+            python_version=host_info['python_version']
+        )
+
+        return session.query(cls).filter_by(**h).first() or cls(**h)
+
     id = sa.Column(sa.Integer, primary_key=True)
     cpu = sa.Column(sa.String(64))
-    cpu_count = sa.Column(sa.Integer)
     hostname = sa.Column(sa.String(64))
     os = sa.Column(sa.String(16))
     os_info = sa.Column(sa.String(64))
     python_version = sa.Column(sa.String(16))
-    python_compiler = sa.Column(sa.String(64))
+
 
 experiment_source_association = sa.Table(
     'experiments_sources', Base.metadata,
@@ -102,10 +130,28 @@ experiment_dependency_association = sa.Table(
 class Experiment(Base):
     __tablename__ = 'experiment'
 
+    @classmethod
+    def get_or_create(cls, ex_info, session):
+        name = ex_info['name']
+        # Compute a MD5sum of the ex_info to determine its uniqueness
+        h = hashlib.md5()
+        h.update(json.dumps(ex_info, sort_keys=True).encode('UTF-8'))
+        md5 = h.hexdigest()
+        instance = session.query(cls).filter_by(name=name, md5sum=md5).first()
+        if instance:
+            return instance
+
+        dependencies = [Dependency.get_or_create(d, session)
+                        for d in ex_info['dependencies']]
+        sources = [Source.get_or_create(s, md5, session)
+                   for s, md5 in ex_info['sources']]
+
+        return cls(name=name, dependencies=dependencies, sources=sources,
+                   md5sum=md5)
+
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(32))
-    doc = sa.Column(sa.Text)
-
+    md5sum = sa.Column(sa.String(32))
     sources = sa.orm.relationship("Source",
                                   secondary=experiment_source_association,
                                   backref="experiments")
@@ -125,20 +171,33 @@ run_resource_association = sa.Table(
 class Run(Base):
     __tablename__ = 'run'
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    id = sa.Column(sa.String(24), primary_key=True, autoincrement=True)
 
+    command = sa.Column(sa.String(64))
+
+    # times
     start_time = sa.Column(sa.DateTime)
     heartbeat = sa.Column(sa.DateTime)
     stop_time = sa.Column(sa.DateTime)
+    queue_time = sa.Column(sa.DateTime)
 
+    # meta info
+    priority = sa.Column(sa.Float)
     comment = sa.Column(sa.Text)
-    captured_out = sa.Column(sa.Text)
+
     fail_trace = sa.Column(sa.Text)
+
+    # Captured out
+    # TODO: move to separate table?
+    captured_out = sa.Column(sa.Text)
+
+    # Configuration & info
+    # TODO: switch type to json if possible
     config = sa.Column(sa.Text)
     info = sa.Column(sa.Text)
 
     status = sa.Column(sa.Enum("RUNNING", "COMPLETED", "INTERRUPTED",
-                               "FAILED"))
+                               "TIMEOUT", "FAILED"))
 
     host_id = sa.Column(sa.Integer, sa.ForeignKey('host.id'))
     host = sa.orm.relationship("Host", backref=sa.orm.backref('runs'))
@@ -152,12 +211,14 @@ class Run(Base):
                                     secondary=run_resource_association,
                                     backref="runs")
 
+    result = sa.Column(sa.Float)
+
 
 # ############################# Observer #################################### #
 
 class SqlObserver(RunObserver):
     @classmethod
-    def create(cls, url, echo=True):
+    def create(cls, url, echo=False):
         engine = sa.create_engine(url, echo=echo)
         Session = sessionmaker(bind=engine)
         return cls(engine, Session())
@@ -165,27 +226,71 @@ class SqlObserver(RunObserver):
     def __init__(self, engine, session):
         self.engine = engine
         self.session = session
+        self.run = None
 
-    def started_event(self, ex_info, host_info, start_time, config, comment):
+    def started_event(self, ex_info, command, host_info, start_time, config,
+                      meta_info, _id):
         Base.metadata.create_all(self.engine)
+        sql_exp = Experiment.get_or_create(ex_info, self.session)
+        sql_host = Host.get_or_create(host_info, self.session)
+        if _id is None:
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            i = -1 if i is None else int(i.id)
+            self.run = Run(id=str(i+1),
+                           start_time=start_time,
+                           config=json.dumps(config, sort_keys=True),
+                           command=command,
+                           priority=meta_info.get('priority', 0),
+                           comment=meta_info.get('comment', ''),
+                           experiment=sql_exp,
+                           host=sql_host,
+                           status='RUNNING')
+        else:
+            self.run = Run(id=_id,
+                           start_time=start_time,
+                           config=json.dumps(config, sort_keys=True),
+                           command=command,
+                           priority=meta_info.get('priority', 0),
+                           comment=meta_info.get('comment', ''),
+                           experiment=sql_exp,
+                           host=sql_host,
+                           status='RUNNING')
+        self.session.add(self.run)
+        self.session.commit()
+        return _id or self.run.id
 
     def heartbeat_event(self, info, captured_out, beat_time):
-        pass
+        self.run.info = json.dumps(info, sort_keys=True)
+        self.run.captured_out = captured_out
+        self.run.heartbeat = beat_time
+        self.session.commit()
 
     def completed_event(self, stop_time, result):
-        pass
+        self.run.stop_time = stop_time
+        self.run.result = result
+        self.run.status = 'COMPLETED'
+        self.session.commit()
 
-    def interrupted_event(self, interrupt_time):
-        pass
+    def interrupted_event(self, interrupt_time, status):
+        self.run.stop_time = interrupt_time
+        self.run.status = status
+        self.session.commit()
 
     def failed_event(self, fail_time, fail_trace):
-        pass
+        self.run.stop_time = fail_time
+        self.run.fail_trace = '\n'.join(fail_trace)
+        self.run.status = 'FAILED'
+        self.session.commit()
 
     def resource_event(self, filename):
-        pass
+        res = Resource.get_or_create(filename, self.session)
+        self.run.resources.append(res)
+        self.session.commit()
 
     def artifact_event(self, filename):
-        pass
+        a = Artifact.create(filename)
+        self.run.artifacts.append(a)
+        self.session.commit()
 
 
 # ######################## Commandline Option ############################### #
@@ -195,8 +300,9 @@ class SqlOption(CommandLineOption):
     """Add a SQL Observer to the experiment."""
 
     arg = 'DB_URL'
-    arg_description = "The typical form is: dialect://username:password@host:port/database"
+    arg_description = \
+        "The typical form is: dialect://username:password@host:port/database"
 
     @classmethod
-    def execute(cls, args, run):
+    def apply(cls, args, run):
         run.observers.append(SqlObserver.create(args))
