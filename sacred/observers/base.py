@@ -14,7 +14,7 @@ class RunObserver(object):
         pass
 
     def started_event(self, ex_info, command, host_info, start_time, config,
-                      meta_info):
+                      meta_info, _id):
         pass
 
     def heartbeat_event(self, info, captured_out, beat_time):

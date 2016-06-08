@@ -32,7 +32,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
     meta_info = {'comment': 'test run'}
-    mongo_obs.started_event(exp, command, host, T1, config, meta_info)
+    mongo_obs.started_event(exp, command, host, T1, config, meta_info, None)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -69,7 +69,8 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     command = 'run'
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
@@ -87,7 +88,8 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     mongo_obs.completed_event(stop_time=T2, result=42)
 
@@ -103,7 +105,8 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     mongo_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
 
@@ -118,7 +121,8 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2,
@@ -136,7 +140,8 @@ def test_mongo_observer_artifact_event(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     filename = "setup.py"
 
@@ -154,7 +159,8 @@ def test_mongo_observer_resource_event(mongo_obs):
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'})
+    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
+                            None)
 
     filename = "setup.py"
     md5 = get_digest(filename)

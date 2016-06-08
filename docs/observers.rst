@@ -175,15 +175,12 @@ The moment an experiment is started, the first event is fired for all the
 observers. It contains the following information:
 
     ===========  ===============================================================
-    name         The name of the experiment
-    config       The configuration for this run, including the root-seed.
-    start_time   The date/time it was started
     ex_info      Some information about the experiment:
 
                     * the docstring of the experiment-file
                     * filename and md5 hash for all source-dependencies of the experiment
                     * names and versions of packages the experiment depends on
-
+    command      The name of the command that was run.
     host_info    Some information about the machine it's being run on:
 
                     * CPU name
@@ -192,9 +189,16 @@ observers. It contains the following information:
                     * Operating System
                     * Python version
                     * Python compiler
-
-    comment      A custom comment given for this run
+    start_time   The date/time it was started
+    config       The configuration for this run, including the root-seed.
+    meta_info    Meta-information about this run such as a custom comment
+                 and the priority of this run.
+    _id          The ID of this run, as determined by the first observer
     ===========  ===============================================================
+
+The started event is also the time when the ID of the run is determined.
+Essentially the first observer which sees `_id=None` sets an id and returns it.
+That id is then stored in the run and also passed to all further observers.
 
 .. _heartbeat:
 

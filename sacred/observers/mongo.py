@@ -154,7 +154,7 @@ class MongoObserver(RunObserver):
                     self.fs.put(f, filename=source_name)
 
     def started_event(self, ex_info, command, host_info, start_time, config,
-                      meta_info):
+                      meta_info, _id):
         if self.overwrite is None:
             self.run_entry = {}
         else:
@@ -179,12 +179,16 @@ class MongoObserver(RunObserver):
             'info': {},
             'heartbeat': None
         })
+        if _id is not None:
+            self.run_entry['_id'] = _id
 
         self.save()
         for source_name, md5 in ex_info['sources']:
             if not self.fs.exists(filename=source_name, md5=md5):
                 with open(source_name, 'rb') as f:
                     self.fs.put(f, filename=source_name)
+
+        return self.run_entry['_id']
 
     def heartbeat_event(self, info, captured_out, beat_time):
         self.run_entry['info'] = info

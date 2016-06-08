@@ -21,6 +21,9 @@ class Run(object):
                  root_logger, run_logger, experiment_info, host_info,
                  pre_run_hooks, post_run_hooks):
 
+        self._id = None
+        """The ID of this run as assigned by the first observer"""
+
         self.captured_out = None
         """Captured stdout and stderr"""
 
@@ -150,8 +153,6 @@ class Run(object):
             return
 
         with tee_output() as self._output_capturer:
-            self.run_logger.info('Started')
-
             self._emit_started()
             self._start_heartbeat()
             try:
@@ -209,16 +210,23 @@ class Run(object):
         self.start_time = datetime.datetime.now()
         for observer in self.observers:
             if hasattr(observer, 'started_event'):
-                observer.started_event(
+                _id = observer.started_event(
                     ex_info=self.experiment_info,
                     command=join_paths(self.main_function.prefix, self.main_function.signature.name),
                     host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config,
-                    meta_info=self.meta_info
+                    meta_info=self.meta_info,
+                    _id=self._id
                 )
+                if self._id is None:
+                    self._id = _id
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
+        if self._id is None:
+            self.run_logger.info('Started')
+        else:
+            self.run_logger.info('Started run with ID "{}"'.format(self._id))
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
