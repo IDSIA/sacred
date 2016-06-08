@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from sacred.commandline_options import CommandLineOption
 
 from sacred.observers.base import RunObserver
+from sacred.observers.flatfile import FlatfileObserver
 import sacred.optional as opt
 
 if opt.has_pymongo:
@@ -39,4 +40,4 @@ else:
                               'missing sqlalchemy dependency')
 
 
-__all__ = ('RunObserver', 'MongoObserver', 'SqlObserver')
+__all__ = ('FlatfileObserver', 'RunObserver', 'MongoObserver', 'SqlObserver')
