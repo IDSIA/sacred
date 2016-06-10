@@ -10,6 +10,7 @@ from datetime import datetime
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred import optional as opt
 
 
 def json_serial(obj):
@@ -18,7 +19,7 @@ def json_serial(obj):
     if isinstance(obj, datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError ("Type not serializable")
+    raise TypeError("Type not serializable")
 
 
 class FlatfileObserver(RunObserver):
@@ -28,6 +29,9 @@ class FlatfileObserver(RunObserver):
             os.makedirs(basedir)
         self.basedir = basedir
         self.run_entry = None
+        self.config = None
+        self.info = None
+        self.cout = ""
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -48,51 +52,78 @@ class FlatfileObserver(RunObserver):
             'artifacts': [],
             'heartbeat': None
         }
+        self.config = config
+        self.info = {}
+        self.cout = ""
+
         self.save_json(self.run_entry, 'run.json')
-        self.save_json(config, 'config.json')
-        self.save_cout('')
+        self.save_json(self.config, 'config.json')
+        self.save_cout()
 
         for s, m in ex_info['sources']:
             self.save_file(s)
 
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
-    def save_file(self, filename):
-        from shutil import copyfile
-        fn = os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, fn))
-
-    def save_cout(self, cout):
-        with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
-            f.write(cout)
-
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), 'w') as f:
             json.dump(obj, f, indent=2, sort_keys=True,
                       default=json_serial)
 
+    def save_file(self, filename):
+        from shutil import copyfile
+        fn = os.path.basename(filename)
+        copyfile(filename, os.path.join(self.dir, fn))
+
+    def save_cout(self):
+        with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
+            f.write(self.cout)
+
+    def render_template(self):
+        print('RENDERING TEMPLATE')
+        template_name = os.path.join(self.basedir, 'template.html')
+        print(template_name)
+        if opt.has_mako and os.path.exists(template_name):
+            print('ACTUALLY DOING IT!')
+            from mako.template import Template
+            template = Template(filename=template_name)
+            report = template.render(run=self.run_entry,
+                                     config=self.config,
+                                     info=self.info,
+                                     cout=self.cout)
+            print('Rendered it!')
+            with open(os.path.join(self.dir, 'report.html'), 'w') as f:
+                f.write(report)
+
     def heartbeat_event(self, info, captured_out, beat_time):
-        self.save_cout(captured_out)
+        self.cout = captured_out
+        self.info = info
         self.run_entry['heartbeat'] = beat_time
+
+        self.save_cout()
         self.save_json(self.run_entry, 'run.json')
-        self.save_json(info, 'info.json')
+        self.save_json(self.info, 'info.json')
 
     def completed_event(self, stop_time, result):
         self.run_entry['stop_time'] = stop_time
         self.run_entry['result'] = result
         self.run_entry['status'] = 'COMPLETED'
+
         self.save_json(self.run_entry, 'run.json')
+        self.render_template()
 
     def interrupted_event(self, interrupt_time, status):
         self.run_entry['stop_time'] = interrupt_time
         self.run_entry['status'] = status
         self.save_json(self.run_entry, 'run.json')
+        self.render_template()
 
     def failed_event(self, fail_time, fail_trace):
         self.run_entry['stop_time'] = fail_time
         self.run_entry['status'] = 'FAILED'
         self.run_entry['fail_trace'] = fail_trace
         self.save_json(self.run_entry, 'run.json')
+        self.render_template()
 
     def resource_event(self, filename):
         self.save_file(filename)
