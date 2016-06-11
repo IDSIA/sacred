@@ -80,18 +80,15 @@ class FlatfileObserver(RunObserver):
             f.write(self.cout)
 
     def render_template(self):
-        print('RENDERING TEMPLATE')
         template_name = os.path.join(self.basedir, 'template.html')
-        print(template_name)
         if opt.has_mako and os.path.exists(template_name):
-            print('ACTUALLY DOING IT!')
             from mako.template import Template
             template = Template(filename=template_name)
             report = template.render(run=self.run_entry,
                                      config=self.config,
                                      info=self.info,
-                                     cout=self.cout)
-            print('Rendered it!')
+                                     cout=self.cout,
+                                     savedir=self.dir)
             with open(os.path.join(self.dir, 'report.html'), 'w') as f:
                 f.write(report)
 
