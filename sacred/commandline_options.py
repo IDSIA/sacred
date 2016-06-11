@@ -201,3 +201,20 @@ class PriorityOption(CommandLineOption):
                              "(but was '{}')".format(args))
         run.meta_info['priority'] = priority
 
+
+class EnforceCleanOption(CommandLineOption):
+    """Fail if any version control repository is dirty."""
+
+    @classmethod
+    def apply(cls, args, run):
+        repos = run.experiment_info['repositories']
+        if not repos:
+            raise RuntimeError('No version control detected. '
+                               'Cannot enforce clean repository.\n'
+                               'Make sure that your sources under VCS and the '
+                               'corresponding python package is installed.')
+        else:
+            for repo, (commit, is_dirty) in repos.items():
+                if is_dirty:
+                    raise RuntimeError('EnforceClean: Uncommited changes in '
+                                       'the "{}" repository.'.format(repo))

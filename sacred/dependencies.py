@@ -50,11 +50,33 @@ def get_digest(filename):
         return h.hexdigest()
 
 
+def get_commit_if_possible(filename):
+    # git
+    if opt.has_gitpython:
+        from git import Repo, InvalidGitRepositoryError
+        try:
+            directory = os.path.dirname(filename)
+            repo = Repo(directory, search_parent_directories=True)
+            try:
+                path = repo.remote().url
+            except ValueError:
+                path = 'git:/' + repo.working_dir
+            is_dirty = repo.is_dirty()
+            commit = repo.head.commit.hexsha
+            return path, commit, is_dirty
+        except InvalidGitRepositoryError:
+            pass
+    return None, None, None
+
+
 @functools.total_ordering
 class Source(object):
-    def __init__(self, filename, digest):
+    def __init__(self, filename, digest, repo, commit, isdirty):
         self.filename = filename
         self.digest = digest
+        self.repo = repo
+        self.commit = commit
+        self.is_dirty = isdirty
 
     @staticmethod
     def create(filename):
@@ -62,9 +84,9 @@ class Source(object):
             raise ValueError('invalid filename or file not found "{}"'
                              .format(filename))
 
-        mainfile = get_py_file_if_possible(os.path.abspath(filename))
-
-        return Source(mainfile, get_digest(mainfile))
+        main_file = get_py_file_if_possible(os.path.abspath(filename))
+        repo, commit, is_dirty = get_commit_if_possible(main_file)
+        return Source(main_file, get_digest(main_file), repo, commit, is_dirty)
 
     def to_json(self):
         return self.filename, self.digest

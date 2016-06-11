@@ -20,6 +20,10 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 __all__ = ('Ingredient',)
 
 
+def collect_repositories(sources):
+    return {s.repo: (s.commit, s.is_dirty) for s in sources if s.repo}
+
+
 class Ingredient(object):
     """
     Ingredients are reusable parts of experiments.
@@ -287,7 +291,9 @@ class Ingredient(object):
         return dict(
             name=self.path,
             sources=[s.to_json() for s in sorted(sources)],
-            dependencies=[d.to_json() for d in sorted(dependencies)])
+            dependencies=[d.to_json() for d in sorted(dependencies)],
+            repositories=collect_repositories(sources)
+        )
 
     def traverse_ingredients(self):
         if self._is_traversing:

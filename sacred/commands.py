@@ -2,6 +2,7 @@
 # coding=utf-8
 """Defines the stock-commands that every sacred experiment ships with."""
 from __future__ import division, print_function, unicode_literals
+import os.path
 
 import pprint
 import pydoc
@@ -64,13 +65,22 @@ def help_for_command(command):
 
 def print_dependencies(_run):
     """Print the detected source-files and dependencies."""
-    print('Sources:')
+    print('Dependencies:')
+    for dep in _run.experiment_info['dependencies']:
+        pack, _, version = dep.partition('==')
+        print('  {:<20} == {}'.format(pack, version))
+
+    print('\nSources:')
     for source, digest in _run.experiment_info['sources']:
         print('  {:<43}  {}'.format(source, digest))
 
-    print('\nDependencies:')
-    for pack, version in _run.experiment_info['dependencies']:
-        print('  {:<20} >= {}'.format(pack, version))
+    if _run.experiment_info['repositories']:
+        repos = _run.experiment_info['repositories']
+        print('\nVersion Control:')
+        for repo, (commit, is_dirty) in repos.items():
+            mod = 'M' if is_dirty else ''
+            print('{}  {:<43}  {}'.format(mod, repo, commit))
+    print('')
 
 
 def _iterate_marked(cfg, config_mods):
