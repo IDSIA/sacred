@@ -21,7 +21,8 @@ __all__ = ('Ingredient',)
 
 
 def collect_repositories(sources):
-    return {s.repo: (s.commit, s.is_dirty) for s in sources if s.repo}
+    return [{'url': s.repo, 'commit': s.commit, 'dirty': s.is_dirty}
+            for s in sources if s.repo]
 
 
 class Ingredient(object):
