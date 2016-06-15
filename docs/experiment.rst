@@ -5,12 +5,12 @@ gives you an overview on what it does and how to use it.
 
 Create an Experiment
 ====================
-To create an ``Experiment`` you need a name and a main method:
+To create an ``Experiment`` you need a main method:
 
 .. code-block:: python
 
     from sacred import Experiment
-    ex = Experiment('my_experiment')
+    ex = Experiment()
 
     @ex.main
     def my_main():
@@ -27,7 +27,7 @@ the following.
 .. code-block:: python
 
     from sacred import Experiment
-    ex = Experiment('my_experiment')
+    ex = Experiment()
 
     @ex.main
     def my_main():

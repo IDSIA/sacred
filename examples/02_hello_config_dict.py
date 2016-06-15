@@ -7,26 +7,26 @@ In this example we configure the message using a dictionary with
 You can run it like this::
 
   $ ./02_hello_config_dict.py
-  INFO - hello_config_dict - Running command 'main'
-  WARNING - hello_config_dict - No observers have been added to this run
-  INFO - hello_config_dict - Started
+  INFO - 02_hello_config_dict - Running command 'main'
+  WARNING - 02_hello_config_dict - No observers have been added to this run
+  INFO - 02_hello_config_dict - Started
   Hello world!
-  INFO - hello_config_dict - Completed after 0:00:00
+  INFO - 02_hello_config_dict - Completed after 0:00:00
 
 The message can also easily be changed using the ``with`` command-line
 argument::
 
   $ ./02_hello_config_dict.py with message='Ciao world!'
-  INFO - hello_config_dict - Running command 'main'
-  WARNING - hello_config_dict - No observers have been added to this run
-  INFO - hello_config_dict - Started
+  INFO - 02_hello_config_dict - Running command 'main'
+  WARNING - 02_hello_config_dict - No observers have been added to this run
+  INFO - 02_hello_config_dict - Started
   Ciao world!
-  INFO - hello_config_dict - Completed after 0:00:00
+  INFO - 02_hello_config_dict - Completed after 0:00:00
 """
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
-ex = Experiment('hello_config_dict')
+ex = Experiment()
 
 # We add message to the configuration of the experiment here
 ex.add_config({

@@ -8,7 +8,9 @@ Release History
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
 * API Change: changed the mongoDB layout
-
+* API Change: the name passed to Experiment is now optional and defaults to the
+              name of the file in which it was instantiated.
+              (The name is still required for interactive mode)
 
 
 

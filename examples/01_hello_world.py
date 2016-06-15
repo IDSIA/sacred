@@ -7,17 +7,17 @@ Not much to see here. But it comes with a command-line interface and can be
 called like this::
 
   $ ./01_hello_world.py
-  INFO - hello_world - Running command 'main'
-  WARNING - hello_world - No observers have been added to this run
-  INFO - hello_world - Started
+  INFO - 01_hello_world - Running command 'main'
+  WARNING - 01_hello_world - No observers have been added to this run
+  INFO - 01_hello_world - Started
   Hello world!
-  INFO - hello_world - Completed after 0:00:00
+  INFO - 01_hello_world - Completed after 0:00:00
 
 As you can see it prints 'Hello world!' as expected, but there is also some
 additional logging. The log-level can be controlled using the ``-l`` argument::
 
   $ ./01_hello_world.py -l WARNING
-  WARNING - hello_world - No observers have been added to this run
+  WARNING - 01_hello_world - No observers have been added to this run
   Hello world!
 
 If you want to learn more about the command-line interface try
@@ -26,7 +26,7 @@ If you want to learn more about the command-line interface try
 from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
-# Create an Experiment instance and provide it with a name
+# Create an Experiment instance
 ex = Experiment()
 
 

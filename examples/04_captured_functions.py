@@ -20,8 +20,6 @@ When run, this example will output the following::
 """
 from __future__ import division, print_function, unicode_literals
 
-from time import sleep
-
 from sacred import Experiment
 
 ex = Experiment('captured_functions')
@@ -40,7 +38,6 @@ def foo(message):
 
 @ex.capture
 def bar(message):
-    sleep(10)
     print(message.format('bar'))
 
 
