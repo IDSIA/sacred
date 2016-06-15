@@ -21,7 +21,7 @@ Let's jump right into it. This is a minimal experiment using Sacred:
 
     from sacred import Experiment
 
-    ex = Experiment('hello_world')
+    ex = Experiment()
 
     @ex.automain
     def my_main():
@@ -29,7 +29,7 @@ Let's jump right into it. This is a minimal experiment using Sacred:
 
 We did three things here:
   - import ``Experiment`` from ``sacred``
-  - create an experiment instance ``ex`` and pass it the name 'hello_world'
+  - create an experiment instance ``ex``
   - decorate the function that we want to run with ``@ex.automain``
 
 This experiment can be run from the command-line, and this is what we get::

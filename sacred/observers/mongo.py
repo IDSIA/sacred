@@ -85,15 +85,21 @@ def force_bson_encodeable(obj):
 
 
 class MongoObserver(RunObserver):
+    COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
+                                 'system.indexes', 'labwatch.seach_space'}
+
     @staticmethod
-    def create(url='localhost', db_name='sacred', prefix='default',
+    def create(url='localhost', db_name='sacred', collection='runs',
                overwrite=None, **kwargs):
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         for manipulator in SON_MANIPULATORS:
             database.add_son_manipulator(manipulator)
-        runs_collection = database[prefix + '.runs']
-        fs = gridfs.GridFS(database, collection=prefix)
+        if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
+            raise KeyError('Collection name "{}" is reserved. '
+                           'Please use a different one.'.format(collection))
+        runs_collection = database[collection]
+        fs = gridfs.GridFS(database)
         return MongoObserver(runs_collection, fs, overwrite=overwrite)
 
     def __init__(self, runs_collection, fs, overwrite=None):
@@ -252,7 +258,7 @@ class MongoDbOption(CommandLineOption):
 
     arg = 'DB'
     arg_description = "Database specification. Can be " \
-                      "[host:port:]db_name[.prefix]"
+                      "[host:port:]db_name[.collection]"
 
     DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
     HOSTNAME_PATTERN = \
@@ -269,10 +275,10 @@ class MongoDbOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        url, db_name, prefix = cls.parse_mongo_db_arg(args)
-        if prefix:
+        url, db_name, collection = cls.parse_mongo_db_arg(args)
+        if collection:
             mongo = MongoObserver.create(db_name=db_name, url=url,
-                                         prefix=prefix)
+                                         collection=collection)
         else:
             mongo = MongoObserver.create(db_name=db_name, url=url)
 
@@ -281,14 +287,14 @@ class MongoDbOption(CommandLineOption):
     @classmethod
     def parse_mongo_db_arg(cls, mongo_db):
         if cls.DB_NAME.match(mongo_db):
-            db_name, _, prefix = mongo_db.partition('.')
-            return 'localhost:27017', db_name, prefix
+            db_name, _, collection = mongo_db.partition('.')
+            return 'localhost:27017', db_name, collection
         elif cls.URL.match(mongo_db):
             return mongo_db, 'sacred', ''
         elif cls.URL_DB_NAME.match(mongo_db):
             match = cls.URL_DB_NAME.match(mongo_db)
-            db_name, _, prefix = match.group('db_name').partition('.')
-            return match.group('url'), db_name, prefix
+            db_name, _, collection = match.group('db_name').partition('.')
+            return match.group('url'), db_name, collection
         else:
             raise ValueError('mongo_db argument must have the form "db_name" '
                              'or "host:port[:db_name]" but was {}'

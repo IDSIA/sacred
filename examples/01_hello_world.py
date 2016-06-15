@@ -27,7 +27,7 @@ from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
 # Create an Experiment instance and provide it with a name
-ex = Experiment('hello_world')
+ex = Experiment()
 
 
 # This function should be executed so we are decorating it with @ex.automain

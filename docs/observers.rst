@@ -86,16 +86,19 @@ If additional arguments need to be passed to the MongoClient they can just be in
 
 Database Entry
 ==============
-The MongoObserver creates three collections with a common prefix
-(default is ``default`` but can be changed) to store information. The first,
-``default.runs``, is the main collection that contains one entry for each run.
-The other two (``default.files``, ``default.chunks``) are used to store
-associated files in the database (compare
-`GridFS <http://docs.mongodb.org/manual/core/gridfs/>`_).
+The MongoObserver creates three collections to store information. The first,
+``runs`` (that name can be changed), is the main collection that contains one
+entry for each run.
+The other two (``fs.files``, ``fs.chunks``) are used to store associated files
+in the database (compare `GridFS <http://docs.mongodb.org/manual/core/gridfs/>`_).
 
-So here is an example entry in the ``default.runs`` collection::
+.. note::
+    This is the new database layout introduced in version 0.7.0.
+    Before that there was a common prefix `default` for all collections.
 
-    > db.default.runs.find()[0]
+So here is an example entry in the ``runs`` collection::
+
+    > db.runs.find()[0]
     {
         "_id" : ObjectId("5507248a1239672ae04591e2"),
         "status" : "COMPLETED",
@@ -144,10 +147,10 @@ As you can see a lot of relevant information is being stored, among it the
 used configuration, automatically detected package dependencies and information
 about the host.
 
-If we take a look at the ``default.files`` collection we can also see, that
+If we take a look at the ``fs.files`` collection we can also see, that
 it stored the sourcecode of the experiment in the database::
 
-    > db.default.files.find()[0]
+    > db.fs.files.find()[0]
     {
         "_id" : ObjectId("5507248a1239672ae04591e3"),
         "filename" : "$(HOME)/sacred/examples/03_hello_config_scope.py",
