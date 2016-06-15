@@ -143,13 +143,26 @@ But that also means it requires more setup for each experiment and
 configuration needs to be done using files.
 Use this project if you need to run non-python experiments, or are ok with the additional setup/configuration overhead.
 
+
+`Future Gadget Laboratory <https://github.com/Kaixhin/FGLab>`_
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   | FGLab is a machine learning dashboard, designed to make prototyping
+   | experiments easier. Experiment details and results are sent to a database,
+   | which allows analytics to be performed after their completion. The server
+   | is FGLab, and the clients are FGMachines.
+
+Similar to Sumatra, FGLab is an external tool that can keep track of runs from
+any program. Projects are configured via a JSON schema and the program needs to
+accept these configurations via command-line options.
+FGLab also takes the role of a basic scheduler by distributing runs over several
+machines.
+
+
 `CDE <https://github.com/pgbovine/CDE/>`_
 +++++++++++++++++++++++++++++++++++++++++
 By tracing system calls during program execution CDE creates a snapshot of
 **all** used files and libraries to guarantee the ability to reproduce any unix
 program execution. It *only* solves reproducibility, but it does so thoroughly.
-
-
 
 
 License
