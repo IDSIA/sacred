@@ -107,16 +107,21 @@ class Run(object):
 
         See also :py:meth:`sacred.Experiment.open_resource`.
 
-        :param filename: name of the file that should be opened
-        :type filename: str
-        :return: the opened file-object
-        :rtype: file
+        Parameters
+        ----------
+        filename : str
+            name of the file that should be opened
+
+        Returns
+        -------
+        file
+            the opened file-object
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
         return open(filename, 'r')  # TODO: How to deal with binary mode?
 
-    def add_artifact(self, filename):
+    def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
@@ -125,17 +130,29 @@ class Run(object):
 
         See also :py:meth:`sacred.Experiment.add_artifact`.
 
-        :param filename: name of the file to be stored as artifact
-        :type filename: str
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as artifact
+        name : str, optional
+            optionally set the name of the artifact.
+            Defaults to the relative file-path.
         """
         filename = os.path.abspath(filename)
-        self._emit_artifact_added(filename)
+        name = os.path.relpath(filename) if name is None else name
+        self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
         """Start this run.
 
-        :param args: parameters passed to the main function
-        :return: the return value of the main function
+        Parameters
+        ----------
+        *args
+            parameters passed to the main function
+
+        Returns
+        -------
+            the return value of the main function
         """
         if self.start_time is not None:
             raise RuntimeError('A run can only be started once. '
@@ -274,9 +291,11 @@ class Run(object):
         for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
-    def _emit_artifact_added(self, filename):
+    def _emit_artifact_added(self, name, filename):
         for observer in self.observers:
-            self._safe_call(observer, 'artifact_event', filename=filename)
+            self._safe_call(observer, 'artifact_event',
+                            name=name,
+                            filename=filename)
 
     def _safe_call(self, obs, method, **kwargs):
         if obs not in self._failed_observers and hasattr(obs, method):

@@ -13,5 +13,5 @@ def test_run_observer():
     assert r.completed_event(datetime.now(), 123) is None
     assert r.interrupted_event(datetime.now(), "INTERRUPTED") is None
     assert r.failed_event(datetime.now(), 'trace') is None
-    assert r.artifact_event('foo.txt') is None
+    assert r.artifact_event('foo', 'foo.txt') is None
     assert r.resource_event('foo.txt') is None

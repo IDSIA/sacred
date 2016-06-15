@@ -11,7 +11,8 @@ Release History
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
               (The name is still required for interactive mode)
-
+* API Change: Artifacts can now be named, and are stored by the observers under
+              that name.
 
 
 0.6.10 (2016-??-??)

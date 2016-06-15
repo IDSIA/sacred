@@ -36,14 +36,14 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        name : str
+        name : str, optional
             Optional name of this experiment, defaults to the filename.
             (Required in interactive mode)
 
-        ingredients : list[sacred.Ingredient]
+        ingredients : list[sacred.Ingredient], optional
             A list of ingredients to be used with this experiment.
 
-        interactive : bool
+        interactive : bool, optional
             If set to True will allow the experiment to be run in interactive
             mode (e.g. IPython or Jupyter notebooks).
             However, this mode is discouraged since it won't allow storing the
@@ -125,13 +125,13 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        config_updates : dict
+        config_updates : dict, optional
             Changes to the configuration as a nested dictionary
 
-        named_configs : list[str]
+        named_configs : list[str], optional
             list of names of named_configs to use
 
-        meta_info : dict
+        meta_info : dict, optional
             Additional meta information for this run.
 
         Returns
@@ -154,16 +154,16 @@ class Experiment(Ingredient):
         command_name : str
             Name of the command to be run.
 
-        config_updates : dict
+        config_updates : dict, optional
             A dictionary of parameter values that should be updates. (optional)
 
-        named_configs : list[str]
+        named_configs : list[str], optional
             List of names of named configurations to use. (optional)
 
-        args : dict
+        args : dict, optional
             Dictionary of command-line options.
 
-        meta_info : dict
+        meta_info : dict, optional
             Additional meta information for this run.
 
         Returns
@@ -195,7 +195,7 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        argv : list[str]
+        argv : list[str], optional
             Split command-line like ``sys.argv``.
 
         Returns
@@ -254,7 +254,7 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename)
 
-    def add_artifact(self, filename):
+    def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
@@ -268,9 +268,12 @@ class Experiment(Ingredient):
         ----------
         filename : str
             name of the file to be stored as artifact
+        name : str, optional
+            optionally set the name of the artifact.
+            Defaults to the relative file-path.
         """
         assert self.current_run is not None, "Can only be called during a run."
-        self.current_run.add_artifact(filename)
+        self.current_run.add_artifact(filename, name)
 
     @property
     def info(self):

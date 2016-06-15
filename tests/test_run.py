@@ -119,8 +119,8 @@ def test_run_heartbeat_event(run):
 def test_run_artifact_event(run):
     observer = run.observers[0]
     handle, f_name = tempfile.mkstemp()
-    run.add_artifact(f_name)
-    observer.artifact_event.assert_called_with(filename=f_name)
+    run.add_artifact(f_name, name='foobar')
+    observer.artifact_event.assert_called_with(filename=f_name, name='foobar')
     os.close(handle)
     os.remove(f_name)
 

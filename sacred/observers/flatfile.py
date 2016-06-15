@@ -70,10 +70,10 @@ class FlatfileObserver(RunObserver):
             json.dump(obj, f, indent=2, sort_keys=True,
                       default=json_serial)
 
-    def save_file(self, filename):
+    def save_file(self, filename, target_name=None):
         from shutil import copyfile
-        fn = os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, fn))
+        target_name = target_name or os.path.basename(filename)
+        copyfile(filename, os.path.join(self.dir, target_name))
 
     def save_cout(self):
         with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
@@ -128,9 +128,9 @@ class FlatfileObserver(RunObserver):
         self.run_entry['resources'].append((filename, md5hash))
         self.save_json(self.run_entry, 'run.json')
 
-    def artifact_event(self, filename):
-        self.save_file(filename)
-        self.run_entry['artifacts'].append(filename)
+    def artifact_event(self, name, filename):
+        self.save_file(filename, name)
+        self.run_entry['artifacts'].append(name)
         self.save_json(self.run_entry, 'run.json')
 
 

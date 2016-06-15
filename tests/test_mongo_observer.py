@@ -144,11 +144,12 @@ def test_mongo_observer_artifact_event(mongo_obs):
                             None)
 
     filename = "setup.py"
+    name = 'mysetup'
 
-    mongo_obs.artifact_event(filename)
+    mongo_obs.artifact_event(name, filename)
 
     assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]['filename'].endswith(filename)
+    assert mongo_obs.fs.put.call_args[1]['filename'].endswith(name)
 
     db_run = mongo_obs.runs.find_one()
     assert db_run['artifacts']

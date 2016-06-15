@@ -59,10 +59,9 @@ class Artifact(Base):
     __tablename__ = 'artifact'
 
     @classmethod
-    def create(cls, filename):
-        head, tail = os.path.split(filename)
+    def create(cls, name, filename):
         with open(filename, 'rb') as f:
-            return cls(filename=tail, content=f.read())
+            return cls(filename=name, content=f.read())
 
     id = sa.Column(sa.Integer, primary_key=True)
     filename = sa.Column(sa.String(64))
@@ -287,8 +286,8 @@ class SqlObserver(RunObserver):
         self.run.resources.append(res)
         self.session.commit()
 
-    def artifact_event(self, filename):
-        a = Artifact.create(filename)
+    def artifact_event(self, name, filename):
+        a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
         self.session.commit()
 
