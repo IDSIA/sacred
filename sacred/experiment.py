@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import inspect
+import os.path
 import sys
 from collections import OrderedDict
 
@@ -29,14 +30,15 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name, ingredients=(), interactive=False):
+    def __init__(self, name=None, ingredients=(), interactive=False):
         """
         Create a new experiment with the given name and optional ingredients.
 
         Parameters
         ----------
         name : str
-            The name of this experiment.
+            Optional name of this experiment, defaults to the filename.
+            (Required in interactive mode)
 
         ingredients : list[sacred.Ingredient]
             A list of ingredients to be used with this experiment.
@@ -48,6 +50,14 @@ class Experiment(Ingredient):
             source-code or reliable reproduction of the runs.
         """
         caller_globals = inspect.stack()[1][0].f_globals
+        if name is None and interactive:
+            raise(RuntimeError('name is required in interactive mode.'))
+        elif name is None:
+            name = os.path.basename(caller_globals['__file__'])
+            if name.endswith('.py'):
+                name = name[:-3]
+            elif name.endswith('.pyc'):
+                name = name[:-4]
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
                                          interactive=interactive,
