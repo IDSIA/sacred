@@ -6,8 +6,8 @@ By just using the ``@ex.command`` decorator we can add additional commands to
 the command-line interface of the experiment::
 
   $ ./05_my_commands.py greet
-  INFO - my_commands - Running command 'greet'
   WARNING - my_commands - No observers have been added to this run
+  INFO - my_commands - Running command 'greet'
   INFO - my_commands - Started
   Hello John! Nice to greet you!
   INFO - my_commands - Completed after 0:00:00
@@ -15,8 +15,8 @@ the command-line interface of the experiment::
 ::
 
   $ ./05_my_commands.py shout
-  INFO - my_commands - Running command 'shout'
   WARNING - my_commands - No observers have been added to this run
+  INFO - my_commands - Running command 'shout'
   INFO - my_commands - Started
   WHAZZZUUUUUUUUUUP!!!????
   INFO - my_commands - Completed after 0:00:00
@@ -30,8 +30,8 @@ Of course we can also use ``with`` and other flags with those commands::
 In fact, the main function is also just a command::
 
   $ ./05_my_commands.py main
-  INFO - my_commands - Running command 'main'
   WARNING - my_commands - No observers have been added to this run
+  INFO - my_commands - Running command 'main'
   INFO - my_commands - Started
   This is just the main command. Try greet or shout.
   INFO - my_commands - Completed after 0:00:00

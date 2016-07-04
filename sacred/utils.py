@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import collections
+import ctypes
+import io
 import logging
 import os.path
 import re
+import subprocess
 import sys
+import tempfile
 import traceback as tb
 from contextlib import contextmanager
 
@@ -20,6 +25,10 @@ NO_LOGGER.disabled = 1
 PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
+
+libc = ctypes.CDLL(None)
+c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
 
 
 class CircularDependencyError(Exception):
@@ -85,15 +94,59 @@ class Tee(object):
         self.out2.flush()
 
 
+def flush():
+    libc.fflush(c_stdout)
+    libc.fflush(c_stderr)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
 @contextmanager
 def tee_output():
-    out = StringIO()
-    sys.stdout = Tee(sys.stdout, out)
-    sys.stderr = Tee(sys.stderr, out)
-    yield out
-    sys.stdout = sys.stdout.out1
-    sys.stderr = sys.stderr.out1
-    out.close()
+    try:
+        original_stdout_fd = sys.stdout.fileno()  # The original fd stdout points to. Usually 1 on POSIX systems.
+        original_stderr_fd = sys.stderr.fileno()  # The original fd stderr points to. Usually 2 on POSIX systems.
+    except (io.UnsupportedOperation, AttributeError):
+        original_stdout_fd = 1
+        original_stderr_fd = 2
+
+    # Save a copy of the original stdout and stderr file descriptors
+    saved_stdout_fd = os.dup(original_stdout_fd)
+    saved_stderr_fd = os.dup(original_stderr_fd)
+
+    try:
+        # Create a temporary file and redirect stdout to it
+        with tempfile.NamedTemporaryFile('wb', delete=False) as tfile:
+            try:
+                tee_stdout = subprocess.Popen(['tee', '-a', tfile.name], stdin=subprocess.PIPE)
+                tee_stderr = subprocess.Popen(['tee', '-a', tfile.name], stdin=subprocess.PIPE, stdout=saved_stderr_fd)
+            except FileNotFoundError:
+                tee_stdout = subprocess.Popen([sys.executable, "-m", "sacred.pytee"], stdin=subprocess.PIPE,
+                                              stderr=tfile.fileno())
+                tee_stderr = subprocess.Popen([sys.executable, "-m", "sacred.pytee"], stdin=subprocess.PIPE,
+                                              stdout=tfile.fileno())
+
+            flush()
+            os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
+            os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
+
+            # Yield to caller, then redirect stdout back to the saved fd
+            yield tfile
+
+            flush()
+            tee_stdout.stdin.close()
+            tee_stderr.stdin.close()
+
+            # restore original fds
+            os.dup2(saved_stdout_fd, original_stdout_fd)
+            os.dup2(saved_stderr_fd, original_stderr_fd)
+
+        tee_stdout.wait()
+        tee_stderr.wait()
+
+    finally:
+        os.close(saved_stdout_fd)
+        os.close(saved_stderr_fd)
 
 
 def iterate_flattened_separately(dictionary):

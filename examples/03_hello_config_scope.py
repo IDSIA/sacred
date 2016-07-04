@@ -7,8 +7,8 @@ In this example we configure the message using Sacreds special ``ConfigScope``.
 As with hello_config_dict you can run it like this::
 
   $ ./03_hello_config_scope.py
-  INFO - hello_cs - Running command 'main'
   WARNING - hello_cs - No observers have been added to this run
+  INFO - hello_cs - Running command 'main'
   INFO - hello_cs - Started
   Hello world!
   INFO - hello_cs - Completed after 0:00:00
@@ -17,8 +17,8 @@ The message can also easily be changed using the ``with`` command-line
 argument::
 
   $ ./03_hello_config_scope.py with message='Ciao world!'
-  INFO - hello_cs - Running command 'main'
   WARNING - hello_cs - No observers have been added to this run
+  INFO - hello_cs - Running command 'main'
   INFO - hello_cs - Started
   Ciao world!
   INFO - hello_cs - Completed after 0:00:00
@@ -28,8 +28,8 @@ But because we are using a ``ConfigScope`` that constructs the message from a
 recipient we can also just modify that::
 
   $ ./03_hello_config_scope.py with recipient='Bob'
-  INFO - hello_cs - Running command 'main'
   WARNING - hello_cs - No observers have been added to this run
+  INFO - hello_cs - Running command 'main'
   INFO - hello_cs - Started
   Hello Bob!
   INFO - hello_cs - Completed after 0:00:00

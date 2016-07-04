@@ -8,6 +8,8 @@ def test_example(capsys, example_test):
     ex, call, out = example_test
     ex.run_commandline(call)
     captured_out, captured_err = capsys.readouterr()
+    print(captured_out)
+    print(captured_err)
     captured_out = captured_out.split('\n')
     captured_err = captured_err.split('\n')
     for out_line in out:

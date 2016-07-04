@@ -7,8 +7,8 @@ In this example we configure the message using a dictionary with
 You can run it like this::
 
   $ ./02_hello_config_dict.py
-  INFO - 02_hello_config_dict - Running command 'main'
   WARNING - 02_hello_config_dict - No observers have been added to this run
+  INFO - 02_hello_config_dict - Running command 'main'
   INFO - 02_hello_config_dict - Started
   Hello world!
   INFO - 02_hello_config_dict - Completed after 0:00:00
@@ -17,8 +17,8 @@ The message can also easily be changed using the ``with`` command-line
 argument::
 
   $ ./02_hello_config_dict.py with message='Ciao world!'
-  INFO - 02_hello_config_dict - Running command 'main'
   WARNING - 02_hello_config_dict - No observers have been added to this run
+  INFO - 02_hello_config_dict - Running command 'main'
   INFO - 02_hello_config_dict - Started
   Ciao world!
   INFO - 02_hello_config_dict - Completed after 0:00:00

@@ -7,8 +7,8 @@ Not much to see here. But it comes with a command-line interface and can be
 called like this::
 
   $ ./01_hello_world.py
-  INFO - 01_hello_world - Running command 'main'
   WARNING - 01_hello_world - No observers have been added to this run
+  INFO - 01_hello_world - Running command 'main'
   INFO - 01_hello_world - Started
   Hello world!
   INFO - 01_hello_world - Completed after 0:00:00

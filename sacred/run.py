@@ -92,7 +92,7 @@ class Run(object):
 
         self._heartbeat = None
         self._failed_observers = []
-        self._output_capturer = None
+        self._output_file = None
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -168,7 +168,7 @@ class Run(object):
             self._emit_queued()
             return
 
-        with tee_output() as self._output_capturer:
+        with tee_output() as self._output_file:
             self._emit_started()
             self._start_heartbeat()
             try:
@@ -177,7 +177,6 @@ class Run(object):
                 self._execute_post_run_hooks()
                 self._stop_heartbeat()
                 self._emit_completed(self.result)
-                return self.result
             except KeyboardInterrupt:
                 self._stop_heartbeat()
                 self._emit_interrupted("INTERRUPTED")
@@ -193,8 +192,13 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
-                self._output_capturer.flush()
-                self.captured_out = self._output_capturer.getvalue()
+
+        with open(self._output_file.name, 'rb') as f:
+            f.seek(0)
+            self.captured_out = f.read()
+        os.remove(self._output_file.name)
+
+        return self.result
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -236,11 +240,13 @@ class Run(object):
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
+        command = join_paths(self.main_function.prefix, self.main_function.signature.name)
+        self.run_logger.info("Running command '%s'", command)
         for observer in self.observers:
             if hasattr(observer, 'started_event'):
                 _id = observer.started_event(
                     ex_info=self.experiment_info,
-                    command=join_paths(self.main_function.prefix, self.main_function.signature.name),
+                    command=command,
                     host_info=self.host_info,
                     start_time=self.start_time,
                     config=self.config,
@@ -258,11 +264,10 @@ class Run(object):
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
-        self.captured_out = self._output_capturer.getvalue()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            captured_out=self.captured_out,
+                            captured_out=self._output_file.name,
                             beat_time=beat_time)
 
     def _stop_time(self):
