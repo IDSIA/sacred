@@ -14,6 +14,7 @@ import pymongo
 import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument
 from pymongo.son_manipulator import SONManipulator
+from sacred.__about__ import __version__
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
@@ -87,6 +88,7 @@ def force_bson_encodeable(obj):
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
                                  'system.indexes', 'labwatch.seach_space'}
+    VERSION = 'MongoObserver-0.7'
 
     @staticmethod
     def create(url='localhost', db_name='sacred', collection='runs',
@@ -173,6 +175,7 @@ class MongoObserver(RunObserver):
 
         self.run_entry.update({
             'experiment': dict(ex_info),
+            'format': self.VERSION,
             'command': command,
             'host': dict(host_info),
             'start_time': start_time,

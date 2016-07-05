@@ -8,11 +8,14 @@ Release History
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
 * API Change: changed the mongoDB layout
+              - added format specifier
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
               (The name is still required for interactive mode)
 * API Change: Artifacts can now be named, and are stored by the observers under
               that name.
+* Refactoring: Migrated from six to future, to avoid conflicts with old
+               preinstalled versions of six.
 
 
 0.6.10 (2016-??-??)
