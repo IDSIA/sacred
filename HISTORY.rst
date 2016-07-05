@@ -7,6 +7,7 @@ Release History
 * Feature: added TimeoutInterrupt to signal that a run timed out
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
+* Feature: allow to pass unparsed commandline string to ``ex.run_commandline``.
 * API Change: changed the mongoDB layout
               - added format specifier
 * API Change: the name passed to Experiment is now optional and defaults to the

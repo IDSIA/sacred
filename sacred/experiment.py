@@ -5,8 +5,11 @@ from __future__ import division, print_function, unicode_literals
 
 import inspect
 import os.path
+import shlex
 import sys
 from collections import OrderedDict
+
+from past.builtins import basestring
 
 from sacred.arg_parser import get_config_updates, parse_args
 from sacred.commandline_options import gather_command_line_options, ForceOption
@@ -175,7 +178,8 @@ class Experiment(Ingredient):
         force = args[force_flag] if force_flag in args else False
 
         run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs, meta_info, force=force)
+                                           named_configs, meta_info,
+                                           force=force)
         self.current_run = run
 
         for option in gather_command_line_options():
@@ -195,8 +199,8 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        argv : list[str], optional
-            Split command-line like ``sys.argv``.
+        argv : list[str] or str, optional
+            Command-line as string or list of strings like ``sys.argv``.
 
         Returns
         -------
@@ -205,6 +209,9 @@ class Experiment(Ingredient):
         """
         if argv is None:
             argv = sys.argv
+        elif isinstance(argv, basestring):
+            argv = shlex.split(argv)
+
         all_commands = self.gather_commands()
 
         args = parse_args(argv,

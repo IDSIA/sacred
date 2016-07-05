@@ -39,6 +39,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs):
     del db_run['_id']
     assert db_run == {
         'experiment': exp,
+        'format': mongo_obs.VERSION,
         'command': command,
         'host': host,
         'start_time': T1,
