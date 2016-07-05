@@ -4,6 +4,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
+import shlex
 from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
 
 
@@ -23,7 +24,7 @@ from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
     ('--force', {'--force': True}),
 ])
 def test_parse_individual_arguments(argv, expected):
-    args = parse_args(['test_prog.py'] + argv.split(), print_help=False)
+    args = parse_args(['test_prog.py'] + shlex.split(argv), print_help=False)
     plain = parse_args(['test_prog.py'], print_help=False)
     plain.update(expected)
 

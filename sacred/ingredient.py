@@ -12,7 +12,6 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
-from sacred.initialize import create_run
 from sacred.utils import CircularDependencyError, optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -306,13 +305,3 @@ class Ingredient(object):
             for ingred, depth in ingredient.traverse_ingredients():
                 yield ingred, depth + 1
         self._is_traversing = False
-
-    # ======================== Private Helpers ================================
-
-    def _create_run_for_command(self, command_name, config_updates=None,
-                                named_configs=(), meta_info=None, force=False):
-        run = create_run(self, command_name, config_updates,
-                         named_configs=named_configs, force=force)
-        if meta_info:
-            run.meta_info.update(meta_info)
-        return run

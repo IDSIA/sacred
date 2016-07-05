@@ -37,14 +37,29 @@ class CommandLineOption(object):
 
     @classmethod
     def get_flag(cls):
+        # Get the flag name from the class name
+        flag = cls.__name__
+        if flag.endswith("Option"):
+            flag = flag[:-6]
+        return '--' + convert_camel_case_to_snake_case(flag)
+
+    @classmethod
+    def get_short_flag(cls):
+        if cls.short_flag is None:
+            return '-' + cls.get_flag()[2]
+        else:
+            return '-' + cls.short_flag
+
+    @classmethod
+    def get_flags(cls):
         """
         Return the short and the long version of this option.
 
-        The long flag (e.g. 'foo_bar'; used on the command-line like this:
+        The long flag (e.g. '--foo_bar'; used on the command-line like this:
         --foo_bar[=ARGS]) is derived from the class-name by stripping away any
         -Option suffix and converting the rest to snake_case.
 
-        The short flag (e.g. 'f'; used on the command-line like this:
+        The short flag (e.g. '-f'; used on the command-line like this:
         -f [ARGS]) the short_flag class-member if that is set, or the first
         letter of the long flag otherwise.
 
@@ -53,16 +68,7 @@ class CommandLineOption(object):
         (str, str)
             tuple of short-flag, and long-flag
         """
-        # Get the flag name from the class name
-        flag = cls.__name__
-        if flag.endswith("Option"):
-            flag = flag[:-6]
-        flag = convert_camel_case_to_snake_case(flag)
-
-        if cls.short_flag is None:
-            return flag[:1], flag
-        else:
-            return cls.short_flag, flag
+        return cls.get_short_flag(), cls.get_flag()
 
     @classmethod
     def apply(cls, args, run):

@@ -15,8 +15,8 @@ from sacred.arg_parser import get_config_updates, parse_args
 from sacred.commandline_options import gather_command_line_options, ForceOption
 from sacred.commands import print_config, print_dependencies
 from sacred.ingredient import Ingredient
+from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
-
 __sacred__ = True  # marks files that should be filtered from stack traces
 
 __all__ = ('Experiment',)
@@ -122,12 +122,16 @@ class Experiment(Ingredient):
 
     # =========================== Public Interface ============================
 
-    def run(self, config_updates=None, named_configs=(), meta_info=None):
+    def run(self, command_name=None, config_updates=None, named_configs=(),
+            meta_info=None, options=None):
         """
         Run the main function of the experiment.
 
         Parameters
         ----------
+        command_name : str, optional
+            Name of the command to be run. Defaults to main function.
+
         config_updates : dict, optional
             Changes to the configuration as a nested dictionary
 
@@ -137,59 +141,55 @@ class Experiment(Ingredient):
         meta_info : dict, optional
             Additional meta information for this run.
 
+        options : dict, optional
+            Dictionary of options to use
+
         Returns
         -------
         sacred.run.Run
             the Run object corresponding to the finished run
         """
-        assert self.default_command, "No main function found"
-        return self.run_command(self.default_command,
-                                config_updates=config_updates,
-                                named_configs=named_configs,
-                                meta_info=meta_info)
+        command_name = command_name or self.default_command
+        if command_name is None:
+            raise RuntimeError('No command found to be run. Specify a command '
+                               'or define a main function.')
+
+        default_options = self.get_default_options()
+        if options:
+            default_options.update(options)
+        options = default_options
+
+        run = create_run(self, command_name, config_updates,
+                         named_configs=named_configs,
+                         force=options.get(ForceOption.get_flag(), False))
+
+        if meta_info:
+            run.meta_info.update(meta_info)
+
+        self.current_run = run
+
+        for option in gather_command_line_options():
+            option_value = options.get(option.get_flag(), False)
+            if option_value:
+                option.apply(option_value, run)
+        run()
+        self.current_run = None
+
+        return run
 
     def run_command(self, command_name, config_updates=None,
                     named_configs=(), args=(), meta_info=None):
         """Run the command with the given name.
 
-        Parameters
-        ----------
-        command_name : str
-            Name of the command to be run.
-
-        config_updates : dict, optional
-            A dictionary of parameter values that should be updates. (optional)
-
-        named_configs : list[str], optional
-            List of names of named configurations to use. (optional)
-
-        args : dict, optional
-            Dictionary of command-line options.
-
-        meta_info : dict, optional
-            Additional meta information for this run.
-
-        Returns
-        -------
-        sacred.run.Run
-            The Run object corresponding to the finished run.
+        .. note:: Deprecated in Sacred 0.7
+            run_command() will be removed in Sacred 1.0.
+            It is replaced by run() which can now also handle command_names.
         """
-        force_flag = '--' + ForceOption.get_flag()[1]
-        force = args[force_flag] if force_flag in args else False
-
-        run = self._create_run_for_command(command_name, config_updates,
-                                           named_configs, meta_info,
-                                           force=force)
-        self.current_run = run
-
-        for option in gather_command_line_options():
-            op_name = '--' + option.get_flag()[1]
-            if op_name in args and args[op_name]:
-                option.apply(args[op_name], run)
-        self.current_run.run_logger.info("Running command '%s'", command_name)
-        run()
-        self.current_run = None
-        return run
+        import warnings
+        warnings.warn("run_command is deprecated. Use run instead",
+                      DeprecationWarning)
+        return self.run(command_name, config_updates, named_configs, meta_info,
+                        args)
 
     def run_commandline(self, argv=None):
         """
@@ -221,8 +221,7 @@ class Experiment(Ingredient):
         cmd_name = args.get('COMMAND') or self.default_command
 
         try:
-            return self.run_command(cmd_name, config_updates, named_configs,
-                                    args)
+            return self.run(cmd_name, config_updates, named_configs, {}, args)
         except Exception:
             if not self.current_run or self.current_run.debug:
                 raise
@@ -298,9 +297,35 @@ class Experiment(Ingredient):
         return self.current_run.info
 
     def gather_commands(self):
+        """Iterator over all commands of this experiment.
+
+        Also recursively collects all commands from ingredients.
+
+        Yields
+        ------
+        (str, function)
+            A tuple consisting of the (dotted) command-name and the
+            corresponding captured function.
+        """
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
 
         for ingred in self.ingredients:
             for cmd_name, cmd in ingred.gather_commands():
                 yield cmd_name, cmd
+
+    def get_default_options(self):
+        """Get a dictionary of default options as used with run.
+
+        Returns
+        -------
+        dict
+            A dictionary containing option keys of the form '--beat_interval'.
+            Their values are boolean if the option is a flag, otherwise None or
+            its default value.
+        """
+        all_commands = self.gather_commands()
+        args = parse_args(["dummy"],
+                          description=self.doc,
+                          commands=OrderedDict(all_commands))
+        return {k: v for k, v in args.items() if k.startswith('--')}

@@ -15,7 +15,11 @@ Release History
               (The name is still required for interactive mode)
 * API Change: Artifacts can now be named, and are stored by the observers under
               that name.
-* Refactoring: Migrated from six to future, to avoid conflicts with old
+* API Change: Experiment.run_command is deprecated in favor of run, which now
+              also takes a command_name parameter.
+* API Change: Experiment.run now takes an options argument to add
+              commandline-options also from python.
+* Dependencies: Migrated from six to future, to avoid conflicts with old
                preinstalled versions of six.
 
 

@@ -126,12 +126,12 @@ def _format_options_usage(options):
     """
     options_usage = ""
     for op in options:
-        short, long = op.get_flag()
+        short, long = op.get_flags()
         if op.arg:
-            flag = "-{short} {arg} --{long}={arg}".format(
+            flag = "{short} {arg} {long}={arg}".format(
                 short=short, long=long, arg=op.arg)
         else:
-            flag = "-{short} --{long}".format(short=short, long=long)
+            flag = "{short} {long}".format(short=short, long=long)
 
         wrapped_description = textwrap.wrap(inspect.cleandoc(op.__doc__),
                                             width=79,
