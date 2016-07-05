@@ -9,7 +9,8 @@ import re
 import sys
 
 import pkg_resources
-import six
+from past.builtins import basestring
+
 import sacred.optional as opt
 from sacred.utils import is_subdir, iter_prefixes
 
@@ -145,7 +146,7 @@ class PackageDependency(object):
         for vattr in possible_version_attributes:
             if hasattr(mod, vattr):
                 version = getattr(mod, vattr)
-                if isinstance(version, six.string_types) and \
+                if isinstance(version, basestring) and \
                         PEP440_VERSION_PATTERN.match(version):
                     return version
                 if isinstance(version, tuple):

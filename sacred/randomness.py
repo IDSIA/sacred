@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import random
-from six import integer_types
+from builtins import int    # subclass of long on Py2
 import sacred.optional as opt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -18,7 +18,7 @@ def get_seed(rnd=None):
 
 
 def create_rnd(seed):
-    assert isinstance(seed, integer_types), \
+    assert isinstance(seed, int), \
         "Seed has to be integer but was {} {}".format(repr(seed), type(seed))
     if opt.has_numpy:
         return opt.np.random.RandomState(seed)

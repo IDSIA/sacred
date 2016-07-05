@@ -1,5 +1,5 @@
 docopt
-six
+future
 wrapt
 pytest
 mock

@@ -6,7 +6,7 @@ import os.path
 import re
 import shlex
 import sys
-from six.moves import reload_module
+from imp import reload
 
 EXAMPLES_PATH = os.path.abspath('examples')
 BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)
@@ -52,7 +52,7 @@ def pytest_generate_tests(metafunc):
             example = __import__(example_name)
             calls_outs = get_calls_from_doc(example.__doc__)
             for i, (call, out) in enumerate(calls_outs):
-                example = reload_module(example)
+                example = reload(example)
                 example_tests.append((example.ex, call, out))
                 example_ids.append('{}_{}'.format(example_name, i))
         metafunc.parametrize('example_test', example_tests, ids=example_ids)

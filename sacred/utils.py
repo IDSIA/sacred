@@ -9,7 +9,7 @@ import sys
 import traceback as tb
 from contextlib import contextmanager
 
-from six import StringIO
+from io import StringIO
 import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces

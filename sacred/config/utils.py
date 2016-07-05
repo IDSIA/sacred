@@ -5,13 +5,13 @@ from __future__ import division, print_function, unicode_literals
 import json
 
 import sacred.optional as opt
-import six
+from past.builtins import basestring
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
 from sacred.utils import PYTHON_IDENTIFIER
 
 
 def assert_is_valid_key(key):
-    if not isinstance(key, six.string_types):
+    if not isinstance(key, basestring):
         raise KeyError('Invalid key "{}". Config-keys have to be strings, '
                        'but was {}'.format(key, type(key)))
     elif key.find('.') > -1 or key.find('$') > -1:

@@ -6,7 +6,7 @@ import inspect
 import os.path
 
 from collections import OrderedDict
-from six import string_types
+from past.builtins import basestring
 
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
@@ -206,7 +206,7 @@ class Ingredient(object):
             return ConfigDict(kw_conf)
         elif isinstance(cfg_or_file, dict):
             return ConfigDict(cfg_or_file)
-        elif isinstance(cfg_or_file, string_types):
+        elif isinstance(cfg_or_file, basestring):
             if not os.path.exists(cfg_or_file):
                 raise IOError('File not found {}'.format(cfg_or_file))
             abspath = os.path.abspath(cfg_or_file)
