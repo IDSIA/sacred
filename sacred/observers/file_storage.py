@@ -22,7 +22,7 @@ def json_serial(obj):
     raise TypeError("Type not serializable")
 
 
-class FlatfileObserver(RunObserver):
+class FileStorageObserver(RunObserver):
 
     def __init__(self, basedir):
         if not os.path.exists(basedir):
@@ -134,8 +134,8 @@ class FlatfileObserver(RunObserver):
         self.save_json(self.run_entry, 'run.json')
 
 
-class FlatfileOption(CommandLineOption):
-    """Add a flat-file observer to the experiment."""
+class FileStorageOption(CommandLineOption):
+    """Add a file-storage observer to the experiment."""
 
     short_flag = 'F'
     arg = 'BASEDIR'
@@ -143,5 +143,5 @@ class FlatfileOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        run.observers.append(FlatfileObserver(args))
+        run.observers.append(FileStorageObserver(args))
 
