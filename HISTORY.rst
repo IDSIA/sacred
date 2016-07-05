@@ -8,8 +8,7 @@ Release History
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
 * Feature: allow to pass unparsed commandline string to ``ex.run_commandline``.
-* API Change: changed the mongoDB layout
-              - added format specifier
+* API Change: significantly changed the mongoDB layout
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
               (The name is still required for interactive mode)
@@ -19,8 +18,10 @@ Release History
               also takes a command_name parameter.
 * API Change: Experiment.run now takes an options argument to add
               commandline-options also from python.
+* API Change: Experiment.get_experiment_info() now returns source-names as
+              relative paths and includes a separate base_dir entry
 * Dependencies: Migrated from six to future, to avoid conflicts with old
-               preinstalled versions of six.
+                preinstalled versions of six.
 
 
 0.6.10 (2016-??-??)

@@ -16,7 +16,7 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 @pytest.fixture()
 def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
+    exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'

@@ -63,6 +63,16 @@ class FileStorageObserver(RunObserver):
 
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
+    def save_sources(self, ex_info):
+        base_dir = ex_info['base_dir']
+        source_info = []
+        for s, m in ex_info['sources']:
+            abspath = os.path.join(base_dir, s)
+            store_path, md5sum = self.find_or_save(abspath, self.source_dir)
+            # assert m == md5sum
+            source_info.append([s, os.path.relpath(store_path, self.basedir)])
+        return source_info
+
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
         if _id is None:
@@ -71,13 +81,7 @@ class FileStorageObserver(RunObserver):
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
 
-        sources = []
-        for s, m in ex_info['sources']:
-            store_path, md5sum = self.find_or_save(s, self.source_dir)
-            # assert m == md5sum
-            sources.append([s, os.path.relpath(store_path, self.basedir)])
-
-        ex_info['sources'] = sources
+        ex_info['sources'] = self.save_sources(ex_info)
 
         self.run_entry = {
             'experiment': dict(ex_info),

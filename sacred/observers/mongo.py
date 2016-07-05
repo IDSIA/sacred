@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 import pickle
 import re
+import os.path
 import sys
 import time
 
@@ -108,39 +109,6 @@ class MongoObserver(RunObserver):
         self.overwrite = overwrite
         self.run_entry = None
 
-    def save(self):
-        try:
-            self.runs.save(self.run_entry)
-        except AutoReconnect:
-            pass  # just wait for the next save
-        except InvalidDocument:
-            raise ObserverError('Run contained an unserializable entry.'
-                                '(most likely in the info)')
-
-    def final_save(self, attempts=10):
-        for i in range(attempts):
-            try:
-                self.runs.save(self.run_entry)
-                return
-            except AutoReconnect:
-                if i < attempts - 1:
-                    time.sleep(1)
-            except InvalidDocument:
-                self.run_entry = force_bson_encodeable(self.run_entry)
-                print("Warning: Some of the entries of the run were not "
-                      "BSON-serializable!\n They have been altered such that "
-                      "they can be stored, but you should fix your experiment!"
-                      "Most likely it is either the 'info' or the 'result'.",
-                      file=sys.stderr)
-
-        from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                prefix='sacred_mongo_fail_') as f:
-            pickle.dump(self.run_entry, f)
-            print("Warning: saving to MongoDB failed! "
-                  "Stored experiment entry in '{}'".format(f.name),
-                  file=sys.stderr)
-
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
                      _id):
         if self.overwrite is not None:
@@ -153,15 +121,12 @@ class MongoObserver(RunObserver):
             'meta': meta_info,
             'status': 'QUEUED'
         }
+        # set ID if given
         if _id is not None:
             self.run_entry['_id'] = _id
-
+        # save sources
+        self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
         self.final_save(attempts=1)
-        for source_name, md5 in ex_info['sources']:
-            if not self.fs.exists(filename=source_name, md5=md5):
-                with open(source_name, 'rb') as f:
-                    self.fs.put(f, filename=source_name)
-
         return self.run_entry['_id']
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -191,15 +156,12 @@ class MongoObserver(RunObserver):
             'info': {},
             'heartbeat': None
         })
+        # set ID if given
         if _id is not None:
             self.run_entry['_id'] = _id
-
+        # save sources
+        self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
         self.save()
-        for source_name, md5 in ex_info['sources']:
-            if not self.fs.exists(filename=source_name, md5=md5):
-                with open(source_name, 'rb') as f:
-                    self.fs.put(f, filename=source_name)
-
         return self.run_entry['_id']
 
     def heartbeat_event(self, info, captured_out, beat_time):
@@ -249,6 +211,53 @@ class MongoObserver(RunObserver):
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
         self.save()
+
+    def save(self):
+        try:
+            self.runs.save(self.run_entry)
+        except AutoReconnect:
+            pass  # just wait for the next save
+        except InvalidDocument:
+            raise ObserverError('Run contained an unserializable entry.'
+                                '(most likely in the info)')
+
+    def final_save(self, attempts=10):
+        for i in range(attempts):
+            try:
+                self.runs.save(self.run_entry)
+                return
+            except AutoReconnect:
+                if i < attempts - 1:
+                    time.sleep(1)
+            except InvalidDocument:
+                self.run_entry = force_bson_encodeable(self.run_entry)
+                print("Warning: Some of the entries of the run were not "
+                      "BSON-serializable!\n They have been altered such that "
+                      "they can be stored, but you should fix your experiment!"
+                      "Most likely it is either the 'info' or the 'result'.",
+                      file=sys.stderr)
+
+        from tempfile import NamedTemporaryFile
+        with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                prefix='sacred_mongo_fail_') as f:
+            pickle.dump(self.run_entry, f)
+            print("Warning: saving to MongoDB failed! "
+                  "Stored experiment entry in '{}'".format(f.name),
+                  file=sys.stderr)
+
+    def save_sources(self, ex_info):
+        base_dir = ex_info['base_dir']
+        source_info = []
+        for source_name, md5 in ex_info['sources']:
+            abs_path = os.path.join(base_dir, source_name)
+            file = self.fs.find_one({'filename': abs_path, 'md5': md5})
+            if file:
+                _id = file._id
+            else:
+                with open(abs_path, 'rb') as f:
+                    _id = self.fs.put(f, filename=abs_path)
+            source_info.append([source_name, _id])
+        return source_info
 
     def __eq__(self, other):
         if isinstance(other, MongoObserver):
