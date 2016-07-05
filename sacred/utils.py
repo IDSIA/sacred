@@ -14,7 +14,6 @@ import tempfile
 import traceback as tb
 from contextlib import contextmanager
 
-from io import StringIO
 import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -77,23 +76,6 @@ def recursive_update(d, u):
     return d
 
 
-class Tee(object):
-    def __init__(self, out1, out2):
-        for attr in ['encoding', 'errors', 'name', 'mode', 'closed',
-                     'line_buffering', 'newlines', 'softspace']:
-            setattr(self, attr, getattr(out1, attr, None))
-        self.out1 = out1
-        self.out2 = out2
-
-    def write(self, data):
-        self.out1.write(data)
-        self.out2.write(data)
-
-    def flush(self):
-        self.out1.flush()
-        self.out2.flush()
-
-
 def flush():
     libc.fflush(c_stdout)
     libc.fflush(c_stderr)
@@ -104,9 +86,11 @@ def flush():
 @contextmanager
 def tee_output():
     try:
-        original_stdout_fd = sys.stdout.fileno()  # The original fd stdout points to. Usually 1 on POSIX systems.
-        original_stderr_fd = sys.stderr.fileno()  # The original fd stderr points to. Usually 2 on POSIX systems.
+        # The original fd stdout/stderr point to. Usually 1/2 on POSIX systems
+        original_stdout_fd = sys.stdout.fileno()
+        original_stderr_fd = sys.stderr.fileno()
     except (io.UnsupportedOperation, AttributeError):
+        # This can happen when sys.stdout or sys.stderr have been replaced
         original_stdout_fd = 1
         original_stderr_fd = 2
 
@@ -118,13 +102,18 @@ def tee_output():
         # Create a temporary file and redirect stdout to it
         with tempfile.NamedTemporaryFile('wb', delete=False) as tfile:
             try:
-                tee_stdout = subprocess.Popen(['tee', '-a', tfile.name], stdin=subprocess.PIPE)
-                tee_stderr = subprocess.Popen(['tee', '-a', tfile.name], stdin=subprocess.PIPE, stdout=saved_stderr_fd)
+                tee_stdout = subprocess.Popen(['tee', '-a', tfile.name],
+                                              stdin=subprocess.PIPE)
+                tee_stderr = subprocess.Popen(['tee', '-a', tfile.name],
+                                              stdin=subprocess.PIPE,
+                                              stdout=saved_stderr_fd)
             except FileNotFoundError:
-                tee_stdout = subprocess.Popen([sys.executable, "-m", "sacred.pytee"], stdin=subprocess.PIPE,
-                                              stderr=tfile.fileno())
-                tee_stderr = subprocess.Popen([sys.executable, "-m", "sacred.pytee"], stdin=subprocess.PIPE,
-                                              stdout=tfile.fileno())
+                tee_stdout = subprocess.Popen(
+                    [sys.executable, "-m", "sacred.pytee"],
+                    stdin=subprocess.PIPE, stderr=tfile.fileno())
+                tee_stderr = subprocess.Popen(
+                    [sys.executable, "-m", "sacred.pytee"],
+                    stdin=subprocess.PIPE, stdout=tfile.fileno())
 
             flush()
             os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
@@ -312,6 +301,7 @@ def is_subdir(path, directory):
     return path.startswith(directory)
 
 
+# noinspection PyUnusedLocal
 @wrapt.decorator
 def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
     def _decorated(func):

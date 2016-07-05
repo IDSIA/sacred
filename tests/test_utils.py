@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import ctypes
+import os
+import sys
 
 import pytest
 from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
@@ -8,7 +11,7 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
-                          convert_camel_case_to_snake_case)
+                          convert_camel_case_to_snake_case, tee_output)
 
 
 def test_recursive_update():
@@ -147,3 +150,30 @@ def test_get_inheritors():
 ])
 def test_convert_camel_case_to_snake_case(name, expected):
     assert convert_camel_case_to_snake_case(name) == expected
+
+
+def test_tee_output():
+    libc = ctypes.CDLL(None)
+    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+    c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+
+    print('before (stdout)')
+    print('before (stderr)', file=sys.stderr)
+    with tee_output() as f:
+        print("captured stdout")
+        print("captured stderr", file=sys.stderr)
+        libc.fputs(b'stdout from C\n', c_stdout)
+        libc.fputs(b'stderr from C\n', c_stderr)
+        os.system('echo and this is from echo')
+    print('after (stdout)')
+    print('after (stderr)', file=sys.stderr)
+
+    with open(f.name, 'r') as g:
+        lines = set(g.readlines())
+        assert lines == {
+            "captured stdout\n",
+            "captured stderr\n",
+            "stdout from C\n",
+            "stderr from C\n",
+            "and this is from echo\n"}
+    os.remove(f.name)

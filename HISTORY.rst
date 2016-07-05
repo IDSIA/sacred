@@ -8,6 +8,8 @@ Release History
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
 * Feature: allow to pass unparsed commandline string to ``ex.run_commandline``.
+* Feature: improved stdout/stderr capturing: it now also collects non-python
+           outputs and logging.
 * API Change: significantly changed the mongoDB layout
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
