@@ -6,6 +6,7 @@ import os.path
 import tempfile
 import json
 from datetime import datetime
+from shutil import copyfile
 
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
@@ -25,10 +26,11 @@ def json_serial(obj):
 class FileStorageObserver(RunObserver):
     VERSION = 'FileStorageObserver-0.7.0'
 
-    def __init__(self, basedir):
+    def __init__(self, basedir, resource_dir=None):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         self.basedir = basedir
+        self.resource_dir = resource_dir or os.path.join(basedir, '_resources')
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -98,7 +100,6 @@ class FileStorageObserver(RunObserver):
                       default=json_serial)
 
     def save_file(self, filename, target_name=None):
-        from shutil import copyfile
         target_name = target_name or os.path.basename(filename)
         copyfile(filename, os.path.join(self.dir, target_name))
 
@@ -150,15 +151,32 @@ class FileStorageObserver(RunObserver):
         self.render_template()
 
     def resource_event(self, filename):
-        self.save_file(filename)
+        if not os.path.exists(self.resource_dir):
+            os.makedirs(self.resource_dir)
+
+        res_name, ext = os.path.splitext(os.path.basename(filename))
         md5hash = get_digest(filename)
-        self.run_entry['resources'].append((filename, md5hash))
+        store_name = res_name + '_' + md5hash + ext
+        store_path = os.path.join(self.resource_dir, store_name)
+
+        if not os.path.exists(store_path):
+            copyfile(filename, store_path)
+
+        self.run_entry['resources'].append((store_path, md5hash))
         self.save_json(self.run_entry, 'run.json')
 
     def artifact_event(self, name, filename):
         self.save_file(filename, name)
         self.run_entry['artifacts'].append(name)
         self.save_json(self.run_entry, 'run.json')
+
+    def __eq__(self, other):
+        if isinstance(other, FileStorageObserver):
+            return self.basedir == other.basedir
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class FileStorageOption(CommandLineOption):
