@@ -23,15 +23,42 @@ def json_serial(obj):
 
 
 class FileStorageObserver(RunObserver):
+    VERSION = 'FileStorageObserver-0.7.0'
 
     def __init__(self, basedir):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         self.basedir = basedir
+        self.dir = None
         self.run_entry = None
         self.config = None
         self.info = None
         self.cout = ""
+
+    def queued_event(self, ex_info, command, queue_time, config, meta_info,
+                     _id):
+        if _id is None:
+            self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
+        else:
+            self.dir = os.path.join(self.basedir, str(_id))
+            os.mkdir(self.dir)
+
+        self.run_entry = {
+            'experiment': dict(ex_info),
+            'command': command,
+            'meta': meta_info,
+            'status': 'QUEUED',
+        }
+        self.config = config
+        self.info = {}
+
+        self.save_json(self.run_entry, 'run.json')
+        self.save_json(self.config, 'config.json')
+
+        for s, m in ex_info['sources']:
+            self.save_file(s)
+
+        return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):

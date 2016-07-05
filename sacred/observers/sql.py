@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 import hashlib
 import json
-import os.path
 
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
@@ -234,26 +233,37 @@ class SqlObserver(RunObserver):
         sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
             i = self.session.query(Run).order_by(Run.id.desc()).first()
-            i = -1 if i is None else int(i.id)
-            self.run = Run(id=str(i+1),
-                           start_time=start_time,
-                           config=json.dumps(config, sort_keys=True),
-                           command=command,
-                           priority=meta_info.get('priority', 0),
-                           comment=meta_info.get('comment', ''),
-                           experiment=sql_exp,
-                           host=sql_host,
-                           status='RUNNING')
-        else:
-            self.run = Run(id=_id,
-                           start_time=start_time,
-                           config=json.dumps(config, sort_keys=True),
-                           command=command,
-                           priority=meta_info.get('priority', 0),
-                           comment=meta_info.get('comment', ''),
-                           experiment=sql_exp,
-                           host=sql_host,
-                           status='RUNNING')
+            _id = '0' if i is None else str(int(i.id) + 1)
+
+        self.run = Run(id=_id,
+                       start_time=start_time,
+                       config=json.dumps(config, sort_keys=True),
+                       command=command,
+                       priority=meta_info.get('priority', 0),
+                       comment=meta_info.get('comment', ''),
+                       experiment=sql_exp,
+                       host=sql_host,
+                       status='RUNNING')
+        self.session.add(self.run)
+        self.session.commit()
+        return _id or self.run.id
+
+    def queued_event(self, ex_info, command, queue_time, config, meta_info,
+                     _id):
+
+        Base.metadata.create_all(self.engine)
+        sql_exp = Experiment.get_or_create(ex_info, self.session)
+        if _id is None:
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            _id = '0' if i is None else str(int(i.id) + 1)
+
+        self.run = Run(id=_id,
+                       config=json.dumps(config, sort_keys=True),
+                       command=command,
+                       priority=meta_info.get('priority', 0),
+                       comment=meta_info.get('comment', ''),
+                       experiment=sql_exp,
+                       status='QUEUED')
         self.session.add(self.run)
         self.session.commit()
         return _id or self.run.id

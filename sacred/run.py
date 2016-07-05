@@ -166,7 +166,6 @@ class Run(object):
 
         if self.queue_only:
             self._emit_queued()
-            self.run_logger.info('Queued')
             return
 
         with tee_output() as self._output_capturer:
@@ -212,16 +211,28 @@ class Run(object):
 
     def _emit_queued(self):
         queue_time = datetime.datetime.now()
+        command = join_paths(self.main_function.prefix,
+                             self.main_function.signature.name)
+        self.run_logger.info("Queuing-up command '%s'", command)
         for observer in self.observers:
             if hasattr(observer, 'queued_event'):
-                observer.queued_event(
+                _id = observer.queued_event(
                     ex_info=self.experiment_info,
+                    command=command,
                     queue_time=queue_time,
                     config=self.config,
-                    meta_info=self.meta_info
+                    meta_info=self.meta_info,
+                    _id = self._id
                 )
+                if self._id is None:
+                    self._id = _id
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
+
+        if self._id is None:
+            self.run_logger.info('Queued')
+        else:
+            self.run_logger.info('Queued-up run with ID "{}"'.format(self._id))
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()

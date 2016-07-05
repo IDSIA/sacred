@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import os.path
 import pickle
 import re
 import sys
@@ -14,7 +13,6 @@ import pymongo
 import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument
 from pymongo.son_manipulator import SONManipulator
-from sacred.__about__ import __version__
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
@@ -88,7 +86,7 @@ def force_bson_encodeable(obj):
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
                                  'system.indexes', 'labwatch.seach_space'}
-    VERSION = 'MongoObserver-0.7'
+    VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
     def create(url='localhost', db_name='sacred', collection='runs',
@@ -143,7 +141,8 @@ class MongoObserver(RunObserver):
                   "Stored experiment entry in '{}'".format(f.name),
                   file=sys.stderr)
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info):
+    def queued_event(self, ex_info, command, queue_time, config, meta_info,
+                     _id):
         if self.overwrite is not None:
             raise RuntimeError("Can't overwrite with QUEUED run.")
         meta_info['queue_time'] = queue_time
@@ -154,12 +153,16 @@ class MongoObserver(RunObserver):
             'meta': meta_info,
             'status': 'QUEUED'
         }
+        if _id is not None:
+            self.run_entry['_id'] = _id
 
         self.final_save(attempts=1)
         for source_name, md5 in ex_info['sources']:
             if not self.fs.exists(filename=source_name, md5=md5):
                 with open(source_name, 'rb') as f:
                     self.fs.put(f, filename=source_name)
+
+        return self.run_entry['_id']
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
