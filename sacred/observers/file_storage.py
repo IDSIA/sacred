@@ -26,11 +26,12 @@ def json_serial(obj):
 class FileStorageObserver(RunObserver):
     VERSION = 'FileStorageObserver-0.7.0'
 
-    def __init__(self, basedir, resource_dir=None):
+    def __init__(self, basedir, resource_dir=None, source_dir=None):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         self.basedir = basedir
         self.resource_dir = resource_dir or os.path.join(basedir, '_resources')
+        self.source_dir = source_dir or os.path.join(basedir, '_sources')
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -70,6 +71,14 @@ class FileStorageObserver(RunObserver):
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
 
+        sources = []
+        for s, m in ex_info['sources']:
+            store_path, md5sum = self.find_or_save(s, self.source_dir)
+            # assert m == md5sum
+            sources.append([s, os.path.relpath(store_path, self.basedir)])
+
+        ex_info['sources'] = sources
+
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
@@ -89,10 +98,18 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.config, 'config.json')
         self.save_cout()
 
-        for s, m in ex_info['sources']:
-            self.save_file(s)
-
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
+
+    def find_or_save(self, filename, store_dir):
+        if not os.path.exists(store_dir):
+            os.makedirs(store_dir)
+        source_name, ext = os.path.splitext(os.path.basename(filename))
+        md5sum = get_digest(filename)
+        store_name = source_name + '_' + md5sum + ext
+        store_path = os.path.join(store_dir, store_name)
+        if not os.path.exists(store_path):
+            copyfile(filename, store_path)
+        return store_path, md5sum
 
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), 'w') as f:
@@ -151,18 +168,8 @@ class FileStorageObserver(RunObserver):
         self.render_template()
 
     def resource_event(self, filename):
-        if not os.path.exists(self.resource_dir):
-            os.makedirs(self.resource_dir)
-
-        res_name, ext = os.path.splitext(os.path.basename(filename))
-        md5hash = get_digest(filename)
-        store_name = res_name + '_' + md5hash + ext
-        store_path = os.path.join(self.resource_dir, store_name)
-
-        if not os.path.exists(store_path):
-            copyfile(filename, store_path)
-
-        self.run_entry['resources'].append((store_path, md5hash))
+        store_path, md5sum = self.find_or_save(filename, self.resource_dir)
+        self.run_entry['resources'].append((filename, store_path))
         self.save_json(self.run_entry, 'run.json')
 
     def artifact_event(self, name, filename):

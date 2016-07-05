@@ -4,15 +4,15 @@ from __future__ import division, print_function, unicode_literals
 import datetime
 import hashlib
 import json
-import os.path
 import tempfile
-
+from copy import copy
 import pytest
 
 from observers.file_storage import FileStorageObserver
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+
 
 @pytest.fixture()
 def sample_run():
@@ -60,6 +60,30 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
         "artifacts": [],
         "status": "RUNNING"
     }
+
+
+def test_fs_observer_started_event_stores_source(dir_obs, sample_run):
+    basedir, obs = dir_obs
+
+    with tempfile.NamedTemporaryFile(suffix='.py') as f:
+        f.write(b'import sacred\n')
+        f.flush()
+        f.seek(0)
+        md5sum = hashlib.md5(f.read()).hexdigest()
+
+        sample_run['ex_info']['sources'] = [[f.name, md5sum]]
+
+        _id = obs.started_event(**sample_run)
+        run_dir = basedir.join(_id)
+
+    assert run_dir.exists()
+    run = json.loads(run_dir.join('run.json').read())
+    ex_info = copy(run['experiment'])
+    assert ex_info['sources'][0][0] == f.name
+    source_path = ex_info['sources'][0][1]
+    source = basedir.join(source_path)
+    assert source.exists()
+    assert source.read() == 'import sacred\n'
 
 
 def test_fs_observer_started_event_uses_given_id(dir_obs, sample_run):
@@ -154,7 +178,6 @@ def test_fs_observer_resource_event(dir_obs, sample_run):
         f.write(b'foo\nbar')
         f.flush()
         obs.resource_event(f.name)
-        md5sum = hashlib.md5(open(f.name, 'rb').read()).hexdigest()
 
     res_dir = basedir.join('_resources')
     assert res_dir.exists()
@@ -163,19 +186,18 @@ def test_fs_observer_resource_event(dir_obs, sample_run):
 
     run = json.loads(run_dir.join('run.json').read())
     assert len(run['resources']) == 1
-    assert run['resources'][0] == [res_dir.listdir()[0].strpath, md5sum]
+    assert run['resources'][0] == [f.name, res_dir.listdir()[0].strpath]
 
 
 def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run):
     basedir, obs = dir_obs
     obs2 = FileStorageObserver(obs.basedir)
-    _id = obs.started_event(**sample_run)
+    obs.started_event(**sample_run)
 
     with tempfile.NamedTemporaryFile(suffix='.py') as f:
         f.write(b'foo\nbar')
         f.flush()
         obs.resource_event(f.name)
-        md5sum = hashlib.md5(open(f.name, 'rb').read()).hexdigest()
         # let's have another run from a different observer
         sample_run['_id'] = None
         _id = obs2.started_event(**sample_run)
@@ -189,7 +211,7 @@ def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run):
 
     run = json.loads(run_dir.join('run.json').read())
     assert len(run['resources']) == 1
-    assert run['resources'][0] == [res_dir.listdir()[0].strpath, md5sum]
+    assert run['resources'][0] == [f.name, res_dir.listdir()[0].strpath]
 
 
 def test_fs_observer_equality(dir_obs):
@@ -200,6 +222,3 @@ def test_fs_observer_equality(dir_obs):
 
     assert not obs == 'foo'
     assert obs != 'foo'
-
-
-

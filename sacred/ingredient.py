@@ -12,6 +12,7 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
+from sacred.initialize import create_run
 from sacred.utils import CircularDependencyError, optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -37,6 +38,8 @@ class Ingredient(object):
 
     def __init__(self, path, ingredients=(), interactive=False,
                  _caller_globals=None):
+        mainfile_name = _caller_globals.get('__file__')
+        self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
         self.path = path
         self.config_hooks = []
         self.configurations = []
@@ -290,7 +293,8 @@ class Ingredient(object):
 
         return dict(
             name=self.path,
-            sources=[s.to_json() for s in sorted(sources)],
+            base_dir=self.base_dir,
+            sources=[s.to_json(self.base_dir) for s in sorted(sources)],
             dependencies=[d.to_json() for d in sorted(dependencies)],
             repositories=collect_repositories(sources)
         )
@@ -305,3 +309,6 @@ class Ingredient(object):
             for ingred, depth in ingredient.traverse_ingredients():
                 yield ingred, depth + 1
         self._is_traversing = False
+
+    # ======================== Private Helpers ================================
+

@@ -10,7 +10,6 @@ import sys
 
 import pkg_resources
 from past.builtins import basestring
-
 import sacred.optional as opt
 from sacred.utils import is_subdir, iter_prefixes
 
@@ -89,8 +88,11 @@ class Source(object):
         repo, commit, is_dirty = get_commit_if_possible(main_file)
         return Source(main_file, get_digest(main_file), repo, commit, is_dirty)
 
-    def to_json(self):
-        return self.filename, self.digest
+    def to_json(self, base_dir=None):
+        if base_dir:
+            return os.path.relpath(self.filename, base_dir), self.digest
+        else:
+            return self.filename, self.digest
 
     def __hash__(self):
         return hash(self.filename)
