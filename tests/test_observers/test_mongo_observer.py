@@ -8,8 +8,7 @@ import mock
 import mongomock
 import pytest
 from sacred.dependencies import get_digest
-from sacred.observers.mongo import (MongoObserver, MongoDbOption,
-                                    force_bson_encodeable)
+from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 from sacred import optional as opt
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -26,32 +25,54 @@ def mongo_obs():
     return MongoObserver(runs, fs)
 
 
-def test_mongo_observer_started_event_creates_run(mongo_obs):
+@pytest.fixture()
+def sample_run():
     exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
     meta_info = {'comment': 'test run'}
-    mongo_obs.started_event(exp, command, host, T1, config, meta_info, None)
+    return {
+        '_id': 'FEDCBA9876543210',
+        'ex_info': exp,
+        'command': command,
+        'host_info': host,
+        'start_time': T1,
+        'config': config,
+        'meta_info': meta_info,
+    }
 
+
+def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
+    sample_run['_id'] = None
+    _id = mongo_obs.started_event(**sample_run)
+    assert _id is not None
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
-    del db_run['_id']
     assert db_run == {
-        'experiment': exp,
+        '_id': _id,
+        'experiment': sample_run['ex_info'],
         'format': mongo_obs.VERSION,
-        'command': command,
-        'host': host,
-        'start_time': T1,
+        'command': sample_run['command'],
+        'host': sample_run['host_info'],
+        'start_time': sample_run['start_time'],
         'heartbeat': None,
         'info': {},
         'captured_out': '',
         'artifacts': [],
-        'config': config,
-        'meta': meta_info,
+        'config': sample_run['config'],
+        'meta': sample_run['meta_info'],
         'status': 'RUNNING',
         'resources': []
     }
+
+
+def test_mongo_observer_started_event_uses_given_id(mongo_obs, sample_run):
+    _id = mongo_obs.started_event(**sample_run)
+    assert _id == sample_run['_id']
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['_id'] == sample_run['_id']
 
 
 def test_mongo_observer_equality(mongo_obs):
@@ -65,13 +86,8 @@ def test_mongo_observer_equality(mongo_obs):
     assert mongo_obs != 'foo'
 
 
-def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    command = 'run'
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
@@ -84,13 +100,8 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs):
     assert db_run['captured_out'] == outp
 
 
-def test_mongo_observer_completed_event_updates_run(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     mongo_obs.completed_event(stop_time=T2, result=42)
 
@@ -101,13 +112,8 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs):
     assert db_run['status'] == 'COMPLETED'
 
 
-def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_interrupted_event_updates_run(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     mongo_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
 
@@ -117,13 +123,8 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs):
     assert db_run['status'] == 'INTERRUPTED'
 
 
-def test_mongo_observer_failed_event_updates_run(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2,
@@ -136,13 +137,8 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs):
     assert db_run['fail_trace'] == fail_trace
 
 
-def test_mongo_observer_artifact_event(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_artifact_event(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     filename = "setup.py"
     name = 'mysetup'
@@ -156,13 +152,8 @@ def test_mongo_observer_artifact_event(mongo_obs):
     assert db_run['artifacts']
 
 
-def test_mongo_observer_resource_event(mongo_obs):
-    exp = {'name': 'test_exp', 'sources': [], 'doc': ''}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    mongo_obs.started_event(exp, command, host, T1, config, {'comment': '...'},
-                            None)
+def test_mongo_observer_resource_event(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
 
     filename = "setup.py"
     md5 = get_digest(filename)
@@ -256,48 +247,3 @@ def test_pandas_to_json_son_manipulator():
                                      'C': {'0': 0.0, '1': 0.0, '2': 1.0}}
     assert mod_doc['nested']['ones'] == {"0": 1.0, "1": 1.0, "2": 1.0,
                                          "3": 1.0, "4": 1.0}
-
-
-# ###################### MongoDbOption ###################################### #
-
-def test_parse_mongo_db_arg():
-    assert MongoDbOption.parse_mongo_db_arg('foo') == ('localhost:27017',
-                                                       'foo', '')
-
-
-def test_parse_mongo_db_arg_collection():
-    assert MongoDbOption.parse_mongo_db_arg('foo.bar') == ('localhost:27017',
-                                                           'foo', 'bar')
-
-
-def test_parse_mongo_db_arg_hostname():
-    assert MongoDbOption.parse_mongo_db_arg('localhost:28017') == \
-        ('localhost:28017', 'sacred', '')
-
-    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017') == \
-        ('www.mymongo.db:28017', 'sacred', '')
-
-    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017') == \
-        ('123.45.67.89:27017', 'sacred', '')
-
-
-def test_parse_mongo_db_arg_hostname_dbname():
-    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo') == \
-        ('localhost:28017', 'foo', '')
-
-    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar') == \
-        ('www.mymongo.db:28017', 'bar', '')
-
-    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz') == \
-        ('123.45.67.89:27017', 'baz', '')
-
-
-def test_parse_mongo_db_arg_hostname_dbname_collection_name():
-    assert MongoDbOption.parse_mongo_db_arg('localhost:28017:foo.bar') == \
-        ('localhost:28017', 'foo', 'bar')
-
-    assert MongoDbOption.parse_mongo_db_arg('www.mymongo.db:28017:bar.baz') ==\
-        ('www.mymongo.db:28017', 'bar', 'baz')
-
-    assert MongoDbOption.parse_mongo_db_arg('123.45.67.89:27017:baz.foo') == \
-        ('123.45.67.89:27017', 'baz', 'foo')
