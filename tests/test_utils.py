@@ -6,6 +6,8 @@ import os
 import sys
 
 import pytest
+import tempfile
+
 from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           get_by_dotted_path, is_prefix, is_subdir,
                           iter_path_splits, iter_prefixes, iterate_flattened,
@@ -153,27 +155,27 @@ def test_convert_camel_case_to_snake_case(name, expected):
 
 
 def test_tee_output():
-    libc = ctypes.CDLL(None)
-    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
-    c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+    from sacred.optional import libc
 
-    print('before (stdout)')
-    print('before (stderr)', file=sys.stderr)
-    with tee_output() as f:
-        print("captured stdout")
-        print("captured stderr", file=sys.stderr)
-        libc.fputs(b'stdout from C\n', c_stdout)
-        libc.fputs(b'stderr from C\n', c_stderr)
-        os.system('echo and this is from echo')
-    print('after (stdout)')
-    print('after (stderr)', file=sys.stderr)
+    try:
+        print('before (stdout)')
+        print('before (stderr)', file=sys.stderr)
+        with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
+            print("captured stdout")
+            print("captured stderr", file=sys.stderr)
+            libc.puts(b'stdout from C')
+            os.system('echo and this is from echo')
 
-    with open(f.name, 'r') as g:
-        lines = set(g.readlines())
-        assert lines == {
-            "captured stdout\n",
-            "captured stderr\n",
-            "stdout from C\n",
-            "stderr from C\n",
-            "and this is from echo\n"}
-    os.remove(f.name)
+        print('after (stdout)')
+        print('after (stderr)', file=sys.stderr)
+
+        with open(f.name, 'r') as f:
+            lines = set(f.readlines())
+            assert lines == {
+                "captured stdout\n",
+                "captured stderr\n",
+                "stdout from C\n",
+                "and this is from echo\n"}
+    finally:
+        print('deleting', f.name)
+        os.remove(f.name)

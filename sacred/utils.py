@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import collections
-import ctypes
 import io
 import logging
 import os.path
@@ -16,6 +15,8 @@ from contextlib import contextmanager
 
 import wrapt
 
+from sacred.optional import libc
+
 __sacred__ = True  # marks files that should be filtered from stack traces
 
 NO_LOGGER = logging.getLogger('ignore')
@@ -25,9 +26,18 @@ PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
-libc = ctypes.CDLL(None)
-c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
-c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+
+def flush():
+    """Try to flush all stdio buffers, both from python and from C."""
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except (AttributeError, ValueError, IOError):
+        pass  # unsupported
+    try:
+        libc.fflush(None)
+    except (AttributeError, ValueError, IOError):
+        pass  # unsupported
 
 
 class CircularDependencyError(Exception):
@@ -76,15 +86,12 @@ def recursive_update(d, u):
     return d
 
 
-def flush():
-    libc.fflush(c_stdout)
-    libc.fflush(c_stderr)
-    sys.stdout.flush()
-    sys.stderr.flush()
-
-
+# Duplicate stdout and stderr to a file. Inspired by:
+# http://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/
+# http://stackoverflow.com/a/651718/1388435
+# http://stackoverflow.com/a/22434262/1388435
 @contextmanager
-def tee_output():
+def tee_output(target):
     try:
         # The original fd stdout/stderr point to. Usually 1/2 on POSIX systems
         original_stdout_fd = sys.stdout.fileno()
@@ -98,41 +105,41 @@ def tee_output():
     saved_stdout_fd = os.dup(original_stdout_fd)
     saved_stderr_fd = os.dup(original_stderr_fd)
 
+    target_fd = target.fileno()
+
     try:
-        # Create a temporary file and redirect stdout to it
-        with tempfile.NamedTemporaryFile('wb', delete=False) as tfile:
-            try:
-                tee_stdout = subprocess.Popen(['tee', '-a', tfile.name],
-                                              stdin=subprocess.PIPE)
-                tee_stderr = subprocess.Popen(['tee', '-a', tfile.name],
-                                              stdin=subprocess.PIPE,
-                                              stdout=saved_stderr_fd)
-            except FileNotFoundError:
-                tee_stdout = subprocess.Popen(
-                    [sys.executable, "-m", "sacred.pytee"],
-                    stdin=subprocess.PIPE, stderr=tfile.fileno())
-                tee_stderr = subprocess.Popen(
-                    [sys.executable, "-m", "sacred.pytee"],
-                    stdin=subprocess.PIPE, stdout=tfile.fileno())
+        try:
+            tee_stdout = subprocess.Popen(
+                ['tee', '-a', '/dev/stderr'],
+                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
+            tee_stderr = subprocess.Popen(
+                ['tee', '-a', '/dev/stderr'],
+                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
+        except FileNotFoundError:
+            tee_stdout = subprocess.Popen(
+                [sys.executable, "-m", "sacred.pytee"],
+                stdin=subprocess.PIPE, stderr=target_fd)
+            tee_stderr = subprocess.Popen(
+                [sys.executable, "-m", "sacred.pytee"],
+                stdin=subprocess.PIPE, stdout=target_fd)
 
-            flush()
-            os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
-            os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
+        flush()
+        os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
+        os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
 
-            # Yield to caller, then redirect stdout back to the saved fd
-            yield tfile
+        yield  # let the caller do their printing
 
-            flush()
-            tee_stdout.stdin.close()
-            tee_stderr.stdin.close()
+        # then redirect stdout back to the saved fd
+        flush()
+        tee_stdout.stdin.close()
+        tee_stderr.stdin.close()
 
-            # restore original fds
-            os.dup2(saved_stdout_fd, original_stdout_fd)
-            os.dup2(saved_stderr_fd, original_stderr_fd)
+        # restore original fds
+        os.dup2(saved_stdout_fd, original_stdout_fd)
+        os.dup2(saved_stderr_fd, original_stderr_fd)
 
         tee_stdout.wait()
         tee_stderr.wait()
-
     finally:
         os.close(saved_stdout_fd)
         os.close(saved_stderr_fd)

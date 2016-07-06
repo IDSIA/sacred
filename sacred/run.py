@@ -8,6 +8,8 @@ import sys
 import threading
 import traceback
 
+import tempfile
+
 from sacred.randomness import set_global_seed
 from sacred.utils import tee_output, ObserverError, TimeoutInterrupt, join_paths
 
@@ -167,36 +169,38 @@ class Run(object):
         if self.queue_only:
             self._emit_queued()
             return
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
+                self._output_file = f.name
+                self._emit_started()
+                self._start_heartbeat()
+                try:
+                    self._execute_pre_run_hooks()
+                    self.result = self.main_function(*args)
+                    self._execute_post_run_hooks()
+                    self._stop_heartbeat()
+                    self._emit_completed(self.result)
+                except KeyboardInterrupt:
+                    self._stop_heartbeat()
+                    self._emit_interrupted("INTERRUPTED")
+                    raise
+                except TimeoutInterrupt:
+                    self._stop_heartbeat()
+                    self._emit_interrupted("TIMEOUT")
+                    raise
+                except:
+                    exc_type, exc_value, trace = sys.exc_info()
+                    self._stop_heartbeat()
+                    self._emit_failed(exc_type, exc_value, trace.tb_next)
+                    raise
+                finally:
+                    self._warn_about_failed_observers()
 
-        with tee_output() as self._output_file:
-            self._emit_started()
-            self._start_heartbeat()
-            try:
-                self._execute_pre_run_hooks()
-                self.result = self.main_function(*args)
-                self._execute_post_run_hooks()
-                self._stop_heartbeat()
-                self._emit_completed(self.result)
-            except KeyboardInterrupt:
-                self._stop_heartbeat()
-                self._emit_interrupted("INTERRUPTED")
-                raise
-            except TimeoutInterrupt:
-                self._stop_heartbeat()
-                self._emit_interrupted("TIMEOUT")
-                raise
-            except:
-                exc_type, exc_value, trace = sys.exc_info()
-                self._stop_heartbeat()
-                self._emit_failed(exc_type, exc_value, trace.tb_next)
-                raise
-            finally:
-                self._warn_about_failed_observers()
-
-        with open(self._output_file.name, 'rb') as f:
-            f.seek(0)
-            self.captured_out = f.read()
-        os.remove(self._output_file.name)
+            with open(self._output_file, 'r') as f:
+                self.captured_out = f.read()
+        finally:
+            if self._output_file:
+                os.remove(self._output_file)
 
         return self.result
 
@@ -267,7 +271,7 @@ class Run(object):
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            captured_out=self._output_file.name,
+                            captured_out=self._output_file,
                             beat_time=beat_time)
 
     def _stop_time(self):

@@ -7,6 +7,8 @@ import datetime
 import mock
 import mongomock
 import pytest
+import tempfile
+
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 from sacred import optional as opt
@@ -91,7 +93,11 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(outp.encode())
+        f.flush()
+        mongo_obs.heartbeat_event(info=info, cout_filename=f.name,
+                                  beat_time=T2)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()

@@ -45,7 +45,7 @@ def test_run_run(run):
     assert (run.start_time - datetime.now()).total_seconds() < 1
     assert (run.stop_time - datetime.now()).total_seconds() < 1
     assert run.result == 123
-    assert run.captured_out == b''
+    assert run.captured_out == ''
 
 
 def test_run_emits_events_if_successful(run):
@@ -112,7 +112,7 @@ def test_run_heartbeat_event(run):
     run()
     call_args, call_kwargs = observer.heartbeat_event.call_args_list[0]
     assert call_kwargs['info'] == run.info
-    assert call_kwargs['captured_out'] == run._output_file.name
+    assert call_kwargs['captured_out'] == run._output_file
     assert (call_kwargs['beat_time'] - datetime.now()).total_seconds() < 1
 
 

@@ -24,6 +24,22 @@ def optional_import(package_name):
     except ImportError:
         return False, None
 
+
+# Get libc in a cross-platform way and use it to also flush the c stdio buffers
+# credit to J.F. Sebastians SO answer from here:
+# http://stackoverflow.com/a/22434262/1388435
+try:
+    import ctypes
+    from ctypes.util import find_library
+except ImportError:
+    has_libc, libc = False, None
+else:
+    try:
+        has_libc, libc = True, ctypes.cdll.msvcrt  # Windows
+    except OSError:
+        has_libc, libc = True, ctypes.cdll.LoadLibrary(find_library('c'))
+
+
 has_pymongo, pymongo = optional_import('pymongo')
 has_numpy, np = optional_import('numpy')
 has_yaml, yaml = optional_import('yaml')
