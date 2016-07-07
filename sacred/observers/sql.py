@@ -36,6 +36,10 @@ class Source(Base):
     md5sum = sa.Column(sa.String(32))
     content = sa.Column(sa.Text)
 
+    def to_json(self):
+        return {'filename': self.filename,
+                'md5sum': self.md5sum}
+
 
 class Dependency(Base):
     __tablename__ = 'dependency'
@@ -53,6 +57,9 @@ class Dependency(Base):
     name = sa.Column(sa.String(32))
     version = sa.Column(sa.String(16))
 
+    def to_json(self):
+        return "{}=={}".format(self.name, self.version)
+
 
 class Artifact(Base):
     __tablename__ = 'artifact'
@@ -68,6 +75,10 @@ class Artifact(Base):
 
     run_id = sa.Column(sa.Integer, sa.ForeignKey('run.id'))
     run = sa.orm.relationship("Run", backref=sa.orm.backref('artifacts'))
+
+    def to_json(self):
+        return {'_id': self.id,
+                'filename': self.filename}
 
 
 class Resource(Base):
@@ -87,6 +98,10 @@ class Resource(Base):
     filename = sa.Column(sa.String(256))
     md5sum = sa.Column(sa.String(32))
     content = sa.Column(sa.LargeBinary)
+
+    def to_json(self):
+        return {'filename': self.filename,
+                'md5sum': self.md5sum}
 
 
 class Host(Base):
@@ -110,6 +125,12 @@ class Host(Base):
     os = sa.Column(sa.String(16))
     os_info = sa.Column(sa.String(64))
     python_version = sa.Column(sa.String(16))
+
+    def to_json(self):
+        return {'cpu': self.cpu,
+                'hostname': self.hostname,
+                'os': [self.os, self.os_info],
+                'python_version': self.python_version}
 
 
 experiment_source_association = sa.Table(
@@ -145,11 +166,12 @@ class Experiment(Base):
                    for s, md5 in ex_info['sources']]
 
         return cls(name=name, dependencies=dependencies, sources=sources,
-                   md5sum=md5)
+                   md5sum=md5, base_dir=ex_info['base_dir'])
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(32))
     md5sum = sa.Column(sa.String(32))
+    base_dir = sa.Column(sa.String(64))
     sources = sa.orm.relationship("Source",
                                   secondary=experiment_source_association,
                                   backref="experiments")
@@ -158,6 +180,11 @@ class Experiment(Base):
         secondary=experiment_dependency_association,
         backref="experiments")
 
+    def to_json(self):
+        return {'name': self.name,
+                'base_dir': self.base_dir,
+                'sources': [s.to_json() for s in self.sources],
+                'dependencies': [d.to_json() for d in self.dependencies]}
 
 run_resource_association = sa.Table(
     'runs_resources', Base.metadata,
@@ -210,6 +237,28 @@ class Run(Base):
                                     backref="runs")
 
     result = sa.Column(sa.Float)
+
+    def to_json(self):
+        return {
+            '_id': self.id,
+            'command': self.command,
+            'start_time': self.start_time,
+            'heartbeat': self.heartbeat,
+            'stop_time': self.stop_time,
+            'queue_time': self.queue_time,
+            'status': self.status,
+            'result': self.result,
+            'meta': {
+                'comment': self.comment,
+                'priority': self.priority},
+            'resources': [r.to_json() for r in self.resources],
+            'artifacts': [a.to_json() for a in self.artifacts],
+            'host': self.host.to_json(),
+            'experiment': self.experiment.to_json(),
+            'config': json.loads(self.config),
+            'captured_out': self.captured_out,
+            'fail_trace': self.fail_trace,
+        }
 
 
 # ############################# Observer #################################### #
@@ -301,6 +350,20 @@ class SqlObserver(RunObserver):
         a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
         self.session.commit()
+
+    def query(self, _id):
+        run = self.session.query(Run).filter_by(id=_id).first()
+        return run.to_json()
+
+    def __eq__(self, other):
+        if isinstance(other, SqlObserver):
+            # fixme: this will probably fail to detect two equivalent engines
+            return (self.engine == other.engine and
+                    self.session == other.session)
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 # ######################## Commandline Option ############################### #

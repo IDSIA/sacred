@@ -56,3 +56,9 @@ def pytest_generate_tests(metafunc):
                 example_tests.append((example.ex, call, out))
                 example_ids.append('{}_{}'.format(example_name, i))
         metafunc.parametrize('example_test', example_tests, ids=example_ids)
+
+
+def pytest_addoption(parser):
+    parser.addoption("--sqlalchemy-connect-url", action="store",
+                     default='sqlite://',
+                     help="Name of the database to connect to")

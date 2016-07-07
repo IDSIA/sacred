@@ -271,7 +271,7 @@ class Run(object):
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            captured_out=self._output_file,
+                            cout_filename=self._output_file,
                             beat_time=beat_time)
 
     def _stop_time(self):
