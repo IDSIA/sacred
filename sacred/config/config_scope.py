@@ -5,6 +5,8 @@ from __future__ import division, print_function, unicode_literals
 import ast
 import inspect
 import re
+from tokenize import tokenize, TokenError, COMMENT
+import io
 from copy import copy
 
 from sacred.config.config_summary import ConfigSummary
@@ -161,14 +163,25 @@ def get_function_body_code(func):
 
 
 def find_doc_for(ast_entry, body_lines):
-    lineno = ast_entry.lineno - 2
+    lineno = ast_entry.lineno - 1
+    line_io = io.BytesIO(body_lines[lineno].encode())
+    try:
+        line_comments = [t.string for t in tokenize(line_io.readline)
+                         if t.type == COMMENT]
+        if line_comments:
+            return line_comments[0][1:].strip()
+    except TokenError:
+        pass
+
+
+    lineno -= 1
     while lineno >= 0:
         if iscomment(body_lines[lineno]):
             return body_lines[lineno].strip('# ')
         if not body_lines[lineno].strip() == '':
-            return ''
+            return None
         lineno -= 1
-    return ''
+    return None
 
 
 def get_config_comments(func):
@@ -180,10 +193,28 @@ def get_config_comments(func):
 
     variables = {'seed': 'the random seed for this experiment'}
 
-    for ast_entry in body_code.body:
-        if isinstance(ast_entry, ast.Assign) and isinstance(ast_entry.targets[0], ast.Name):
-            name = ast_entry.targets[0].id
+    def add_doc(target):
+        if isinstance(target, ast.Name):
+            # if it is a variable name add it to the doc
+            name = target.id
             if name not in variables:
-                variables[name] = find_doc_for(ast_entry, body_lines)
+                doc = find_doc_for(target, body_lines)
+                if doc is not None:
+                    variables[name] = doc
+        elif isinstance(target, ast.Tuple):
+            # if it is a tuple then iterate the elements
+            # this can happen like this:
+            # a, b = 1, 2
+            for e in target.elts:
+                add_doc(e)
+
+    for ast_entry in body_code.body:
+        if isinstance(ast_entry, ast.Assign):
+            # we found an assignment statement
+            # go through all targets of the assignment
+            # usually a single entry, but can be more for statements like:
+            # a = b = 5
+            for t in ast_entry.targets:
+                add_doc(t)
 
     return variables
