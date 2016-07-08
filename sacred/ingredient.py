@@ -308,6 +308,3 @@ class Ingredient(object):
             for ingred, depth in ingredient.traverse_ingredients():
                 yield ingred, depth + 1
         self._is_traversing = False
-
-    # ======================== Private Helpers ================================
-

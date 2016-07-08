@@ -228,7 +228,7 @@ class Run(object):
                     queue_time=queue_time,
                     config=self.config,
                     meta_info=self.meta_info,
-                    _id = self._id
+                    _id=self._id
                 )
                 if self._id is None:
                     self._id = _id
@@ -242,7 +242,8 @@ class Run(object):
 
     def _emit_started(self):
         self.start_time = datetime.datetime.now()
-        command = join_paths(self.main_function.prefix, self.main_function.signature.name)
+        command = join_paths(self.main_function.prefix,
+                             self.main_function.signature.name)
         self.run_logger.info("Running command '%s'", command)
         for observer in self.observers:
             if hasattr(observer, 'started_event'):

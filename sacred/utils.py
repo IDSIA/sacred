@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import collections
-import io
 import logging
 import os.path
 import re
@@ -98,14 +97,8 @@ def recursive_update(d, u):
 # http://stackoverflow.com/a/22434262/1388435
 @contextmanager
 def tee_output(target):
-    try:
-        # The original fd stdout/stderr point to. Usually 1/2 on POSIX systems
-        original_stdout_fd = sys.stdout.fileno()
-        original_stderr_fd = sys.stderr.fileno()
-    except (io.UnsupportedOperation, AttributeError):
-        # This can happen when sys.stdout or sys.stderr have been replaced
-        original_stdout_fd = 1
-        original_stderr_fd = 2
+    original_stdout_fd = 1
+    original_stderr_fd = 2
 
     # Save a copy of the original stdout and stderr file descriptors
     saved_stdout_fd = os.dup(original_stdout_fd)

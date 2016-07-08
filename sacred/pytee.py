@@ -9,7 +9,3 @@ if __name__ == '__main__':
         buffer = sys.stdin.read()
         sys.stdout.write(buffer)
         sys.stderr.write(buffer)
-
-
-
-

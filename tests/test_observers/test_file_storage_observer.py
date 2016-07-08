@@ -8,7 +8,7 @@ import tempfile
 from copy import copy
 import pytest
 
-from observers.file_storage import FileStorageObserver
+from sacred.observers.file_storage import FileStorageObserver
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)

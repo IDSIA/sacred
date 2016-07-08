@@ -28,7 +28,6 @@ if opt.has_sqlalchemy:
 else:
     SqlObserver = opt.MissingDependencyMock('sqlalchemy')
 
-
     class SqlOption(CommandLineOption):
         """To use the SqlObserver you need to install sqlalchemy first."""
 

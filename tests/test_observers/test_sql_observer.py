@@ -8,13 +8,14 @@ import pytest
 import tempfile
 from sacred.dependencies import get_digest
 
+sqlalchemy = pytest.importorskip("sqlalchemy")
+
 from sacred.observers.sql import (SqlObserver, Host, Experiment, Run, Source,
                                   Resource)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
-sqlalchemy = pytest.importorskip("sqlalchemy")
 
 
 @pytest.fixture(scope="module")

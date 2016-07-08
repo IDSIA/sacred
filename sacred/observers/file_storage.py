@@ -15,8 +15,7 @@ from sacred import optional as opt
 
 
 def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
+    """JSON serializer for objects not serializable by default json code."""
     if isinstance(obj, datetime):
         serial = obj.isoformat()
         return serial
@@ -198,4 +197,3 @@ class FileStorageOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.observers.append(FileStorageObserver(args))
-

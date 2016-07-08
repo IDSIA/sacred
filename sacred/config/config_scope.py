@@ -4,9 +4,10 @@ from __future__ import division, print_function, unicode_literals
 
 import ast
 import inspect
-import re
-from tokenize import tokenize, TokenError, COMMENT
 import io
+import re
+import sys
+from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 from copy import copy
 
 from sacred.config.config_summary import ConfigSummary
@@ -166,13 +167,16 @@ def find_doc_for(ast_entry, body_lines):
     lineno = ast_entry.lineno - 1
     line_io = io.BytesIO(body_lines[lineno].encode())
     try:
-        line_comments = [t.string for t in tokenize(line_io.readline)
-                         if t.type == COMMENT]
+        if sys.version_info[0] >= 3:
+            tokens = tokenize(line_io.readline) or []
+            line_comments = [t.string for t in tokens if t.type == COMMENT]
+        else:  # sys.version[0] == 2:
+            tokens = generate_tokens(line_io.readline)
+            line_comments = [s for (t, s, _, _, _) in tokens if t == COMMENT]
         if line_comments:
-            return line_comments[0][1:].strip()
+                return line_comments[0][1:].strip()
     except TokenError:
         pass
-
 
     lineno -= 1
     while lineno >= 0:

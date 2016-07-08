@@ -267,8 +267,7 @@ class SqlObserver(RunObserver):
     @classmethod
     def create(cls, url, echo=False):
         engine = sa.create_engine(url, echo=echo)
-        Session = sessionmaker(bind=engine)
-        return cls(engine, Session())
+        return cls(engine, sessionmaker(bind=engine)())
 
     def __init__(self, engine, session):
         self.engine = engine
@@ -369,7 +368,6 @@ class SqlObserver(RunObserver):
 # ######################## Commandline Option ############################### #
 
 class SqlOption(CommandLineOption):
-
     """Add a SQL Observer to the experiment."""
 
     arg = 'DB_URL'

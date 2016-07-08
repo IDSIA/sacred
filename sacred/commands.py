@@ -2,7 +2,6 @@
 # coding=utf-8
 """Defines the stock-commands that every sacred experiment ships with."""
 from __future__ import division, print_function, unicode_literals
-import os.path
 
 import pprint
 import pydoc
@@ -22,7 +21,8 @@ LEGEND = '(' + BLUE + 'modified' + ENDC +\
     ', ' + GREEN + 'added' + ENDC +\
     ', ' + RED + 'typechanged' + ENDC + ')'
 
-ConfigEntry = namedtuple('ConfigEntry', 'key value added modified typechanged doc')
+ConfigEntry = namedtuple('ConfigEntry',
+                         'key value added modified typechanged doc')
 PathEntry = namedtuple('PathEntry', 'key added modified typechanged doc')
 
 

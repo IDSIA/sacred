@@ -173,8 +173,7 @@ class UnobservedOption(CommandLineOption):
 
 
 class QueueOption(CommandLineOption):
-
-    """ Only queue this run, do not start it."""
+    """Only queue this run, do not start it."""
 
     @classmethod
     def apply(cls, args, run):

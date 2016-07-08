@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import pymongo
 import gridfs
 from datetime import datetime, timedelta
-import time
 from sacred.observers import MongoObserver
 
 
@@ -21,6 +19,8 @@ class MongoAssistant(object):
 
     def mark_dead_runs(self):
         """
+        Find and mark all dead runs.
+
         Find all runs with a RUNNING status but no heartbeat within the last
         minute and set their status to DIED.
         """
@@ -31,7 +31,7 @@ class MongoAssistant(object):
         )
 
     def get_status(self):
-        """Return a summary of how many runs are in each status"""
+        """Return a summary of how many runs are in each status."""
         self.mark_dead_runs()
         pipeline = [{'$group': {'_id': '$status', 'count': {'$sum': 1}}}]
         return {r['_id']: r['count'] for r in self.runs.aggregate(pipeline)}
@@ -100,8 +100,8 @@ def _check_sources(ex_sources, run_sources):
         if not ex_source == tuple(run_source):
             raise KeyError('Source files did not match: experiment:'
                            ' {} [{}] != {} [{}] (run)'.format(
-                            ex_source[0], ex_source[1],
-                            run_source[0], run_source[1]))
+                               ex_source[0], ex_source[1],
+                               run_source[0], run_source[1]))
 
 
 def _check_names(ex_name, run_name):

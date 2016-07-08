@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-from setuptools import setup, Extension
+from setuptools import setup
 
 classifiers = """
 Development Status :: 5 - Production/Stable
@@ -45,6 +45,5 @@ setup(
 
     classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',
-    long_description=open('README.rst').read(),
-    ext_modules=[Extension('sacred.mytee4', sources=['sacred/mytee4.c'])]
+    long_description=open('README.rst').read()
 )
