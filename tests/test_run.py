@@ -9,7 +9,7 @@ import tempfile
 
 from sacred.run import Run
 from sacred.config.config_summary import ConfigSummary
-from sacred.utils import ObserverError
+from sacred.utils import ObserverError, SacredInterrupt, TimeoutInterrupt
 
 
 @pytest.fixture
@@ -59,15 +59,23 @@ def test_run_emits_events_if_successful(run):
     assert not observer.failed_event.called
 
 
-def test_run_emits_events_if_interrupted(run):
+@pytest.mark.parametrize('exception,status', [
+    (KeyboardInterrupt, 'INTERRUPTED'),
+    (SacredInterrupt, 'INTERRUPTED'),
+    (TimeoutInterrupt, 'TIMEOUT'),
+])
+def test_run_emits_events_if_interrupted(run, exception, status):
     observer = run.observers[0]
-    run.main_function.side_effect = KeyboardInterrupt
-    with pytest.raises(KeyboardInterrupt):
+    run.main_function.side_effect = exception
+    with pytest.raises(exception):
         run()
     assert observer.started_event.called
     assert observer.heartbeat_event.called
     assert not observer.completed_event.called
     assert observer.interrupted_event.called
+    observer.interrupted_event.assert_called_with(
+        interrupt_time=run.stop_time,
+        status=status)
     assert not observer.failed_event.called
 
 
@@ -112,7 +120,7 @@ def test_run_heartbeat_event(run):
     run()
     call_args, call_kwargs = observer.heartbeat_event.call_args_list[0]
     assert call_kwargs['info'] == run.info
-    assert call_kwargs['captured_out'] == run._output_file
+    assert call_kwargs['cout_filename'] == run._output_file
     assert (call_kwargs['beat_time'] - datetime.now()).total_seconds() < 1
 
 

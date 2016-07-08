@@ -9,7 +9,6 @@ import os.path
 import re
 import subprocess
 import sys
-import tempfile
 import traceback as tb
 from contextlib import contextmanager
 
@@ -48,13 +47,20 @@ class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
 
 
-class TimeoutInterrupt(Exception):
+class SacredInterrupt(Exception):
+    """Base-Class for all custom interrupts of runs."""
 
+    STATUS = "INTERRUPTED"
+
+
+class TimeoutInterrupt(SacredInterrupt):
     """Signal a that the experiment timed out.
 
     This exception can be used in client code to indicate that the run
     exceeded its time limit and has been interrupted because of that.
     """
+
+    STATUS = "TIMEOUT"
 
 
 def create_basic_stream_logger():

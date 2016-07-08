@@ -11,7 +11,8 @@ import traceback
 import tempfile
 
 from sacred.randomness import set_global_seed
-from sacred.utils import tee_output, ObserverError, TimeoutInterrupt, join_paths
+from sacred.utils import tee_output, ObserverError, SacredInterrupt, join_paths
+
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -180,13 +181,10 @@ class Run(object):
                     self._execute_post_run_hooks()
                     self._stop_heartbeat()
                     self._emit_completed(self.result)
-                except KeyboardInterrupt:
+                except (SacredInterrupt, KeyboardInterrupt) as e:
                     self._stop_heartbeat()
-                    self._emit_interrupted("INTERRUPTED")
-                    raise
-                except TimeoutInterrupt:
-                    self._stop_heartbeat()
-                    self._emit_interrupted("TIMEOUT")
+                    status = getattr(e, 'STATUS', 'INTERRUPTED')
+                    self._emit_interrupted(status)
                     raise
                 except:
                     exc_type, exc_value, trace = sys.exc_info()
