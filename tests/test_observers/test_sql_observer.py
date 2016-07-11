@@ -122,7 +122,7 @@ def test_sql_observer_started_event_uses_given_id(sql_obs, sample_run, session):
     assert _id == sample_run['_id']
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
-    assert db_run.id == sample_run['_id']
+    assert db_run.run_id == sample_run['_id']
 
 
 def test_fs_observer_started_event_saves_source(sql_obs, sample_run, session):

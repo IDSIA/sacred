@@ -1,8 +1,10 @@
 Release History
 ---------------
 
-0.7.0 (2016-06-??)
+0.7.0 (2016-07-??)
 ++++++++++++++++++
+* Feature: added new SqlObserver
+* Feature: added new FileStorageObserver
 * Feature: added queue flag to just queue a run instead of executing it
 * Feature: added TimeoutInterrupt to signal that a run timed out
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
@@ -24,11 +26,8 @@ Release History
               relative paths and includes a separate base_dir entry
 * Dependencies: Migrated from six to future, to avoid conflicts with old
                 preinstalled versions of six.
-
-
-0.6.10 (2016-??-??)
-+++++++++++++++++++
 * Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
+
 
 0.6.9 (2016-01-16)
 ++++++++++++++++++

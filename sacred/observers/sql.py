@@ -77,7 +77,7 @@ class Artifact(Base):
     run = sa.orm.relationship("Run", backref=sa.orm.backref('artifacts'))
 
     def to_json(self):
-        return {'_id': self.id,
+        return {'_id': self.artifact_id,
                 'filename': self.filename}
 
 
@@ -244,7 +244,7 @@ class Run(Base):
 
     def to_json(self):
         return {
-            '_id': self.id,
+            '_id': self.run_id,
             'command': self.command,
             'start_time': self.start_time,
             'heartbeat': self.heartbeat,
@@ -285,7 +285,7 @@ class SqlObserver(RunObserver):
         sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
             i = self.session.query(Run).order_by(Run.run_id.desc()).first()
-            _id = '0' if i is None else str(int(i.id) + 1)
+            _id = '0' if i is None else str(int(i.run_id) + 1)
 
         self.run = Run(run_id=_id,
                        start_time=start_time,

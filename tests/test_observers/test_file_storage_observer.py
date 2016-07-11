@@ -34,7 +34,7 @@ def sample_run():
 
 @pytest.fixture()
 def dir_obs(tmpdir):
-    return tmpdir, FileStorageObserver(tmpdir.strpath)
+    return tmpdir, FileStorageObserver.create(tmpdir.strpath)
 
 
 def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
@@ -193,7 +193,7 @@ def test_fs_observer_resource_event(dir_obs, sample_run):
 
 def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run):
     basedir, obs = dir_obs
-    obs2 = FileStorageObserver(obs.basedir)
+    obs2 = FileStorageObserver.create(obs.basedir)
     obs.started_event(**sample_run)
 
     with tempfile.NamedTemporaryFile(suffix='.py') as f:
@@ -218,7 +218,7 @@ def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run):
 
 def test_fs_observer_equality(dir_obs):
     basedir, obs = dir_obs
-    obs2 = FileStorageObserver(obs.basedir)
+    obs2 = FileStorageObserver.create(obs.basedir)
     assert obs == obs2
     assert not obs != obs2
 
