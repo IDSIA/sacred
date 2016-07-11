@@ -20,8 +20,8 @@ your own :ref:`custom_observer`.
 
 .. _mongo_observer:
 
-MongoObserver
-=============
+Mongo Observer
+==============
 The MongoObserver is the recommended way of storing the run information from
 Sacred.
 MongoDB allows very powerful querying of the entries that can deal with
@@ -173,8 +173,8 @@ it stored the sourcecode of the experiment in the database::
 
 .. _file_observer:
 
-FileStorageObserver
-===================
+File Storage Observer
+=====================
 The FileStorageObserver is the most basic observer and requires the least
 amount of setup.
 It is mostly meant for preliminary experiments and cases when setting up a
@@ -284,6 +284,45 @@ The FileStorageObserver will then render that template into a
 ``mako`` is a very powerful templating engine that can execute
 arbitrary python-code, so be careful about the templates you use.
 For an example see ``sacred/examples/my_runs/template.html``.
+
+.. _sql_observer:
+
+SQL Observer
+============
+The SqlObserver saves all the relevant information in a set of SQL tables.
+It requires the `sqlalchemy <http://www.sqlalchemy.org/>`_ package to be
+installed.
+
+Adding a SqlObserver
+--------------------
+The SqlObserver can be added from the command-line via the
+``-s DB_URL`` and  ``--sql=DB_URL`` flags::
+
+    >> ./my_experiment.py -s DB_URL
+    >> ./my_experiment.py --sql=DB_URL
+
+Here ``DB_URL`` is a url specifying the dialect and server of the SQL database
+to connect to. For example:
+
+  * PostgreSQL: ``postgresql://scott:tiger@localhost/mydatabase``
+  * MySQL: ``mysql://scott:tiger@localhost/foo``
+  * SqlLite: ``sqlite:///foo.db``
+
+For more information on the database-urls see the sqlalchemy `documentation <http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_.
+
+To add a SqlObserver from python code do:
+
+.. code-block:: python
+
+    from sacred.observers import SqlObserver
+
+    ex.observers.append(SqlObserver.create('sqlite:///foo.db'))
+
+
+Schema
+------
+.. image:: images/sql_schema.png
+
 
 Events
 ======

@@ -31,7 +31,7 @@ class Source(Base):
         with open(filename, 'r') as f:
             return cls(filename=filename, md5sum=md5sum, content=f.read())
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    source_id = sa.Column(sa.Integer, primary_key=True)
     filename = sa.Column(sa.String(256))
     md5sum = sa.Column(sa.String(32))
     content = sa.Column(sa.Text)
@@ -53,7 +53,7 @@ class Dependency(Base):
             return instance
         return cls(name=name, version=version)
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    dependency_id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(32))
     version = sa.Column(sa.String(16))
 
@@ -69,11 +69,11 @@ class Artifact(Base):
         with open(filename, 'rb') as f:
             return cls(filename=name, content=f.read())
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    artifact_id = sa.Column(sa.Integer, primary_key=True)
     filename = sa.Column(sa.String(64))
     content = sa.Column(sa.LargeBinary)
 
-    run_id = sa.Column(sa.Integer, sa.ForeignKey('run.id'))
+    run_id = sa.Column(sa.String(24), sa.ForeignKey('run.run_id'))
     run = sa.orm.relationship("Run", backref=sa.orm.backref('artifacts'))
 
     def to_json(self):
@@ -94,7 +94,7 @@ class Resource(Base):
         with open(filename, 'rb') as f:
             return cls(filename=filename, md5sum=md5sum, content=f.read())
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    resource_id = sa.Column(sa.Integer, primary_key=True)
     filename = sa.Column(sa.String(256))
     md5sum = sa.Column(sa.String(32))
     content = sa.Column(sa.LargeBinary)
@@ -119,7 +119,7 @@ class Host(Base):
 
         return session.query(cls).filter_by(**h).first() or cls(**h)
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    host_id = sa.Column(sa.Integer, primary_key=True)
     cpu = sa.Column(sa.String(64))
     hostname = sa.Column(sa.String(64))
     os = sa.Column(sa.String(16))
@@ -135,14 +135,17 @@ class Host(Base):
 
 experiment_source_association = sa.Table(
     'experiments_sources', Base.metadata,
-    sa.Column('experiment_id', sa.Integer, sa.ForeignKey('experiment.id')),
-    sa.Column('source_id', sa.Integer, sa.ForeignKey('source.id'))
+    sa.Column('experiment_id', sa.Integer,
+              sa.ForeignKey('experiment.experiment_id')),
+    sa.Column('source_id', sa.Integer, sa.ForeignKey('source.source_id'))
 )
 
 experiment_dependency_association = sa.Table(
     'experiments_dependencies', Base.metadata,
-    sa.Column('experiment_id', sa.Integer, sa.ForeignKey('experiment.id')),
-    sa.Column('dependency_id', sa.Integer, sa.ForeignKey('dependency.id'))
+    sa.Column('experiment_id', sa.Integer,
+              sa.ForeignKey('experiment.experiment_id')),
+    sa.Column('dependency_id', sa.Integer,
+              sa.ForeignKey('dependency.dependency_id'))
 )
 
 
@@ -168,7 +171,7 @@ class Experiment(Base):
         return cls(name=name, dependencies=dependencies, sources=sources,
                    md5sum=md5, base_dir=ex_info['base_dir'])
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    experiment_id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(32))
     md5sum = sa.Column(sa.String(32))
     base_dir = sa.Column(sa.String(64))
@@ -188,15 +191,15 @@ class Experiment(Base):
 
 run_resource_association = sa.Table(
     'runs_resources', Base.metadata,
-    sa.Column('run_id', sa.Integer, sa.ForeignKey('run.id')),
-    sa.Column('resource_id', sa.Integer, sa.ForeignKey('resource.id'))
+    sa.Column('run_id', sa.String(24), sa.ForeignKey('run.run_id')),
+    sa.Column('resource_id', sa.Integer, sa.ForeignKey('resource.resource_id'))
 )
 
 
 class Run(Base):
     __tablename__ = 'run'
 
-    id = sa.Column(sa.String(24), primary_key=True, autoincrement=True)
+    run_id = sa.Column(sa.String(24), primary_key=True, autoincrement=True)
 
     command = sa.Column(sa.String(64))
 
@@ -224,10 +227,11 @@ class Run(Base):
     status = sa.Column(sa.Enum("RUNNING", "COMPLETED", "INTERRUPTED",
                                "TIMEOUT", "FAILED"))
 
-    host_id = sa.Column(sa.Integer, sa.ForeignKey('host.id'))
+    host_id = sa.Column(sa.Integer, sa.ForeignKey('host.host_id'))
     host = sa.orm.relationship("Host", backref=sa.orm.backref('runs'))
 
-    experiment_id = sa.Column(sa.Integer, sa.ForeignKey('experiment.id'))
+    experiment_id = sa.Column(sa.Integer,
+                              sa.ForeignKey('experiment.experiment_id'))
     experiment = sa.orm.relationship("Experiment",
                                      backref=sa.orm.backref('runs'))
 
@@ -280,10 +284,10 @@ class SqlObserver(RunObserver):
         sql_exp = Experiment.get_or_create(ex_info, self.session)
         sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
             _id = '0' if i is None else str(int(i.id) + 1)
 
-        self.run = Run(id=_id,
+        self.run = Run(run_id=_id,
                        start_time=start_time,
                        config=json.dumps(config, sort_keys=True),
                        command=command,
@@ -294,7 +298,7 @@ class SqlObserver(RunObserver):
                        status='RUNNING')
         self.session.add(self.run)
         self.session.commit()
-        return _id or self.run.id
+        return _id or self.run.run_id
 
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
                      _id):
@@ -302,10 +306,10 @@ class SqlObserver(RunObserver):
         Base.metadata.create_all(self.engine)
         sql_exp = Experiment.get_or_create(ex_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
             _id = '0' if i is None else str(int(i.id) + 1)
 
-        self.run = Run(id=_id,
+        self.run = Run(run_id=_id,
                        config=json.dumps(config, sort_keys=True),
                        command=command,
                        priority=meta_info.get('priority', 0),
@@ -314,7 +318,7 @@ class SqlObserver(RunObserver):
                        status='QUEUED')
         self.session.add(self.run)
         self.session.commit()
-        return _id or self.run.id
+        return _id or self.run.run_id
 
     def heartbeat_event(self, info, cout_filename, beat_time):
         self.run.info = json.dumps(info, sort_keys=True)
