@@ -25,12 +25,28 @@ def json_serial(obj):
 class FileStorageObserver(RunObserver):
     VERSION = 'FileStorageObserver-0.7.0'
 
-    def __init__(self, basedir, resource_dir=None, source_dir=None):
+    @classmethod
+    def create(cls, basedir, resource_dir=None, source_dir=None,
+               template=None):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
+        resource_dir = resource_dir or os.path.join(basedir, '_resources')
+        source_dir = source_dir or os.path.join(basedir, '_sources')
+        if template is not None:
+            if not os.path.exists(template):
+                raise FileNotFoundError("Couldn't find template file '{}'"
+                                        .format(template))
+        else:
+            template = os.path.join(basedir, 'template.html')
+            if not os.path.exists(template):
+                template = None
+        return cls(basedir, resource_dir, source_dir, template)
+
+    def __init__(self, basedir, resource_dir, source_dir, template):
         self.basedir = basedir
-        self.resource_dir = resource_dir or os.path.join(basedir, '_resources')
-        self.source_dir = source_dir or os.path.join(basedir, '_sources')
+        self.resource_dir = resource_dir
+        self.source_dir = source_dir
+        self.template = template
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -128,16 +144,16 @@ class FileStorageObserver(RunObserver):
             f.write(self.cout)
 
     def render_template(self):
-        template_name = os.path.join(self.basedir, 'template.html')
-        if opt.has_mako and os.path.exists(template_name):
+        if opt.has_mako and self.template:
             from mako.template import Template
-            template = Template(filename=template_name)
+            template = Template(filename=self.template)
             report = template.render(run=self.run_entry,
                                      config=self.config,
                                      info=self.info,
                                      cout=self.cout,
                                      savedir=self.dir)
-            with open(os.path.join(self.dir, 'report.html'), 'w') as f:
+            _, ext = os.path.splitext(self.template)
+            with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
                 f.write(report)
 
     def heartbeat_event(self, info, cout_filename, beat_time):
@@ -145,7 +161,8 @@ class FileStorageObserver(RunObserver):
         self.run_entry['heartbeat'] = beat_time
         self.save_file(cout_filename, 'cout.txt')
         self.save_json(self.run_entry, 'run.json')
-        self.save_json(self.info, 'info.json')
+        if self.info:
+            self.save_json(self.info, 'info.json')
 
     def completed_event(self, stop_time, result):
         self.run_entry['stop_time'] = stop_time
@@ -196,4 +213,4 @@ class FileStorageOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        run.observers.append(FileStorageObserver(args))
+        run.observers.append(FileStorageObserver.create(args))

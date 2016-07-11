@@ -6,18 +6,32 @@ Sacred helps you doing that by providing an *Observer Interface* for your
 experiments. By attaching an Observer you can gather all the information about
 the run even while it is still running.
 
-The only observer that is shipped with Sacred at this point is
-:ref:`mongo_observer`, so we'll focus on that.
-The ``MongoObserver`` collects information about an experiment and stores them
-in a `MongoDB <http://www.mongodb.org/>`_.
+At the moment there are three observers that are shipped with Sacred:
 
-But if you want your run infos stored some other way, it is easy to write
+ * The main one is the :ref:`mongo_observer` which stores all information in a
+   `MongoDB <http://www.mongodb.org/>`_.
+ * The :ref:`file_observer` stores the run information as files in a given
+   directory and will therefore only work locally.
+ * The :ref:`sql_observer` connects to any SQL database and will store the
+   relevant information there.
+
+But if you want the run information stored some other way, it is easy to write
 your own :ref:`custom_observer`.
 
 .. _mongo_observer:
 
+MongoObserver
+=============
+The MongoObserver is the recommended way of storing the run information from
+Sacred.
+MongoDB allows very powerful querying of the entries that can deal with
+almost any structure of the configuration and the custom info.
+Furthermore it is easy to set-up and allows to connect to a central remote DB.
+Most tools for further analysing the data collected by Sacred build upon this
+observer.
+
 Adding a MongoObserver
-======================
+----------------------
 You can add a MongoObserver from the command-line via the ``-m MY_DB`` flag::
 
     >> ./my_experiment.py -m MY_DB
@@ -56,7 +70,6 @@ network without authentication.
 
 Authentication
 --------------
-
 If you need authentication a little more work might be necessary.
 First you have to decide which
 `authentication protocol <http://api.mongodb.org/python/current/examples/authentication.html>`_
@@ -85,7 +98,7 @@ If additional arguments need to be passed to the MongoClient they can just be in
         ssl_ca_certs='/path/to/ca.pem'))
 
 Database Entry
-==============
+--------------
 The MongoObserver creates three collections to store information. The first,
 ``runs`` (that name can be changed), is the main collection that contains one
 entry for each run.
@@ -101,12 +114,12 @@ So here is an example entry in the ``runs`` collection::
     > db.runs.find()[0]
     {
         "_id" : ObjectId("5507248a1239672ae04591e2"),
+        "format" : "MongoObserver-0.7.0",
         "status" : "COMPLETED",
         "result" : null,
-        "start_time" : ISODate("2015-03-16T19:44:26.439Z"),
-        "heartbeat" : ISODate("2015-03-16T19:44:26.446Z"),
-        "stop_time" : ISODate("2015-03-16T19:44:26.447Z")
-
+        "start_time" : ISODate("2016-07-11T14:50:14.473Z"),
+        "heartbeat" : ISODate("2015-03-16T19:44:26.530Z"),
+        "stop_time" : ISODate("2015-03-16T19:44:26.532Z"),
         "config" : {
             "message" : "Hello world!",
             "seed" : 909032414,
@@ -116,30 +129,27 @@ So here is an example entry in the ``runs`` collection::
         "resources" : [ ],
         "artifacts" : [ ],
         "captured_out" : "Hello world!\n",
-
         "experiment" : {
-            "name" : "hello_config_scope",
-            "dependencies" : [
-                ["numpy", "1.9.1"],
-                ["sacred", "0.6"]
-            ],
+            "name" : "hello_cs",
+            "base_dir" : "$(HOME)/sacred/examples/"
+            "dependencies" : ["numpy==1.9.1", "sacred==0.7.0"],
             "sources" : [
                 [
-                    "$(HOME)/sacred/examples/03_hello_config_scope.py",
-                    "da6a2d6e03d122b3abead21b0c621ba9"
+                    "03_hello_config_scope.py",
+                    ObjectId("5507248a1239672ae04591e3")
                 ]
             ],
-            "doc" : "A configurable Hello World \"experiment\".\nIn this [...]"
+            "repositories" : [{
+                "url" : "git@github.com:IDSIA/sacred.git"
+				"dirty" : false,
+				"commit" : "d88deb2555bb311eb779f81f22fe16dd3b703527"}]
         },
-
         "host" : {
-            "os" : "Linux",
+            "os" : ["Linux",
+                    "Linux-3.13.0-46-generic-x86_64-with-Ubuntu-14.04-trusty"],
             "cpu" : "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz",
             "hostname" : "MyAwesomeMachine",
-            "python_version" : "3.4.0",
-            "python_compiler" : "GCC 4.8.2",
-            "os_info" : "Linux-3.13.0-46-generic-x86_64-with-Ubuntu-14.04-trusty",
-            "cpu_count" : 8
+            "python_version" : "3.4.0"
         },
     }
 
@@ -154,12 +164,126 @@ it stored the sourcecode of the experiment in the database::
     {
         "_id" : ObjectId("5507248a1239672ae04591e3"),
         "filename" : "$(HOME)/sacred/examples/03_hello_config_scope.py",
-        "md5" : "da6a2d6e03d122b3abead21b0c621ba9",
+        "md5" : "897b2144880e2ee8e34775929943f496",
         "chunkSize" : 261120,
         "length" : 1526,
-        "uploadDate" : ISODate("2015-03-16T18:44:26.444Z")
+        "uploadDate" : ISODate("2016-07-11T12:50:14.522Z")
     }
 
+
+.. _file_observer:
+
+FileStorageObserver
+===================
+The FileStorageObserver is the most basic observer and requires the least
+amount of setup.
+It is mostly meant for preliminary experiments and cases when setting up a
+database is difficult or impossible.
+But in combination with the template rendering integration it can be very
+helpful.
+
+Adding a FileStorageObserver
+----------------------------
+The FileStorageObserver can be added from the command-line via the
+``-F BASEDIR`` and  ``--file_storage=BASEDIR`` flags::
+
+    >> ./my_experiment.py -F BASEDIR
+    >> ./my_experiment.py --file_storage=BASEDIR
+
+Here ``BASEDIR`` is the name of the directory in which all the subdirectories
+for individual runs will be created.
+
+You can, of course, also add it from code like this:
+
+.. code-block:: python
+
+    from sacred.observers import FileStorageObserver
+
+    ex.observers.append(FileStorageObserver.create('my_runs'))
+
+
+Directory Structure
+-------------------
+The FileStorageObserver creates a separate sub-directory for each run and stores
+several files in there::
+
+    my_runs/
+        run_3mdq4amp/
+            config.json
+            cout.txt
+            info.json
+            run.json
+        run_zw82a7xg/
+            ...
+        ...
+
+``config.json`` contains the JSON-serialized version of the configuration
+and ``cout.txt`` the captured output.
+The main information is stored in ``run.json`` and is very similar to the
+database entries from the :ref:`mongo_observer`::
+
+    {
+      "command": "main",
+      "status": "COMPLETED",
+      "start_time": "2016-07-11T15:35:14.765152",
+      "heartbeat": "2016-07-11T15:35:14.766793",
+      "stop_time": "2016-07-11T15:35:14.768465",
+      "result": null,
+      "experiment": {
+        "base_dir": "/home/greff/Programming/sacred/examples",
+        "dependencies": [
+          "numpy==1.11.0",
+          "sacred==0.6.9"],
+        "name": "hello_cs",
+        "repositories": [{
+            "commit": "d88deb2555bb311eb779f81f22fe16dd3b703527",
+            "dirty": false,
+            "url": "git@github.com:IDSIA/sacred.git"}],
+        "sources": [
+          ["03_hello_config_scope.py",
+           "_sources/03_hello_config_scope_897b2144880e2ee8e34775929943f496.py"]]
+      },
+      "host": {
+        "cpu": "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz",
+        "hostname": "Liz",
+        "os": ["Linux",
+               "Linux-3.19.0-58-generic-x86_64-with-Ubuntu-15.04-vivid"],
+        "python_version": "3.4.3"
+      },
+      "artifacts": [],
+      "resources": [],
+      "meta": {},
+    }
+
+In addition to that there is an ``info.json`` file holding :ref:`custom_info`
+(if existing) and all the :ref:`artifacts`.
+
+The FileStorageObserver also stores a snapshot of the source-code in a separate
+``my_runs/_sources`` directory, and :ref:`resources` in ``my_runs/_resources``
+(if present).
+Their filenames are stored in the ``run.json`` file such that the corresponding
+files can be easily linked to their respective run.
+
+Template Rendering
+------------------
+In addition to these basic files, the FileStorageObserver can also generate a
+report for each run from a given template file.
+The prerequisite for this is that the `mako <http://www.makotemplates.org/>`_ package is installed and a
+``my_runs/template.html`` file needs to exist.
+The file can be located somewhere else, but then the filename must be passed to
+the FileStorageObserver like this:
+
+.. code-block:: python
+
+    from sacred.observers import FileStorageObserver
+
+    ex.observers.append(FileStorageObserver.create('my_runs', template='/custom/template.txt'))
+
+The FileStorageObserver will then render that template into a
+``report.html``/``report.txt`` file in the respective run directory.
+``mako`` is a very powerful templating engine that can execute
+arbitrary python-code, so be careful about the templates you use.
+For an example see ``sacred/examples/my_runs/template.html``.
 
 Events
 ======
