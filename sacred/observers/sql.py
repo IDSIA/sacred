@@ -165,8 +165,8 @@ class Experiment(Base):
 
         dependencies = [Dependency.get_or_create(d, session)
                         for d in ex_info['dependencies']]
-        sources = [Source.get_or_create(s, md5, session)
-                   for s, md5 in ex_info['sources']]
+        sources = [Source.get_or_create(s, md5sum, session)
+                   for s, md5sum in ex_info['sources']]
 
         return cls(name=name, dependencies=dependencies, sources=sources,
                    md5sum=md5, base_dir=ex_info['base_dir'])

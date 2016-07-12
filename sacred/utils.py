@@ -24,6 +24,17 @@ PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
+# A PY2 compatible FileNotFoundError
+if sys.version_info[0] == 2:
+    import errno
+
+    class FileNotFoundError(IOError):
+        def __init__(self, msg):
+            super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+else:
+    # Reassign so that we can import it from here
+    FileNotFoundError = FileNotFoundError
+
 
 def flush():
     """Try to flush all stdio buffers, both from python and from C."""

@@ -11,6 +11,7 @@ from shutil import copyfile
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.utils import FileNotFoundError  # For compatibility with py2
 from sacred import optional as opt
 
 
