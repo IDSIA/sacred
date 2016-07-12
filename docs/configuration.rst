@@ -117,9 +117,9 @@ If you prefer, you can also directly load configuration entries from a file:
 
 .. code-block:: python
 
-    ex.add_config_file('conf.json')
-    ex.add_config_file('conf.pickle')  # if configuration was stored as dict
-    ex.add_config_file('conf.yaml')  # requires PyYAML
+    ex.add_config('conf.json')
+    ex.add_config('conf.pickle')  # if configuration was stored as dict
+    ex.add_config('conf.yaml')  # requires PyYAML
 
 This will essentially just read the file and add the resulting dictionary to
 the configuration with ``ex.add_config``.
