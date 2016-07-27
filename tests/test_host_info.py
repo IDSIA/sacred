@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import sacred.host_info as hi
-from sacred.host_info import get_host_info, host_info
+from sacred.host_info import (get_host_info, host_info_getter,
+                              host_info_gatherers)
 from past.builtins import basestring
 
 
@@ -16,30 +16,30 @@ def test_get_host_info():
 
 def test_host_info_decorator():
     try:
-        assert 'greeting' not in hi.host_info_gatherers
+        assert 'greeting' not in host_info_gatherers
 
-        @host_info
+        @host_info_getter
         def greeting():
             return "hello"
 
-        assert 'greeting' in hi.host_info_gatherers
-        assert hi.host_info_gatherers['greeting'] == greeting
+        assert 'greeting' in host_info_gatherers
+        assert host_info_gatherers['greeting'] == greeting
         assert get_host_info()['greeting'] == 'hello'
     finally:
-        del hi.host_info_gatherers['greeting']
+        del host_info_gatherers['greeting']
 
 
 def test_host_info_decorator_with_name():
     try:
-        assert 'foo' not in hi.host_info_gatherers
+        assert 'foo' not in host_info_gatherers
 
-        @host_info(name='foo')
+        @host_info_getter(name='foo')
         def greeting():
             return "hello"
 
-        assert 'foo' in hi.host_info_gatherers
-        assert 'greeting' not in hi.host_info_gatherers
-        assert hi.host_info_gatherers['foo'] == greeting
+        assert 'foo' in host_info_gatherers
+        assert 'greeting' not in host_info_gatherers
+        assert host_info_gatherers['foo'] == greeting
         assert get_host_info()['foo'] == 'hello'
     finally:
-        del hi.host_info_gatherers['foo']
+        del host_info_gatherers['foo']

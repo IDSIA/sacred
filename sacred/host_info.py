@@ -30,7 +30,7 @@ def get_host_info():
 
 
 @optional_kwargs_decorator
-def host_info(func, name=None):
+def host_info_getter(func, name=None):
     """
     The decorated function is added to the process of collecting the host_info.
 
