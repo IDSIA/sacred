@@ -44,6 +44,8 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 # All local variables of this function will be put into the configuration
 @ex.config
 def cfg():
+    name = 'foo'
+
     # The recipient of the geeting
     recipient = "world"
 
