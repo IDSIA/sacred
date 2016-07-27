@@ -7,8 +7,14 @@ import os
 import platform
 import re
 import subprocess
+from sacred.utils import optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
+
+__all__ = ['host_info_gatherers', 'get_host_info', 'host_info']
+
+host_info_gatherers = {}
+"""Global dict of functions that are used to collect the host information."""
 
 
 def get_host_info():
@@ -20,19 +26,60 @@ def get_host_info():
         A dictionary with information about the CPU, the OS and the
         Python version of this machine.
     """
-    return {
-        "hostname": platform.node(),
-        "cpu": _get_processor_name(),
-        "os": [platform.system(), platform.platform()],
-        "python_version": platform.python_version()
-    }
+    return {k: v() for k, v in host_info_gatherers.items()}
 
 
-def _get_processor_name():
+@optional_kwargs_decorator
+def host_info(func, name=None):
+    """
+    The decorated function is added to the process of collecting the host_info.
+
+    This just adds the decorated function to the global
+    ``sacred.host_info.host_info_gatherers`` dictionary.
+    The functions from that dictionary are used when collecting the host info
+    using :py:func:`~sacred.host_info.get_host_info`.
+
+    Parameters
+    ----------
+    func : callable
+        A function that can be called without arguments and returns some
+        json-serializable information.
+    name : str, optional
+        The name of the corresponding entry in host_info.
+        Defaults to the name of the function.
+
+    Returns
+    -------
+    The function itself.
+    """
+    name = name or func.__name__
+    host_info_gatherers[name] = func
+    return func
+
+
+# #################### Default Host Information ###############################
+
+@host_info(name='hostname')
+def _hostname():
+    return platform.node()
+
+
+@host_info(name='os')
+def _os():
+    return [platform.system(), platform.platform()]
+
+
+@host_info(name='python_version')
+def _python_version():
+    return platform.python_version()
+
+
+@host_info(name='cpu')
+def _cpu():
     if platform.system() == "Windows":
         return platform.processor().strip()
     elif platform.system() == "Darwin":
-        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + '/usr/sbin'
+        os.environ['PATH'] = os.path.join(os.environ['PATH'], '/usr/sbin')
         command = ["sysctl", "-n", "machdep.cpu.brand_string"]
         return subprocess.check_output(command).decode().strip()
     elif platform.system() == "Linux":

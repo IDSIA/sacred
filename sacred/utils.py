@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import traceback as tb
+from functools import partial
 from contextlib import contextmanager
 
 import wrapt
@@ -321,13 +322,11 @@ def is_subdir(path, directory):
 # noinspection PyUnusedLocal
 @wrapt.decorator
 def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
-    def _decorated(func):
-        return wrapped(func, **kwargs)
-
-    if args:
-        return _decorated(*args)
-    else:
-        return _decorated
+    # here wrapped is itself a decorator
+    if args:  # means it was used as a normal decorator (so just call it)
+        return wrapped(*args, **kwargs)
+    else:  # used with kwargs, so we need to return a decorator
+        return partial(wrapped, **kwargs)
 
 
 def get_inheritors(cls):

@@ -49,4 +49,8 @@ Observers
     :members:
     :undoc-members:
 
+Host Info
+=========
 
+.. automodule:: sacred.host_info
+    :members:
