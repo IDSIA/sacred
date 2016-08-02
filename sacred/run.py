@@ -19,7 +19,7 @@ class Run(object):
 
     def __init__(self, config, config_modifications, main_function, observers,
                  root_logger, run_logger, experiment_info, host_info,
-                 pre_run_hooks, post_run_hooks):
+                 pre_run_hooks, post_run_hooks, captured_out_filter=None):
 
         self.captured_out = None
         """Captured stdout and stderr"""
@@ -83,6 +83,9 @@ class Run(object):
 
         self.force = False
         """Disable warnings about suspicious changes"""
+
+        self.captured_out_filter = captured_out_filter
+        """Filter function to be applied to captured output"""
 
         self._heartbeat = None
         self._failed_observers = []
@@ -164,7 +167,13 @@ class Run(object):
             finally:
                 self._warn_about_failed_observers()
                 self._output_capturer.flush()
-                self.captured_out = self._output_capturer.getvalue()
+                self.captured_out = self._get_captured_output()
+
+    def _get_captured_output(self):
+        text = self._output_capturer.getvalue()
+        if self.captured_out_filter is not None:
+            text = self.captured_out_filter(text)
+        return text
 
     def _start_heartbeat(self):
         self._emit_heatbeat()
@@ -195,7 +204,7 @@ class Run(object):
 
     def _emit_heatbeat(self):
         beat_time = datetime.datetime.now()
-        self.captured_out = self._output_capturer.getvalue()
+        self.captured_out = self._get_captured_output()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
