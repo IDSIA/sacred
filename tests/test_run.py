@@ -6,6 +6,7 @@ import mock
 import os
 import pytest
 import tempfile
+import sys
 
 from sacred.run import Run
 from sacred.config.config_summary import ConfigSummary
@@ -209,3 +210,18 @@ def test_unobserved_run_doesnt_emit(run):
     assert not observer.completed_event.called
     assert not observer.interrupted_event.called
     assert not observer.failed_event.called
+
+
+def test_captured_out_filter(run):
+    from sacred.utils import apply_backspaces_and_linefeeds
+    def print_mock_progress():
+        sys.stdout.write('progress 0')
+        sys.stdout.flush()
+        for i in range(10):
+            sys.stdout.write('\b')
+            sys.stdout.write(str(i))
+            sys.stdout.flush()
+    run.captured_out_filter = apply_backspaces_and_linefeeds
+    run.main_function.side_effect = print_mock_progress
+    run()
+    assert run.captured_out == 'progress 9'

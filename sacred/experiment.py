@@ -47,6 +47,8 @@ class Experiment(Ingredient):
         self.command(print_dependencies, unobserved=True)
         self.observers = []
         self.current_run = None
+        self.captured_out_filter = None
+        """Filter function to be applied to captured output of a run"""
 
     # =========================== Decorators ==================================
 
