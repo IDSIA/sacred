@@ -203,7 +203,7 @@ class Run(object):
         return self.result
 
     def _start_heartbeat(self):
-        self._emit_heatbeat()
+        self._emit_heartbeat()
         if self.beat_interval > 0:
             self._heartbeat = threading.Timer(self.beat_interval,
                                               self._start_heartbeat)
@@ -213,7 +213,7 @@ class Run(object):
         if self._heartbeat is not None:
             self._heartbeat.cancel()
         self._heartbeat = None
-        self._emit_heatbeat()  # one final beat to flush pending changes
+        self._emit_heartbeat()  # one final beat to flush pending changes
 
     def _emit_queued(self):
         queue_time = datetime.datetime.now()
@@ -265,7 +265,7 @@ class Run(object):
         else:
             self.run_logger.info('Started run with ID "{}"'.format(self._id))
 
-    def _emit_heatbeat(self):
+    def _emit_heartbeat(self):
         beat_time = datetime.datetime.now()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
