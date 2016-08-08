@@ -1,11 +1,17 @@
 Release History
 ---------------
 
-0.6.10 (2016-??-??)
+0.6.10 (2016-08-08)
 +++++++++++++++++++
 * Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
+* Bugfix: fixed a random crash of the heartbeat thread (see #101).
+* Feature: added --force/-f option to disable errors and warnings concerning
+           suspicious changes. (thanks to Yannic Kilcher)
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
            an error by default, which can be deactivated using interactive=True
+* Feature: added support for adding a captured out filter, and a filter that
+           and applies backspaces and linefeeds before saving like a terminal
+           would. (thanks to Kevin McGuinness)
 
 0.6.9 (2016-01-16)
 ++++++++++++++++++
