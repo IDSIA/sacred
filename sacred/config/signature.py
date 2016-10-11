@@ -4,8 +4,56 @@ from __future__ import division, print_function, unicode_literals
 
 import inspect
 from collections import OrderedDict
+import sys
 
 __sacred__ = True  # marks files that should be filtered from stack traces
+
+
+if sys.version_info[0] < 3:  # python2
+    def get_argspec(f):
+        args, vararg_name, kw_wildcard_name, defaults = inspect.getargspec(f)
+        defaults = defaults or []
+        positional_args = args[:len(args) - len(defaults)]
+        kwargs = OrderedDict(zip(args[-len(defaults):], defaults))
+        return args, vararg_name, kw_wildcard_name, positional_args, kwargs
+
+elif sys.version_info[1] < 3:  # python 3.2
+    def get_argspec(f):
+        (args, vararg_name, kw_wildcard_name, defaults, kwonlyargs, kwdefaults,
+         annotations) = inspect.getfullargspec(f)
+        defaults = defaults or []
+        positional_args = args[:len(args) - len(defaults)]
+        kwargs = OrderedDict(zip(args[-len(defaults):], defaults))
+        return args, vararg_name, kw_wildcard_name, positional_args, kwargs
+
+else:  # python >= 3.3
+    from inspect import Parameter
+    ARG_TYPES = [Parameter.POSITIONAL_ONLY,
+                 Parameter.POSITIONAL_OR_KEYWORD,
+                 Parameter.KEYWORD_ONLY]
+    POSARG_TYPES = [Parameter.POSITIONAL_ONLY,
+                    Parameter.POSITIONAL_OR_KEYWORD]
+
+    def get_argspec(f):
+        sig = inspect.signature(f)
+        args = [n for n, p in sig.parameters.items()
+                if p.kind in ARG_TYPES]
+        pos_args = [n for n, p in sig.parameters.items()
+                    if p.kind in POSARG_TYPES and p.default == inspect._empty]
+        varargs = [n for n, p in sig.parameters.items()
+                   if p.kind == Parameter.VAR_POSITIONAL]
+        # only use first vararg  (how on earth would you have more anyways?)
+        vararg_name = varargs[0] if varargs else None
+
+        varkws = [n for n, p in sig.parameters.items()
+                  if p.kind == Parameter.VAR_KEYWORD]
+        # only use first varkw  (how on earth would you have more anyways?)
+        kw_wildcard_name = varkws[0] if varkws else None
+        kwargs = OrderedDict([(n, p.default)
+                              for n, p in sig.parameters.items()
+                              if p.default != inspect._empty])
+
+        return args, vararg_name, kw_wildcard_name, pos_args, kwargs
 
 
 class Signature(object):
@@ -22,13 +70,12 @@ class Signature(object):
 
     def __init__(self, f):
         self.name = f.__name__
-        args, vararg_name, kw_wildcard_name, defaults = inspect.getargspec(f)
+        args, vararg_name, kw_wildcard_name, pos_args, kwargs = get_argspec(f)
         self.arguments = args
         self.vararg_name = vararg_name
         self.kw_wildcard_name = kw_wildcard_name
-        defaults = defaults or []
-        self.positional_args = args[:len(args) - len(defaults)]
-        self.kwargs = OrderedDict(zip(args[-len(defaults):], defaults))
+        self.positional_args = pos_args
+        self.kwargs = kwargs
 
     def get_free_parameters(self, args, kwargs, bound=False):
         expected_args = self._get_expected_args(bound)

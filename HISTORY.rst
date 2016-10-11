@@ -3,6 +3,8 @@ Release History
 
 0.7.0 (2016-07-??)
 ++++++++++++++++++
+* Feature: @main, @automain, @command and @capture now support functions with
+           Python3 style annotations.
 * Feature: config is now serialized using jsonpickle, which supports arbitrary
            python types.
 * Feature: added new SqlObserver

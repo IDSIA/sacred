@@ -62,3 +62,8 @@ def pytest_addoption(parser):
     parser.addoption("--sqlalchemy-connect-url", action="store",
                      default='sqlite://',
                      help="Name of the database to connect to")
+
+
+collect_ignore = []
+if sys.version_info[0] < 3:
+    collect_ignore.append("test_config/test_signature_py3.py")

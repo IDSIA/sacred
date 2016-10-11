@@ -8,7 +8,7 @@ import jsonpickle as json
 import jsonpickle.handlers
 
 
-__all__ = ['json']
+__all__ = ('json', )
 
 
 class DatetimeHandler(jsonpickle.handlers.BaseHandler):
