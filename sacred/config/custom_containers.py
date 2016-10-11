@@ -269,4 +269,4 @@ if opt.has_numpy:
 def type_changed(old_value, new_value):
     sot = SIMPLIFY_TYPE.get(type(old_value), type(old_value))
     snt = SIMPLIFY_TYPE.get(type(new_value), type(new_value))
-    return sot != snt
+    return sot != snt and old_value is not None  # ignore typechanges from None

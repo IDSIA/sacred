@@ -171,8 +171,7 @@ class Scaffold(object):
                 self.logger.warning('Added new config entry: "%s"' % add)
 
         for key, (type_old, type_new) in self.config_mods.typechanged.items():
-            if (type_old is type(None) or
-                    (type_old in (int, float) and type_new in (int, float))):
+            if type_old in (int, float) and type_new in (int, float):
                 continue
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
