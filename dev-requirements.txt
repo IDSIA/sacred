@@ -1,5 +1,6 @@
 docopt
 future
+jsonpickle
 wrapt
 pytest
 mock
