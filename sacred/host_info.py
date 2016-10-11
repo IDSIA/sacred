@@ -11,7 +11,7 @@ from sacred.utils import optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ['host_info_gatherers', 'get_host_info', 'host_info']
+__all__ = ['host_info_gatherers', 'get_host_info', 'host_info_getter']
 
 host_info_gatherers = {}
 """Global dict of functions that are used to collect the host information."""
