@@ -199,7 +199,7 @@ run_resource_association = sa.Table(
 class Run(Base):
     __tablename__ = 'run'
 
-    run_id = sa.Column(sa.String(24), primary_key=True, autoincrement=True)
+    run_id = sa.Column(sa.String(24), primary_key=True)
 
     command = sa.Column(sa.String(64))
 
