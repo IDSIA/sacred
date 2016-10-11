@@ -11,7 +11,7 @@ from sacred.utils import optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ['host_info_gatherers', 'get_host_info', 'host_info']
+__all__ = ['host_info_gatherers', 'get_host_info', 'host_info_getter']
 
 host_info_gatherers = {}
 """Global dict of functions that are used to collect the host information."""
@@ -59,22 +59,22 @@ def host_info_getter(func, name=None):
 
 # #################### Default Host Information ###############################
 
-@host_info(name='hostname')
+@host_info_getter(name='hostname')
 def _hostname():
     return platform.node()
 
 
-@host_info(name='os')
+@host_info_getter(name='os')
 def _os():
     return [platform.system(), platform.platform()]
 
 
-@host_info(name='python_version')
+@host_info_getter(name='python_version')
 def _python_version():
     return platform.python_version()
 
 
-@host_info(name='cpu')
+@host_info_getter(name='cpu')
 def _cpu():
     if platform.system() == "Windows":
         return platform.processor().strip()
