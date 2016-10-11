@@ -45,6 +45,7 @@ ex = Experiment('hello_config_scope')
 @ex.config
 def cfg():
     recipient = "world"
+    foo = None
     message = "Hello {}!".format(recipient)
 
 
