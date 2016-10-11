@@ -171,8 +171,7 @@ class Scaffold(object):
                 self.logger.warning('Added new config entry: "%s"' % add)
 
         for key, (type_old, type_new) in self.config_mods.typechanged.items():
-            if (isinstance(type_old, type(None)) or
-                    (type_old in (int, float) and type_new in (int, float))):
+            if type_old in (int, float) and type_new in (int, float):
                 continue
             self.logger.warning(
                 'Changed type of config entry "%s" from %s to %s' %
@@ -322,7 +321,7 @@ def create_run(experiment, command_name, config_updates=None,
 
     run = Run(config, config_modifications, main_function,
               experiment.observers, root_logger, run_logger, experiment_info,
-              host_info, pre_runs, post_runs)
+              host_info, pre_runs, post_runs, experiment.captured_out_filter)
 
     if hasattr(main_function, 'unobserved'):
         run.unobserved = main_function.unobserved
