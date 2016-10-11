@@ -39,7 +39,7 @@ setup(
     packages=['sacred', 'sacred.observers', 'sacred.config'],
     scripts=[],
     install_requires=[
-        'docopt', 'future', 'wrapt'
+        'docopt', 'future', 'jsonpickle', 'wrapt'
     ],
     tests_require=['mock', 'mongomock', 'pytest'],
 

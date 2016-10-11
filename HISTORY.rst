@@ -3,6 +3,8 @@ Release History
 
 0.7.0 (2016-07-??)
 ++++++++++++++++++
+* Feature: config is now serialized using jsonpickle, which supports arbitrary
+           python types.
 * Feature: added new SqlObserver
 * Feature: added new FileStorageObserver
 * Feature: added queue flag to just queue a run instead of executing it
@@ -27,6 +29,7 @@ Release History
 * Dependencies: Migrated from six to future, to avoid conflicts with old
                 preinstalled versions of six.
 * Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
+* Bugfix: type conversions from None to some other type are now correctly ignored
 
 
 0.6.9 (2016-01-16)
