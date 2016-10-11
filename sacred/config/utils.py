@@ -2,9 +2,8 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import json
-
 import sacred.optional as opt
+from sacred.serializer import json
 from past.builtins import basestring
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
 from sacred.utils import PYTHON_IDENTIFIER
@@ -47,7 +46,7 @@ def normalize_or_die(obj):
     elif opt.has_numpy:
         obj = normalize_numpy(obj)
     try:
-        json.dumps(obj)
+        json.encode(obj)
         return obj
     except TypeError:
         raise ValueError("Invalid value '{}'. All values have to be"

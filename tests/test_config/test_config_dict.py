@@ -47,9 +47,8 @@ def test_config_dict_raises_on_invalid_keys(key):
 
 
 @pytest.mark.parametrize("value", [lambda x:x, pytest, test_fixing_values])
-def test_config_dict_raises_on_invalid_values(value):
-    with pytest.raises(ValueError):
-        ConfigDict({"invalid": value})
+def test_config_dict_accepts_special_types(value):
+    assert ConfigDict({"special": value})()['special'] == value
 
 
 def test_fixing_nested_dicts(conf_dict):

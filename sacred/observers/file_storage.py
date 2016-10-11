@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals
 import os
 import os.path
 import tempfile
-import json
+
 from datetime import datetime
 from shutil import copyfile
 
@@ -13,6 +13,7 @@ from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.utils import FileNotFoundError  # For compatibility with py2
 from sacred import optional as opt
+from sacred.serializer import json
 
 
 def json_serial(obj):
@@ -133,8 +134,7 @@ class FileStorageObserver(RunObserver):
 
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), 'w') as f:
-            json.dump(obj, f, indent=2, sort_keys=True,
-                      default=json_serial)
+            f.write(json.encode(obj))
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)

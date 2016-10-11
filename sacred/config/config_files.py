@@ -2,11 +2,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import json
 import os
 import pickle
 
 import sacred.optional as opt
+from sacred.serializer import json
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -18,7 +18,8 @@ class Handler(object):
         self.mode = mode
 
 HANDLER_BY_EXT = {
-    '.json': Handler(json.load, json.dump, ''),
+    '.json': Handler(lambda fp: json.decode(fp.read()),
+                     lambda obj, fp: fp.write(json.encode(obj)), ''),
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),
 }
 

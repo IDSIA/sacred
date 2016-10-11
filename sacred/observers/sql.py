@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import hashlib
-import json
 
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.serializer import json
 
 # ################################ ORM ###################################### #
 Base = declarative_base()
@@ -157,7 +157,7 @@ class Experiment(Base):
         name = ex_info['name']
         # Compute a MD5sum of the ex_info to determine its uniqueness
         h = hashlib.md5()
-        h.update(json.dumps(ex_info, sort_keys=True).encode('UTF-8'))
+        h.update(json.encode(ex_info).encode('UTF-8'))
         md5 = h.hexdigest()
         instance = session.query(cls).filter_by(name=name, md5sum=md5).first()
         if instance:
@@ -259,7 +259,7 @@ class Run(Base):
             'artifacts': [a.to_json() for a in self.artifacts],
             'host': self.host.to_json(),
             'experiment': self.experiment.to_json(),
-            'config': json.loads(self.config),
+            'config': json.decode(self.config),
             'captured_out': self.captured_out,
             'fail_trace': self.fail_trace,
         }
@@ -289,7 +289,7 @@ class SqlObserver(RunObserver):
 
         self.run = Run(run_id=_id,
                        start_time=start_time,
-                       config=json.dumps(config, sort_keys=True),
+                       config=json.encode(config),
                        command=command,
                        priority=meta_info.get('priority', 0),
                        comment=meta_info.get('comment', ''),
@@ -310,7 +310,7 @@ class SqlObserver(RunObserver):
             _id = '0' if i is None else str(int(i.id) + 1)
 
         self.run = Run(run_id=_id,
-                       config=json.dumps(config, sort_keys=True),
+                       config=json.encode(config),
                        command=command,
                        priority=meta_info.get('priority', 0),
                        comment=meta_info.get('comment', ''),
@@ -321,7 +321,7 @@ class SqlObserver(RunObserver):
         return _id or self.run.run_id
 
     def heartbeat_event(self, info, cout_filename, beat_time):
-        self.run.info = json.dumps(info, sort_keys=True)
+        self.run.info = json.encode(info)
         with open(cout_filename, 'r') as f:
             self.run.captured_out = f.read()
         self.run.heartbeat = beat_time

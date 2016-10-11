@@ -2,11 +2,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import datetime
-import json
 
 import pytest
 import tempfile
 from sacred.dependencies import get_digest
+from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
 
@@ -15,7 +15,6 @@ from sacred.observers.sql import (SqlObserver, Host, Experiment, Run, Source,
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
-
 
 
 @pytest.fixture(scope="module")
@@ -158,7 +157,7 @@ def test_sql_observer_heartbeat_event_updates_run(sql_obs, sample_run, session):
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
     assert db_run.heartbeat == T2
-    assert json.loads(db_run.info) == info
+    assert json.decode(db_run.info) == info
     assert db_run.captured_out == outp
 
 

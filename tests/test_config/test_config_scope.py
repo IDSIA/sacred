@@ -25,14 +25,14 @@ def conf_scope():
         composit1 = a + b
         composit2 = f['c'] + "ada"
 
-        ignored1 = lambda: 23
+        func1 = lambda: 23
 
-        deriv = ignored1()
+        deriv = func1()
 
-        def ignored2():
-            pass
+        def func2(a):
+            return 'Nothing to report' + a
 
-        ignored3 = int
+        some_type = int
 
     cfg()
     return cfg
@@ -46,7 +46,8 @@ def test_result_of_config_scope_is_dict(conf_scope):
 def test_result_of_config_scope_contains_keys(conf_scope):
     cfg = conf_scope()
     assert set(cfg.keys()) == {'a', 'b', 'c', 'd', 'dd', 'e', 'f',
-                               'composit1', 'composit2', 'deriv'}
+                               'composit1', 'composit2', 'deriv', 'func1',
+                               'func2', 'some_type'}
 
     assert cfg['a'] == 1
     assert cfg['b'] == 2.0
@@ -57,6 +58,9 @@ def test_result_of_config_scope_contains_keys(conf_scope):
     assert cfg['f'] == {'a': 'b', 'c': 'd'}
     assert cfg['composit1'] == 3.0
     assert cfg['composit2'] == 'dada'
+    assert cfg['func1']() == 23
+    assert cfg['func2'](', sir!') == 'Nothing to report, sir!'
+    assert cfg['some_type'] == int
     assert cfg['deriv'] == 23
 
 

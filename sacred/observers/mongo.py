@@ -40,7 +40,7 @@ if opt.has_numpy:
 
 if opt.has_pandas:
     pd = opt.pandas
-    import json
+    from sacred.serializer import json
 
     class PandasToJson(SONManipulator):
         """Turn pandas structures into dictionaries to save in json."""
@@ -48,7 +48,7 @@ if opt.has_pandas:
         def transform_incoming(self, son, collection):
             for (key, value) in son.items():
                 if isinstance(value, (pd.Series, pd.DataFrame, pd.Panel)):
-                    son[key] = json.loads(value.to_json())
+                    son[key] = json.decode(value.to_json())
                 elif isinstance(value, dict):
                     # Make sure we recurse into sub-docs
                     son[key] = self.transform_incoming(value, collection)

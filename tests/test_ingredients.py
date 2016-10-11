@@ -3,7 +3,6 @@
 """global docstring"""
 from __future__ import division, print_function, unicode_literals
 
-import json
 import os
 import pytest
 import tempfile
@@ -12,6 +11,7 @@ from sacred.config import ConfigScope, ConfigDict
 from sacred.dependencies import Source, PackageDependency
 from sacred.ingredient import Ingredient
 from sacred.utils import CircularDependencyError
+from sacred.serializer import json
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ def test_add_config_non_dict_raises(ing):
 def test_add_config_file(ing):
     handle, f_name = tempfile.mkstemp(suffix='.json')
     f = os.fdopen(handle, "w")
-    json.dump({'foo': 15, 'bar': 7}, f)
+    f.write(json.encode({'foo': 15, 'bar': 7}))
     f.close()
     ing.add_config(f_name)
 
