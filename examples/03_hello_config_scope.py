@@ -46,7 +46,7 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 def cfg():
     name = 'foo'
 
-    # The recipient of the geeting
+    # The recipient of the greeting
     recipient = "world"
 
     # The message used for greeting
