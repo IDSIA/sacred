@@ -3,17 +3,24 @@ import wrapt
 
 
 class ContextDecorator():
+    """A helper ContextManager decorating a method with a custom function."""
     def __init__(self, classx, method_name, decorator_func):
         """
-        This is a helper Context Manager that decorates a method of a class with a custom function.
+        Create a new context manager decorating a function within its scope.
+
+        This is a helper Context Manager that decorates a method of a class
+        with a custom function.
         The decoration is only valid within the scope.
         :param classx: A class (object)
         :param method_name A string name of the method to be decorated
-        :param decorator_func: The decorator function is responsible for calling the original method.
-                The signature should be: func(instance, original_method, original_args, original_kwargs)
-                when called, instance refers to an instance of classx and the original_method refers
-                to the original method object which can be called.
-                args and kwargs are arguments passed to the method
+        :param decorator_func: The decorator function is responsible
+         for calling the original method.
+         The signature should be: func(instance, original_method,
+         original_args, original_kwargs)
+         when called, instance refers to an instance of classx and the
+         original_method refers to the original method object which can be
+         called.
+         args and kwargs are arguments passed to the method
 
         """
         self.method_name = method_name
@@ -26,7 +33,8 @@ class ContextDecorator():
 
         @functools.wraps(self.original_method)
         def decorated(instance, *args, **kwargs):
-            return self.decorator_func(instance, self.original_method, args, kwargs)
+            return self.decorator_func(instance, self.original_method, args,
+                                       kwargs)
 
         setattr(self.classx, self.method_name, decorated)
 
@@ -36,11 +44,13 @@ class ContextDecorator():
 
 def log_summary_writer(experiment):
     """
-    This annotation causes that each time a new tensorflow.train.SummaryWriter instance is created
-    inside the annotated function, the corresponding log directory path is appended to the list
-    in experiment.info["tensorflow"]["logdirs"].
+    Intercept ``logdir`` each time a new ``SummaryWriter`` instance is created.
 
-    :param experiment: Tensorflow experiment. The state of the experiment must be running when entering the annotated
+    Inside the annotated function, the corresponding log directory path is
+    appended to the list in experiment.info["tensorflow"]["logdirs"].
+
+    :param experiment: Tensorflow experiment. The state of the experiment
+    must be running when entering the annotated
     function.
 
     Example:
@@ -55,14 +65,19 @@ def log_summary_writer(experiment):
     """
     @wrapt.decorator
     def wrapper(wrapped, instance, args, kwargs):
-        def log_writer_decorator(instance, original_method, original_args, original_kwargs):
-            result = original_method(instance, *original_args, **original_kwargs)
+        def log_writer_decorator(instance, original_method, original_args,
+                                 original_kwargs):
+            result = original_method(instance, *original_args,
+                                     **original_kwargs)
             if "logdir" in original_kwargs:
                 logdir = original_kwargs["logdir"]
             else:
                 logdir = original_args[0]
-            experiment.info.setdefault("tensorflow", {}).setdefault("logdirs", []).append(logdir)
+            experiment.info.setdefault("tensorflow", {}).setdefault(
+                "logdirs", []).append(logdir)
+            return result
 
-        with ContextDecorator(tensorflow.train.SummaryWriter, "__init__", log_writer_decorator):
+        with ContextDecorator(tensorflow.train.SummaryWriter, "__init__",
+                              log_writer_decorator):
             return wrapped(*args, **kwargs)
     return wrapper

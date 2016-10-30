@@ -6,9 +6,11 @@ Sacred contains some (currently: one) ways to interact with the Tensorflow_ libr
 
 Storing Tensorflow logs
 -----------------------
-It is now possible to store Tensorflow summaries paths (created by ``tensorflow.train.SummaryWriter``) into
-the database under ``info.tensorflow.logdirs``. This is done automatically whenever
-a new ``SummaryWriter`` instantination is detected, provided that the instantination occures within a scope
+It is now possible to store Tensorflow summaries paths (created by
+``tensorflow.train.SummaryWriter``) into the database under ``info
+.tensorflow.logdirs``. This is done automatically whenever a new
+``SummaryWriter`` instantiation is detected, provided that the
+instantiation occurs within a scope
 of a function or method annotated with ``log_summary_writer(ex)``
 
 .. code-block:: python

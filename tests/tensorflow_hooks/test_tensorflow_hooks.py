@@ -16,7 +16,8 @@ def test_context_decorator():
             print(z)
             return y*self.x + z
 
-    def decorate_three_times(instance, original_method, original_args, original_kwargs):
+    def decorate_three_times(instance, original_method, original_args,
+                             original_kwargs):
         print("three_times")
         print(original_args)
         print(original_kwargs)
@@ -31,12 +32,14 @@ def test_context_decorator():
     assert foo.do_foo(5, z=6) == (5 * 10 + 6)
     assert foo.do_foo(y=5, z=6) == (5 * 10 + 6)
 
-    def decorate_three_times_with_exception(instance, original_method, original_args, original_kwargs):
+    def decorate_three_times_with_exception(instance, original_method,
+                                            original_args, original_kwargs):
         raise RuntimeError("This should be caught")
 
     exception = False
     try:
-        with ContextDecorator(FooClass, "do_foo", decorate_three_times_with_exception):
+        with ContextDecorator(FooClass, "do_foo",
+                              decorate_three_times_with_exception):
             foo = FooClass(10)
             this_should_raise_exception =  foo.do_foo(5, 6)
     except RuntimeError:
@@ -92,7 +95,8 @@ def test_summary_writer_log(ex, tf):
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         with tf.Session() as s:
-            swr = tf.train.SummaryWriter(TEST_LOG_DIR, s.graph)
+            swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            assert swr is not None
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
             tf.train.SummaryWriter(TEST_LOG_DIR2, s.graph)
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
@@ -121,6 +125,7 @@ def test_summary_writer_log_class(ex, tf):
         foo = FooClass()
         with tf.Session() as s:
             swr = tf.train.SummaryWriter(TEST_LOG_DIR, s.graph)
+            assert swr is not None
             # Because SummaryWritter was not called in an annotated function
             assert _run.info.get("tensorflow", None) is None
         foo.hello(TEST_LOG_DIR2)
