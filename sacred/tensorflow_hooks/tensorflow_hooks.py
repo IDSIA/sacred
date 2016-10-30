@@ -36,8 +36,8 @@ class ContextDecorator():
 
 def log_summary_writer(experiment):
     """
-    This annotation causes that each time a new tensorflow.train.SummaryWriter instance is created,
-    inside an annotated function, the corresponding path is appended to the list
+    This annotation causes that each time a new tensorflow.train.SummaryWriter instance is created
+    inside the annotated function, the corresponding log directory path is appended to the list
     in experiment.info["tensorflow"]["logdirs"].
 
     :param experiment: Tensorflow experiment. The state of the experiment must be running when entering the annotated
@@ -49,7 +49,7 @@ def log_summary_writer(experiment):
     def run_experiment(_run):
         with tf.Session() as s:
             swr = tf.train.SummaryWriter("/tmp/1", s.graph)
-            # _run.info["tensorflow"]["logdirs"] = ["/tmp/1"]
+            # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
             swr2 tf.train.SummaryWriter("./test", s.graph)
             #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
     """
