@@ -19,3 +19,4 @@ branches:
   only:
     - master
     - /^release.*$/
+    - /^feature.*$/
