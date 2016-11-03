@@ -6,13 +6,10 @@ import datetime
 
 import os
 
-import mock
-# import mongomock
 import pytest
 import tempfile
 
-from tinydb import TinyDB, Query
-
+from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
@@ -76,6 +73,53 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     assert len(tinydb_obs.runs) == 1
     db_run = tinydb_obs.runs.get(eid=1)
     assert db_run['_id'] == sample_run['_id']
+
+
+def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, sample_run):
+
+    filename = 'setup.py'
+    md5 = get_digest(filename)
+
+    sample_run['ex_info']['sources'] = [[filename, md5]]
+    _id = tinydb_obs.started_event(**sample_run)
+
+    assert _id is not None
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run == {
+        '_id': _id,
+        'experiment': sample_run['ex_info'],
+        'format': tinydb_obs.VERSION,
+        'command': sample_run['command'],
+        'host': sample_run['host_info'],
+        'start_time': sample_run['start_time'],
+        'heartbeat': None,
+        'info': {},
+        'captured_out': '',
+        'artifacts': [],
+        'config': sample_run['config'],
+        'meta': sample_run['meta_info'],
+        'status': 'RUNNING',
+        'resources': []
+    }
+
+    # Check that duplicate source files are listed in ex_info
+    tinydb_obs.db_run_id = None
+    _id2 = tinydb_obs.started_event(**sample_run)
+    assert len(tinydb_obs.runs) == 2
+    db_run2 = tinydb_obs.runs.get(eid=2)
+    assert db_run2['experiment']['sources'] == db_run['experiment']['sources']
+
+
+def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, sample_run):
+
+    sample_queued_run = sample_run.copy()
+    del sample_queued_run['host_info']
+    del sample_queued_run['start_time']
+    sample_queued_run['queue_time'] = T1
+
+    with pytest.raises(NotImplementedError):
+        tinydb_obs.queued_event(**sample_queued_run)
 
 
 def test_tinydb_observer_equality(tmpdir, tinydb_obs):
@@ -188,6 +232,21 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
         fs_content = f2.read()
 
     assert fs_content == file_content
+
+
+def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
+
+    filename = "setup.py"
+    md5 = get_digest(filename)
+
+    # Add file by other means
+    tinydb_obs.fs.put(filename)
+
+    tinydb_obs.resource_event(filename)
+
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['resources'] == [[filename, md5]]
 
 
 @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')

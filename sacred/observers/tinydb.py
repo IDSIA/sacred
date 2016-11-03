@@ -100,7 +100,6 @@ class TinyDbObserver(RunObserver):
 
     def save_sources(self, ex_info):
         
-        # base_dir = ex_info['base_dir']
         source_info = []
         for source_name, md5 in ex_info['sources']:
         
@@ -111,9 +110,8 @@ class TinyDbObserver(RunObserver):
                 # Substitute any HOME or Environment Vars to get absolute path
                 abs_path = os.path.expanduser(source_name)
                 abs_path = os.path.expandvars(source_name)
-                with open(abs_path, 'rb') as f:
-                    address = self.fs.put(f)
-                    id_ = address.id
+                address = self.fs.put(abs_path)
+                id_ = address.id
             source_info.append([source_name, id_])
         return source_info
 
