@@ -2,12 +2,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import datetime
-
 import os
+import datetime
+import tempfile
 
 import pytest
-import tempfile
 
 from tinydb import TinyDB
 from hashfs import HashFS

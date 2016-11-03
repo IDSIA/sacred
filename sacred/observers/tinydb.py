@@ -11,8 +11,6 @@ from sacred.dependencies import get_digest
 import sacred.optional as opt
 
 from tinydb import TinyDB
-from tinydb.middlewares import Middleware
-from tinydb.storages import JSONStorage
 from tinydb_serialization import Serializer, SerializationMiddleware
 
 from hashfs import HashFS
@@ -204,46 +202,3 @@ class TinyDbObserver(RunObserver):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
-# class SerializeArrayDataFrameMiddleware(Middleware):
-
-#     """ Custom Middleware to handle arrays and DataFrame serialisation """
-    
-#     def __init__(self, storage_cls=TinyDB.DEFAULT_STORAGE):
-#         # Any middleware *has* to call the super constructor
-#         # with storage_cls
-#         super(SerializeArrayDataFrameMiddleware, self).__init__(storage_cls)
-
-#     def read(self):
-#         data = self.storage.read()
-
-#         return data
-
-#     def write(self, data):
-
-#         for table_name in data:
-#             table = data[table_name]
-
-#             for element_id in table:
-#                 doc = table[element_id]
-#                 doc = self._convert(doc)
-
-#         self.storage.write(data)
-
-#     def _convert(self, doc):
-#         """ Recursively convert array and DataFrame to lists/json """
-#         for key, value in doc.items():
-#             if isinstance(value, (opt.pandas.Series, opt.pandas.DataFrame, opt.pandas.Panel)):
-#                 doc[key] = value.to_json()
-#             elif isinstance(value, opt.np.ndarray):
-#                 doc[key] = value.tolist()
-#             elif isinstance(value, dt.datetime):
-#                 doc[key] = value.isoformat()
-#             elif isinstance(value, dict):
-#                 # Make sure we recurse into sub-docs
-#                 doc[key] = self._convert(value)
-#         return doc
-
-#     def close(self):
-#         self.storage.close()
