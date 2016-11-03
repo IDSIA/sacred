@@ -103,12 +103,27 @@ def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, sample_run
         'resources': []
     }
 
-    # Check that duplicate source files are listed in ex_info
+    # Check that duplicate source files are still listed in ex_info
     tinydb_obs.db_run_id = None
-    _id2 = tinydb_obs.started_event(**sample_run)
+    tinydb_obs.started_event(**sample_run)
     assert len(tinydb_obs.runs) == 2
     db_run2 = tinydb_obs.runs.get(eid=2)
     assert db_run2['experiment']['sources'] == db_run['experiment']['sources']
+
+
+def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs, sample_run):
+    sample_run['_id'] = None
+    _id = tinydb_obs.started_event(**sample_run)
+    assert _id is not None
+
+    # Check that duplicate source files are still listed in ex_info
+    tinydb_obs.db_run_id = None
+    sample_run['_id'] = None
+    _id2 = tinydb_obs.started_event(**sample_run)
+
+    assert len(tinydb_obs.runs) == 2
+    # Check new random id is given for each run
+    assert _id != _id2
 
 
 def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, sample_run):
