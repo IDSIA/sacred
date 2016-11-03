@@ -2,6 +2,7 @@
 # coding=utf-8
 import os
 import datetime as dt 
+import json
 import uuid
 
 from sacred.__about__ import __version__
@@ -12,8 +13,39 @@ import sacred.optional as opt
 from tinydb import TinyDB
 from tinydb.middlewares import Middleware
 from tinydb.storages import JSONStorage
+from tinydb_serialization import Serializer, SerializationMiddleware
 
 from hashfs import HashFS
+
+
+class DateTimeSerializer(Serializer):
+    OBJ_CLASS = dt.datetime  # The class this serializer handles
+
+    def encode(self, obj):
+        return obj.strftime('%Y-%m-%dT%H:%M:%S')
+
+    def decode(self, s):
+        return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
+
+
+class NdArraySerializer(Serializer):
+    OBJ_CLASS = opt.np.ndarray  # The class this serializer handles
+
+    def encode(self, obj):
+        return json.dumps(obj.tolist(), check_circular=True)
+
+    def decode(self, s):
+        return opt.np.array(json.loads(s))
+
+
+class DataFrameSerializer(Serializer):
+    OBJ_CLASS = opt.pandas.DataFrame  # The class this serializer handles
+
+    def encode(self, obj):
+        return obj.to_json()
+
+    def decode(self, s):
+        return opt.pandas.read_json(s)
 
 
 class TinyDbObserver(RunObserver):
@@ -28,8 +60,13 @@ class TinyDbObserver(RunObserver):
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
 
-        db = TinyDB(os.path.join(root_dir, 'metadata.json'),
-                    storage=SerializeArrayDataFrameMiddleware(JSONStorage))
+        # Setup Serialisation of non list/dict objects 
+        serialization = SerializationMiddleware()
+        serialization.register_serializer(DateTimeSerializer(), 'TinyDate')
+        serialization.register_serializer(NdArraySerializer(), 'TinyArray')
+        serialization.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+
+        db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization)
         fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3, width=2, algorithm='md5')
 
         return TinyDbObserver(db, fs, overwrite=overwrite)
@@ -166,44 +203,44 @@ class TinyDbObserver(RunObserver):
         return not self.__eq__(other)
 
 
-class SerializeArrayDataFrameMiddleware(Middleware):
+# class SerializeArrayDataFrameMiddleware(Middleware):
 
-    """ Custom Middleware to handle arrays and DataFrame serialisation """
+#     """ Custom Middleware to handle arrays and DataFrame serialisation """
     
-    def __init__(self, storage_cls=TinyDB.DEFAULT_STORAGE):
-        # Any middleware *has* to call the super constructor
-        # with storage_cls
-        super(SerializeArrayDataFrameMiddleware, self).__init__(storage_cls)
+#     def __init__(self, storage_cls=TinyDB.DEFAULT_STORAGE):
+#         # Any middleware *has* to call the super constructor
+#         # with storage_cls
+#         super(SerializeArrayDataFrameMiddleware, self).__init__(storage_cls)
 
-    def read(self):
-        data = self.storage.read()
+#     def read(self):
+#         data = self.storage.read()
 
-        return data
+#         return data
 
-    def write(self, data):
+#     def write(self, data):
 
-        for table_name in data:
-            table = data[table_name]
+#         for table_name in data:
+#             table = data[table_name]
 
-            for element_id in table:
-                doc = table[element_id]
-                doc = self._convert(doc)
+#             for element_id in table:
+#                 doc = table[element_id]
+#                 doc = self._convert(doc)
 
-        self.storage.write(data)
+#         self.storage.write(data)
 
-    def _convert(self, doc):
-        """ Recursively convert array and DataFrame to lists/json """
-        for key, value in doc.items():
-            if isinstance(value, (opt.pandas.Series, opt.pandas.DataFrame, opt.pandas.Panel)):
-                doc[key] = value.to_json()
-            elif isinstance(value, opt.np.ndarray):
-                doc[key] = value.tolist()
-            elif isinstance(value, dt.datetime):
-                doc[key] = value.isoformat()
-            elif isinstance(value, dict):
-                # Make sure we recurse into sub-docs
-                doc[key] = self._convert(value)
-        return doc
+#     def _convert(self, doc):
+#         """ Recursively convert array and DataFrame to lists/json """
+#         for key, value in doc.items():
+#             if isinstance(value, (opt.pandas.Series, opt.pandas.DataFrame, opt.pandas.Panel)):
+#                 doc[key] = value.to_json()
+#             elif isinstance(value, opt.np.ndarray):
+#                 doc[key] = value.tolist()
+#             elif isinstance(value, dt.datetime):
+#                 doc[key] = value.isoformat()
+#             elif isinstance(value, dict):
+#                 # Make sure we recurse into sub-docs
+#                 doc[key] = self._convert(value)
+#         return doc
 
-    def close(self):
-        self.storage.close()
+#     def close(self):
+#         self.storage.close()

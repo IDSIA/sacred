@@ -42,28 +42,28 @@ def sample_run():
     }
 
 
-# def test_tindb_observer_started_event_creates_run(tinydb_obs, sample_run):
-#     sample_run['_id'] = None
-#     _id = tinydb_obs.started_event(**sample_run)
-#     assert _id is not None
-#     assert len(tinydb_obs.runs) == 1
-#     db_run = tinydb_obs.runs.get(eid=1)
-#     assert db_run == {
-#         '_id': _id,
-#         'experiment': sample_run['ex_info'],
-#         'format': tinydb_obs.VERSION,
-#         'command': sample_run['command'],
-#         'host': sample_run['host_info'],
-#         'start_time': sample_run['start_time'],
-#         'heartbeat': None,
-#         'info': {},
-#         'captured_out': '',
-#         'artifacts': [],
-#         'config': sample_run['config'],
-#         'meta': sample_run['meta_info'],
-#         'status': 'RUNNING',
-#         'resources': []
-#     }
+def test_tindb_observer_started_event_creates_run(tinydb_obs, sample_run):
+    sample_run['_id'] = None
+    _id = tinydb_obs.started_event(**sample_run)
+    assert _id is not None
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run == {
+        '_id': _id,
+        'experiment': sample_run['ex_info'],
+        'format': tinydb_obs.VERSION,
+        'command': sample_run['command'],
+        'host': sample_run['host_info'],
+        'start_time': sample_run['start_time'],
+        'heartbeat': None,
+        'info': {},
+        'captured_out': '',
+        'artifacts': [],
+        'config': sample_run['config'],
+        'meta': sample_run['meta_info'],
+        'status': 'RUNNING',
+        'resources': []
+    }
 
 
 def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
