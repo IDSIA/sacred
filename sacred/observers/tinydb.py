@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import os
-import datetime as dt 
+import datetime as dt
 import json
 import uuid
 
@@ -43,7 +43,7 @@ class DataFrameSerializer(Serializer):
 
     def __init__(self, *args, **kwds):
         super(DataFrameSerializer).__init__(self, *args, **kwds)
-        self.OBJ_CLASS = opt.pandas.DataFrame 
+        self.OBJ_CLASS = opt.pandas.DataFrame
 
     def encode(self, obj):
         return obj.to_json()
@@ -56,7 +56,7 @@ class SeriesSerializer(Serializer):
 
     def __init__(self, *args, **kwds):
         super(SeriesSerializer).__init__(self, *args, **kwds)
-        self.OBJ_CLASS = opt.pandas.Series 
+        self.OBJ_CLASS = opt.pandas.Series
 
     def encode(self, obj):
         return obj.to_json()
@@ -69,7 +69,7 @@ class TinyDbObserver(RunObserver):
 
     VERSION = "TinyDbObserver-{}".format(__version__)
 
-    @staticmethod 
+    @staticmethod
     def create(path='.', name='observer_db', overwrite=None):
 
         location = os.path.abspath(path)
@@ -77,17 +77,23 @@ class TinyDbObserver(RunObserver):
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
 
-        # Setup Serialisation object for non list/dict objects 
+        # Setup Serialisation object for non list/dict objects
         serialization_store = SerializationMiddleware()
-        serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
+        serialization_store.register_serializer(DateTimeSerializer(),
+                                                'TinyDate')
         if opt.has_numpy:
-            serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
-        if opt.has_pandas:    
-            serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
-            serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+            serialization_store.register_serializer(NdArraySerializer(),
+                                                    'TinyArray')
+        if opt.has_pandas:
+            serialization_store.register_serializer(DataFrameSerializer(),
+                                                    'TinyDataFrame')
+            serialization_store.register_serializer(SeriesSerializer(),
+                                                    'TinySeries')
 
-        db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
-        fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3, width=2, algorithm='md5')
+        db = TinyDB(os.path.join(root_dir, 'metadata.json'),
+                    storage=serialization_store)
+        fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
+                    width=2, algorithm='md5')
 
         return TinyDbObserver(db, fs, overwrite=overwrite)
 
@@ -108,10 +114,10 @@ class TinyDbObserver(RunObserver):
             self.db_run_id = db_run_id
 
     def save_sources(self, ex_info):
-        
+
         source_info = []
         for source_name, md5 in ex_info['sources']:
-        
+
             file = self.fs.get(md5)
             if file:
                 id_ = file.id
@@ -126,7 +132,8 @@ class TinyDbObserver(RunObserver):
 
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
                      _id):
-        raise NotImplementedError('queued_event method is not implimented for local TinyDbObserver.')
+        raise NotImplementedError('queued_event method is not implimented for'
+                                  ' local TinyDbObserver.')
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -152,7 +159,7 @@ class TinyDbObserver(RunObserver):
             _id = uuid.uuid4().hex
 
         self.run_entry['_id'] = _id
-        
+
         # save sources
         self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
         self.save()
@@ -187,12 +194,12 @@ class TinyDbObserver(RunObserver):
         md5hash = get_digest(filename)
         file_ = self.fs.get(md5hash)
         resource = (filename, md5hash)
-        
+
         if file_:
             if resource not in self.run_entry['resources']:
                 self.run_entry['resources'].append(resource)
                 self.save()
-        else: 
+        else:
             self.fs.put(filename)
             self.run_entry['resources'].append((filename, md5hash))
             self.save()

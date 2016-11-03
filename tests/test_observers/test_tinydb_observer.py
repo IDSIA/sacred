@@ -74,7 +74,8 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     assert db_run['_id'] == sample_run['_id']
 
 
-def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, sample_run):
+def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, 
+                                                          sample_run):
 
     filename = 'setup.py'
     md5 = get_digest(filename)
@@ -110,7 +111,8 @@ def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, sample_run
     assert db_run2['experiment']['sources'] == db_run['experiment']['sources']
 
 
-def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs, sample_run):
+def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs,
+                                                                  sample_run):
     sample_run['_id'] = None
     _id = tinydb_obs.started_event(**sample_run)
     assert _id is not None
@@ -125,7 +127,8 @@ def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs, sa
     assert _id != _id2
 
 
-def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, sample_run):
+def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, 
+                                                         sample_run):
 
     sample_queued_run = sample_run.copy()
     del sample_queued_run['host_info']
@@ -139,7 +142,8 @@ def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, sample_run)
 def test_tinydb_observer_equality(tmpdir, tinydb_obs):
 
     db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'))
-    fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3, width=2, algorithm='md5')
+    fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3, 
+                width=2, algorithm='md5')
     m = TinyDbObserver(db, fs)
 
     assert tinydb_obs == m
@@ -179,7 +183,8 @@ def test_tinydb_observer_completed_event_updates_run(tinydb_obs, sample_run):
     assert db_run['status'] == 'COMPLETED'
 
 
-def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs, sample_run):
+def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs, 
+                                                       sample_run):
     tinydb_obs.started_event(**sample_run)
 
     tinydb_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
@@ -248,7 +253,8 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
     assert fs_content == file_content
 
 
-def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs, sample_run):
+def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs, 
+                                                              sample_run):
     tinydb_obs.started_event(**sample_run)
 
     filename = "setup.py"
@@ -273,7 +279,8 @@ def test_serialisation_of_numpy_ndarray(tmpdir):
     serialization_store = SerializationMiddleware()
     serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
 
-    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), storage=serialization_store)
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), 
+                storage=serialization_store)
 
     eye_mat = np.eye(3)
     ones_array = np.ones(5)
@@ -304,10 +311,13 @@ def test_pandas_to_json_son_manipulator(tmpdir):
 
     # Setup Serialisation object for non list/dict objects 
     serialization_store = SerializationMiddleware()
-    serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
-    serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+    serialization_store.register_serializer(DataFrameSerializer(), 
+                                            'TinyDataFrame')
+    serialization_store.register_serializer(SeriesSerializer(), 
+                                            'TinySeries')
 
-    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), storage=serialization_store)
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), 
+                storage=serialization_store)
 
     df = pd.DataFrame(np.eye(3), columns=list('ABC'))
     series = pd.Series(np.ones(5))
