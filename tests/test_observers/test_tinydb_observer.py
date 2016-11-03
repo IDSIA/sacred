@@ -190,84 +190,66 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
     assert fs_content == file_content
 
 
+@pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
+def test_serialisation_of_numpy_ndarray(tmpdir):
+    from sacred.observers.tinydb import NdArraySerializer
+    from tinydb_serialization import SerializationMiddleware
+    import numpy as np
 
-# def test_force_bson_encodable_doesnt_change_valid_document():
-#     d = {'int': 1, 'string': 'foo', 'float': 23.87, 'list': ['a', 1, True],
-#          'bool': True, 'cr4zy: _but_ [legal) Key!': '$illegal.key.as.value',
-#          'datetime': datetime.datetime.now(), 'tuple': (1, 2.0, 'three'),
-#          'none': None}
-#     assert force_bson_encodeable(d) == d
+    # Setup Serialisation object for non list/dict objects 
+    serialization_store = SerializationMiddleware()
+    serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
 
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), storage=serialization_store)
 
-# def test_force_bson_encodable_substitutes_illegal_value_with_strings():
-#     d = {
-#         'a_module': datetime,
-#         'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-#         'nested': {
-#             'dict': {
-#                 'with': {
-#                     'illegal_module': mock
-#                 }
-#             }
-#         },
-#         '$illegal': 'because it starts with a $',
-#         'il.legal': 'because it contains a .',
-#         12.7: 'illegal because it is not a string key'
-#     }
-#     expected = {
-#         'a_module': str(datetime),
-#         'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-#         'nested': {
-#             'dict': {
-#                 'with': {
-#                     'illegal_module': str(mock)
-#                 }
-#             }
-#         },
-#         '@illegal': 'because it starts with a $',
-#         'il,legal': 'because it contains a .',
-#         '12,7': 'illegal because it is not a string key'
-#     }
-#     assert force_bson_encodeable(d) == expected
+    eye_mat = np.eye(3)
+    ones_array = np.ones(5)
+
+    document = {
+        'foo': 'bar',
+        'some_array': eye_mat,
+        'nested': {
+            'ones': ones_array
+        }
+    }
+
+    db.insert(document)
+    returned_doc = db.all()[0]
+
+    assert returned_doc['foo'] == 'bar'
+    assert (returned_doc['some_array'] == eye_mat).all()
+    assert (returned_doc['nested']['ones'] == ones_array).all()
 
 
-# @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
-# def test_numpy_array_to_list_son_manipulator():
-#     from sacred.observers.mongo import NumpyArraysToList
-#     import numpy as np
-#     sonm = NumpyArraysToList()
-#     document = {
-#         'foo': 'bar',
-#         'some_array': np.eye(3),
-#         'nested': {
-#             'ones': np.ones(5)
-#         }
-#     }
-#     mod_doc = sonm.transform_incoming(document, 'fake_collection')
-#     assert mod_doc['foo'] == 'bar'
-#     assert mod_doc['some_array'] == [[1.0, 0.0, 0.0],
-#                                      [0.0, 1.0, 0.0],
-#                                      [0.0, 0.0, 1.0]]
-#     assert mod_doc['nested']['ones'] == [1.0, 1.0, 1.0, 1.0, 1.0]
+@pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
+def test_pandas_to_json_son_manipulator(tmpdir):
+    from sacred.observers.tinydb import DataFrameSerializer, SeriesSerializer
+    from tinydb_serialization import SerializationMiddleware
 
+    import numpy as np
+    import pandas as pd
 
-# @pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
-# def test_pandas_to_json_son_manipulator():
-#     from sacred.observers.mongo import PandasToJson
-#     import numpy as np
-#     import pandas as pd
-#     sonm = PandasToJson()
-#     document = {
-#         'foo': 'bar',
-#         'some_array': pd.DataFrame(np.eye(3), columns=list('ABC')),
-#         'nested': {
-#             'ones': pd.Series(np.ones(5))
-#         }
-#     }
-#     mod_doc = sonm.transform_incoming(document, 'fake_collection')
-#     assert mod_doc['foo'] == 'bar'
-#     assert mod_doc['some_array'] == {'A': {'0': 1.0, '1': 0.0, '2': 0.0},
-#                                      'B': {'0': 0.0, '1': 1.0, '2': 0.0},
-#                                      'C': {'0': 0.0, '1': 0.0, '2': 1.0}}
-#     assert mod_doc['nested']['ones'] == {"0": 1.0, "1": 1.0, "2": 1.0,
-#                                          "3": 1.0, "4": 1.0}
+    # Setup Serialisation object for non list/dict objects 
+    serialization_store = SerializationMiddleware()
+    serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+    serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), storage=serialization_store)
+
+    df = pd.DataFrame(np.eye(3), columns=list('ABC'))
+    series = pd.Series(np.ones(5))
+
+    document = {
+        'foo': 'bar',
+        'some_dataframe': df,
+        'nested': {
+            'ones': series
+        }
+    }
+
+    db.insert(document)
+    returned_doc = db.all()[0]
+
+    assert returned_doc['foo'] == 'bar'
+    assert (returned_doc['some_dataframe'] == df).all().all()
+    assert (returned_doc['nested']['ones'] == series).all()

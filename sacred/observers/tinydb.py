@@ -29,7 +29,7 @@ class DateTimeSerializer(Serializer):
 
 
 class NdArraySerializer(Serializer):
-    OBJ_CLASS = opt.np.ndarray  # The class this serializer handles
+    OBJ_CLASS = opt.np.ndarray 
 
     def encode(self, obj):
         return json.dumps(obj.tolist(), check_circular=True)
@@ -39,13 +39,23 @@ class NdArraySerializer(Serializer):
 
 
 class DataFrameSerializer(Serializer):
-    OBJ_CLASS = opt.pandas.DataFrame  # The class this serializer handles
+    OBJ_CLASS = opt.pandas.DataFrame 
 
     def encode(self, obj):
         return obj.to_json()
 
     def decode(self, s):
         return opt.pandas.read_json(s)
+
+
+class SeriesSerializer(Serializer):
+    OBJ_CLASS = opt.pandas.core.series.Series  
+
+    def encode(self, obj):
+        return obj.to_json()
+
+    def decode(self, s):
+        return opt.pandas.read_json(s, typ='series')
 
 
 class TinyDbObserver(RunObserver):
@@ -65,6 +75,7 @@ class TinyDbObserver(RunObserver):
         serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
         serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
         serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+        serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
 
         db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
         fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3, width=2, algorithm='md5')
