@@ -22,10 +22,10 @@ class DateTimeSerializer(Serializer):
     OBJ_CLASS = dt.datetime  # The class this serializer handles
 
     def encode(self, obj):
-        return obj.strftime('%Y-%m-%dT%H:%M:%S')
+        return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def decode(self, s):
-        return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
+        return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
 
 
 class NdArraySerializer(Serializer):
@@ -60,13 +60,13 @@ class TinyDbObserver(RunObserver):
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
 
-        # Setup Serialisation of non list/dict objects 
-        serialization = SerializationMiddleware()
-        serialization.register_serializer(DateTimeSerializer(), 'TinyDate')
-        serialization.register_serializer(NdArraySerializer(), 'TinyArray')
-        serialization.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+        # Setup Serialisation object for non list/dict objects 
+        serialization_store = SerializationMiddleware()
+        serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
+        serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
+        serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
 
-        db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization)
+        db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
         fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3, width=2, algorithm='md5')
 
         return TinyDbObserver(db, fs, overwrite=overwrite)
@@ -168,9 +168,9 @@ class TinyDbObserver(RunObserver):
 
         md5hash = get_digest(filename)
         file_ = self.fs.get(md5hash)
-
+        resource = (filename, md5hash)
+        
         if file_:
-            resource = (filename, md5hash)
             if resource not in self.run_entry['resources']:
                 self.run_entry['resources'].append(resource)
                 self.save()
@@ -179,24 +179,18 @@ class TinyDbObserver(RunObserver):
             self.run_entry['resources'].append((filename, md5hash))
             self.save()
 
-    def artifact_event(self, filename):
+    def artifact_event(self, name, filename):
 
         md5hash = get_digest(filename)
-        file_ = self.fs.get(md5hash)
 
-        if file_:
-            artifact = (filename, md5hash)
-            if artifact not in self.run_entry['artifacts']:
-                self.run_entry['artifacts'].append(artifact)
-                self.save()
-        else: 
-            self.fs.put(filename)
-            self.run_entry['artifacts'].append((filename, md5hash))
-            self.save()
+        self.fs.put(filename)
+        self.run_entry['artifacts'].append({'name': name,
+                                            'file_id': md5hash})
+        self.save()
 
     def __eq__(self, other):
         if isinstance(other, TinyDbObserver):
-            return self.runs == other.runs
+            return self.runs.all() == other.runs.all()
         return False
 
     def __ne__(self, other):

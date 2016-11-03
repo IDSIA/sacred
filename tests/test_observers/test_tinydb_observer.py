@@ -4,12 +4,16 @@ from __future__ import division, print_function, unicode_literals
 
 import datetime
 
+import os
+
 import mock
 # import mongomock
 import pytest
 import tempfile
 
-from tinydb import Query
+from tinydb import TinyDB, Query
+
+from hashfs import HashFS
 
 from sacred.dependencies import get_digest
 from sacred.observers.tinydb import TinyDbObserver
@@ -74,101 +78,117 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     assert db_run['_id'] == sample_run['_id']
 
 
-# # Got to here !!!!
-# def test_mongo_observer_equality(mongo_obs):
-#     runs = mongo_obs.runs
-#     fs = mock.MagicMock()
-#     m = TinyDbObserver(runs, fs)
-#     assert mongo_obs == m
-#     assert not mongo_obs != m
+def test_tinydb_observer_equality(tmpdir, tinydb_obs):
 
-#     assert not mongo_obs == 'foo'
-#     assert mongo_obs != 'foo'
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'))
+    fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3, width=2, algorithm='md5')
+    m = TinyDbObserver(db, fs)
 
+    assert tinydb_obs == m
+    assert not tinydb_obs != m
 
-# def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
-
-#     info = {'my_info': [1, 2, 3], 'nr': 7}
-#     outp = 'some output'
-#     with tempfile.NamedTemporaryFile() as f:
-#         f.write(outp.encode())
-#         f.flush()
-#         mongo_obs.heartbeat_event(info=info, cout_filename=f.name,
-#                                   beat_time=T2)
-
-#     assert mongo_obs.runs.count() == 1
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['heartbeat'] == T2
-#     assert db_run['info'] == info
-#     assert db_run['captured_out'] == outp
+    assert not tinydb_obs == 'foo'
+    assert tinydb_obs != 'foo'
 
 
-# def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
+def test_tinydb_observer_heartbeat_event_updates_run(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
 
-#     mongo_obs.completed_event(stop_time=T2, result=42)
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(outp.encode())
+        f.flush()
+        tinydb_obs.heartbeat_event(info=info, cout_filename=f.name,
+                                   beat_time=T2)
 
-#     assert mongo_obs.runs.count() == 1
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['stop_time'] == T2
-#     assert db_run['result'] == 42
-#     assert db_run['status'] == 'COMPLETED'
-
-
-# def test_mongo_observer_interrupted_event_updates_run(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
-
-#     mongo_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
-
-#     assert mongo_obs.runs.count() == 1
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['stop_time'] == T2
-#     assert db_run['status'] == 'INTERRUPTED'
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['heartbeat'] == T2
+    assert db_run['info'] == info
+    assert db_run['captured_out'] == outp
 
 
-# def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
+def test_tinydb_observer_completed_event_updates_run(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
 
-#     fail_trace = "lots of errors and\nso\non..."
-#     mongo_obs.failed_event(fail_time=T2,
-#                            fail_trace=fail_trace)
+    tinydb_obs.completed_event(stop_time=T2, result=42)
 
-#     assert mongo_obs.runs.count() == 1
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['stop_time'] == T2
-#     assert db_run['status'] == 'FAILED'
-#     assert db_run['fail_trace'] == fail_trace
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['stop_time'] == T2
+    assert db_run['result'] == 42
+    assert db_run['status'] == 'COMPLETED'
 
 
-# def test_mongo_observer_artifact_event(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
+def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
 
-#     filename = "setup.py"
-#     name = 'mysetup'
+    tinydb_obs.interrupted_event(interrupt_time=T2, status='INTERRUPTED')
 
-#     mongo_obs.artifact_event(name, filename)
-
-#     assert mongo_obs.fs.put.called
-#     assert mongo_obs.fs.put.call_args[1]['filename'].endswith(name)
-
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['artifacts']
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['stop_time'] == T2
+    assert db_run['status'] == 'INTERRUPTED'
 
 
-# def test_mongo_observer_resource_event(mongo_obs, sample_run):
-#     mongo_obs.started_event(**sample_run)
+def test_tinydb_observer_failed_event_updates_run(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
 
-#     filename = "setup.py"
-#     md5 = get_digest(filename)
+    fail_trace = "lots of errors and\nso\non..."
+    tinydb_obs.failed_event(fail_time=T2,
+                            fail_trace=fail_trace)
 
-#     mongo_obs.resource_event(filename)
+    assert len(tinydb_obs.runs) == 1
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['stop_time'] == T2
+    assert db_run['status'] == 'FAILED'
+    assert db_run['fail_trace'] == fail_trace
 
-#     assert mongo_obs.fs.exists.called
-#     mongo_obs.fs.exists.assert_any_call(filename=filename)
 
-#     db_run = mongo_obs.runs.find_one()
-#     assert db_run['resources'] == [(filename, md5)]
+def test_tinydb_observer_artifact_event(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
+
+    filename = "setup.py"
+    name = 'mysetup'
+
+    tinydb_obs.artifact_event(name, filename)
+
+    assert tinydb_obs.fs.exists(filename)
+
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['artifacts'][0]['name'] == name
+
+    with open(filename, 'rb') as f:
+        file_content = f.read()
+
+    with tinydb_obs.fs.open(db_run['artifacts'][0]['file_id']) as f2:
+        fs_content = f2.read()
+
+    assert fs_content == file_content
+
+
+def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
+    tinydb_obs.started_event(**sample_run)
+
+    filename = "setup.py"
+    md5 = get_digest(filename)
+
+    tinydb_obs.resource_event(filename)
+
+    assert tinydb_obs.fs.exists(filename)
+
+    db_run = tinydb_obs.runs.get(eid=1)
+    assert db_run['resources'] == [[filename, md5]]
+
+    with open(filename, 'rb') as f:
+        file_content = f.read()
+
+    with tinydb_obs.fs.open(db_run['resources'][0][1]) as f2:
+        fs_content = f2.read()
+
+    assert fs_content == file_content
+
 
 
 # def test_force_bson_encodable_doesnt_change_valid_document():
