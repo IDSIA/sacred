@@ -27,7 +27,10 @@ class DateTimeSerializer(Serializer):
 
 
 class NdArraySerializer(Serializer):
-    OBJ_CLASS = opt.np.ndarray 
+
+    def __init__(self, *args, **kwds):
+        super(NdArraySerializer).__init__(self, *args, **kwds)
+        self.OBJ_CLASS = opt.np.ndarray
 
     def encode(self, obj):
         return json.dumps(obj.tolist(), check_circular=True)
@@ -37,7 +40,10 @@ class NdArraySerializer(Serializer):
 
 
 class DataFrameSerializer(Serializer):
-    OBJ_CLASS = opt.pandas.DataFrame 
+
+    def __init__(self, *args, **kwds):
+        super(DataFrameSerializer).__init__(self, *args, **kwds)
+        self.OBJ_CLASS = opt.pandas.DataFrame 
 
     def encode(self, obj):
         return obj.to_json()
@@ -47,7 +53,10 @@ class DataFrameSerializer(Serializer):
 
 
 class SeriesSerializer(Serializer):
-    OBJ_CLASS = opt.pandas.core.series.Series  
+
+    def __init__(self, *args, **kwds):
+        super(SeriesSerializer).__init__(self, *args, **kwds)
+        self.OBJ_CLASS = opt.pandas.Series 
 
     def encode(self, obj):
         return obj.to_json()
@@ -71,9 +80,11 @@ class TinyDbObserver(RunObserver):
         # Setup Serialisation object for non list/dict objects 
         serialization_store = SerializationMiddleware()
         serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
-        serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
-        serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
-        serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+        if opt.has_numpy:
+            serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
+        if opt.has_pandas:    
+            serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+            serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
 
         db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
         fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3, width=2, algorithm='md5')

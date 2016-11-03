@@ -8,12 +8,12 @@ import tempfile
 
 import pytest
 
-from tinydb import TinyDB
-from hashfs import HashFS
-
 from sacred.dependencies import get_digest
 from sacred.observers.tinydb import TinyDbObserver
 from sacred import optional as opt
+
+from tinydb import TinyDB
+from hashfs import HashFS
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
