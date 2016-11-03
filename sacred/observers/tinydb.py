@@ -106,7 +106,7 @@ class TinyDbObserver(RunObserver):
         self.db_run_id = None
 
     def save(self):
-        """ Insert or update the current entry """
+        """Insert or update the current run entry."""
         if self.db_run_id:
             self.runs.update(self.run_entry, eids=[self.db_run_id])
         else:
