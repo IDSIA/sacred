@@ -15,6 +15,8 @@ from tinydb_serialization import Serializer, SerializationMiddleware
 
 from hashfs import HashFS
 
+__sacred__ = True  # marks files that should be filtered from stack traces
+
 
 class DateTimeSerializer(Serializer):
     OBJ_CLASS = dt.datetime  # The class this serializer handles
