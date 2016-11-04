@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import division, print_function, unicode_literals
+
 import os
 import datetime as dt
 import json
@@ -11,9 +13,8 @@ from sacred.dependencies import get_digest
 import sacred.optional as opt
 
 from tinydb import TinyDB
+from hashFS import HashFS
 from tinydb_serialization import Serializer, SerializationMiddleware
-
-from hashfs import HashFS
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 

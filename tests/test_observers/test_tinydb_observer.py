@@ -8,12 +8,12 @@ import tempfile
 
 import pytest
 
-from sacred.dependencies import get_digest
-from sacred.observers.tinydb import TinyDbObserver
-from sacred import optional as opt
-
 from tinydb import TinyDB
 from hashfs import HashFS
+
+from sacred.dependencies import get_digest
+from sacred.observers.tinydb_hashfs import TinyDbObserver
+from sacred import optional as opt
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -143,7 +143,7 @@ def test_tinydb_observer_equality(tmpdir, tinydb_obs):
 
     db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'))
     fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3, 
-                width=2, algorithm='md5')
+                       width=2, algorithm='md5')
     m = TinyDbObserver(db, fs)
 
     assert tinydb_obs == m
