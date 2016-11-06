@@ -19,6 +19,11 @@ from tinydb_serialization import Serializer, SerializationMiddleware
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
+# Set data type values for abstract properties in Serializers 
+series_type = opt.pandas.Series if opt.has_pandas else None
+dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
+ndarray_type = opt.np.ndarray if opt.has_numpy else None
+
 
 class DateTimeSerializer(Serializer):
     OBJ_CLASS = dt.datetime  # The class this serializer handles
@@ -31,10 +36,7 @@ class DateTimeSerializer(Serializer):
 
 
 class NdArraySerializer(Serializer):
-
-    def __init__(self, *args, **kwds):
-        super(NdArraySerializer).__init__(self, *args, **kwds)
-        self.OBJ_CLASS = opt.np.ndarray
+    OBJ_CLASS = ndarray_type
 
     def encode(self, obj):
         return json.dumps(obj.tolist(), check_circular=True)
@@ -44,10 +46,7 @@ class NdArraySerializer(Serializer):
 
 
 class DataFrameSerializer(Serializer):
-
-    def __init__(self, *args, **kwds):
-        super(DataFrameSerializer).__init__(self, *args, **kwds)
-        self.OBJ_CLASS = opt.pandas.DataFrame
+    OBJ_CLASS = dataframe_type
 
     def encode(self, obj):
         return obj.to_json()
@@ -57,10 +56,7 @@ class DataFrameSerializer(Serializer):
 
 
 class SeriesSerializer(Serializer):
-
-    def __init__(self, *args, **kwds):
-        super(SeriesSerializer).__init__(self, *args, **kwds)
-        self.OBJ_CLASS = opt.pandas.Series
+    OBJ_CLASS = series_type
 
     def encode(self, obj):
         return obj.to_json()
