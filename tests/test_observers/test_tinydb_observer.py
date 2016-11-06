@@ -75,7 +75,7 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     assert db_run['_id'] == sample_run['_id']
 
 
-def test_tindb_observer_started_event_saves_given_sources(tinydb_obs, 
+def test_tindb_observer_started_event_saves_given_sources(tinydb_obs,
                                                           sample_run):
 
     filename = 'setup.py'
@@ -128,7 +128,7 @@ def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs,
     assert _id != _id2
 
 
-def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs, 
+def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs,
                                                          sample_run):
 
     sample_queued_run = sample_run.copy()
@@ -143,8 +143,8 @@ def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs,
 def test_tinydb_observer_equality(tmpdir, tinydb_obs):
 
     db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'))
-    fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3, 
-                       width=2, algorithm='md5')
+    fs = HashFS(os.path.join(tmpdir.strpath, 'hashfs'), depth=3,
+                width=2, algorithm='md5')
     m = TinyDbObserver(db, fs)
 
     assert tinydb_obs == m
@@ -184,7 +184,7 @@ def test_tinydb_observer_completed_event_updates_run(tinydb_obs, sample_run):
     assert db_run['status'] == 'COMPLETED'
 
 
-def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs, 
+def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs,
                                                        sample_run):
     tinydb_obs.started_event(**sample_run)
 
@@ -254,7 +254,7 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
     assert fs_content == file_content
 
 
-def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs, 
+def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs,
                                                               sample_run):
     tinydb_obs.started_event(**sample_run)
 
@@ -272,15 +272,15 @@ def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs,
 
 @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
 def test_serialisation_of_numpy_ndarray(tmpdir):
-    from sacred.observers.tinydb import NdArraySerializer
+    from sacred.observers.tinydb_hashfs import NdArraySerializer
     from tinydb_serialization import SerializationMiddleware
     import numpy as np
 
-    # Setup Serialisation object for non list/dict objects 
+    # Setup Serialisation object for non list/dict objects
     serialization_store = SerializationMiddleware()
     serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
 
-    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), 
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'),
                 storage=serialization_store)
 
     eye_mat = np.eye(3)
@@ -303,21 +303,22 @@ def test_serialisation_of_numpy_ndarray(tmpdir):
 
 
 @pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
-def test_pandas_to_json_son_manipulator(tmpdir):
-    from sacred.observers.tinydb import DataFrameSerializer, SeriesSerializer
+def test_serialisation_of_pandas_dataframe(tmpdir):
+    from sacred.observers.tinydb_hashfs import (DataFrameSerializer, 
+                                                SeriesSerializer)
     from tinydb_serialization import SerializationMiddleware
 
     import numpy as np
     import pandas as pd
 
-    # Setup Serialisation object for non list/dict objects 
+    # Setup Serialisation object for non list/dict objects
     serialization_store = SerializationMiddleware()
-    serialization_store.register_serializer(DataFrameSerializer(), 
+    serialization_store.register_serializer(DataFrameSerializer(),
                                             'TinyDataFrame')
-    serialization_store.register_serializer(SeriesSerializer(), 
+    serialization_store.register_serializer(SeriesSerializer(),
                                             'TinySeries')
 
-    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'), 
+    db = TinyDB(os.path.join(tmpdir.strpath, 'metadata.json'),
                 storage=serialization_store)
 
     df = pd.DataFrame(np.eye(3), columns=list('ABC'))

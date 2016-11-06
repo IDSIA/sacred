@@ -19,7 +19,7 @@ from tinydb_serialization import Serializer, SerializationMiddleware
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-# Set data type values for abstract properties in Serializers 
+# Set data type values for abstract properties in Serializers
 series_type = opt.pandas.Series if opt.has_pandas else None
 dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
 ndarray_type = opt.np.ndarray if opt.has_numpy else None
