@@ -247,4 +247,4 @@ class TinyDbOption(CommandLineOption):
         if not tail:
             tail = 'observer_db'
 
-        return head, tail 
+        return head, tail
