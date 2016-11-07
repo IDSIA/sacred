@@ -10,6 +10,7 @@ import uuid
 
 from sacred.__about__ import __version__
 from sacred.observers import RunObserver
+from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 import sacred.optional as opt
 
@@ -220,3 +221,30 @@ class TinyDbObserver(RunObserver):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class TinyDbOption(CommandLineOption):
+    """Add a TinyDB Observer to the experiment."""
+
+    arg = 'LOCATION'
+    arg_description = ("Root location and name for Tinydb-hash file system. "
+                       "Can be [path/to/location/]db_name defaulting to "
+                       "current directory with db named 'observer_db'")
+
+    @classmethod
+    def apply(cls, args, run):
+        location, db_name = cls.parse_tinydb_arg(args)
+        tinydb_obs = TinyDbObserver.create(path=location, name=db_name)
+        run.observers.append(tinydb_obs)
+
+    @classmethod
+    def parse_tinydb_arg(cls, args):
+
+        head, tail = os.path.split(args)
+
+        if not head:
+            head = '.'
+        if not tail:
+            tail = 'observer_db'
+
+        return head, tail 

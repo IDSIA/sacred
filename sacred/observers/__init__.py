@@ -7,6 +7,7 @@ from sacred.commandline_options import CommandLineOption
 from sacred.observers.base import RunObserver
 from sacred.observers.file_storage import FileStorageObserver
 import sacred.optional as opt
+from sacred.observers.tinydb_hashfs import TinyDbObserver
 
 if opt.has_pymongo:
     from sacred.observers.mongo import MongoObserver
@@ -40,4 +41,4 @@ else:
 
 
 __all__ = ('FileStorageObserver', 'RunObserver', 'MongoObserver',
-           'SqlObserver')
+           'SqlObserver', 'TinyDbObserver')
