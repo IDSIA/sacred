@@ -13,7 +13,7 @@ from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
-from sacred.observers.tinydb_hashfs import TinyDbObserver
+from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption
 from sacred import optional as opt
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -338,3 +338,9 @@ def test_serialisation_of_pandas_dataframe(tmpdir):
     assert returned_doc['foo'] == 'bar'
     assert (returned_doc['some_dataframe'] == df).all().all()
     assert (returned_doc['nested']['ones'] == series).all()
+
+
+def test_parse_mongo_db_arg():
+    assert TinyDbOption.parse_tinydb_arg('foo') == ('.', 'foo')
+    assert TinyDbOption.parse_tinydb_arg('path/to/foo') == ('path/to', 'foo')
+    assert TinyDbOption.parse_tinydb_arg('') == ('.', 'observer_db')
