@@ -71,10 +71,9 @@ class TinyDbObserver(RunObserver):
     VERSION = "TinyDbObserver-{}".format(__version__)
 
     @staticmethod
-    def create(path='.', name='observer_db', overwrite=None):
+    def create(path='./runs_db', overwrite=None):
 
-        location = os.path.abspath(path)
-        root_dir = os.path.join(location, name)
+        root_dir = os.path.abspath(path)
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
 
@@ -226,25 +225,14 @@ class TinyDbObserver(RunObserver):
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
 
-    arg = 'LOCATION'
-    arg_description = ("Root location and name for Tinydb-hash file system. "
-                       "Can be [path/to/location/]db_name defaulting to "
-                       "current directory with db named 'observer_db'")
+    arg = 'BASEDIR'
 
     @classmethod
     def apply(cls, args, run):
-        location, db_name = cls.parse_tinydb_arg(args)
-        tinydb_obs = TinyDbObserver.create(path=location, name=db_name)
+        location = cls.parse_tinydb_arg(args)
+        tinydb_obs = TinyDbObserver.create(path=location)
         run.observers.append(tinydb_obs)
 
     @classmethod
     def parse_tinydb_arg(cls, args):
-
-        head, tail = os.path.split(args)
-
-        if not head:
-            head = '.'
-        if not tail:
-            tail = 'observer_db'
-
-        return head, tail
+        return args

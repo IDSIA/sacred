@@ -23,7 +23,7 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 @pytest.fixture()
 def tinydb_obs(tmpdir):
-    return TinyDbObserver.create(path=tmpdir.strpath, name='testdb')
+    return TinyDbObserver.create(path=tmpdir.strpath)
 
 
 @pytest.fixture()
@@ -342,15 +342,13 @@ def test_serialisation_of_pandas_dataframe(tmpdir):
 
 
 def test_parse_tinydb_arg():
-    assert TinyDbOption.parse_tinydb_arg('foo') == ('.', 'foo')
-    assert TinyDbOption.parse_tinydb_arg('path/to/foo') == ('path/to', 'foo')
-    assert TinyDbOption.parse_tinydb_arg('') == ('.', 'observer_db')
+    assert TinyDbOption.parse_tinydb_arg('foo') == 'foo'
 
 
 def test_parse_tinydboption_apply(tmpdir):
 
     exp = Experiment()
-    args = (os.path.join(tmpdir.strpath, 'testdb'))  
+    args = os.path.join(tmpdir.strpath)  
 
     TinyDbOption.apply(args, exp) 
     assert type(exp.observers[0]) == TinyDbObserver
