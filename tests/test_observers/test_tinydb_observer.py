@@ -6,6 +6,7 @@ from __future__ import (division, print_function, unicode_literals,
 import os
 import datetime
 import tempfile
+import io
 
 import pytest
 
@@ -88,9 +89,12 @@ def test_tindb_observer_started_event_saves_given_sources(tinydb_obs,
     assert _id is not None
     assert len(tinydb_obs.runs) == 1
     db_run = tinydb_obs.runs.get(eid=1)
-    assert db_run == {
+
+    # Check all but the experiment section
+    db_run_copy = db_run.copy()
+    del db_run_copy['experiment']
+    assert db_run_copy == {
         '_id': _id,
-        'experiment': sample_run['ex_info'],
         'format': tinydb_obs.VERSION,
         'command': sample_run['command'],
         'host': sample_run['host_info'],
@@ -105,12 +109,18 @@ def test_tindb_observer_started_event_saves_given_sources(tinydb_obs,
         'resources': []
     }
 
+    assert len(db_run['experiment']['sources']) == 1
+    assert len(db_run['experiment']['sources'][0]) == 3
+    assert db_run['experiment']['sources'][0][:2] == [filename, md5]
+    assert isinstance(db_run['experiment']['sources'][0][2], io.BufferedReader)
+
     # Check that duplicate source files are still listed in ex_info
     tinydb_obs.db_run_id = None
     tinydb_obs.started_event(**sample_run)
     assert len(tinydb_obs.runs) == 2
     db_run2 = tinydb_obs.runs.get(eid=2)
-    assert db_run2['experiment']['sources'] == db_run['experiment']['sources']
+
+    assert db_run['experiment']['sources'][0][:2] == db_run2['experiment']['sources'][0][:2]
 
 
 def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs,
@@ -222,15 +232,11 @@ def test_tinydb_observer_artifact_event(tinydb_obs, sample_run):
     assert tinydb_obs.fs.exists(filename)
 
     db_run = tinydb_obs.runs.get(eid=1)
-    assert db_run['artifacts'][0]['name'] == name
+    assert db_run['artifacts'][0][0] == name
 
     with open(filename, 'rb') as f:
         file_content = f.read()
-
-    with tinydb_obs.fs.open(db_run['artifacts'][0]['file_id']) as f2:
-        fs_content = f2.read()
-
-    assert fs_content == file_content
+    assert db_run['artifacts'][0][3].read() == file_content
 
 
 def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
@@ -244,15 +250,11 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
     assert tinydb_obs.fs.exists(filename)
 
     db_run = tinydb_obs.runs.get(eid=1)
-    assert db_run['resources'] == [[filename, md5]]
+    assert db_run['resources'][0][:2] == [filename, md5]
 
     with open(filename, 'rb') as f:
         file_content = f.read()
-
-    with tinydb_obs.fs.open(db_run['resources'][0][1]) as f2:
-        fs_content = f2.read()
-
-    assert fs_content == file_content
+    assert db_run['resources'][0][2].read() == file_content
 
 
 def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs,
@@ -268,7 +270,7 @@ def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs,
     tinydb_obs.resource_event(filename)
 
     db_run = tinydb_obs.runs.get(eid=1)
-    assert db_run['resources'] == [[filename, md5]]
+    assert db_run['resources'][0][:2] == [filename, md5]
 
 
 @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
@@ -305,7 +307,7 @@ def test_serialisation_of_numpy_ndarray(tmpdir):
 
 @pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
 def test_serialisation_of_pandas_dataframe(tmpdir):
-    from sacred.observers.tinydb_hashfs import (DataFrameSerializer, 
+    from sacred.observers.tinydb_hashfs import (DataFrameSerializer,
                                                 SeriesSerializer)
     from tinydb_serialization import SerializationMiddleware
 
@@ -348,7 +350,7 @@ def test_parse_tinydb_arg():
 def test_parse_tinydboption_apply(tmpdir):
 
     exp = Experiment()
-    args = os.path.join(tmpdir.strpath)  
+    args = os.path.join(tmpdir.strpath)
 
-    TinyDbOption.apply(args, exp) 
+    TinyDbOption.apply(args, exp)
     assert type(exp.observers[0]) == TinyDbObserver

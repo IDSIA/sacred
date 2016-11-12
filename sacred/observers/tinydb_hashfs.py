@@ -8,10 +8,11 @@ import datetime as dt
 import json
 import uuid
 
+from io import BufferedReader
+
 from sacred.__about__ import __version__
 from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
-from sacred.dependencies import get_digest
 import sacred.optional as opt
 
 from tinydb import TinyDB
@@ -26,7 +27,7 @@ dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
 ndarray_type = opt.np.ndarray if opt.has_numpy else None
 
 
-class FileHandleWrapper(object):
+class BufferedReaderWrapper(BufferedReader):
 
     """Custom wrapper to allow for copying of file handle.
 
@@ -39,16 +40,16 @@ class FileHandleWrapper(object):
     one thats closed.
     """
 
-    def __init__(self, file_handle):
-        self.file_handle = file_handle
+    def __init__(self, *args, **kwargs):
+        super(BufferedReaderWrapper, self).__init__(*args, **kwargs)
 
     def __copy__(self):
-        f = open(self.file_handle.name, self.file_handle.mode)
-        return FileHandleWrapper(f)
+        f = open(self.name, self.mode)
+        return BufferedReaderWrapper(f)
 
     def __deepcopy__(self, memo):
-        f = open(self.file_handle.name, self.file_handle.mode)
-        return FileHandleWrapper(f)
+        f = open(self.name, self.mode)
+        return BufferedReaderWrapper(f)
 
 
 class DateTimeSerializer(Serializer):
@@ -92,21 +93,21 @@ class SeriesSerializer(Serializer):
 
 
 class FileSerializer(Serializer):
-    OBJ_CLASS = FileHandleWrapper
+    OBJ_CLASS = BufferedReaderWrapper
 
     def __init__(self, fs):
         self.fs = fs
 
     def encode(self, obj):
-        f_obj = obj.file_handle
-        filename = os.path.split(f_obj.name)[1]
-        address = self.fs.put(f_obj)
-        return json.dumps([filename, address.id])
+        address = self.fs.put(obj)
+        return json.dumps(address.id)
 
     def decode(self, s):
-        filename, id_ = json.loads(s)
+        id_ = json.loads(s)
         file_reader = self.fs.open(id_)
-        return filename, file_reader
+        file_reader = BufferedReaderWrapper(file_reader)
+        file_reader.hash = id_
+        return file_reader
 
 
 class TinyDbObserver(RunObserver):
@@ -157,6 +158,7 @@ class TinyDbObserver(RunObserver):
         if self.db_run_id:
             self.runs.update(self.run_entry, eids=[self.db_run_id])
         else:
+            print(self.run_entry)
             db_run_id = self.runs.insert(self.run_entry)
             self.db_run_id = db_run_id
 
@@ -165,16 +167,18 @@ class TinyDbObserver(RunObserver):
         source_info = []
         for source_name, md5 in ex_info['sources']:
 
+            # Substitute any HOME or Environment Vars to get absolute path
+            abs_path = os.path.expanduser(source_name)
+            abs_path = os.path.expandvars(source_name)
+            handle = BufferedReaderWrapper(open(abs_path, 'rb'))
+
             file = self.fs.get(md5)
             if file:
-                id_ = file.id
+                id_ = file.id                
             else:
-                # Substitute any HOME or Environment Vars to get absolute path
-                abs_path = os.path.expanduser(source_name)
-                abs_path = os.path.expandvars(source_name)
                 address = self.fs.put(abs_path)
                 id_ = address.id
-            source_info.append([source_name, id_])
+            source_info.append([source_name, id_, handle])
         return source_info
 
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
@@ -238,27 +242,23 @@ class TinyDbObserver(RunObserver):
 
     def resource_event(self, filename):
 
-        md5hash = get_digest(filename)
-        file_ = self.fs.get(md5hash)
-        resource = (filename, md5hash)
+        id_ = self.fs.put(filename).id
+        handle = BufferedReaderWrapper(open(filename, 'rb'))        
+        resource = [filename, id_, handle]
 
-        if file_:
-            if resource not in self.run_entry['resources']:
-                self.run_entry['resources'].append(resource)
-                self.save()
-        else:
-            self.fs.put(filename)
-            self.run_entry['resources'].append((filename, md5hash))
+        if resource not in self.run_entry['resources']:
+            self.run_entry['resources'].append(resource)
             self.save()
 
     def artifact_event(self, name, filename):
 
-        md5hash = get_digest(filename)
-
-        self.fs.put(filename)
-        self.run_entry['artifacts'].append({'name': name,
-                                            'file_id': md5hash})
-        self.save()
+        id_ = self.fs.put(filename).id
+        handle = BufferedReaderWrapper(open(filename, 'rb'))        
+        artifact = [name, filename, id_, handle]
+        
+        if artifact not in self.run_entry['artifacts']:
+            self.run_entry['artifacts'].append(artifact)
+            self.save()
 
     def __eq__(self, other):
         if isinstance(other, TinyDbObserver):
