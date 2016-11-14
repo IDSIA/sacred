@@ -7,6 +7,8 @@ import os
 import datetime as dt
 import json
 import uuid
+import textwrap
+from collections import OrderedDict
 
 from io import BufferedReader
 
@@ -15,7 +17,8 @@ from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
 import sacred.optional as opt
 
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
+from tinydb.queries import QueryImpl
 from hashfs import HashFS
 from tinydb_serialization import Serializer, SerializationMiddleware
 
@@ -158,7 +161,6 @@ class TinyDbObserver(RunObserver):
         if self.db_run_id:
             self.runs.update(self.run_entry, eids=[self.db_run_id])
         else:
-            print(self.run_entry)
             db_run_id = self.runs.insert(self.run_entry)
             self.db_run_id = db_run_id
 
@@ -283,3 +285,201 @@ class TinyDbOption(CommandLineOption):
     @classmethod
     def parse_tinydb_arg(cls, args):
         return args
+
+
+class TinyDbReader(object):
+
+    def __init__(self, path):
+
+        root_dir = os.path.abspath(path)
+        if not os.path.exists(root_dir):
+            raise IOError('Path does not exist: %s' % path)
+
+        fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
+                    width=2, algorithm='md5')
+
+        # Setup Serialisation for non list/dict objects
+        serialization_store = SerializationMiddleware()
+        serialization_store.register_serializer(DateTimeSerializer(),
+                                                'TinyDate')
+        serialization_store.register_serializer(FileSerializer(fs),
+                                                'TinyFile')
+        if opt.has_numpy:
+            serialization_store.register_serializer(NdArraySerializer(),
+                                                    'TinyArray')
+        if opt.has_pandas:
+            serialization_store.register_serializer(DataFrameSerializer(),
+                                                    'TinyDataFrame')
+            serialization_store.register_serializer(SeriesSerializer(),
+                                                    'TinySeries')
+
+        db = TinyDB(os.path.join(root_dir, 'metadata.json'),
+                    storage=serialization_store)
+
+        self.db = db
+        self.runs = db.table('runs')
+        self.fs = fs
+
+    def search(self, *args, **kwargs):
+        """Wrapper to TinyDB's search function"""
+        return self.runs.search(*args, **kwargs)
+
+    def fetch_files(self, exp_name=None, query=None, indices=None):
+        """Return Dictionary of files for experiment name or query. 
+
+        Returns a list of one dictionary per matched experiment. The 
+        dictionary is of the following structure 
+
+            {
+              'exp_name': 'scascasc',
+              'exp_id': 'dqwdqdqwf',
+              'date': datatime_object, 
+              'sources': [ {'filename': filehandle}, ..., ],
+              'resources': [ {'filename': filehandle}, ..., ],
+              'artifacts': [ {'filename': filehandle}, ..., ]
+            }
+
+        """
+
+        entries = self.fetch_metadata(exp_name, query, indices) 
+
+        all_matched_entries = []
+        for ent in entries:
+            
+            rec = dict(exp_name=ent['experiment']['name'], 
+                       exp_id=ent['_id'], 
+                       date=ent['start_time'])
+
+            source_files = {x[0]: x[2] for x in ent['experiment']['sources']}
+            resource_files = {x[0]: x[2] for x in ent['resources']}
+            artifact_files = {x[0]: x[3] for x in ent['artifacts']}            
+
+            if source_files:
+                rec['sources'] = source_files
+            if resource_files:
+                rec['resources'] = resource_files
+            if artifact_files:
+                rec['artifacts'] = artifact_files
+
+            all_matched_entries.append(rec)
+
+        return all_matched_entries
+
+    def fetch_report(self, exp_name=None, query=None, indices=None):
+
+        template = """
+-------------------------------------------------
+Experiment: {exp_name}
+-------------------------------------------------
+ID: {exp_id}
+Date: {start_date}    Duration: {duration}
+
+Parameters:
+{parameters}
+
+Result: 
+{result}
+
+Dependencies:
+{dependencies}
+
+Resources:
+{resources}
+
+Source Files:
+{sources}
+
+Outputs:
+{artifacts}
+"""
+
+        entries = self.fetch_metadata(exp_name, query, indices) 
+
+        all_matched_entries = []
+        for ent in entries:
+            
+            date = ent['start_time']
+            WEEKDAYS = 'Mon Tue Wed Thu Fri Sat Sun'.split()
+            w = WEEKDAYS[date.weekday()]
+            date = ' '.join([w, date.strftime('%d %b %Y')])
+
+            duration = ent['stop_time'] - ent['start_time']
+            secs = duration.total_seconds()
+            hours, remainder = divmod(secs, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            duration = '%d:%d:%.1f' % (hours, minutes, seconds)
+
+            parameters = self._dict_to_indented_list(ent['config'])
+
+            result = textwrap.indent(ent['result'].__repr__(), prefix='    ')
+
+            deps = ent['experiment']['dependencies']
+            deps = textwrap.indent('\n'.join(deps), prefix='    ')
+
+            resources = [x[0] for x in ent['resources']]
+            resources = textwrap.indent('\n'.join(resources), prefix='    ')
+
+            sources = [x[0] for x in ent['experiment']['sources']]
+            sources = textwrap.indent('\n'.join(sources), prefix='    ')
+
+            artifacts = [x[0] for x in ent['artifacts']]
+            artifacts = textwrap.indent('\n'.join(artifacts), prefix='    ')
+
+            none_str = '    None'
+
+            rec = dict(exp_name=ent['experiment']['name'], 
+                       exp_id=ent['_id'], 
+                       start_date=date, 
+                       duration=duration,
+                       parameters=parameters if parameters else none_str,
+                       result=result if result else none_str, 
+                       dependencies=deps if deps else none_str, 
+                       resources=resources if resources else none_str,
+                       sources=sources if sources else none_str,
+                       artifacts=artifacts if artifacts else none_str)
+
+            report = template.format(**rec)
+
+            all_matched_entries.append(report)
+
+        return all_matched_entries
+
+    def fetch_metadata(self, exp_name=None, query=None, indices=None):
+        """Return all metadata for matching experiment name, index or query"""
+
+        if exp_name or query:
+            if query:
+                assert type(query), QueryImpl
+                q = query
+            elif exp_name:
+                q = Query().experiment.name.matches(exp_name)
+    
+            entries = self.runs.search(q)
+    
+        elif indices:
+            if not isinstance(indices, (tuple, list)):
+                indices = [indices]
+
+            entries = [self.runs.all()[ind] for ind in indices]
+
+        else:
+            raise ValueError('Must specify an experiment name, indicies or '
+                             'pass custom query')
+
+        return entries
+
+    def _dict_to_indented_list(self, d):
+
+        d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+        
+        output_str = ''
+
+        for k, v in d.items():
+            output_str += '%s: %s' % (k, v)
+            output_str += '\n'
+
+        output_str = textwrap.indent(output_str.strip(), prefix='    ')
+
+        return output_str
+
+
