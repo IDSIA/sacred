@@ -45,7 +45,7 @@ def sample_run():
     }
 
 
-def test_tindb_observer_started_event_creates_run(tinydb_obs, sample_run):
+def test_tinydb_observer_started_event_creates_run(tinydb_obs, sample_run):
     sample_run['_id'] = None
     _id = tinydb_obs.started_event(**sample_run)
     assert _id is not None
@@ -77,7 +77,7 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     assert db_run['_id'] == sample_run['_id']
 
 
-def test_tindb_observer_started_event_saves_given_sources(tinydb_obs,
+def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs,
                                                           sample_run):
 
     filename = 'setup.py'
@@ -123,7 +123,7 @@ def test_tindb_observer_started_event_saves_given_sources(tinydb_obs,
     assert db_run['experiment']['sources'][0][:2] == db_run2['experiment']['sources'][0][:2]
 
 
-def test_tindb_observer_started_event_generates_different_run_ids(tinydb_obs,
+def test_tinydb_observer_started_event_generates_different_run_ids(tinydb_obs,
                                                                   sample_run):
     sample_run['_id'] = None
     _id = tinydb_obs.started_event(**sample_run)
