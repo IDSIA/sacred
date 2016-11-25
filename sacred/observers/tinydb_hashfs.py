@@ -146,15 +146,16 @@ class TinyDbObserver(RunObserver):
         db = TinyDB(os.path.join(root_dir, 'metadata.json'),
                     storage=serialization_store)
 
-        return TinyDbObserver(db, fs, overwrite=overwrite)
+        return TinyDbObserver(db, fs, overwrite=overwrite, root=root_dir)
 
-    def __init__(self, db, fs, overwrite=None):
+    def __init__(self, db, fs, overwrite=None, root=None):
         self.db = db
         self.runs = db.table('runs')
         self.fs = fs
         self.overwrite = overwrite
         self.run_entry = {}
         self.db_run_id = None
+        self.root = root
 
     def save(self):
         """Insert or update the current run entry."""
@@ -176,7 +177,7 @@ class TinyDbObserver(RunObserver):
 
             file = self.fs.get(md5)
             if file:
-                id_ = file.id                
+                id_ = file.id
             else:
                 address = self.fs.put(abs_path)
                 id_ = address.id
@@ -341,18 +342,18 @@ class TinyDbReader(object):
 
         """
 
-        entries = self.fetch_metadata(exp_name, query, indices) 
+        entries = self.fetch_metadata(exp_name, query, indices)
 
         all_matched_entries = []
         for ent in entries:
-            
-            rec = dict(exp_name=ent['experiment']['name'], 
+
+            rec = dict(exp_name=ent['experiment']['name'],
                        exp_id=ent['_id'], 
                        date=ent['start_time'])
 
             source_files = {x[0]: x[2] for x in ent['experiment']['sources']}
             resource_files = {x[0]: x[2] for x in ent['resources']}
-            artifact_files = {x[0]: x[3] for x in ent['artifacts']}            
+            artifact_files = {x[0]: x[3] for x in ent['artifacts']}
 
             if source_files:
                 rec['sources'] = source_files
@@ -397,7 +398,7 @@ Outputs:
 
         all_matched_entries = []
         for ent in entries:
-            
+
             date = ent['start_time']
             WEEKDAYS = 'Mon Tue Wed Thu Fri Sat Sun'.split()
             w = WEEKDAYS[date.weekday()]
@@ -481,5 +482,3 @@ Outputs:
         output_str = textwrap.indent(output_str.strip(), prefix='    ')
 
         return output_str
-
-
