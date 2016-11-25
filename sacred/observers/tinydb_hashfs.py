@@ -326,9 +326,9 @@ class TinyDbReader(object):
         return self.runs.search(*args, **kwargs)
 
     def fetch_files(self, exp_name=None, query=None, indices=None):
-        """Return Dictionary of files for experiment name or query. 
+        """Return Dictionary of files for experiment name or query.
 
-        Returns a list of one dictionary per matched experiment. The 
+        Returns a list of one dictionary per matched experiment. The
         dictionary is of the following structure 
 
             {
@@ -378,7 +378,7 @@ Date: {start_date}    Duration: {duration}
 Parameters:
 {parameters}
 
-Result: 
+Result:
 {result}
 
 Dependencies:
@@ -408,7 +408,7 @@ Outputs:
             secs = duration.total_seconds()
             hours, remainder = divmod(secs, 3600)
             minutes, seconds = divmod(remainder, 60)
-            duration = '%d:%d:%.1f' % (hours, minutes, seconds)
+            duration = '%02d:%02d:%04.1f' % (hours, minutes, seconds)
 
             parameters = self._dict_to_indented_list(ent['config'])
 
@@ -453,13 +453,20 @@ Outputs:
                 assert type(query), QueryImpl
                 q = query
             elif exp_name:
-                q = Query().experiment.name.matches(exp_name)
+                q = Query().experiment.name.search(exp_name)
     
             entries = self.runs.search(q)
     
-        elif indices:
+        elif indices or indices == 0:
             if not isinstance(indices, (tuple, list)):
                 indices = [indices]
+
+            num_recs = len(self.runs)
+
+            for idx in indices:
+                if idx >= num_recs:
+                    raise ValueError('Index value ({}) must be less than '
+                            'number of records ({})'.format(idx, num_recs))
 
             entries = [self.runs.all()[ind] for ind in indices]
 
