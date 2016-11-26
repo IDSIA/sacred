@@ -14,7 +14,7 @@ from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
-from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption
+from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption, BufferedReaderWrapper
 from sacred import optional as opt
 from sacred.experiment import Experiment
 
@@ -43,6 +43,11 @@ def sample_run():
         'config': config,
         'meta_info': meta_info,
     }
+
+
+def test_tinydb_observer_creates_missing_directories(tmpdir):
+    tinydb_obs = TinyDbObserver.create(path=os.path.join(tmpdir.strpath, 'foo'))
+    assert tinydb_obs.root == os.path.join(tmpdir.strpath, 'foo')
 
 
 def test_tinydb_observer_started_event_creates_run(tinydb_obs, sample_run):
@@ -78,8 +83,7 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
 
 
 def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs,
-                                                          sample_run):
-
+                                                           sample_run):
     filename = 'setup.py'
     md5 = get_digest(filename)
 
@@ -124,7 +128,7 @@ def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs,
 
 
 def test_tinydb_observer_started_event_generates_different_run_ids(tinydb_obs,
-                                                                  sample_run):
+                                                                   sample_run):
     sample_run['_id'] = None
     _id = tinydb_obs.started_event(**sample_run)
     assert _id is not None
@@ -271,6 +275,31 @@ def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs,
 
     db_run = tinydb_obs.runs.get(eid=1)
     assert db_run['resources'][0][:2] == [filename, md5]
+
+
+def test_custom_bufferreaderwrapper(tmpdir):
+    import copy
+
+    with open(os.path.join(tmpdir.strpath, 'test.txt'), 'w') as f:
+        f.write('some example text')
+    with open(os.path.join(tmpdir.strpath, 'test.txt'), 'r') as f:
+        custom_fh = BufferedReaderWrapper(f)
+        assert f.name == custom_fh.name
+        assert f.mode == custom_fh.mode
+        custom_fh_copy = copy.copy(custom_fh)
+        assert custom_fh.name == custom_fh_copy.name
+        assert custom_fh.mode == custom_fh_copy.mode
+
+    assert f.closed
+    assert custom_fh.closed
+    assert not custom_fh_copy.closed
+
+    custom_fh_deepcopy = copy.deepcopy(custom_fh_copy)
+    assert custom_fh_copy.name == custom_fh_deepcopy.name
+    assert custom_fh_copy.mode == custom_fh_deepcopy.mode
+    custom_fh_copy.close()
+    assert custom_fh_copy.closed
+    assert not custom_fh_deepcopy.closed
 
 
 @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
