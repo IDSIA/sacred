@@ -34,13 +34,13 @@ class BufferedReaderWrapper(BufferedReader):
 
     """Custom wrapper to allow for copying of file handle.
 
-    tinydb_serialisation currently does a deepcopy on all the content of the 
-    dictionary before serialisation. By default, file handles are not 
-    copiable so this wrapper is necessary to create a duplicate of the 
-    file handle passes in.  
+    tinydb_serialisation currently does a deepcopy on all the content of the
+    dictionary before serialisation. By default, file handles are not
+    copiable so this wrapper is necessary to create a duplicate of the
+    file handle passes in.
 
     Note that the file passed in will therefor remain open as the copy is the
-    one thats closed.
+    one that gets closed.
     """
 
     def __init__(self, *args, **kwargs):
@@ -246,7 +246,7 @@ class TinyDbObserver(RunObserver):
     def resource_event(self, filename):
 
         id_ = self.fs.put(filename).id
-        handle = BufferedReaderWrapper(open(filename, 'rb'))        
+        handle = BufferedReaderWrapper(open(filename, 'rb'))
         resource = [filename, id_, handle]
 
         if resource not in self.run_entry['resources']:
@@ -256,9 +256,9 @@ class TinyDbObserver(RunObserver):
     def artifact_event(self, name, filename):
 
         id_ = self.fs.put(filename).id
-        handle = BufferedReaderWrapper(open(filename, 'rb'))        
+        handle = BufferedReaderWrapper(open(filename, 'rb'))
         artifact = [name, filename, id_, handle]
-        
+
         if artifact not in self.run_entry['artifacts']:
             self.run_entry['artifacts'].append(artifact)
             self.save()
@@ -329,12 +329,12 @@ class TinyDbReader(object):
         """Return Dictionary of files for experiment name or query.
 
         Returns a list of one dictionary per matched experiment. The
-        dictionary is of the following structure 
+        dictionary is of the following structure
 
             {
               'exp_name': 'scascasc',
               'exp_id': 'dqwdqdqwf',
-              'date': datatime_object, 
+              'date': datatime_object,
               'sources': [ {'filename': filehandle}, ..., ],
               'resources': [ {'filename': filehandle}, ..., ],
               'artifacts': [ {'filename': filehandle}, ..., ]
@@ -348,7 +348,7 @@ class TinyDbReader(object):
         for ent in entries:
 
             rec = dict(exp_name=ent['experiment']['name'],
-                       exp_id=ent['_id'], 
+                       exp_id=ent['_id'],
                        date=ent['start_time'])
 
             source_files = {x[0]: x[2] for x in ent['experiment']['sources']}
@@ -394,7 +394,7 @@ Outputs:
 {artifacts}
 """
 
-        entries = self.fetch_metadata(exp_name, query, indices) 
+        entries = self.fetch_metadata(exp_name, query, indices)
 
         all_matched_entries = []
         for ent in entries:
@@ -428,13 +428,13 @@ Outputs:
 
             none_str = '    None'
 
-            rec = dict(exp_name=ent['experiment']['name'], 
-                       exp_id=ent['_id'], 
-                       start_date=date, 
+            rec = dict(exp_name=ent['experiment']['name'],
+                       exp_id=ent['_id'],
+                       start_date=date,
                        duration=duration,
                        parameters=parameters if parameters else none_str,
-                       result=result if result else none_str, 
-                       dependencies=deps if deps else none_str, 
+                       result=result if result else none_str,
+                       dependencies=deps if deps else none_str,
                        resources=resources if resources else none_str,
                        sources=sources if sources else none_str,
                        artifacts=artifacts if artifacts else none_str)
@@ -454,9 +454,9 @@ Outputs:
                 q = query
             elif exp_name:
                 q = Query().experiment.name.search(exp_name)
-    
+
             entries = self.runs.search(q)
-    
+
         elif indices or indices == 0:
             if not isinstance(indices, (tuple, list)):
                 indices = [indices]
@@ -465,8 +465,9 @@ Outputs:
 
             for idx in indices:
                 if idx >= num_recs:
-                    raise ValueError('Index value ({}) must be less than '
-                            'number of records ({})'.format(idx, num_recs))
+                    raise ValueError(
+                        'Index value ({}) must be less than '
+                        'number of records ({})'.format(idx, num_recs))
 
             entries = [self.runs.all()[ind] for ind in indices]
 
@@ -479,7 +480,7 @@ Outputs:
     def _dict_to_indented_list(self, d):
 
         d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-        
+
         output_str = ''
 
         for k, v in d.items():

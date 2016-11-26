@@ -62,7 +62,7 @@ def run_test_experiment(exp_name, exp_id, root_dir):
     tinydb_obs = TinyDbObserver.create(path=root_dir)
 
     # Start exp 1
-    _id = tinydb_obs.started_event(**run_date)
+    tinydb_obs.started_event(**run_date)
 
     # Heartbeat
     info = {'my_info': [1, 2, 3], 'nr': 7}
@@ -71,7 +71,7 @@ def run_test_experiment(exp_name, exp_id, root_dir):
         f.write(outp.encode())
         f.flush()
         tinydb_obs.heartbeat_event(info=info, cout_filename=f.name,
-                                    beat_time=T2)
+                                   beat_time=T2)
     # Add Artifact
     filename = "sacred/__about__.py"
     name = 'about'
