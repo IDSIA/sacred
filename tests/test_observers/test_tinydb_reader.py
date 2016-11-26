@@ -3,20 +3,17 @@
 from __future__ import (division, print_function, unicode_literals,
                         absolute_import)
 
-import os
 import datetime
 import tempfile
 import io
 
 import pytest
 
-from tinydb import TinyDB, Query
-from hashfs import HashFS
+from tinydb import Query
 
 from sacred.dependencies import get_digest
 from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbReader
-from sacred import optional as opt
-from sacred.experiment import Experiment
+
 
 # Utilities and fixtures
 @pytest.fixture
@@ -24,23 +21,25 @@ def sample_run():
 
     T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 
-    exp = {'name': 'test_exp', 
-           'sources': [], 
-           'doc': '', 
-           'base_dir': '/tmp', 
-           'dependencies': ['sacred==0.7b0']}
+    exp = {
+        'name': 'test_exp',
+        'sources': [],
+        'doc': '',
+        'base_dir': '/tmp',
+        'dependencies': ['sacred==0.7b0']
+    }
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
     meta_info = {'comment': 'test run'}
     sample_run = {
-            '_id': 'FED235DA13',
-            'ex_info': exp,
-            'command': command,
-            'host_info': host,
-            'start_time': T1,
-            'config': config,
-            'meta_info': meta_info,
+        '_id': 'FED235DA13',
+        'ex_info': exp,
+        'command': command,
+        'host_info': host,
+        'start_time': T1,
+        'config': config,
+        'meta_info': meta_info,
     }
 
     filename = 'setup.py'
@@ -90,9 +89,9 @@ def run_test_experiment(exp_name, exp_id, root_dir):
 
 def strip_file_handles(results):
     """Return a database result set with all file handle objects removed.abs
-    
+
     Utility function to aid comparison of database entries. As file handles are
-    created newly each object, these are always different so can be excluded. 
+    created newly each object, these are always different so can be excluded.
     """
 
     if not isinstance(results, (list, tuple)):
@@ -100,7 +99,7 @@ def strip_file_handles(results):
 
     cleaned_results = []
     for result in results:
-        sources = result['experiment']['sources'] 
+        sources = result['experiment']['sources']
         artifacts = result['artifacts']
         resources = result['resources']
         if sources:
@@ -119,33 +118,39 @@ def strip_file_handles(results):
 
     return cleaned_results
 
+
 # TinyDbReader Tests
 def test_tinydb_reader_loads_db_and_fs(tmpdir):
-    
+
     root = tmpdir.strpath
     tinydb_obs = run_test_experiment(exp_name='exp1', exp_id='1234', root_dir=root)
     tinydb_reader = TinyDbReader(root)
-    
+
     assert tinydb_obs.fs.root == tinydb_reader.fs.root
-    # Different file handles are used in each object so compar based on str 
-    # representation 
-    assert str(tinydb_obs.runs.all()[0]) == str(tinydb_reader.runs.all()[0]) 
+    # Different file handles are used in each object so compar based on str
+    # representation
+    assert str(tinydb_obs.runs.all()[0]) == str(tinydb_reader.runs.all()[0])
+
+
+def test_tinydb_reader_raises_exceptions(tmpdir):
+    with pytest.raises(IOError):
+        TinyDbReader('foo')
 
 
 def test_fetch_metadata_function_with_indices(tmpdir, sample_run):
-    
+
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
+    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha',
                                      exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
+    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta',
                                      exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha', 
+    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha',
                                      exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
-    # Test fetch by indices 
+    # Test fetch by indices
     res = tinydb_reader.fetch_metadata(indices=-1)
     res2 = tinydb_reader.fetch_metadata(indices=[-1])
     assert strip_file_handles(res) == strip_file_handles(res2)
@@ -157,6 +162,11 @@ def test_fetch_metadata_function_with_indices(tmpdir, sample_run):
     assert exp1_res[0]['experiment']['name'] == 'experiment 1 alpha'
     assert exp1_res[0]['_id'] == '1234'
 
+    # Test Exception
+    with pytest.raises(ValueError):
+        tinydb_reader.fetch_metadata(indices=4)
+
+    # Test returned values
     exp1 = strip_file_handles(exp1_res)[0]
 
     sample_run['ex_info']['name'] = 'experiment 1 alpha'
@@ -182,22 +192,22 @@ def test_fetch_metadata_function_with_indices(tmpdir, sample_run):
         'status': 'COMPLETED',
         'resources': [
             ['sacred/__init__.py', get_digest('sacred/__init__.py')]
-        ], 
-        'result': 42, 
+        ],
+        'result': 42,
         'stop_time': datetime.datetime(1999, 5, 5, 6, 6, 6, 6)
     }
 
 
 def test_fetch_metadata_function_with_exp_name(tmpdir):
-    
+
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
-                                     exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
-                                     exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha', 
-                                     exp_id='9990', root_dir=root)
+    run_test_experiment(exp_name='experiment 1 alpha',
+                        exp_id='1234', root_dir=root)
+    run_test_experiment(exp_name='experiment 2 beta',
+                        exp_id='5678', root_dir=root)
+    run_test_experiment(exp_name='experiment 3 alpha',
+                        exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
@@ -209,18 +219,18 @@ def test_fetch_metadata_function_with_exp_name(tmpdir):
     assert res2[0]['experiment']['name'] == 'experiment 1 alpha'
     res2 = tinydb_reader.fetch_metadata(exp_name='foo')
     assert len(res2) == 0
-    
+
 
 def test_fetch_metadata_function_with_querry(tmpdir):
-    
+
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
-                                     exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
-                                     exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha beta', 
-                                     exp_id='9990', root_dir=root)
+    run_test_experiment(exp_name='experiment 1 alpha',
+                        exp_id='1234', root_dir=root)
+    run_test_experiment(exp_name='experiment 2 beta',
+                        exp_id='5678', root_dir=root)
+    run_test_experiment(exp_name='experiment 3 alpha beta',
+                        exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
@@ -229,12 +239,12 @@ def test_fetch_metadata_function_with_querry(tmpdir):
     exp1_query = record.experiment.name.matches('.*alpha$')
 
     exp3_query = (
-        (record.experiment.name.search('alpha')) & 
+        (record.experiment.name.search('alpha')) &
         (record._id == '9990')
     )
 
     # Test Fetch by Tinydb Query
-    res1 = tinydb_reader.fetch_metadata(query=exp1_query)            
+    res1 = tinydb_reader.fetch_metadata(query=exp1_query)
     assert len(res1) == 1
     assert res1[0]['experiment']['name'] == 'experiment 1 alpha'
 
@@ -242,22 +252,25 @@ def test_fetch_metadata_function_with_querry(tmpdir):
         query=record.experiment.name.search('experiment [23]'))
     assert len(res2) == 2
 
-    res3 = tinydb_reader.fetch_metadata(query=exp3_query)            
+    res3 = tinydb_reader.fetch_metadata(query=exp3_query)
     assert len(res3) == 1
     assert res3[0]['experiment']['name'] == 'experiment 3 alpha beta'
 
+    # Test Exception
+    with pytest.raises(ValueError):
+        tinydb_reader.fetch_metadata()
 
 
 def test_search_function(tmpdir):
-    
+
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
-                                     exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
-                                     exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha beta', 
-                                     exp_id='9990', root_dir=root)
+    run_test_experiment(exp_name='experiment 1 alpha',
+                        exp_id='1234', root_dir=root)
+    run_test_experiment(exp_name='experiment 2 beta',
+                        exp_id='5678', root_dir=root)
+    run_test_experiment(exp_name='experiment 3 alpha beta',
+                        exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
@@ -274,16 +287,16 @@ def test_search_function(tmpdir):
 def test_fetch_files_function(tmpdir):
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
-                                     exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
-                                     exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha beta', 
-                                     exp_id='9990', root_dir=root)
+    run_test_experiment(exp_name='experiment 1 alpha',
+                        exp_id='1234', root_dir=root)
+    run_test_experiment(exp_name='experiment 2 beta',
+                        exp_id='5678', root_dir=root)
+    run_test_experiment(exp_name='experiment 3 alpha beta',
+                        exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
-    res = tinydb_reader.fetch_files(indices=0) 
+    res = tinydb_reader.fetch_files(indices=0)
     assert len(res) == 1
     assert list(res[0]['artifacts'].keys()) == ['about']
     assert isinstance(res[0]['artifacts']['about'], io.BufferedReader)
@@ -297,15 +310,15 @@ def test_fetch_files_function(tmpdir):
 
 
 def test_fetch_report_function(tmpdir):
-    
+
     # Setup and run three experiments
     root = tmpdir.strpath
-    tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha', 
-                                     exp_id='1234', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 2 beta', 
-                                     exp_id='5678', root_dir=root)
-    tinydb_obs = run_test_experiment(exp_name='experiment 3 alpha beta', 
-                                     exp_id='9990', root_dir=root)
+    run_test_experiment(exp_name='experiment 1 alpha',
+                        exp_id='1234', root_dir=root)
+    run_test_experiment(exp_name='experiment 2 beta',
+                        exp_id='5678', root_dir=root)
+    run_test_experiment(exp_name='experiment 3 alpha beta',
+                        exp_id='9990', root_dir=root)
 
     tinydb_reader = TinyDbReader(root)
 
