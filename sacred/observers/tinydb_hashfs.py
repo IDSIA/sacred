@@ -31,7 +31,6 @@ ndarray_type = opt.np.ndarray if opt.has_numpy else None
 
 
 class BufferedReaderWrapper(BufferedReader):
-
     """Custom wrapper to allow for copying of file handle.
 
     tinydb_serialisation currently does a deepcopy on all the content of the
@@ -322,7 +321,7 @@ class TinyDbReader(object):
         self.fs = fs
 
     def search(self, *args, **kwargs):
-        """Wrapper to TinyDB's search function"""
+        """Wrapper to TinyDB's search function."""
         return self.runs.search(*args, **kwargs)
 
     def fetch_files(self, exp_name=None, query=None, indices=None):
@@ -341,7 +340,6 @@ class TinyDbReader(object):
             }
 
         """
-
         entries = self.fetch_metadata(exp_name, query, indices)
 
         all_matched_entries = []
@@ -400,8 +398,8 @@ Outputs:
         for ent in entries:
 
             date = ent['start_time']
-            WEEKDAYS = 'Mon Tue Wed Thu Fri Sat Sun'.split()
-            w = WEEKDAYS[date.weekday()]
+            weekdays = 'Mon Tue Wed Thu Fri Sat Sun'.split()
+            w = weekdays[date.weekday()]
             date = ' '.join([w, date.strftime('%d %b %Y')])
 
             duration = ent['stop_time'] - ent['start_time']
@@ -446,8 +444,7 @@ Outputs:
         return all_matched_entries
 
     def fetch_metadata(self, exp_name=None, query=None, indices=None):
-        """Return all metadata for matching experiment name, index or query"""
-
+        """Return all metadata for matching experiment name, index or query."""
         if exp_name or query:
             if query:
                 assert type(query), QueryImpl
