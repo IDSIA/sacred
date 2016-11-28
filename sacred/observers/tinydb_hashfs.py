@@ -10,7 +10,7 @@ import uuid
 import textwrap
 from collections import OrderedDict
 
-from io import BufferedReader
+from io import BufferedReader, FileIO
 
 from sacred.__about__ import __version__
 from sacred.observers import RunObserver
@@ -42,8 +42,9 @@ class BufferedReaderWrapper(BufferedReader):
     one that gets closed.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(BufferedReaderWrapper, self).__init__(*args, **kwargs)
+    def __init__(self, f_obj):
+        f_obj = FileIO(f_obj.name)
+        super(BufferedReaderWrapper, self).__init__(f_obj)
 
     def __copy__(self):
         f = open(self.name, self.mode)
@@ -410,19 +411,19 @@ Outputs:
 
             parameters = self._dict_to_indented_list(ent['config'])
 
-            result = textwrap.indent(ent['result'].__repr__(), prefix='    ')
+            result = self._indent(ent['result'].__repr__(), prefix='    ')
 
             deps = ent['experiment']['dependencies']
-            deps = textwrap.indent('\n'.join(deps), prefix='    ')
+            deps = self._indent('\n'.join(deps), prefix='    ')
 
             resources = [x[0] for x in ent['resources']]
-            resources = textwrap.indent('\n'.join(resources), prefix='    ')
+            resources = self._indent('\n'.join(resources), prefix='    ')
 
             sources = [x[0] for x in ent['experiment']['sources']]
-            sources = textwrap.indent('\n'.join(sources), prefix='    ')
+            sources = self._indent('\n'.join(sources), prefix='    ')
 
             artifacts = [x[0] for x in ent['artifacts']]
-            artifacts = textwrap.indent('\n'.join(artifacts), prefix='    ')
+            artifacts = self._indent('\n'.join(artifacts), prefix='    ')
 
             none_str = '    None'
 
@@ -484,6 +485,19 @@ Outputs:
             output_str += '%s: %s' % (k, v)
             output_str += '\n'
 
-        output_str = textwrap.indent(output_str.strip(), prefix='    ')
+        output_str = self._indent(output_str.strip(), prefix='    ')
 
         return output_str
+
+    def _indent(self, message, prefix):
+        """Wrapper for indenting strings in Python 2 and 3."""
+        preferred_width = 150
+        wrapper = textwrap.TextWrapper(initial_indent=prefix,
+                                       width=preferred_width,
+                                       subsequent_indent=prefix)
+
+        lines = message.splitlines()
+        formatted_lines = [wrapper.fill(lin) for lin in lines]
+        formatted_text = '\n'.join(formatted_lines)
+
+        return formatted_text

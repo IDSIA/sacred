@@ -14,7 +14,8 @@ from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
-from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption, BufferedReaderWrapper
+from sacred.observers.tinydb_hashfs import (TinyDbObserver, TinyDbOption, 
+                                            BufferedReaderWrapper)
 from sacred import optional as opt
 from sacred.experiment import Experiment
 
@@ -124,7 +125,8 @@ def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs,
     assert len(tinydb_obs.runs) == 2
     db_run2 = tinydb_obs.runs.get(eid=2)
 
-    assert db_run['experiment']['sources'][0][:2] == db_run2['experiment']['sources'][0][:2]
+    assert (db_run['experiment']['sources'][0][:2] ==
+            db_run2['experiment']['sources'][0][:2])
 
 
 def test_tinydb_observer_started_event_generates_different_run_ids(tinydb_obs,
@@ -282,7 +284,7 @@ def test_custom_bufferreaderwrapper(tmpdir):
 
     with open(os.path.join(tmpdir.strpath, 'test.txt'), 'w') as f:
         f.write('some example text')
-    with open(os.path.join(tmpdir.strpath, 'test.txt'), 'r') as f:
+    with open(os.path.join(tmpdir.strpath, 'test.txt'), 'rb') as f:
         custom_fh = BufferedReaderWrapper(f)
         assert f.name == custom_fh.name
         assert f.mode == custom_fh.mode
@@ -291,7 +293,7 @@ def test_custom_bufferreaderwrapper(tmpdir):
         assert custom_fh.mode == custom_fh_copy.mode
 
     assert f.closed
-    assert custom_fh.closed
+    assert not custom_fh.closed
     assert not custom_fh_copy.closed
 
     custom_fh_deepcopy = copy.deepcopy(custom_fh_copy)
