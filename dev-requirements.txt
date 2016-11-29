@@ -8,3 +8,6 @@ mongomock
 pymongo
 pyyaml
 pytest-cov
+tinydb
+tinydb-serialization
+hashfs

@@ -17,6 +17,7 @@ class Handler(object):
         self.dump = dump
         self.mode = mode
 
+
 HANDLER_BY_EXT = {
     '.json': Handler(lambda fp: json.decode(fp.read()),
                      lambda obj, fp: fp.write(json.encode(obj)), ''),

@@ -18,6 +18,7 @@ class DatetimeHandler(jsonpickle.handlers.BaseHandler):
     def flatten(self, obj, data):
         return obj.isoformat()
 
+
 DatetimeHandler.handles(datetime)
 
 json.set_encoder_options('simplejson', sort_keys=True, indent=4)

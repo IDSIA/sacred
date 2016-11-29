@@ -6,12 +6,15 @@ Sacred helps you doing that by providing an *Observer Interface* for your
 experiments. By attaching an Observer you can gather all the information about
 the run even while it is still running.
 
-At the moment there are three observers that are shipped with Sacred:
+At the moment there are four observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
  * The :ref:`file_observer` stores the run information as files in a given
    directory and will therefore only work locally.
+ * The :ref:`tinydb_observer` provides another local way of observing experiments
+   by using `TinyDB <http://tinydb.readthedocs.io/en/latest/>`_ 
+   to store run information in a JSON file. 
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
 
@@ -284,6 +287,253 @@ The FileStorageObserver will then render that template into a
 ``mako`` is a very powerful templating engine that can execute
 arbitrary python-code, so be careful about the templates you use.
 For an example see ``sacred/examples/my_runs/template.html``.
+
+.. _tinydb_observer:
+
+TinyDB Observer
+=====================
+The TinyDbObserver uses the `TinyDB <http://tinydb.readthedocs.io/en/latest/>`_  
+library to provides an alternative to storing results in MongoDB whilst still 
+allowing results to be stored in a document like database. This observer 
+uses TinyDB to store the metadata about an observed run in a JSON file. 
+
+The TinyDbObserver also makes use of the hashfs `hashfs <https://github.com/dgilland/hashfs>`_
+library to store artifacts, resources and source code files associated with a run. 
+Storing results like this provides an easy way to lookup associated files for a run
+bases on their hash, and ensures no duplicate files are stored. 
+
+The main drawback of storing files in this way is that they are not easy to manually 
+inspect, as their path names are now the hash of their content. Therefore, to aid in
+retrieving data and files stored by the TinyDbObserver, a TinyDbReader class is 
+provided to allow for easier querying and retrieval of the results. This ability to
+store metadata and files in a way that can be queried locally is the main advantage
+of the TinyDbObserver observer compared to the FileStorageObserver.  
+
+The TinyDbObserver is designed to be a simple, scalable way to store and query 
+results as a single user on a local file system, either for personal experimentation
+or when setting up a larger database configuration is not desirable.  
+
+Adding a TinyDbObserver
+----------------------------
+The TinyDbObserver can be added from the command-line via the
+``-t BASEDIR`` and  ``--tiny_db=BASEDIR`` flags::
+
+    >> ./my_experiment.py -t BASEDIR
+    >> ./my_experiment.py --tiny_db=BASEDIR
+
+Here ``BASEDIR`` specifies the directory in which the TinyDB JSON file and 
+hashfs filesytem will be created. All intermediate directories are created with
+the default being to create a directory called ``runs_db`` in the current 
+directory. 
+
+Alternatively, you can also add the observer from code like this:
+
+.. code-block:: python
+
+    from sacred.observers import TinyDbObserver
+
+    ex.observers.append(TinyDbObserver.create('my_runs'))
+
+
+Directory Structure
+-------------------
+The TinyDbObserver creates a directory structure as follows::
+
+    my_runs/
+        metadata.json
+        hashfs/
+
+``metadata.json`` contains the JSON-serialized metadata in the TinyDB format.  
+Each entry is very similar to the database entries from the :ref:`mongo_observer`::
+
+    {
+      "_id": "2118c70ef274497f90b7eb72dcf34598",
+      "artifacts": [],
+      "captured_out": "",
+      "command": "run",
+      "config": {
+        "C": 1,
+        "gamma": 0.7,
+        "seed": 191164913
+      },
+      "experiment": {
+        "base_dir": "/Users/chris/Dropbox/projects/dev/sacred-tinydb",
+        "dependencies": [
+          "IPython==5.1.0",
+          "numpy==1.11.2",
+          "sacred==0.7b0",
+          "sklearn==0.18"
+        ],
+        "name": "iris_rbf_svm",
+        "repositories": [],
+        "sources": [
+          [
+            "test_exp.py",
+            "6f4294124f7697655f9fd1f7d4e7798b",
+            "{TinyFile}:\"6f4294124f7697655f9fd1f7d4e7798b\""
+          ]
+        ]
+      },
+      "format": "TinyDbObserver-0.7b0",
+      "heartbeat": "{TinyDate}:2016-11-12T01:18:00.228352",
+      "host": {
+        "cpu": "Intel(R) Core(TM)2 Duo CPU     P8600  @ 2.40GHz",
+        "hostname": "phoebe",
+        "os": [
+          "Darwin",
+          "Darwin-15.5.0-x86_64-i386-64bit"
+        ],
+        "python_version": "3.5.2"
+      },
+      "info": {},
+      "meta": {},
+      "resources": [],
+      "result": 0.9833333333333333,
+      "start_time": "{TinyDate}:2016-11-12T01:18:00.197311",
+      "status": "COMPLETED",
+      "stop_time": "{TinyDate}:2016-11-12T01:18:00.337519"
+    }
+
+The elements in the above example are taken from a generated JSON file, where
+those prefixed with ``{TinyData}`` will be converted into python datetime
+objects upon reading them back in. Likewise those prefixed with ``{TinyFile}``
+will be converted into a file object opened in read mode for the associated 
+source, artifact or resource file. 
+
+The files referenced in either the sources, artifacts or resources sections 
+are stored in a location according to the hash of their contents under the 
+``hashfs/`` directory. The hashed file system is setup to create three 
+directories from the first 6 characters of the hash, with the rest of
+the hash making up the file name. The stored source file is therefore 
+located at ::
+
+    my_runs/
+        metadata.json
+        hashfs/
+            59/
+                ab/
+                    16/
+                        5b3579a1869399b4838be2a125
+
+A file handle, serialised with the tag ``{TinyFile}`` in the JSON file, is 
+included in the metadata alongside individual source files, artifacts or 
+resources as a convenient way to access the file content. 
+
+The TinyDB Reader
+-----------------
+
+To make querying and stored results easier, a TinyDbReader class is provided. 
+Create a class instance by passing the path to the root directory of the 
+TinyDbObserver.  
+
+.. code-block:: python
+
+    from sacred.observers import TinyDbReader
+
+    reader = TinyDbReader('my_runs')
+
+The TinyDbReader class provides three main methods for retrieving data: 
+
+* ``.fetch_metadata()`` will return all metadata associated with an experiment. 
+* ``.fetch_files()`` will return a dictionary of file handles for the sources, 
+  artifacts and resources.
+* ``.fetch_report()`` will will return all metadata rendered in a summary report. 
+
+All three provide a similar API, allowing the search for records by index, 
+by experiment name, or by using a TinyDB search query.
+To do so specify one of the following arguments to the above methods: 
+
+* ``indices`` accepts either a single integer or a list of integers and works like
+  list indexing, retrieving experiments in the order they were run. e.g. 
+  ``indices=0`` will get the first or oldest experiment, and ``indices=-1`` will 
+  get the latest experiment to run. 
+* ``exp_name`` accepts a string and retrieves any experiment that contains that
+  string in its name. Also works with regular expressions. 
+* ``query`` accepts a TinyDB query object and returns all experiments that match it. 
+  Refer to the `TinyDB documentation <http://tinydb.readthedocs.io/en/latest/usage.html>`_ 
+  for details on the API.  
+  
+
+Retrieving Files 
+^^^^^^^^^^^^^^^^
+
+To get the files from the last experimental run:
+
+.. code-block:: python
+
+    results = reader.fetch_files(indices=-1)
+
+The results object is a list of dictionaries, each containing the date the experiment 
+started, the experiment id, the experiment name, as well as nested dictionaries for 
+the sources, artifacts and resources if they are present for the experiment. For each 
+of these nested dictionaries, the key is the file name, and the value is a file handle
+opened for reading that file. ::
+
+    [{'date': datetime.datetime(2016, 11, 12, 1, 36, 54, 970229),
+      'exp_id': '68b71b5c009e4f6a887479cdda7a93a0',
+      'exp_name': 'iris_rbf_svm',
+      'sources': {'test_exp.py': <BufferedReaderWrapper name='...'>}}]
+
+Individual files can therefore be accessed with, 
+
+.. code-block:: python
+
+    results = reader.fetch_files(indices=-1)
+    f = results[0]['sources']['test_exp.py']
+    f.read()
+
+Depending on whether the file contents is text or binary data, it can then either be 
+printed to console or visualised in an appropriate library e.g. 
+`Pillow <https://python-pillow.org/>`_ for images. The content can also be written 
+back out to disk and inspected in an external program. 
+
+
+Summary Report 
+^^^^^^^^^^^^^^
+
+Often you may want to see a high level summary of an experimental run,
+such as the config used the results, and any inputs, dependencies and other artifacts
+generated. The ``.fetch_report()`` method is designed to provide these rendered as a 
+simple text based report.
+
+To get the report for the last experiment simple run,
+
+.. code-block:: python
+
+    results = reader.fetch_report(indices=-1)
+    print(results[0])
+
+:: 
+
+    -------------------------------------------------
+    Experiment: iris_rbf_svm
+    -------------------------------------------------
+    ID: 68b71b5c009e4f6a887479cdda7a93a0
+    Date: Sat 12 Nov 2016    Duration: 0:0:0.1
+
+    Parameters:
+        C: 1.0
+        gamma: 0.7
+        seed: 816200523
+
+    Result:
+        0.9666666666666667
+
+    Dependencies:
+        IPython==5.1.0
+        numpy==1.11.2
+        sacred==0.7b0
+        sacred.observers.tinydb_hashfs==0.7b0
+        sklearn==0.18
+
+    Resources:
+        None
+
+    Source Files:
+        test_exp.py
+
+    Outputs:
+        None
 
 .. _sql_observer:
 
