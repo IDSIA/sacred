@@ -291,7 +291,7 @@ For an example see ``sacred/examples/my_runs/template.html``.
 .. _tinydb_observer:
 
 TinyDB Observer
-=====================
+===============
 The TinyDbObserver uses the `TinyDB <http://tinydb.readthedocs.io/en/latest/>`_  
 library to provides an alternative to storing results in MongoDB whilst still 
 allowing results to be stored in a document like database. This observer 
@@ -314,7 +314,7 @@ results as a single user on a local file system, either for personal experimenta
 or when setting up a larger database configuration is not desirable.  
 
 Adding a TinyDbObserver
-----------------------------
+-----------------------
 The TinyDbObserver can be added from the command-line via the
 ``-t BASEDIR`` and  ``--tiny_db=BASEDIR`` flags::
 

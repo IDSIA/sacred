@@ -9,18 +9,24 @@ class MissingDependencyMock(object):
         self.depends_on = depends_on
 
     def __getattribute__(self, item):
-        raise ImportError('Depends on missing "{}" package.'
-                          .format(object.__getattribute__(self, 'depends_on')))
+        dep = object.__getattribute__(self, 'depends_on')
+        if isinstance(dep, (list, tuple)):
+            raise ImportError('Depends on missing {!r} packages.'.format(dep))
+        else:
+            raise ImportError('Depends on missing {!r} package.'.format(dep))
 
     def __call__(self, *args, **kwargs):
-        raise ImportError('Depends on missing "{}" package.'
-                          .format(object.__getattribute__(self, 'depends_on')))
+        dep = object.__getattribute__(self, 'depends_on')
+        if isinstance(dep, (list, tuple)):
+            raise ImportError('Depends on missing {!r} packages.'.format(dep))
+        else:
+            raise ImportError('Depends on missing {!r} package.'.format(dep))
 
 
-def optional_import(package_name):
+def optional_import(*package_names):
     try:
-        p = importlib.import_module(package_name)
-        return True, p
+        packages = [importlib.import_module(pn) for pn in package_names]
+        return True, packages[0]
     except ImportError:
         return False, None
 
@@ -47,3 +53,5 @@ has_pandas, pandas = optional_import('pandas')
 has_sqlalchemy, sqlalchemy = optional_import('sqlalchemy')
 has_mako, mako = optional_import('mako')
 has_gitpython, git = optional_import('git')
+has_tinydb, tinydb = optional_import('tinydb', 'tinydb-serialization',
+                                     'hashfs')

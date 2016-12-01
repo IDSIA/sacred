@@ -9,6 +9,9 @@ import io
 
 import pytest
 
+tinydb = pytest.importorskip("tinydb")
+hashfs = pytest.importorskip("hashfs")
+
 from tinydb import Query
 
 from sacred.dependencies import get_digest

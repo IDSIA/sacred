@@ -10,6 +10,9 @@ import io
 
 import pytest
 
+tinydb = pytest.importorskip("tinydb")
+hashfs = pytest.importorskip("hashfs")
+
 from tinydb import TinyDB
 from hashfs import HashFS
 

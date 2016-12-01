@@ -7,6 +7,7 @@ Release History
            Python3 style annotations.
 * Feature: config is now serialized using jsonpickle, which supports arbitrary
            python types.
+* Feature: added new TinyDbObserver and TinyDbReader
 * Feature: added new SqlObserver
 * Feature: added new FileStorageObserver
 * Feature: added queue flag to just queue a run instead of executing it
