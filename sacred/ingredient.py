@@ -50,7 +50,7 @@ class Ingredient(object):
         self.commands = OrderedDict()
         # capture some context information
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
-        mainfile_name = _caller_globals.get('__file__')
+        mainfile_name = _caller_globals.get('__file__', '.')
         self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
         self.doc = _caller_globals.get('__doc__', "")
         self.sources, self.dependencies = \

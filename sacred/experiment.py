@@ -53,10 +53,15 @@ class Experiment(Ingredient):
             source-code or reliable reproduction of the runs.
         """
         caller_globals = inspect.stack()[1][0].f_globals
-        if name is None and interactive:
-            raise(RuntimeError('name is required in interactive mode.'))
-        elif name is None:
-            name = os.path.basename(caller_globals['__file__'])
+        if name is None:
+            if interactive:
+                raise RuntimeError('name is required in interactive mode.')
+            mainfile = caller_globals.get('__file__')
+            if mainfile is None:
+                raise RuntimeError('No main-file found. Are you running in '
+                                   'interactive mode? If so please provide a '
+                                   'name and set interactive=True.')
+            name = os.path.basename(mainfile)
             if name.endswith('.py'):
                 name = name[:-3]
             elif name.endswith('.pyc'):
