@@ -53,5 +53,5 @@ has_pandas, pandas = optional_import('pandas')
 has_sqlalchemy, sqlalchemy = optional_import('sqlalchemy')
 has_mako, mako = optional_import('mako')
 has_gitpython, git = optional_import('git')
-has_tinydb, tinydb = optional_import('tinydb', 'tinydb-serialization',
+has_tinydb, tinydb = optional_import('tinydb', 'tinydb_serialization',
                                      'hashfs')
