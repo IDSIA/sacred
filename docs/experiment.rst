@@ -84,16 +84,6 @@ containing all the values that you wish to update. For more information see
 
     r = ex.run(config_updates={'foo': 23})
 
-You can also specify the log-level while calling ``run`` like so. See
-:doc:`logging` for more information:
-
-.. code-block:: python
-
-    from my_experiment import ex
-
-    r = ex.run(loglevel='DEBUG')
-
-
 .. note::
 
     Under the hood a ``Run`` object is created every time you run an
