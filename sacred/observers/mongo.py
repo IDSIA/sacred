@@ -164,10 +164,9 @@ class MongoObserver(RunObserver):
         self.save()
         return self.run_entry['_id']
 
-    def heartbeat_event(self, info, cout_filename, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time):
         self.run_entry['info'] = info
-        with open(cout_filename, 'r') as f:
-            self.run_entry['captured_out'] = f.read()
+        self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
         self.save()
 

@@ -157,10 +157,11 @@ class FileStorageObserver(RunObserver):
             with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
                 f.write(report)
 
-    def heartbeat_event(self, info, cout_filename, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time):
         self.info = info
         self.run_entry['heartbeat'] = beat_time
-        self.save_file(cout_filename, 'cout.txt')
+        self.cout = captured_out
+        self.save_cout()
         self.save_json(self.run_entry, 'run.json')
         if self.info:
             self.save_json(self.info, 'info.json')

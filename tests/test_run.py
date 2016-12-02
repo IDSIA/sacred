@@ -120,7 +120,7 @@ def test_run_heartbeat_event(run):
     run()
     call_args, call_kwargs = observer.heartbeat_event.call_args_list[0]
     assert call_kwargs['info'] == run.info
-    assert call_kwargs['cout_filename'] == run._output_file
+    assert call_kwargs['captured_out'] == ""
     assert (call_kwargs['beat_time'] - datetime.now()).total_seconds() < 1
 
 

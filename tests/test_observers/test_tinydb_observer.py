@@ -179,11 +179,7 @@ def test_tinydb_observer_heartbeat_event_updates_run(tinydb_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    with tempfile.NamedTemporaryFile() as f:
-        f.write(outp.encode())
-        f.flush()
-        tinydb_obs.heartbeat_event(info=info, cout_filename=f.name,
-                                   beat_time=T2)
+    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
 
     assert len(tinydb_obs.runs) == 1
     db_run = tinydb_obs.runs.get(eid=1)

@@ -170,36 +170,30 @@ class Run(object):
         if self.queue_only:
             self._emit_queued()
             return
-        try:
-            with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
-                self._output_file = f.name
-                self._emit_started()
-                self._start_heartbeat()
-                try:
-                    self._execute_pre_run_hooks()
-                    self.result = self.main_function(*args)
-                    self._execute_post_run_hooks()
-                    self._stop_heartbeat()
-                    self._emit_completed(self.result)
-                except (SacredInterrupt, KeyboardInterrupt) as e:
-                    self._stop_heartbeat()
-                    status = getattr(e, 'STATUS', 'INTERRUPTED')
-                    self._emit_interrupted(status)
-                    raise
-                except:
-                    exc_type, exc_value, trace = sys.exc_info()
-                    self._stop_heartbeat()
-                    self._emit_failed(exc_type, exc_value, trace.tb_next)
-                    raise
-                finally:
-                    self._warn_about_failed_observers()
-
-            with open(self._output_file, 'r') as f:
-                self.captured_out = f.read()
-        finally:
-            if self._output_file:
-                os.remove(self._output_file)
-
+        with tempfile.NamedTemporaryFile() as f, tee_output(f):
+            self._output_file = f
+            self._emit_started()
+            self._start_heartbeat()
+            try:
+                self._execute_pre_run_hooks()
+                self.result = self.main_function(*args)
+                self._execute_post_run_hooks()
+                self._stop_heartbeat()
+                self._emit_completed(self.result)
+            except (SacredInterrupt, KeyboardInterrupt) as e:
+                self._stop_heartbeat()
+                status = getattr(e, 'STATUS', 'INTERRUPTED')
+                self._emit_interrupted(status)
+                raise
+            except:
+                exc_type, exc_value, trace = sys.exc_info()
+                self._stop_heartbeat()
+                self._emit_failed(exc_type, exc_value, trace.tb_next)
+                raise
+            finally:
+                self._warn_about_failed_observers()
+                f.seek(0)
+                self.captured_out = f.read().decode()
         return self.result
 
     def _start_heartbeat(self):
@@ -267,10 +261,12 @@ class Run(object):
 
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.now()
+        self._output_file.seek(0)
+        captured_out = self._output_file.read().decode()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            cout_filename=self._output_file,
+                            captured_out=captured_out,
                             beat_time=beat_time)
 
     def _stop_time(self):

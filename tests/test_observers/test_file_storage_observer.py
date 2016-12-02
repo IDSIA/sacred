@@ -98,10 +98,7 @@ def test_fs_observer_heartbeat_event_updates_run(dir_obs, sample_run):
     _id = obs.started_event(**sample_run)
     run_dir = basedir.join(_id)
     info = {'my_info': [1, 2, 3], 'nr': 7}
-    with tempfile.NamedTemporaryFile() as f:
-        f.write(b'some output')
-        f.flush()
-        obs.heartbeat_event(info=info, cout_filename=f.name, beat_time=T2)
+    obs.heartbeat_event(info=info, captured_out='some output', beat_time=T2)
 
     assert run_dir.join('cout.txt').read() == 'some output'
     run = json.decode(run_dir.join('run.json').read())

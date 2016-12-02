@@ -321,10 +321,9 @@ class SqlObserver(RunObserver):
         self.session.commit()
         return _id or self.run.run_id
 
-    def heartbeat_event(self, info, cout_filename, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time):
         self.run.info = json.encode(info)
-        with open(cout_filename, 'r') as f:
-            self.run.captured_out = f.read()
+        self.run.captured_out = captured_out
         self.run.heartbeat = beat_time
         self.session.commit()
 
