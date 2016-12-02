@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-In this example the use of captured functions ist demonstrated. Like the
+In this example the use of captured functions is demonstrated. Like the
 main function, they have access to the configuration parameters by just
 accepting them as arguments.
 
