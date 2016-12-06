@@ -156,26 +156,35 @@ def tee_output(target):
         os.close(saved_stderr_fd)
 
 
-def iterate_flattened_separately(dictionary):
+def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     """
     Recursively iterate over the items of a dictionary in a special order.
 
-    First iterate over all items that are non-dictionary values
-    (sorted by keys), then over the rest (sorted by keys), providing full
-    dotted paths for every leaf.
+    First iterate over manually sorted keys and then over all items that are
+    non-dictionary values (sorted by keys), then over the rest
+    (sorted by keys), providing full dotted paths for every leaf.
     """
+    if manually_sorted_keys is None:
+        manually_sorted_keys = []
+    for key in manually_sorted_keys:
+        if key in dictionary:
+            yield key, dictionary[key]
+
     single_line_keys = [key for key in dictionary.keys() if
-                        not dictionary[key] or
-                        not isinstance(dictionary[key], dict)]
+                        key not in manually_sorted_keys and
+                        (not dictionary[key] or
+                         not isinstance(dictionary[key], dict))]
     for key in sorted(single_line_keys):
         yield key, dictionary[key]
 
-    multi_line_keys = [key for key in dictionary.keys()
-                       if (dictionary[key] and
-                           isinstance(dictionary[key], dict))]
+    multi_line_keys = [key for key in dictionary.keys() if
+                       key not in manually_sorted_keys and
+                       (dictionary[key] and
+                        isinstance(dictionary[key], dict))]
     for key in sorted(multi_line_keys):
         yield key, PATHCHANGE
-        for k, val in iterate_flattened_separately(dictionary[key]):
+        for k, val in iterate_flattened_separately(dictionary[key],
+                                                   manually_sorted_keys):
             yield join_paths(key, k), val
 
 

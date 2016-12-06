@@ -25,13 +25,13 @@ def test_recursive_update():
 
 def test_iterate_flattened_separately():
     d = {'a1': 1,
-         'b2': {'foo': 'bar'},
+         'b2': {'bar': 'foo', 'foo': 'bar'},
          'c1': 'f',
          'd1': [1, 2, 3],
          'e2': {}}
-    res = list(iterate_flattened_separately(d))
+    res = list(iterate_flattened_separately(d, ['foo', 'bar']))
     assert res == [('a1', 1), ('c1', 'f'), ('d1', [1, 2, 3]), ('e2', {}),
-                   ('b2', PATHCHANGE), ('b2.foo', 'bar')]
+                   ('b2', PATHCHANGE), ('b2.foo', 'bar'), ('b2.bar', 'foo')]
 
 
 def test_iterate_flattened():
