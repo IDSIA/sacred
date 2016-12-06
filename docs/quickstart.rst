@@ -83,8 +83,8 @@ for us::
     INFO - hello_config - Running command 'print_config'
     INFO - hello_config - started
     Configuration:
-      message = 'Hello World!'
-      recipient = 'World'
+      message = 'Hello world!'
+      recipient = 'world'
       seed = 746486301
     INFO - hello_config - finished after 0:00:00.
 
