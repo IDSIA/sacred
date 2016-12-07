@@ -15,11 +15,13 @@ __sacred__ = True  # marks files that should be filtered from stack traces
 BLUE = '\033[94m'
 GREEN = '\033[92m'
 RED = '\033[91m'
+GREY = '\033[90m'
 ENDC = '\033[0m'
 
 LEGEND = '(' + BLUE + 'modified' + ENDC +\
     ', ' + GREEN + 'added' + ENDC +\
-    ', ' + RED + 'typechanged' + ENDC + ')'
+    ', ' + RED + 'typechanged' + ENDC +\
+    ', ' + GREY + 'doc' + ENDC + ')'
 
 ConfigEntry = namedtuple('ConfigEntry',
                          'key value added modified typechanged doc')
@@ -85,7 +87,7 @@ def print_dependencies(_run):
 
 
 def _iterate_marked(cfg, config_mods):
-    for path, value in iterate_flattened_separately(cfg):
+    for path, value in iterate_flattened_separately(cfg, ['__doc__']):
         if value is PATHCHANGE:
             yield path, PathEntry(
                 key=path.rpartition('.')[2],
@@ -112,16 +114,21 @@ def _format_entry(indent, entry):
         color = GREEN
     elif entry.modified:
         color = BLUE
-    end = ENDC if color else ""
-    if isinstance(entry, ConfigEntry):
+    if entry.key == '__doc__':
+        color = GREY
+        doc_string = entry.value.replace('\n', '\n' + indent)
+        assign = '{}"""{}"""'.format(indent, doc_string)
+    elif isinstance(entry, ConfigEntry):
         assign = indent + entry.key + " = " + PRINTER.pformat(entry.value)
     else:  # isinstance(entry, PathEntry):
         assign = indent + entry.key + ":"
     if entry.doc:
+        doc_string = GREY + '# ' + entry.doc + ENDC
         if len(assign) <= 35:
-            assign = "{:<35}  # {}".format(assign, entry.doc)
+            assign = "{:<35}  {}".format(assign, doc_string)
         else:
-            assign += '    # ' + entry.doc
+            assign += '    ' + doc_string
+    end = ENDC if color else ""
     return color + assign + end
 
 

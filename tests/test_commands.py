@@ -6,9 +6,9 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 
 import pytest
-from sacred.commands import (BLUE, ENDC, GREEN, RED, ConfigEntry, PathEntry,
-                             _format_config, _format_entry, help_for_command,
-                             _iterate_marked, _non_unicode_repr)
+from sacred.commands import (BLUE, ENDC, GREY, GREEN, RED, ConfigEntry,
+                             PathEntry, _format_config, _format_entry,
+                             help_for_command, _iterate_marked, _non_unicode_repr)
 from sacred.config.config_summary import ConfigSummary
 
 
@@ -107,6 +107,9 @@ def test_iterate_marked_typechanged(cfg):
     (ConfigEntry('e', {}, False, False, None, None),      "e = {}"),
     # Path entries
     (PathEntry('f', False, False, None, None), "f:"),
+    # Docstring entry
+    (ConfigEntry('__doc__', 'multiline\ndocstring', False, False, None, None),
+     GREY + '"""multiline\ndocstring"""' + ENDC),
 ])
 def test_format_entry(entry, expected):
     assert _format_entry(0, entry) == expected
