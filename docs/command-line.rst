@@ -319,6 +319,69 @@ be of the form ``db_name`` or ``[host:port:]db_name``.
 
 See :ref:`mongo_observer` for more details.
 
+
+FileStorage Observer
+--------------------
+
++----------------------------+------------------------------+
+| ``-F BASEDIR``             |  add a file storage observer |
++----------------------------+                              |
+| ``--file_storage=BASEDIR`` |                              |
++----------------------------+------------------------------+
+
+
+This flag can be used to add a file-storage observer to your experiment.
+``BASEDIR`` specifies the directory the observer will use to store its files.
+
+See :ref:`file_observer` for more details.
+
+
+TinyDB Observer
+---------------
+
++-----------------------+------------------------------+
+| ``-t BASEDIR``        |  add a TinyDB observer       |
++-----------------------+                              |
+| ``--tiny_db=BASEDIR`` |                              |
++-----------------------+------------------------------+
+
+
+This flag can be used to add a TinyDB observer to your experiment.
+``BASEDIR`` specifies the directory the observer will use to store its files.
+
+See :ref:`tinydb_observer` for more details.
+
+.. note::
+    For this flag to work you need to have the
+    `tinydb <http://tinydb.readthedocs.io>`_,
+    `tinydb-serialization <https://github.com/msiemens/tinydb-serialization>`_,
+    and `hashfs <https://github.com/dgilland/hashfs>`_ packages installed.
+
+
+SQL Observer
+------------
+
++------------------+--------------------------+
+| ``-s DB_URL``    |  add a SQL observer      |
++------------------+                          |
+| ``--sql=DB_URL`` |                          |
++------------------+--------------------------+
+
+
+This flag can be used to add a SQL observer to your experiment.
+``DB_URL`` must be parseable by the `sqlalchemy <http://www.sqlalchemy.org/>`_
+package, which is typically means being of the form
+``dialect://username:password@host:port/database`` (see their
+`documentation <http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_
+for more detail).
+
+.. note::
+    For this flag to work you need to have the
+    `sqlalchemy <http://www.sqlalchemy.org/>`_ package installed.
+
+See :ref:`mongo_observer` for more details.
+
+
 Debug Mode
 ----------
 
