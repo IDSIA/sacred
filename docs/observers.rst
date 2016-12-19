@@ -583,6 +583,8 @@ Whenever a resource or artifact is added to the running experiment a
 ``resource_event`` resp. ``artifact_event`` is fired.
 Finally, once it stops one of the three ``completed_event``,
 ``interrupted_event``, or ``failed_event`` is fired.
+If the run is only being queued, then instead of all the above only a single
+``queued_event`` is fired.
 
 
 Start
@@ -615,6 +617,14 @@ observers. It contains the following information:
 The started event is also the time when the ID of the run is determined.
 Essentially the first observer which sees `_id=None` sets an id and returns it.
 That id is then stored in the run and also passed to all further observers.
+
+
+Queued
+------
+If a run is only queued instead of being run (see :ref:`cmdline_queue`), then this event is fired instead
+of a ``started_event``. It contains the same information as the
+``started_event`` except for the ``host_info``.
+
 
 .. _heartbeat:
 

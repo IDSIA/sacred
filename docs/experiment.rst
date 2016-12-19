@@ -190,6 +190,16 @@ collection called ``experiments``. You can also add this observer from the
 For more information see :doc:`observers`
 
 
+Queuing a Run
+=============
+Sacred also supports queuing runs by passing the :ref:`cmdline_queue` flag
+(``-q``/``--queue``). This will **not** run the experiment, but instead only
+create a database entry that holds all information needed to start the run.
+This feature could be useful for having a distributed pool of workers that get
+configurations from the database and run them. As of yet, however, there is
+no further support for this workflow.
+
+
 .. _debugging:
 
 Debugging

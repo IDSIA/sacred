@@ -252,7 +252,8 @@ the decorator:
 Flags
 =====
 
-**Help**
+Help
+----
 
 +------------+-----------------------------+
 | ``-h``     |  print usage                |
@@ -263,7 +264,8 @@ Flags
 This prints a help/usage message for your experiment.
 It is equivalent to typing just ``help``.
 
-**Comment**
+Comment
+-------
 
 +-----------------------+-----------------------------+
 | ``-c COMMENT``        |  add a comment to this run  |
@@ -273,7 +275,8 @@ It is equivalent to typing just ``help``.
 
 The ``COMMENT`` can be any text and will be stored with the run.
 
-**Logging Level**
+Logging Level
+-------------
 
 +----------------------+-----------------------------+
 | ``-l LEVEL``         |  control the logging level  |
@@ -301,7 +304,8 @@ With this flag you can adjust the logging level.
 
 See :ref:`log_levels` for more details.
 
-**MongoDB Observer**
+MongoDB Observer
+----------------
 
 +-------------------+--------------------------+
 | ``-m DB``         |  add a MongoDB observer  |
@@ -315,7 +319,8 @@ be of the form ``db_name`` or ``[host:port:]db_name``.
 
 See :ref:`mongo_observer` for more details.
 
-**Debug Mode**
+Debug Mode
+----------
 
 +-------------------+-------------------------------+
 | ``-d``            |  don't filter the stacktrace  |
@@ -328,7 +333,8 @@ this. It is mainly used for debugging experiments using a debugger
 (see :ref:`debugging`).
 
 
-**PDB Debugging**
+PDB Debugging
+-------------
 
 +-------------------+----------------------------------------------------+
 | ``-D``            |  Enter post-mortem debugging with pdb on failure.  |
@@ -340,7 +346,8 @@ If this flag is set and an exception occurs, sacred automatically starts a
 ``pdb`` post-mortem debugger to investigate the error and interact with the
 stack (see :ref:`debugging`).
 
-**Beat Interval**
+Beat Interval
+-------------
 
 +-----------------------------------------+-----------------------------------------------+
 | ``-b BEAT_INTERVAL``                    |  set the interval between heartbeat events    |
@@ -354,7 +361,8 @@ This flag can be used to change the interval from 10 sec (default) to
 ``BEAT_INTERVAL`` sec.
 
 
-**Unobserved**
+Unobserved
+----------
 
 +------------------+--------------------------------------+
 | ``-u``           |  Ignore all observers for this run.  |
@@ -365,6 +373,25 @@ This flag can be used to change the interval from 10 sec (default) to
 If this flag is set, sacred will remove all observers from the current run and
 also silence the warning for having no observers. This is useful for some quick
 tests or debugging runs.
+
+
+.. _cmdline_queue:
+
+Queue
+-----
+
++---------------+-----------------------------------------+
+| ``-q``        |  Only queue this run, do not start it.  |
++---------------+                                         |
+| ``--queue``   |                                         |
++---------------+-----------------------------------------+
+
+Instead of running the experiment, this will only create an entry in the
+database (or where the observers put it) with the status ``QUEUED``.
+This entry will contain all the information about the experiment and the
+configuration. But the experiment will not be run. This can be useful to have
+some distributed workers fetch and start the queued up runs.
+
 
 Custom Flags
 ============
