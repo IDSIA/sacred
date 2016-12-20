@@ -1,11 +1,14 @@
 Internals of Sacred
 *******************
-Here I'll describe some internals of Sacred.
+This section is meant as a reference for Sacred developers.
+It should give a high-level description of some of the more intricate
+internals of Sacred.
 
 
 Configuration Process
 =====================
-The configuration process is run when an experiment is started:
+The configuration process is executed when an experiment is started, and
+determines the final configuration that should be used for the run:
 
  #. Determine the order for running the ingredients
 

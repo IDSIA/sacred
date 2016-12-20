@@ -59,7 +59,10 @@ class ObserverError(Exception):
 
 
 class SacredInterrupt(Exception):
-    """Base-Class for all custom interrupts of runs."""
+    """Base-Class for all custom interrupts.
+
+    For more information see :ref:`custom_interrupts`.
+    """
 
     STATUS = "INTERRUPTED"
 
@@ -69,6 +72,9 @@ class TimeoutInterrupt(SacredInterrupt):
 
     This exception can be used in client code to indicate that the run
     exceeded its time limit and has been interrupted because of that.
+    The status of the interrupted run will then be set to ``TIMEOUT``.
+
+    For more information see :ref:`custom_interrupts`.
     """
 
     STATUS = "TIMEOUT"

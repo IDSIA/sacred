@@ -200,10 +200,30 @@ configurations from the database and run them. As of yet, however, there is
 no further support for this workflow.
 
 
+Interrupted and Failed Experiments
+==================================
+If a run is interrupted (e.g. Ctrl+C) or if an exception occurs, Sacred will
+gather the stacktrace and the fail time and report them to the observers.
+The resulting entries will have their status set to ``INTERRUPTED`` or to
+``FAILED``. This allows to quickly see the reason for a non-successful run, and
+enables later investigation of the errors.
+
+Detecting Hard Failures
+-----------------------
+Sometimes an experiment can fail without an exception being thrown
+(e.g. power loss, kernel panic, ...). In that case the failure cannot be logged
+to the database and their status will still be ``RUNNING``.
+Runs that fail in that way are most easily detected by investigating their
+heartbeat time: each running experiment reports to its observers in regular
+intervals (default every 10 sec) and updates the heartbeat time along with the
+captured stdout and the info dict (see :ref:`custom_info`). So if the heartbeat
+time lies much further back in time than that interval, the run can be
+considered dead.
+
 .. _debugging:
 
 Debugging
-=========
+---------
 If an Exception occurs, sacred by default filters the stacktrace by removing
 all sacred-internal calls. The stacktrace is of course also saved in the
 database (if appropriate observer is added).
@@ -214,14 +234,46 @@ disabled, because it doesn't play well with debuggers like ``pdb``.
 If you want to use a debugger with your experiment, you have two options:
 
 Disable Stacktrace Filtering
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Stacktrace filtering can be deactivated via the ``-d`` flag.
 Sacred then does not interfere with the exception and it can be properly
 handled by any debugger.
 
 Post-Mortem Debugging
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 For convenience Sacred also supports directly attaching a post-mortem ``pdb``
 debugger via the ``-D`` flag.
 If this option is set and an exception occurs, sacred will automatically start
 ``pdb`` debugger to investigate the error, and interact with the stack.
+
+.. _custom_interrupts:
+
+Custom Interrupts
+-----------------
+Sometimes it can be useful to have custom reasons for interrupting an
+experiment. One example is if there is a limited time budget for an experiment.
+If the experiment is stopped because of exceeding that limit, that should be
+reflected in the database entries.
+
+For these cases, Sacred offers a special base exception
+:py:class:`sacred.utils.SacredInterrupt` that can be used to provide a custom
+status code. If an exception derived from this one is raised, then the
+status of the interrupted run will be set to that code.
+
+For the aforementioned timeout usecase there is the
+:py:class:`sacred.utils.TimeoutInterrupt` exception with the status code
+``TIMEOUT``.
+But any status code can be used by simply creating a custom exception that
+inherits from :py:class:`sacred.utils.SacredInterrupt` and defines a ``STATUS``
+member like this:
+
+.. code-block:: python
+
+    from sacred.utils import SacredInterrupt
+
+    class CustomInterrupt(SacredInterrupt)
+        STATUS = 'MY_CUSTOM_STATUS'
+
+
+When this exception is raised during any run, its status is set to
+``MY_CUSTOM_STATUS``.

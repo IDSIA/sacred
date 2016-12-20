@@ -54,3 +54,13 @@ Host Info
 
 .. automodule:: sacred.host_info
     :members:
+
+
+Custom Exceptions
+=================
+
+.. autoclass:: sacred.utils.SacredInterrupt
+    :members:
+
+.. autoclass:: sacred.utils.TimeoutInterrupt
+    :members:
