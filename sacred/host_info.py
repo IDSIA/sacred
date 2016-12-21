@@ -79,7 +79,7 @@ def _cpu():
     if platform.system() == "Windows":
         return platform.processor().strip()
     elif platform.system() == "Darwin":
-        os.environ['PATH'] = os.path.join(os.environ['PATH'], '/usr/sbin')
+        os.environ['PATH'] += ':/usr/sbin'
         command = ["sysctl", "-n", "machdep.cpu.brand_string"]
         return subprocess.check_output(command).decode().strip()
     elif platform.system() == "Linux":
