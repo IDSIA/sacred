@@ -80,6 +80,8 @@ You will still get an appropriate error in the following cases:
     hide some missing value errors from you, by (unintentionally) filling them
     in from the configuration.
 
+.. _special_values:
+
 Special Values
 ==============
 There are a couple of special parameters that captured functions can accept.

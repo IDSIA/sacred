@@ -51,6 +51,7 @@ Contents
    randomness
    logging
    ingredients
+   optional
    examples
    apidoc
    internals

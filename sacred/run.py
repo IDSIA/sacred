@@ -150,7 +150,7 @@ class Run(object):
 
         Parameters
         ----------
-        *args
+        \*args
             parameters passed to the main function
 
         Returns

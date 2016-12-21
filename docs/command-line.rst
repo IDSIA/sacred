@@ -455,6 +455,24 @@ This entry will contain all the information about the experiment and the
 configuration. But the experiment will not be run. This can be useful to have
 some distributed workers fetch and start the queued up runs.
 
+.. _cmdline_enforce_clean:
+
+Enforce Clean
+-------------
++---------------------+----------------------------------------------------+
+| ``-e``              |  Fail if any version control repository is dirty.  |
++---------------------+                                                    |
+| ``--enforce_clean`` |                                                    |
++---------------------+----------------------------------------------------+
+
+This flag can be used to enforce that experiments are only being run on a clean
+repository, i.e. with no uncommitted changes.
+
+.. note::
+    For this flag to work you need to have the
+    `GitPython <https://github.com/gitpython-developers/GitPython>`_
+    package installed.
+
 
 Custom Flags
 ============

@@ -13,7 +13,7 @@ At the moment there are four observers that are shipped with Sacred:
  * The :ref:`file_observer` stores the run information as files in a given
    directory and will therefore only work locally.
  * The :ref:`tinydb_observer` provides another local way of observing experiments
-   by using `TinyDB <http://tinydb.readthedocs.io/en/latest/>`_ 
+   by using `tinydb <http://tinydb.readthedocs.io>`_
    to store run information in a JSON file. 
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
@@ -25,6 +25,11 @@ your own :ref:`custom_observer`.
 
 Mongo Observer
 ==============
+
+.. note::
+    Requires the `pymongo <https://api.mongodb.com/python/current/>`_ package.
+    Install with ``pip install pymongo``.
+
 The MongoObserver is the recommended way of storing the run information from
 Sacred.
 MongoDB allows very powerful querying of the entries that can deal with
@@ -292,7 +297,13 @@ For an example see ``sacred/examples/my_runs/template.html``.
 
 TinyDB Observer
 ===============
-The TinyDbObserver uses the `TinyDB <http://tinydb.readthedocs.io/en/latest/>`_  
+.. note::
+    requires the
+    `tinydb <http://tinydb.readthedocs.io>`_,
+    `tinydb-serialization <https://github.com/msiemens/tinydb-serialization>`_,
+    and `hashfs <https://github.com/dgilland/hashfs>`_ packages installed.
+
+The TinyDbObserver uses the `tinydb <http://tinydb.readthedocs.io>`_
 library to provides an alternative to storing results in MongoDB whilst still 
 allowing results to be stored in a document like database. This observer 
 uses TinyDB to store the metadata about an observed run in a JSON file. 
@@ -673,6 +684,9 @@ Saving Custom Information
 Sometimes you want to add custom information about the run of an experiment,
 like the dataset, error curves during training, or the final trained model.
 To allow this sacred offers three different mechanisms.
+
+
+.. _info_dict:
 
 Info Dict
 ---------
