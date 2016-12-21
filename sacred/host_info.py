@@ -7,6 +7,7 @@ import os
 import platform
 import re
 import subprocess
+import xml.etree.ElementTree as ET
 from sacred.utils import optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -15,6 +16,11 @@ __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
 
 host_info_gatherers = {}
 """Global dict of functions that are used to collect the host information."""
+
+
+class IgnoreHostInfo(Exception):
+
+    """Used by host_info_getters to signal that this cannot be gathered."""
 
 
 def get_host_info():
@@ -26,7 +32,13 @@ def get_host_info():
         A dictionary with information about the CPU, the OS and the
         Python version of this machine.
     """
-    return {k: v() for k, v in host_info_gatherers.items()}
+    host_info = {}
+    for k, v in host_info_gatherers.items():
+        try:
+            host_info[k] = v()
+        except IgnoreHostInfo:
+            pass
+    return host_info
 
 
 @optional_kwargs_decorator
@@ -89,3 +101,30 @@ def _cpu():
         for line in all_info.split("\n"):
             if model_pattern.match(line):
                 return model_pattern.sub("", line, 1).strip()
+
+
+@host_info_getter(name='gpus')
+def _gpus():
+    try:
+        res = subprocess.Popen(['nvidia-smi', '-q', '-x'],
+                               stdout=subprocess.PIPE)
+    except (FileNotFoundError, OSError):
+        raise IgnoreHostInfo()
+
+    xml = res.stdout.read().decode()
+    gpu_info = {'gpus': []}
+    for child in ET.fromstring(xml):
+        if child.tag == 'driver_version':
+            gpu_info['driver_version'] = child.text
+        if child.tag != 'gpu':
+            continue
+        gpu = {
+            'model': child.find('product_name').text,
+            'total_memory': int(child.find('fb_memory_usage').find('total')
+                                .text.split()[0]),
+            'persistence_mode': (child.find('persistence_mode').text ==
+                                 'Enabled')
+        }
+        gpu_info['gpus'].append(gpu)
+
+    return gpu_info
