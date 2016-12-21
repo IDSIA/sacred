@@ -656,13 +656,14 @@ Failed:
 
 Resources
 ---------
-Every time ``ex.open_resource(filename)`` is called an event will be fired
-with that filename (see :ref:`resources`).
+Every time :py:meth:`sacred.Experiment.open_resource` is called with a
+filename, an event will be fired with that filename (see :ref:`resources`).
 
 Artifacts
 ---------
-Every time ``ex.add_artifact(filename)`` is called an event will be fired
-with that filename (see :ref:`artifacts`).
+Every time :py:meth:`sacred.Experiment.add_artifact` is called with a filename
+and optionally a name, an event will be fired with that name and filename
+(see :ref:`artifacts`). If the name is left empty it defaults to the filename.
 
 
 .. _custom_info:
@@ -719,9 +720,11 @@ Artifacts
 ---------
 An artifact is a file created during the run. This mechanism is meant to store
 big custom chunks of data like a trained model. With
-``ex.add_artifact(filename)`` such a file can be added, which will fire an
+:py:meth:`sacred.Experiment.add_artifact` such a file can be added, which will fire an
 ``artifact_event``. The MongoObserver will then in turn again, store that file
 in the database and log it in the run entry.
+Artifacts always have a name, but if the optional name parameter is left empty
+it defaults to the filename.
 
 
 .. _custom_observer:
@@ -730,14 +733,19 @@ Custom Observer
 ===============
 
 The easiest way to implement a custom observer is to inherit from
-``sacred.observers.RunObserver`` and override some or all of the events:
+:py:class:`sacred.observers.RunObserver` and override some or all of the events:
 
 .. code-block:: python
 
     from sacred.observer import RunObserver
 
     class MyObserver(RunObserver):
-        def started_event(self, ex_info, host_info, start_time, config, comment):
+        def queued_event(self, ex_info, command, queue_time, config, meta_info,
+                         _id):
+            pass
+
+        def started_event(self, ex_info, command, host_info, start_time,
+                          config, meta_info, _id):
             pass
 
         def heartbeat_event(self, info, captured_out, beat_time):
@@ -746,7 +754,7 @@ The easiest way to implement a custom observer is to inherit from
         def completed_event(self, stop_time, result):
             pass
 
-        def interrupted_event(self, interrupt_time):
+        def interrupted_event(self, interrupt_time, status):
             pass
 
         def failed_event(self, fail_time, fail_trace):
@@ -755,6 +763,5 @@ The easiest way to implement a custom observer is to inherit from
         def resource_event(self, filename):
             pass
 
-        def artifact_event(self, filename):
+        def artifact_event(self, name, filename):
             pass
-
