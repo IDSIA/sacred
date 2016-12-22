@@ -19,7 +19,6 @@ host_info_gatherers = {}
 
 
 class IgnoreHostInfo(Exception):
-
     """Used by host_info_getters to signal that this cannot be gathered."""
 
 

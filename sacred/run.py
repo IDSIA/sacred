@@ -146,7 +146,7 @@ class Run(object):
         self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
-        """Start this run.
+        r"""Start this run.
 
         Parameters
         ----------
