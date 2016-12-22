@@ -132,7 +132,7 @@ def tee_output(target):
             tee_stderr = subprocess.Popen(
                 ['tee', '-a', '/dev/stderr'],
                 stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             tee_stdout = subprocess.Popen(
                 [sys.executable, "-m", "sacred.pytee"],
                 stdin=subprocess.PIPE, stderr=target_fd)

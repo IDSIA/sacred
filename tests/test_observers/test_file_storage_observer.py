@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 import datetime
 import hashlib
+import os
 import tempfile
 from copy import copy
 import pytest
@@ -37,6 +38,27 @@ def dir_obs(tmpdir):
     return tmpdir, FileStorageObserver.create(tmpdir.strpath)
 
 
+@pytest.fixture
+def tmpfile():
+    # NOTE: instead of using a with block and delete=True we are creating and
+    # manually deleting the file, such that we can close it before running the
+    # tests. This is necessary since on Windows we can not open the same file
+    # twice, so for the FileStorageObserver to read it, we need to close it.
+    f = tempfile.NamedTemporaryFile(suffix='.py', delete=False)
+
+    f.content = 'import sacred\n'
+    f.write(f.content.encode())
+    f.flush()
+    f.seek(0)
+    f.md5sum = hashlib.md5(f.read()).hexdigest()
+
+    f.close()
+
+    yield f
+
+    os.remove(f.name)
+
+
 def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
     basedir, obs = dir_obs
     sample_run['_id'] = None
@@ -62,24 +84,17 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
     }
 
 
-def test_fs_observer_started_event_stores_source(dir_obs, sample_run):
+def test_fs_observer_started_event_stores_source(dir_obs, sample_run, tmpfile):
     basedir, obs = dir_obs
+    sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'import sacred\n')
-        f.flush()
-        f.seek(0)
-        md5sum = hashlib.md5(f.read()).hexdigest()
-
-        sample_run['ex_info']['sources'] = [[f.name, md5sum]]
-
-        _id = obs.started_event(**sample_run)
-        run_dir = basedir.join(_id)
+    _id = obs.started_event(**sample_run)
+    run_dir = basedir.join(_id)
 
     assert run_dir.exists()
     run = json.decode(run_dir.join('run.json').read())
     ex_info = copy(run['experiment'])
-    assert ex_info['sources'][0][0] == f.name
+    assert ex_info['sources'][0][0] == tmpfile.name
     source_path = ex_info['sources'][0][1]
     source = basedir.join(source_path)
     assert source.exists()
@@ -149,68 +164,60 @@ def test_fs_observer_failed_event_updates_run(dir_obs, sample_run):
     assert run['fail_trace'] == fail_trace
 
 
-def test_fs_observer_artifact_event(dir_obs, sample_run):
+def test_fs_observer_artifact_event(dir_obs, sample_run, tmpfile):
     basedir, obs = dir_obs
     _id = obs.started_event(**sample_run)
     run_dir = basedir.join(_id)
-
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        obs.artifact_event('my_artifact.py', f.name)
+    
+    obs.artifact_event('my_artifact.py', tmpfile.name)
 
     artifact = run_dir.join('my_artifact.py')
     assert artifact.exists()
-    assert artifact.read() == 'foo\nbar'
+    assert artifact.read() == tmpfile.content
 
     run = json.decode(run_dir.join('run.json').read())
     assert len(run['artifacts']) == 1
     assert run['artifacts'][0] == artifact.relto(run_dir)
 
 
-def test_fs_observer_resource_event(dir_obs, sample_run):
+def test_fs_observer_resource_event(dir_obs, sample_run, tmpfile):
     basedir, obs = dir_obs
     _id = obs.started_event(**sample_run)
     run_dir = basedir.join(_id)
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        obs.resource_event(f.name)
+    obs.resource_event(tmpfile.name)
 
     res_dir = basedir.join('_resources')
     assert res_dir.exists()
     assert len(res_dir.listdir()) == 1
-    assert res_dir.listdir()[0].read() == 'foo\nbar'
+    assert res_dir.listdir()[0].read() == tmpfile.content
 
     run = json.decode(run_dir.join('run.json').read())
     assert len(run['resources']) == 1
-    assert run['resources'][0] == (f.name, res_dir.listdir()[0].strpath)
+    assert run['resources'][0] == (tmpfile.name, res_dir.listdir()[0].strpath)
 
 
-def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run):
+def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run,
+                                                       tmpfile):
     basedir, obs = dir_obs
     obs2 = FileStorageObserver.create(obs.basedir)
     obs.started_event(**sample_run)
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        obs.resource_event(f.name)
-        # let's have another run from a different observer
-        sample_run['_id'] = None
-        _id = obs2.started_event(**sample_run)
-        run_dir = basedir.join(_id)
-        obs2.resource_event(f.name)
+    obs.resource_event(tmpfile.name)
+    # let's have another run from a different observer
+    sample_run['_id'] = None
+    _id = obs2.started_event(**sample_run)
+    run_dir = basedir.join(_id)
+    obs2.resource_event(tmpfile.name)
 
     res_dir = basedir.join('_resources')
     assert res_dir.exists()
     assert len(res_dir.listdir()) == 1
-    assert res_dir.listdir()[0].read() == 'foo\nbar'
+    assert res_dir.listdir()[0].read() == tmpfile.content
 
     run = json.decode(run_dir.join('run.json').read())
     assert len(run['resources']) == 1
-    assert run['resources'][0] == (f.name, res_dir.listdir()[0].strpath)
+    assert run['resources'][0] == (tmpfile.name, res_dir.listdir()[0].strpath)
 
 
 def test_fs_observer_equality(dir_obs):

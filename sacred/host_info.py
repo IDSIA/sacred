@@ -8,7 +8,7 @@ import platform
 import re
 import subprocess
 import xml.etree.ElementTree as ET
-from sacred.utils import optional_kwargs_decorator
+from sacred.utils import optional_kwargs_decorator, FileNotFoundError
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
