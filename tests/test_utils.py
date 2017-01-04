@@ -154,32 +154,29 @@ def test_convert_camel_case_to_snake_case(name, expected):
     assert convert_camel_case_to_snake_case(name) == expected
 
 
-def test_tee_output():
+def test_tee_output(capsys):
     from sacred.optional import libc
 
-    # dirty hack to work around py.test also hijacking the stdout/stderr
-    stdout = sys.__stdout__
-    stderr = sys.__stderr__
+    with capsys.disabled():
+        try:
+            print('before (stdout)')
+            print('before (stderr)')
+            with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
+                print("captured stdout")
+                print("captured stderr")
+                libc.puts(b'stdout from C')
+                os.system('echo and this is from echo')
 
-    try:
-        print('before (stdout)', file=stdout)
-        print('before (stderr)', file=stderr)
-        with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
-            print("captured stdout", file=stdout)
-            print("captured stderr", file=stderr)
-            libc.puts(b'stdout from C')
-            os.system('echo and this is from echo')
+            print('after (stdout)')
+            print('after (stderr)')
 
-        print('after (stdout)', file=stdout)
-        print('after (stderr)', file=stderr)
-
-        with open(f.name, 'r') as f:
-            lines = set(f.readlines())
-            assert lines == {
-                "captured stdout\n",
-                "captured stderr\n",
-                "stdout from C\n",
-                "and this is from echo\n"}
-    finally:
-        print('deleting', f.name)
-        os.remove(f.name)
+            with open(f.name, 'r') as f:
+                lines = set(f.readlines())
+                assert lines == {
+                    "captured stdout\n",
+                    "captured stderr\n",
+                    "stdout from C\n",
+                    "and this is from echo\n"}
+        finally:
+            print('deleting', f.name)
+            os.remove(f.name)
