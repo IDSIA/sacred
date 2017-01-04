@@ -22,6 +22,7 @@ Release History
            outputs and logging.
 * Feature: observers now share the id of a run and it is available during
            runtime as ``run._id``.
+* Feature: new ``--print_config`` flag to always print config first
 * API Change: significantly changed the mongoDB layout
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.

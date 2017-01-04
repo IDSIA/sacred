@@ -8,6 +8,7 @@ Some further options that add observers to the run are defined alongside those.
 """
 
 from __future__ import division, print_function, unicode_literals
+from sacred.commands import print_config
 from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
 
 
@@ -223,3 +224,14 @@ class EnforceCleanOption(CommandLineOption):
                 if is_dirty:
                     raise RuntimeError('EnforceClean: Uncommited changes in '
                                        'the "{}" repository.'.format(repo))
+
+
+class PrintConfigOption(CommandLineOption):
+    """Always print the configuration first."""
+
+    short_flag = 'P'
+
+    @classmethod
+    def apply(cls, args, run):
+        print_config(run)
+        print('-'*79)
