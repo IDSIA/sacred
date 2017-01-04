@@ -211,6 +211,7 @@ class Run(object):
 
     def _emit_queued(self):
         queue_time = datetime.datetime.now()
+        self.meta_info['queue_time'] = queue_time
         command = join_paths(self.main_function.prefix,
                              self.main_function.signature.name)
         self.run_logger.info("Queuing-up command '%s'", command)

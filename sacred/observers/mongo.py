@@ -113,7 +113,6 @@ class MongoObserver(RunObserver):
                      _id):
         if self.overwrite is not None:
             raise RuntimeError("Can't overwrite with QUEUED run.")
-        meta_info['queue_time'] = queue_time
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
@@ -221,7 +220,7 @@ class MongoObserver(RunObserver):
             raise ObserverError('Run contained an unserializable entry.'
                                 '(most likely in the info)')
 
-    def final_save(self, attempts=10):
+    def final_save(self, attempts):
         for i in range(attempts):
             try:
                 self.runs.save(self.run_entry)
