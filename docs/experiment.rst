@@ -1,11 +1,11 @@
 Experiment Overview
 *******************
 ``Experiment`` is the central class of the Sacred framework. This section
-gives you an overview on what it does and how to use it.
+provides an overview of what it does and how to use it.
 
 Create an Experiment
 ====================
-To create an ``Experiment`` you need a main method:
+To create an ``Experiment`` just instantiate it and add main method:
 
 .. code-block:: python
 

@@ -3,8 +3,11 @@ Release History
 
 0.7.0 (2016-07-??)
 ++++++++++++++++++
-* Feature: @main, @automain, @command and @capture now support functions with
-           Python3 style annotations.
+* Feature: host info now contains information about NVIDIA GPUs (if available)
+* Feature: git integration: sacred now collects info about the git repository
+           of the experiment (if available and if gitpython is installed)
+* Feature: new ``--enforce-clean`` flag that cancels a run if the
+           git repository is dirty
 * Feature: config is now serialized using jsonpickle, which supports arbitrary
            python types.
 * Feature: added new TinyDbObserver and TinyDbReader
@@ -17,6 +20,8 @@ Release History
 * Feature: allow to pass unparsed commandline string to ``ex.run_commandline``.
 * Feature: improved stdout/stderr capturing: it now also collects non-python
            outputs and logging.
+* Feature: observers now share the id of a run and it is available during
+           runtime as ``run._id``.
 * API Change: significantly changed the mongoDB layout
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
@@ -33,8 +38,10 @@ Release History
                 preinstalled versions of six.
 * Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
 * Bugfix: type conversions from None to some other type are now correctly ignored
-
-
+* Bugfix: fixed a problem with stdout capturing breaking tools that access
+          certain attributes of ``sys.stdout`` or ``sys.stderr``.
+* Bugfix: @main, @automain, @command and @capture now support functions with
+           Python3 style annotations.
 0.6.9 (2016-01-16)
 ++++++++++++++++++
 * Bugfix: fixed support for ``@ex.named_config`` (was broken by 0.6.8)

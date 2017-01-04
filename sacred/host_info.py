@@ -105,12 +105,10 @@ def _cpu():
 @host_info_getter(name='gpus')
 def _gpus():
     try:
-        res = subprocess.Popen(['nvidia-smi', '-q', '-x'],
-                               stdout=subprocess.PIPE)
-    except (FileNotFoundError, OSError):
+        xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError):
         raise IgnoreHostInfo()
 
-    xml = res.stdout.read().decode()
     gpu_info = {'gpus': []}
     for child in ET.fromstring(xml):
         if child.tag == 'driver_version':
