@@ -10,7 +10,8 @@ import sys
 
 from sacred.run import Run
 from sacred.config.config_summary import ConfigSummary
-from sacred.utils import ObserverError, SacredInterrupt, TimeoutInterrupt
+from sacred.utils import (ObserverError, SacredInterrupt, TimeoutInterrupt,
+                          apply_backspaces_and_linefeeds)
 
 
 @pytest.fixture
@@ -224,8 +225,7 @@ def test_unobserved_run_doesnt_emit(run):
     assert not observer.failed_event.called
 
 
-def test_captured_out_filter(run):
-    from sacred.utils import apply_backspaces_and_linefeeds
+def test_captured_out_filter(run, capsys):
     def print_mock_progress():
         sys.stdout.write('progress 0')
         sys.stdout.flush()
@@ -233,7 +233,9 @@ def test_captured_out_filter(run):
             sys.stdout.write('\b')
             sys.stdout.write(str(i))
             sys.stdout.flush()
+
     run.captured_out_filter = apply_backspaces_and_linefeeds
     run.main_function.side_effect = print_mock_progress
-    run()
-    assert run.captured_out == 'progress 9'
+    with capsys.disabled():
+        run()
+        assert run.captured_out == 'progress 9'
