@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import ctypes
 import os
-import sys
 
 import pytest
 import tempfile
@@ -165,6 +163,7 @@ def test_tee_output(capsys):
                 print("captured stdout")
                 print("captured stderr")
                 libc.puts(b'stdout from C')
+                libc.fflush(None)
                 os.system('echo and this is from echo')
 
             print('after (stdout)')
