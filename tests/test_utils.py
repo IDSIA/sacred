@@ -178,7 +178,7 @@ def test_tee_output(capsys):
         "captured stdout\n",
         "captured stderr\n",
         "and this is from echo\n"}
-    if sys.platform != 'win32':
+    if not sys.platform.startswith('win'):
         # FIXME: this line randomly doesn't show on windows (skip for now)
         expected_lines.add("stdout from C\n")
 
@@ -189,7 +189,7 @@ def test_tee_output(capsys):
             with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
                 print("captured stdout")
                 print("captured stderr")
-                if sys.platform != 'win32':
+                if not sys.platform.startswith('win'):
                     libc.puts(b'stdout from C')
                     libc.fflush(None)
                 os.system('echo and this is from echo')
