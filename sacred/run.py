@@ -11,7 +11,8 @@ import traceback
 import tempfile
 
 from sacred.randomness import set_global_seed
-from sacred.utils import tee_output, ObserverError, SacredInterrupt, join_paths
+from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
+                          join_paths, flush)
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -195,16 +196,18 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
-                self.captured_out = self._get_captured_output()
+                self._get_captured_output()
 
         return self.result
 
     def _get_captured_output(self):
+        flush()
+        self._output_file.flush()
         self._output_file.seek(0)
         text = self._output_file.read().decode()
         if self.captured_out_filter is not None:
             text = self.captured_out_filter(text)
-        return text
+        self.captured_out = text
 
     def _start_heartbeat(self):
         self._emit_heartbeat()
@@ -272,7 +275,7 @@ class Run(object):
 
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.now()
-        self.captured_out = self._get_captured_output()
+        self._get_captured_output()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,

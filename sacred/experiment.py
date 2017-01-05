@@ -139,10 +139,12 @@ class Experiment(Ingredient):
         dictionary. That is, the dictionary of commandline options used for
         this run.
 
-        NOTE: The decorated function MUST have an argument called options.
-        NOTE: While the options still contain the COMMAND and UPDATE entries,
-              changing them has no effect. Only flags (starting with '--') can
-              be modified.
+        .. note::
+            The decorated function MUST have an argument called options.
+
+            The options also contain ``'COMMAND'`` and ``'UPDATE'`` entries,
+            but changing them has no effect. Only modification on
+            flags (entries starting with ``'--'``) are considered.
         """
         sig = Signature(function)
         if "options" not in sig.arguments:

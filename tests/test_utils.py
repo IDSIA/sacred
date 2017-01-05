@@ -164,6 +164,7 @@ def test_convert_camel_case_to_snake_case(name, expected):
     ('abc\rdef', 'def'),
     ('abc\r', 'abc'),
     ('abc\rd', 'dbc'),
+    ('abc\r\nd', 'abc\nd'),
     ('abc\ndef\rg', 'abc\ngef'),
     ('abc\ndef\r\rg', 'abc\ngef')
 ])
