@@ -161,3 +161,23 @@ def test_using_a_named_config(ex):
 
     assert ex.run().result == 1
     assert ex.run(named_configs=['ncfg']).result == 10
+
+
+def test_adding_option_hooks(ex):
+    @ex.option_hook
+    def hook(options):
+        pass
+
+    @ex.option_hook
+    def hook2(options):
+        pass
+
+    assert hook in ex.option_hooks
+    assert hook2 in ex.option_hooks
+
+
+def test_option_hooks_without_options_arg_raises(ex):
+    with pytest.raises(KeyError):
+        @ex.option_hook
+        def invalid_hook(wrong_arg_name):
+            pass
