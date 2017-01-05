@@ -1,7 +1,7 @@
 Release History
 ---------------
 
-0.7.0 (2016-07-??)
+0.7.0 (2017-01-??)
 ++++++++++++++++++
 * Feature: host info now contains information about NVIDIA GPUs (if available)
 * Feature: git integration: sacred now collects info about the git repository
@@ -43,6 +43,19 @@ Release History
           certain attributes of ``sys.stdout`` or ``sys.stderr``.
 * Bugfix: @main, @automain, @command and @capture now support functions with
            Python3 style annotations.
+
+0.6.10 (2016-08-08)
++++++++++++++++++++
+* Bugfix: fixed a problem when trying  to set the loglevel to DEBUG
+* Bugfix: fixed a random crash of the heartbeat thread (see #101).
+* Feature: added --force/-f option to disable errors and warnings concerning
+           suspicious changes. (thanks to Yannic Kilcher)
+* Feature: experiments can now be run in Jupyter notebook, but will fail with
+           an error by default, which can be deactivated using interactive=True
+* Feature: added support for adding a captured out filter, and a filter that
+           and applies backspaces and linefeeds before saving like a terminal
+           would. (thanks to Kevin McGuinness)
+
 0.6.9 (2016-01-16)
 ++++++++++++++++++
 * Bugfix: fixed support for ``@ex.named_config`` (was broken by 0.6.8)

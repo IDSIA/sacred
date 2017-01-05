@@ -12,7 +12,8 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
-                          convert_camel_case_to_snake_case, tee_output)
+                          convert_camel_case_to_snake_case, tee_output,
+                          apply_backspaces_and_linefeeds)
 
 
 def test_recursive_update():
@@ -151,6 +152,23 @@ def test_get_inheritors():
 ])
 def test_convert_camel_case_to_snake_case(name, expected):
     assert convert_camel_case_to_snake_case(name) == expected
+
+
+@pytest.mark.parametrize('text,expected', [
+    ('', ''),
+    ('\b', ''),
+    ('\r', ''),
+    ('ab\bc', 'ac'),
+    ('\ba', 'a'),
+    ('ab\nc\b\bd', 'ab\nd'),
+    ('abc\rdef', 'def'),
+    ('abc\r', 'abc'),
+    ('abc\rd', 'dbc'),
+    ('abc\ndef\rg', 'abc\ngef'),
+    ('abc\ndef\r\rg', 'abc\ngef')
+])
+def test_apply_backspaces_and_linefeeds(text, expected):
+    assert apply_backspaces_and_linefeeds(text) == expected
 
 
 def test_tee_output(capsys):

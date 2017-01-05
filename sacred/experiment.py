@@ -14,10 +14,11 @@ from past.builtins import basestring
 from sacred.arg_parser import get_config_updates, parse_args
 from sacred.commandline_options import gather_command_line_options, ForceOption
 from sacred.commands import print_config, print_dependencies
+from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace
-from sacred.config.signature import Signature
+
 __sacred__ = True  # marks files that should be filtered from stack traces
 
 __all__ = ('Experiment',)
@@ -76,6 +77,8 @@ class Experiment(Ingredient):
         self.command(print_dependencies, unobserved=True)
         self.observers = []
         self.current_run = None
+        self.captured_out_filter = None
+        """Filter function to be applied to captured output of a run"""
         self.option_hooks = []
 
     # =========================== Decorators ==================================

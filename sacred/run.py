@@ -22,7 +22,7 @@ class Run(object):
 
     def __init__(self, config, config_modifications, main_function, observers,
                  root_logger, run_logger, experiment_info, host_info,
-                 pre_run_hooks, post_run_hooks):
+                 pre_run_hooks, post_run_hooks, captured_out_filter=None):
 
         self._id = None
         """The ID of this run as assigned by the first observer"""
@@ -92,6 +92,9 @@ class Run(object):
 
         self.queue_only = False
         """If true then this run will only fire the queued_event and quit"""
+
+        self.captured_out_filter = captured_out_filter
+        """Filter function to be applied to captured output"""
 
         self._heartbeat = None
         self._failed_observers = []
@@ -192,9 +195,16 @@ class Run(object):
                 raise
             finally:
                 self._warn_about_failed_observers()
-                f.seek(0)
-                self.captured_out = f.read().decode()
+                self.captured_out = self._get_captured_output()
+
         return self.result
+
+    def _get_captured_output(self):
+        self._output_file.seek(0)
+        text = self._output_file.read().decode()
+        if self.captured_out_filter is not None:
+            text = self.captured_out_filter(text)
+        return text
 
     def _start_heartbeat(self):
         self._emit_heartbeat()
@@ -262,12 +272,11 @@ class Run(object):
 
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.now()
-        self._output_file.seek(0)
-        captured_out = self._output_file.read().decode()
+        self.captured_out = self._get_captured_output()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
-                            captured_out=captured_out,
+                            captured_out=self.captured_out,
                             beat_time=beat_time)
 
     def _stop_time(self):

@@ -363,3 +363,29 @@ def convert_camel_case_to_snake_case(name):
     """Convert CamelCase to snake_case."""
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def apply_backspaces_and_linefeeds(text):
+    """
+    Interpret backspaces and linefeeds in text like a terminal would.
+
+    Interpret text like a terminal by removing backspace and linefeed
+    characters and applying them line by line.
+    """
+    lines = []
+    for line in text.split('\n'):
+        chars, cursor = [], 0
+        for ch in line:
+            if ch == '\b':
+                cursor = max(0, cursor - 1)
+            elif ch == '\r':
+                cursor = 0
+            else:
+                # normal character
+                if cursor == len(chars):
+                    chars.append(ch)
+                else:
+                    chars[cursor] = ch
+                cursor += 1
+        lines.append(''.join(chars))
+    return '\n'.join(lines)

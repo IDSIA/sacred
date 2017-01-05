@@ -22,7 +22,7 @@ the source-file of the experiment.
 
 Instead of ``@ex.main`` it is recommended to use ``@ex.automain``. This will
 automatically run the experiment if you execute the file. It is equivalent to
-the following.
+the following:
 
 .. code-block:: python
 
@@ -58,6 +58,20 @@ it from there an run it like this:
     from my_experiment import ex
 
     r = ex.run()
+
+.. warning::
+
+    By default, Sacred experiments **will fail** if run in an interactive
+    environment like a REPL or a Jupyter Notebook.
+    This is an intended security measure since in these environments
+    reproducibility cannot be ensured.
+    If needed, this safeguard can be deactivated by passing
+    ``interactive=True`` to the experiment like this:
+
+     .. code-block:: python
+
+        ex = Experiment('jupyter_ex', interactive=True)
+
 
 The ``run`` function accepts ``config_updates`` to specify how the configuration
 should be changed for this run. It should be (possibly nested) dictionary
@@ -188,6 +202,29 @@ collection called ``experiments``. You can also add this observer from the
     >> python my_experiment.py -m my_database
 
 For more information see :doc:`observers`
+
+Capturing stdout / stderr
+-------------------------
+By default sacred captures everything that is written to ``sys.stdout`` and
+``sys.stderr`` and transmits that information to the observers.
+Sometimes this is unwanted, for example when the output contains lots of
+live-updated progressbars and such.
+To prevent the captured out from recording each and every update that is
+written to the console one can add a *captured out filter* to the experiment
+like this:
+
+.. code-block:: python
+
+    from sacred.utils import apply_backspaces_and_linefeeds
+
+    ex.captured_out_filter = apply_backspaces_and_linefeeds
+
+Here ``apply_backspaces_and_linefeeds`` is a simple function that interprets
+all backspace and linefeed characters like in a terminal and returns the
+modified text.
+Any function that takes a string as input and outputs a (modified) string can
+be used as a ``captured_out_filter``.
+For a simple example see `examples/captured_out_filter.py <https://github.com/IDSIA/sacred/tree/master/examples/captured_out_filter.py>`_.
 
 
 Queuing a Run
