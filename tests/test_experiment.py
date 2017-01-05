@@ -166,7 +166,7 @@ def test_using_a_named_config(ex):
 
 # FIXME: No idea why this fails under windows...
 @pytest.mark.skipif(sys.platform.startswith('win'),
-                    reason='fails on windows for some reason')
+                    reason='randomly fails on windows for some reason')
 def test_captured_out_filter(ex, capsys):
     @ex.main
     def run_print_mock_progress():
