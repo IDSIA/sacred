@@ -234,4 +234,4 @@ class PrintConfigOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         print_config(run)
-        print('-'*79)
+        print('-' * 79)
