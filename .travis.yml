@@ -8,7 +8,7 @@ sudo: false
 install:
   - pip install tox-travis
 script:
-  - tox -e $TOX_ENV
+  - tox
 
 branches:
   only:
