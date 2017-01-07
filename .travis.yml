@@ -1,5 +1,9 @@
 language: python
-python: 2.7
+python:
+    - "2.7"
+    - "3.3"
+    - "3.4"
+    - "3.5"
 sudo: false
 env:
   - TOX_ENV=py27
@@ -9,7 +13,7 @@ env:
   - TOX_ENV=flake8
   - TOX_ENV=coverage
 install:
-  - pip install tox
+  - pip install tox-travis
 script:
   - tox -e $TOX_ENV
 
