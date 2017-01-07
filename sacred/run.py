@@ -8,7 +8,7 @@ import sys
 import threading
 import traceback
 
-import tempfile
+from tempfile import NamedTemporaryFile
 
 from sacred.randomness import set_global_seed
 from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
@@ -174,33 +174,44 @@ class Run(object):
         if self.queue_only:
             self._emit_queued()
             return
-        with tempfile.NamedTemporaryFile() as f, tee_output(f):
-            self._output_file = f
-            self._emit_started()
-            self._start_heartbeat()
+        try:
             try:
-                self._execute_pre_run_hooks()
-                self.result = self.main_function(*args)
-                self._execute_post_run_hooks()
-                self._stop_heartbeat()
-                self._emit_completed(self.result)
-            except (SacredInterrupt, KeyboardInterrupt) as e:
-                self._stop_heartbeat()
-                status = getattr(e, 'STATUS', 'INTERRUPTED')
-                self._emit_interrupted(status)
-                raise
-            except:
-                exc_type, exc_value, trace = sys.exc_info()
-                self._stop_heartbeat()
-                self._emit_failed(exc_type, exc_value, trace.tb_next)
-                raise
+                with NamedTemporaryFile() as f, tee_output(f) as final_out:
+                    self._output_file = f
+                    self._emit_started()
+                    self._start_heartbeat()
+                    self._execute_pre_run_hooks()
+                    self.result = self.main_function(*args)
+                    self._execute_post_run_hooks()
+                    if self.result is not None:
+                        self.run_logger.info('Result: {}'.format(self.result))
+                    elapsed_time = self._stop_time()
+                    self.run_logger.info('Completed after %s', elapsed_time)
             finally:
-                self._warn_about_failed_observers()
-                self._get_captured_output()
+                self.captured_out = final_out[0]
+                if self.captured_out_filter is not None:
+                    self.captured_out = self.captured_out_filter(
+                        self.captured_out)
+            self._stop_heartbeat()
+            self._emit_completed(self.result)
+        except (SacredInterrupt, KeyboardInterrupt) as e:
+            self._stop_heartbeat()
+            status = getattr(e, 'STATUS', 'INTERRUPTED')
+            self._emit_interrupted(status)
+            raise
+        except:
+            exc_type, exc_value, trace = sys.exc_info()
+            self._stop_heartbeat()
+            self._emit_failed(exc_type, exc_value, trace.tb_next)
+            raise
+        finally:
+            self._warn_about_failed_observers()
 
         return self.result
 
     def _get_captured_output(self):
+        if self._output_file.closed:
+            return  # nothing we can do
         flush()
         self._output_file.flush()
         self._output_file.seek(0)
@@ -289,10 +300,6 @@ class Run(object):
         return elapsed_time
 
     def _emit_completed(self, result):
-        if result is not None:
-            self.run_logger.info('Result: {}'.format(result))
-        elapsed_time = self._stop_time()
-        self.run_logger.info('Completed after %s', elapsed_time)
         for observer in self.observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,

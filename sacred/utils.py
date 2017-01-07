@@ -124,6 +124,8 @@ def tee_output(target):
 
     target_fd = target.fileno()
 
+    final_output = []
+
     try:
         try:
             tee_stdout = subprocess.Popen(
@@ -144,10 +146,10 @@ def tee_output(target):
         os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
         os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
 
-        yield  # let the caller do their printing
+        yield final_output  # let the caller do their printing
+        flush()
 
         # then redirect stdout back to the saved fd
-        flush()
         tee_stdout.stdin.close()
         tee_stderr.stdin.close()
 
@@ -158,9 +160,11 @@ def tee_output(target):
         tee_stdout.wait()
         tee_stderr.wait()
     finally:
-        flush()
         os.close(saved_stdout_fd)
         os.close(saved_stderr_fd)
+        target.flush()
+        target.seek(0)
+        final_output.append(target.read().decode())
 
 
 def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
