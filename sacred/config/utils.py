@@ -4,9 +4,9 @@ from __future__ import division, print_function, unicode_literals
 
 import sacred.optional as opt
 from sacred.serializer import json
-from past.builtins import basestring
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
 from sacred.utils import PYTHON_IDENTIFIER
+from sacred.optional import basestring
 
 
 def assert_is_valid_key(key):

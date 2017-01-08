@@ -9,7 +9,6 @@ import re
 import sys
 
 import pkg_resources
-from past.builtins import basestring
 import sacred.optional as opt
 from sacred.utils import is_subdir, iter_prefixes
 
@@ -22,7 +21,7 @@ module = type(sys)
 PEP440_VERSION_PATTERN = re.compile(r"""
 ^
 (\d+!)?              # epoch
-(\d[\.\d]*(?<= \d))  # release
+(\d[.\d]*(?<= \d))   # release
 ((?:[abc]|rc)\d+)?   # pre-release
 (?:(\.post\d+))?     # post-release
 (?:(\.dev\d+))?      # development release
@@ -148,7 +147,7 @@ class PackageDependency(object):
         for vattr in possible_version_attributes:
             if hasattr(mod, vattr):
                 version = getattr(mod, vattr)
-                if isinstance(version, basestring) and \
+                if isinstance(version, opt.basestring) and \
                         PEP440_VERSION_PATTERN.match(version):
                     return version
                 if isinstance(version, tuple):

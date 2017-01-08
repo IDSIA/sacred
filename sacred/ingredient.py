@@ -6,12 +6,12 @@ import inspect
 import os.path
 
 from collections import OrderedDict
-from past.builtins import basestring
 
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
+from sacred.optional import basestring
 from sacred.utils import CircularDependencyError, optional_kwargs_decorator
 
 __sacred__ = True  # marks files that should be filtered from stack traces

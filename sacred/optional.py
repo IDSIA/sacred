@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import importlib
+import sys
 
 
 class MissingDependencyMock(object):
@@ -55,3 +56,11 @@ has_mako, mako = optional_import('mako')
 has_gitpython, git = optional_import('git')
 has_tinydb, tinydb = optional_import('tinydb', 'tinydb_serialization',
                                      'hashfs')
+
+# Python 2 and 3 compatible basestring
+if sys.version_info[0] == 3:
+    basestring = str
+    int_types = (int, )
+else:
+    basestring = basestring
+    int_types = (int, long)

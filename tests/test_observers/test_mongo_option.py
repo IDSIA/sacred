@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+import pytest
+
+pymongo = pytest.importorskip("pymongo")
+
 from sacred.observers.mongo import MongoDbOption
 
 

@@ -9,14 +9,13 @@ import shlex
 import sys
 from collections import OrderedDict
 
-from past.builtins import basestring
-
 from sacred.arg_parser import get_config_updates, parse_args
 from sacred.commandline_options import gather_command_line_options, ForceOption
 from sacred.commands import print_config, print_dependencies
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.optional import basestring
 from sacred.utils import print_filtered_stacktrace
 
 __sacred__ = True  # marks files that should be filtered from stack traces
