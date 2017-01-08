@@ -2,8 +2,10 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import jsonpickle.tags
+
+from sacred import SETTINGS
 import sacred.optional as opt
-from sacred.serializer import json
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
 from sacred.utils import PYTHON_IDENTIFIER
 from sacred.optional import basestring
@@ -36,12 +38,13 @@ def assert_is_valid_key(key):
       if the key violates any requirements
     """
     if SETTINGS.CONFIG_KEYS.ENFORCE_MONGO_COMPATIBLE:
-        if key.find('.') > -1 or key.startswith('$'):
+        if isinstance(key, basestring) and (key.find('.') > -1 or
+                                            key.startswith('$')):
             raise KeyError('Invalid key "{}". Config-keys cannot '
                            'contain "." or start with "$"'.format(key))
 
     if SETTINGS.CONFIG_KEYS.ENFORCE_JSONPICKLE_COMPATIBLE:
-        if key in jsonpickle.tags.RESERVED:
+        if key in jsonpickle.tags.RESERVED or key.startswith('json://'):
             raise KeyError('Invalid key "{}". Config-keys cannot be one of the'
                            'reserved jsonpickle tags: {}'
                            .format(key, jsonpickle.tags.RESERVED))
@@ -52,20 +55,16 @@ def assert_is_valid_key(key):
                            'but was {}'.format(key, type(key)))
 
     if SETTINGS.CONFIG_KEYS.ENFORCE_VALID_PYTHON_IDENTIFIER:
-        if not PYTHON_IDENTIFIER.match(key):
-            raise KeyError('Key "{}" is not a valid python identifier'.format(key))
+        if isinstance(key, basestring) and not PYTHON_IDENTIFIER.match(key):
+            raise KeyError('Key "{}" is not a valid python identifier'
+                           .format(key))
 
 
 def normalize_numpy(obj):
-    if isinstance(obj, opt.np.generic):
+    if opt.has_numpy and isinstance(obj, opt.np.generic):
         try:
             return opt.np.asscalar(obj)
         except ValueError:
-            pass
-    elif isinstance(obj, opt.np.ndarray):
-        try:
-            return obj.tolist()
-        except (AttributeError, ValueError):
             pass
     return obj
 
@@ -79,14 +78,7 @@ def normalize_or_die(obj):
         return res
     elif isinstance(obj, (list, tuple)):
         return list([normalize_or_die(value) for value in obj])
-    elif opt.has_numpy:
-        obj = normalize_numpy(obj)
-    try:
-        json.encode(obj)
-        return obj
-    except TypeError:
-        raise ValueError("Invalid value '{}'. All values have to be"
-                         "JSON-serializeable".format(obj))
+    return normalize_numpy(obj)
 
 
 def recursive_fill_in(config, preset):

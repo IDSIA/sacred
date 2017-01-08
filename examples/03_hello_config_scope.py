@@ -40,22 +40,10 @@ from sacred import Experiment
 ex = Experiment('hello_cs')  # here we name the experiment explicitly
 
 
-from sacred.observers import RunObserver
-from pprint import pprint
-
-class DebugObserver(RunObserver):
-    def started_event(self, ex_info, command, host_info, start_time, config,
-                      meta_info, _id):
-        pprint(config)
-
-ex.observers.append(DebugObserver())
-
-
 # A ConfigScope is a function like this decorated with @ex.config
 # All local variables of this function will be put into the configuration
 @ex.config
 def cfg():
-    mod = pprint
     # The recipient of the greeting
     recipient = "world"
 
@@ -65,6 +53,5 @@ def cfg():
 
 # again we can access the message here by taking it as an argument
 @ex.automain
-def main(message, mod):
+def main(message):
     print(message)
-    print(mod)
