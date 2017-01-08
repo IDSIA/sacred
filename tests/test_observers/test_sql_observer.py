@@ -8,7 +8,6 @@ import os
 
 import pytest
 import tempfile
-from sacred.dependencies import get_digest
 from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
@@ -20,48 +19,26 @@ T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def engine(request):
     """Engine configuration."""
     url = request.config.getoption("--sqlalchemy-connect-url")
     from sqlalchemy.engine import create_engine
     engine = create_engine(url)
-
-    def fin():
-        engine.dispose()
-
-    request.addfinalizer(fin)
-    return engine
+    yield engine
+    engine.dispose()
 
 
-@pytest.fixture(scope="module")
-def connection(request, engine):
-    connection = engine.connect()
-
-    def fin():
-        connection.close()
-
-    request.addfinalizer(fin)
-    return connection
-
-
-@pytest.fixture()
-def transaction(request, connection):
-    """Will start a transaction on the connection. The connection will
-    be rolled back after it leaves its scope."""
-    transaction = connection.begin()
-
-    def fin():
-        transaction.rollback()
-
-    request.addfinalizer(fin)
-    return connection
-
-
-@pytest.fixture()
-def session(transaction):
+@pytest.fixture
+def session(engine):
     from sqlalchemy.orm import sessionmaker
-    return sessionmaker()(bind=transaction)
+    connection = engine.connect()
+    trans = connection.begin()
+    session = sessionmaker()(bind=connection)
+    yield session
+    session.close()
+    trans.rollback()
+    connection.close()
 
 
 @pytest.fixture
@@ -69,7 +46,7 @@ def sql_obs(session, engine):
     return SqlObserver(engine, session)
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_run():
     exp = {'name': 'test_exp', 'sources': [], 'dependencies': [],
            'base_dir': '/tmp'}
@@ -244,32 +221,31 @@ def test_fs_observer_resource_event(sql_obs, sample_run, session, tmpfile):
     assert res.content.decode() == tmpfile.content
 
 
-def test_fs_observer_doesnt_duplicate_resources_or_sources(sql_obs, sample_run,
-                                                           session, engine):
-
-    sql_obs2 = SqlObserver(engine, session)
-
+def test_fs_observer_doesnt_duplicate_sources(sql_obs, sample_run, session, tmpfile):
+    sql_obs2 = SqlObserver(sql_obs.engine, session)
     sample_run['_id'] = None
+    sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'import sacred\n')
-        f.flush()
-        f.seek(0)
-        md5sum = get_digest(f.name)
-        sample_run['ex_info']['sources'] = [[f.name, md5sum]]
+    sql_obs.started_event(**sample_run)
+    sql_obs2.started_event(**sample_run)
 
-        sql_obs.started_event(**sample_run)
-        sql_obs2.started_event(**sample_run)
+    assert session.query(Run).count() == 2
+    assert session.query(Source).count() == 1
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        sql_obs.resource_event(f.name)
-        sql_obs2.resource_event(f.name)
+
+def test_fs_observer_doesnt_duplicate_resources(sql_obs, sample_run, session, tmpfile):
+    sql_obs2 = SqlObserver(sql_obs.engine, session)
+    sample_run['_id'] = None
+    sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
+
+    sql_obs.started_event(**sample_run)
+    sql_obs2.started_event(**sample_run)
+
+    sql_obs.resource_event(tmpfile.name)
+    sql_obs2.resource_event(tmpfile.name)
 
     assert session.query(Run).count() == 2
     assert session.query(Resource).count() == 1
-    assert session.query(Source).count() == 1
 
 
 def test_sql_observer_equality(sql_obs, engine, session):
