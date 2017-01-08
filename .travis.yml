@@ -1,21 +1,32 @@
 language: python
 sudo: false
 install:
-  - pip install tox-travis
+  - pip install tox
 matrix:
   include:
   - python: "2.7"
     env: TOX_ENV=py27
+    os: linux
   - python: "3.3"
     env: TOX_ENV=py33
+    os: linux
   - python: "3.4"
     env: TOX_ENV=py34
+    os: linux
   - python: "3.5"
     env: TOX_ENV=flake8
+    os: linux
   - python: "3.5"
     env: TOX_ENV=coverage
+    os: linux
+  - python: "2.7"
+    env: TOX_ENV=py27
+    os: osx
+  - python: "3.5"
+    env: TOX_ENV=py35
+    os: osx
 script:
-  - tox
+  - tox -e $TOX_ENV
 
 branches:
   only:
