@@ -10,14 +10,50 @@ from sacred.optional import basestring
 
 
 def assert_is_valid_key(key):
-    if not isinstance(key, basestring):
-        raise KeyError('Invalid key "{}". Config-keys have to be strings, '
-                       'but was {}'.format(key, type(key)))
-    elif key.find('.') > -1 or key.find('$') > -1:
-        raise KeyError('Invalid key "{}". Config-keys cannot '
-                       'contain "." or "$"'.format(key))
-    elif not PYTHON_IDENTIFIER.match(key):
-        raise KeyError('Key "{}" is not a valid python identifier'.format(key))
+    """
+    Raise KeyError if a given config key violates any requirements.
+
+    The requirements are the following and can be individually deactivated
+    in ``sacred.SETTINGS.CONFIG_KEYS``:
+      * ENFORCE_MONGO_COMPATIBLE (default: True):
+        make sure the keys don't contain a '.' or start with a '$'
+      * ENFORCE_JSONPICKLE_COMPATIBLE (default: True):
+        make sure the keys do not contain any reserved jsonpickle tags
+        This is very important. Only deactivate if you know what you are doing.
+      * ENFORCE_STRING (default: False):
+        make sure all keys are string.
+      * ENFORCE_VALID_PYTHON_IDENTIFIER (default: False):
+        make sure all keys are valid python identifiers.
+
+    Parameters
+    ----------
+    key:
+      The key that should be checked
+
+    Raises
+    ------
+    KeyError:
+      if the key violates any requirements
+    """
+    if SETTINGS.CONFIG_KEYS.ENFORCE_MONGO_COMPATIBLE:
+        if key.find('.') > -1 or key.startswith('$'):
+            raise KeyError('Invalid key "{}". Config-keys cannot '
+                           'contain "." or start with "$"'.format(key))
+
+    if SETTINGS.CONFIG_KEYS.ENFORCE_JSONPICKLE_COMPATIBLE:
+        if key in jsonpickle.tags.RESERVED:
+            raise KeyError('Invalid key "{}". Config-keys cannot be one of the'
+                           'reserved jsonpickle tags: {}'
+                           .format(key, jsonpickle.tags.RESERVED))
+
+    if SETTINGS.CONFIG_KEYS.ENFORCE_STRING:
+        if not isinstance(key, basestring):
+            raise KeyError('Invalid key "{}". Config-keys have to be strings, '
+                           'but was {}'.format(key, type(key)))
+
+    if SETTINGS.CONFIG_KEYS.ENFORCE_VALID_PYTHON_IDENTIFIER:
+        if not PYTHON_IDENTIFIER.match(key):
+            raise KeyError('Key "{}" is not a valid python identifier'.format(key))
 
 
 def normalize_numpy(obj):
