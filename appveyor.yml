@@ -9,9 +9,6 @@ environment:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.x"
 
-    - PYTHON: "C:\\Python33"
-      PYTHON_VERSION: "3.3.x"
-
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.x"
 

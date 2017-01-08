@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
 import datetime
+import hashlib
+import os
 
 import pytest
 import tempfile
@@ -86,6 +89,27 @@ def sample_run():
     }
 
 
+@pytest.fixture
+def tmpfile():
+    # NOTE: instead of using a with block and delete=True we are creating and
+    # manually deleting the file, such that we can close it before running the
+    # tests. This is necessary since on Windows we can not open the same file
+    # twice, so for the FileStorageObserver to read it, we need to close it.
+    f = tempfile.NamedTemporaryFile(suffix='.py', delete=False)
+
+    f.content = 'import sacred\n'
+    f.write(f.content.encode())
+    f.flush()
+    f.seek(0)
+    f.md5sum = hashlib.md5(f.read()).hexdigest()
+
+    f.close()
+
+    yield f
+
+    os.remove(f.name)
+
+
 def test_sql_observer_started_event_creates_run(sql_obs, sample_run, session):
     sample_run['_id'] = None
     _id = sql_obs.started_event(**sample_run)
@@ -124,23 +148,20 @@ def test_sql_observer_started_event_uses_given_id(sql_obs, sample_run, session):
     assert db_run.run_id == sample_run['_id']
 
 
-def test_fs_observer_started_event_saves_source(sql_obs, sample_run, session):
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'import sacred\n')
-        f.flush()
-        md5sum = get_digest(f.name)
-        sample_run['ex_info']['sources'] = [[f.name, md5sum]]
+def test_fs_observer_started_event_saves_source(sql_obs, sample_run, session,
+                                                tmpfile):
+    sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
 
-        sql_obs.started_event(**sample_run)
+    sql_obs.started_event(**sample_run)
 
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
     assert session.query(Source).count() == 1
     assert len(db_run.experiment.sources) == 1
     source = db_run.experiment.sources[0]
-    assert source.filename == f.name
+    assert source.filename == tmpfile.name
     assert source.content == 'import sacred\n'
-    assert source.md5sum == md5sum
+    assert source.md5sum == tmpfile.md5sum
 
 
 def test_sql_observer_heartbeat_event_updates_run(sql_obs, sample_run, session):
@@ -193,13 +214,10 @@ def test_sql_observer_failed_event_updates_run(sql_obs, sample_run, session):
     assert db_run.fail_trace == "lots of errors and\nso\non..."
 
 
-def test_sql_observer_artifact_event(sql_obs, sample_run, session):
+def test_sql_observer_artifact_event(sql_obs, sample_run, session, tmpfile):
     sql_obs.started_event(**sample_run)
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        sql_obs.artifact_event('my_artifact.py', f.name)
+    sql_obs.artifact_event('my_artifact.py', tmpfile.name)
 
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
@@ -208,26 +226,22 @@ def test_sql_observer_artifact_event(sql_obs, sample_run, session):
     artifact = db_run.artifacts[0]
 
     assert artifact.filename == 'my_artifact.py'
-    assert artifact.content == b'foo\nbar'
+    assert artifact.content.decode() == tmpfile.content
 
 
-def test_fs_observer_resource_event(sql_obs, sample_run, session):
+def test_fs_observer_resource_event(sql_obs, sample_run, session, tmpfile):
     sql_obs.started_event(**sample_run)
 
-    with tempfile.NamedTemporaryFile(suffix='.py') as f:
-        f.write(b'foo\nbar')
-        f.flush()
-        sql_obs.resource_event(f.name)
-        md5sum = get_digest(f.name)
+    sql_obs.resource_event(tmpfile.name)
 
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
 
     assert len(db_run.resources) == 1
     res = db_run.resources[0]
-    assert res.filename == f.name
-    assert res.md5sum == md5sum
-    assert res.content == b'foo\nbar'
+    assert res.filename == tmpfile.name
+    assert res.md5sum == tmpfile.md5sum
+    assert res.content.decode() == tmpfile.content
 
 
 def test_fs_observer_doesnt_duplicate_resources_or_sources(sql_obs, sample_run,
