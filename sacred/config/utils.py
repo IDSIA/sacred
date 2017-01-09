@@ -59,6 +59,11 @@ def assert_is_valid_key(key):
             raise KeyError('Key "{}" is not a valid python identifier'
                            .format(key))
 
+    if SETTINGS.CONFIG_KEYS.ENFORCE_NO_EQUALS:
+        if isinstance(key, basestring) and '=' in key:
+            raise KeyError('Invalid key "{}". Config keys may not contain an'
+                           'equals sign ("=").'.format('='))
+
 
 def normalize_numpy(obj):
     if opt.has_numpy and isinstance(obj, opt.np.generic):

@@ -20,7 +20,9 @@ SETTINGS = munchify({
         # make sure all config keys are valid python identifiers
         'ENFORCE_VALID_PYTHON_IDENTIFIER': False,
         # make sure all config keys are strings
-        'ENFORCE_STRING': False
+        'ENFORCE_STRING': False,
+        # make sure no config key contains an equals sign
+        'ENFORCE_NO_EQUALS': True
     }})
 
 from .__about__ import __version__, __author__, __author_email__, __url__
