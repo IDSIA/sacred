@@ -7,6 +7,7 @@ Mako==1.0.6
 MarkupSafe==0.23
 mock==2.0.0
 mongomock==3.7.0
+munch==2.0.4
 numpy==1.11.3
 pandas==0.19.2
 pbr==1.10.0

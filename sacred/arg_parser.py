@@ -17,7 +17,7 @@ from docopt import docopt
 
 from sacred.commandline_options import gather_command_line_options
 from sacred.commands import help_for_command
-from serializer import restore
+from sacred.serializer import restore
 from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
