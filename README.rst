@@ -103,6 +103,14 @@ Frontends
 At this point there are two frontends to the database entries created by sacred (that I'm aware of).
 They are developed externally as separate projects.
 
+`Sacredboard <https://github.com/chovanecm/sacredboard>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/sacredboard.png
+
+Sacredboard is a web-based dashboard interface to the sacred runs stored in a
+MongoDB.
+
+
 `SacredBrowser <https://github.com/michaelwand/SacredBrowser>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .. image:: docs/images/SacredBrowser.png
@@ -117,10 +125,8 @@ database or over the network.
 
 `Prophet <https://github.com/Qwlouse/prophet>`_
 +++++++++++++++++++++++++++++++++++++++++++++++
-.. image:: docs/images/prophet.png
-
 Prophet is an early prototype of a webinterface to the MongoDB entries created by
-sacred experiments.
+sacred experiments, that is discontinued.
 It requires you to run `RestHeart <http://restheart.org>`_ to access the database.
 
 
