@@ -13,48 +13,11 @@ import gridfs
 import pymongo
 import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument
-from pymongo.son_manipulator import SONManipulator
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.serializer import flatten
 from sacred.utils import ObserverError
-
-SON_MANIPULATORS = []
-
-
-if opt.has_numpy:
-    class NumpyArraysToList(SONManipulator):
-        """Turn numpy array into nested lists to save in json."""
-
-        def transform_incoming(self, son, collection):
-            for (key, value) in son.items():
-                if isinstance(value, opt.np.ndarray):
-                    son[key] = value.tolist()
-                elif isinstance(value, dict):
-                    # Make sure we recurse into sub-docs
-                    son[key] = self.transform_incoming(value, collection)
-            return son
-
-    SON_MANIPULATORS.append(NumpyArraysToList())
-
-
-if opt.has_pandas:
-    pd = opt.pandas
-    from sacred.serializer import json
-
-    class PandasToJson(SONManipulator):
-        """Turn pandas structures into dictionaries to save in json."""
-
-        def transform_incoming(self, son, collection):
-            for (key, value) in son.items():
-                if isinstance(value, (pd.Series, pd.DataFrame, pd.Panel)):
-                    son[key] = json.decode(value.to_json())
-                elif isinstance(value, dict):
-                    # Make sure we recurse into sub-docs
-                    son[key] = self.transform_incoming(value, collection)
-            return son
-
-    SON_MANIPULATORS.append(PandasToJson())
 
 
 def force_valid_bson_key(key):
@@ -86,7 +49,7 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
-                                 'system.indexes', 'labwatch.seach_space'}
+                                 'system.indexes', 'seach_space'}
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
@@ -94,8 +57,6 @@ class MongoObserver(RunObserver):
                overwrite=None, **kwargs):
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
-        for manipulator in SON_MANIPULATORS:
-            database.add_son_manipulator(manipulator)
         if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError('Collection name "{}" is reserved. '
                            'Please use a different one.'.format(collection))
@@ -116,7 +77,7 @@ class MongoObserver(RunObserver):
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
-            'config': config,
+            'config': flatten(config),
             'meta': meta_info,
             'status': 'QUEUED'
         }
@@ -146,7 +107,7 @@ class MongoObserver(RunObserver):
             'command': command,
             'host': dict(host_info),
             'start_time': start_time,
-            'config': config,
+            'config': flatten(config),
             'meta': meta_info,
             'status': 'RUNNING',
             'resources': [],
@@ -164,7 +125,7 @@ class MongoObserver(RunObserver):
         return self.run_entry['_id']
 
     def heartbeat_event(self, info, captured_out, beat_time):
-        self.run_entry['info'] = info
+        self.run_entry['info'] = flatten(info)
         self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
         self.save()

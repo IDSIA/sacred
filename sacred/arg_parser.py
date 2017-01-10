@@ -17,6 +17,7 @@ from docopt import docopt
 
 from sacred.commandline_options import gather_command_line_options
 from sacred.commands import help_for_command
+from serializer import restore
 from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -237,7 +238,7 @@ def _get_first_line_of_docstring(func):
 def _convert_value(value):
     """Parse string as python literal if possible and fallback to string."""
     try:
-        return ast.literal_eval(value)
+        return restore(ast.literal_eval(value))
     except (ValueError, SyntaxError):
         # use as string if nothing else worked
         return value

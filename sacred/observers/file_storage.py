@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import json
 import os
 import os.path
 import tempfile
@@ -13,7 +14,7 @@ from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.utils import FileNotFoundError  # For compatibility with py2
 from sacred import optional as opt
-from sacred.serializer import json
+from sacred.serializer import flatten
 
 
 def json_serial(obj):
@@ -104,7 +105,7 @@ class FileStorageObserver(RunObserver):
             'experiment': dict(ex_info),
             'command': command,
             'host': dict(host_info),
-            'start_time': start_time,
+            'start_time': start_time.isoformat(),
             'meta': meta_info,
             'status': 'RUNNING',
             'resources': [],
@@ -134,7 +135,7 @@ class FileStorageObserver(RunObserver):
 
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), 'w') as f:
-            f.write(json.encode(obj))
+            json.dump(flatten(obj), f, sort_keys=True, indent=2)
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
@@ -159,7 +160,7 @@ class FileStorageObserver(RunObserver):
 
     def heartbeat_event(self, info, captured_out, beat_time):
         self.info = info
-        self.run_entry['heartbeat'] = beat_time
+        self.run_entry['heartbeat'] = beat_time.isoformat()
         self.cout = captured_out
         self.save_cout()
         self.save_json(self.run_entry, 'run.json')
@@ -167,7 +168,7 @@ class FileStorageObserver(RunObserver):
             self.save_json(self.info, 'info.json')
 
     def completed_event(self, stop_time, result):
-        self.run_entry['stop_time'] = stop_time
+        self.run_entry['stop_time'] = stop_time.isoformat()
         self.run_entry['result'] = result
         self.run_entry['status'] = 'COMPLETED'
 
@@ -175,13 +176,13 @@ class FileStorageObserver(RunObserver):
         self.render_template()
 
     def interrupted_event(self, interrupt_time, status):
-        self.run_entry['stop_time'] = interrupt_time
+        self.run_entry['stop_time'] = interrupt_time.isoformat()
         self.run_entry['status'] = status
         self.save_json(self.run_entry, 'run.json')
         self.render_template()
 
     def failed_event(self, fail_time, fail_trace):
-        self.run_entry['stop_time'] = fail_time
+        self.run_entry['stop_time'] = fail_time.isoformat()
         self.run_entry['status'] = 'FAILED'
         self.run_entry['fail_trace'] = fail_trace
         self.save_json(self.run_entry, 'run.json')
@@ -189,7 +190,7 @@ class FileStorageObserver(RunObserver):
 
     def resource_event(self, filename):
         store_path, md5sum = self.find_or_save(filename, self.resource_dir)
-        self.run_entry['resources'].append((filename, store_path))
+        self.run_entry['resources'].append([filename, store_path])
         self.save_json(self.run_entry, 'run.json')
 
     def artifact_event(self, name, filename):
