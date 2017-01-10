@@ -63,6 +63,12 @@ def test_serialize_numpy_arrays():
     assert b.shape == a.shape
 
 
+def test_serialize_tuples():
+    t = (1, 'two')
+    assert restore(flatten(t)) == t
+    assert isinstance(restore(flatten(t)), tuple)
+
+
 # def test_serialize_datetime():
 #     from datetime import datetime
 #     t = datetime.now()
