@@ -7,8 +7,9 @@ import json as _json
 
 from sacred import optional as opt
 
+__sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ('json', )
+__all__ = ('flatten', 'restore')
 
 
 # class DatetimeHandler(BaseHandler):
@@ -32,7 +33,6 @@ if opt.has_numpy:
 
         def restore(self, obj):
             return opt.np.array(obj["values"], dtype=obj["dtype"])
-
 
     class NumpyGenericHandler(BaseHandler):
         def flatten(self, obj, data):
