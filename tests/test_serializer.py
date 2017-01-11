@@ -69,6 +69,15 @@ def test_serialize_tuples():
     assert isinstance(restore(flatten(t)), tuple)
 
 
+@pytest.mark.skipif(not opt.has_pandas, reason="requires pandas")
+def test_serialize_pandas_dataframes():
+    pd, np = opt.pandas, opt.np
+    df = pd.DataFrame(np.arange(20).reshape(5, 4), columns=list('ABCD'))
+    b = restore(flatten(df))
+    assert np.all(df == b)
+    assert np.all(df.dtypes == b.dtypes)
+
+
 # def test_serialize_datetime():
 #     from datetime import datetime
 #     t = datetime.now()

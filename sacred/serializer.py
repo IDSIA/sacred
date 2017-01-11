@@ -47,6 +47,24 @@ if opt.has_numpy:
               np.uint64, np.float16, np.float32, np.float64]:
         NumpyGenericHandler.handles(t)
 
+
+if opt.has_pandas:
+    import pandas as pd
+
+    class PandasDataframeHandler(BaseHandler):
+        def flatten(self, obj, data):
+            # TODO: this is slow
+            data['values'] = json.loads(obj.to_json())
+            data['dtypes'] = {k: str(v) for k, v in obj.dtypes.items()}
+            return data
+
+        def restore(self, obj):
+            # TODO: get rid of unnecessary json.dumps
+            return pd.read_json(json.dumps(obj['values']),
+                                dtype=obj['dtypes'])
+
+    PandasDataframeHandler.handles(pd.DataFrame)
+
 json.set_encoder_options('simplejson', sort_keys=True, indent=4)
 json.set_encoder_options('demjson', compactly=False)
 
