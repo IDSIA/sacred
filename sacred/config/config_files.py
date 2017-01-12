@@ -5,10 +5,14 @@ from __future__ import division, print_function, unicode_literals
 import os
 import pickle
 
+import json
+
 import sacred.optional as opt
-from sacred.serializer import json
+from sacred.serializer import flatten, restore
 
 __sacred__ = True  # marks files that should be filtered from stack traces
+
+__all__ = ('load_config_file', 'save_config_file')
 
 
 class Handler(object):
@@ -19,8 +23,9 @@ class Handler(object):
 
 
 HANDLER_BY_EXT = {
-    '.json': Handler(lambda fp: json.decode(fp.read()),
-                     lambda obj, fp: fp.write(json.encode(obj)), ''),
+    '.json': Handler(lambda fp: restore(json.load(fp.read())),
+                     lambda obj, fp: json.dump(flatten(obj), fp,
+                                               sort_keys=True, indent=2), ''),
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),
 }
 
@@ -29,8 +34,18 @@ if opt.has_yaml:
     HANDLER_BY_EXT['.yaml'] = Handler(opt.yaml.load, opt.yaml.dump, '')
 
 
-def load_config_file(filename):
+def get_handler(filename):
     _, extension = os.path.splitext(filename)
-    handler = HANDLER_BY_EXT[extension]
+    return HANDLER_BY_EXT[extension]
+
+
+def load_config_file(filename):
+    handler = get_handler(filename)
     with open(filename, 'r' + handler.mode) as f:
         return handler.load(f)
+
+
+def save_config_file(config, filename):
+    handler = get_handler(filename)
+    with open(filename, 'w' + handler.mode) as f:
+        handler.dump(config, f)

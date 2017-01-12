@@ -8,9 +8,14 @@ import pydoc
 import re
 from collections import namedtuple
 
+from sacred.config import save_config_file
+from sacred.serializer import flatten
 from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
 __sacred__ = True  # marks files that should be filtered from stack traces
+
+__all__ = ('print_config', 'print_dependencies', 'save_config',
+           'help_for_command')
 
 BLUE = '\033[94m'
 GREEN = '\033[92m'
@@ -80,10 +85,23 @@ def print_dependencies(_run):
     if _run.experiment_info['repositories']:
         repos = _run.experiment_info['repositories']
         print('\nVersion Control:')
-        for repo, (commit, is_dirty) in repos.items():
-            mod = 'M' if is_dirty else ''
-            print('{}  {:<43}  {}'.format(mod, repo, commit))
+        for repo in repos:
+            mod = RED + 'M' if repo['dirty'] else ' '
+            print('{} {:<43}  {}'.format(mod, repo['url'], repo['commit']) +
+                  ENDC)
     print('')
+
+
+def save_config(_config, config_filename='config.json'):
+    """
+    Store the updated configuration in a file.
+
+    By default uses the filename "config.json", but that can be changed by
+    setting the config_filename config entry.
+    """
+    if 'config_filename' in _config:
+        del _config['config_filename']
+    save_config_file(flatten(_config), config_filename)
 
 
 def _iterate_marked(cfg, config_mods):
