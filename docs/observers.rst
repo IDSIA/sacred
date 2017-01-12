@@ -598,6 +598,8 @@ If the run is only being queued, then instead of all the above only a single
 ``queued_event`` is fired.
 
 
+.. _event_started:
+
 Start
 -----
 The moment an experiment is started, the first event is fired for all the
@@ -629,6 +631,7 @@ The started event is also the time when the ID of the run is determined.
 Essentially the first observer which sees `_id=None` sets an id and returns it.
 That id is then stored in the run and also passed to all further observers.
 
+.. _event_queued:
 
 Queued
 ------
@@ -702,20 +705,19 @@ This can be done conveniently using the special ``_run`` parameter in any
 captured function, which gives you access to the current ``Run`` object.
 
 You can add whatever information you like to ``_run.info``. This ``info`` dict
-will be sent to all the observers every 10 sec as part of the heartbeat_event.
+will be sent to all the observers every 10 sec as part of the
+:ref:`heartbeat_event <heartbeat>`.
 
 .. warning::
-    You can only store information in ``info`` that is JSON-serializable and
-    contains only valid python identifiers as keys in dictionaries. Otherwise
-    the Observer might not be able to store it in the Database and crash.
-    ``numpy`` arrays and ``pandas`` datastructures are an exception to that
-    rule as they converted automatically (see below).
+    Many observers will convert the information of ``info`` into JSON using the
+    jsonpickle library. This works for most python datatypes, but the resulting
+    entries in the database may look different from what you might expect.
+    So only store non-JSON information if you absolutely need to.
 
 If the info dict contains ``numpy`` arrays or ``pandas`` Series/DataFrame/Panel
 then these will be converted to json automatically. The result is human
-readable (nested lists for ``numpy`` and a dict for ``pandas``). Note that this
-process looses information about the precise datatypes
-(e.g. uint8 will be just int afterwards).
+readable (nested lists for ``numpy`` and a dict for ``pandas``), but might be
+imprecise in some cases.
 
 
 .. _resources:

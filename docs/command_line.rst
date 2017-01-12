@@ -125,6 +125,7 @@ Supported formats are the same as with :ref:`config_files`.
 If there should ever be a name-collision between a named config and a config
 file the latter takes precedence.
 
+.. _print_config:
 
 Print Config
 ============
@@ -176,6 +177,38 @@ help you find typos and update mistakes::
         baz = 3                # green
         foo = True             # red
     INFO - hello_config - Completed after 0:00:00
+
+
+.. _print_dependencies:
+
+Print Dependencies
+==================
+
+The ``print_dependencies`` command shows the package dependencies, source files,
+and (optionally) the state of version control for the experiment. For example::
+
+    >> ./03_hello_config_scope.py print_dependencies
+    INFO - hello_cs - Running command 'print_dependencies'
+    INFO - hello_cs - Started
+    Dependencies:
+      numpy                == 1.11.0
+      sacred               == 0.7.0
+
+    Sources:
+      03_hello_config_scope.py                     53cee32c9dc77870f7b39622434aff85
+
+    Version Control:
+    M git@github.com:IDSIA/sacred.git              bcdde712957570606ec5087b1748c60a89bb89e0
+
+    INFO - hello_cs - Completed after 0:00:00
+
+Where the *Sources* section lists all discovered (or added) source files and their
+md5 hash.
+The *Version Control* section lists all discovered VCS repositories
+(ATM only git is supported), the current commit hash.
+The M at the beginning of the git line signals that the repository is currently
+dirty, i.e. has uncommitted changes.
+
 
 Custom Commands
 ===============
@@ -472,6 +505,21 @@ repository, i.e. with no uncommitted changes.
     For this flag to work you need to have the
     `GitPython <https://github.com/gitpython-developers/GitPython>`_
     package installed.
+
+
+.. _cmdline_print_config:
+
+Print Config
+------------
++---------------------+----------------------------------------------------+
+| ``-P``              |  Always print the config first.                    |
++---------------------+                                                    |
+| ``--print_config``  |                                                    |
++---------------------+----------------------------------------------------+
+
+If this flag is set, sacred will always print the current configuration
+including modifications (like the :ref:`print_config` command) before running
+the main method.
 
 
 Custom Flags

@@ -46,7 +46,7 @@ Run the Experiment
 ==================
 The easiest way to run your experiment is to just use the command-line. This
 requires that you used ``automain`` (or an equivalent). You can then just
-execute the experiments python file and use the powerful :doc:`command-line`.
+execute the experiments python file and use the powerful :doc:`command_line`.
 
 You can also run your experiment directly from python. This is especially useful
 if you want to run it multiple times with different configurations. So lets say
@@ -197,7 +197,7 @@ add an observer like this:
 At the moment ``MongoObserver`` is the only observer shipped with Sacred.
 It connects to a MongoDB and puts all these information into a document in a
 collection called ``experiments``. You can also add this observer from the
-:doc:`command-line` like this::
+:doc:`command_line` like this::
 
     >> python my_experiment.py -m my_database
 

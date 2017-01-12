@@ -1,3 +1,5 @@
+.. _configuration_injection:
+
 Configuration Injection
 ***********************
 Once you've set up your configuration, the next step is to use those values in

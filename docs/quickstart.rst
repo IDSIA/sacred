@@ -93,7 +93,7 @@ It also added a ``seed`` to our configuration, but we are going to ignore that
 for now.
 
 Now that our experiment has a configuration we can change it from the
-:doc:`command-line`::
+:doc:`command_line`::
 
     > python hello_config.py with recipient="that is cool"
     INFO - hello_config - Running command 'my_main'

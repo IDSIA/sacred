@@ -1,3 +1,5 @@
+.. _configuration:
+
 Configuration
 *************
 The configuration of an experiment is the standard way of parametrizing runs.
@@ -51,7 +53,7 @@ want to play around with this you can just execute ``my_config``::
     >>> my_config()
     {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 5}
 
-Or use the ``print_config`` command from the :doc:`command-line`::
+Or use the ``print_config`` command from the :doc:`command_line`::
 
     $ python config_demo.py print_config
     INFO - config_demo - Running command 'print_config'
@@ -160,7 +162,7 @@ dictionary:
     {'foo': {'bar': 'my_string23', 'a_squared': 529}, 'a': 23, 'e': 5}
 
 
-Using the :doc:`command-line` we can achieve the same thing::
+Using the :doc:`command_line` we can achieve the same thing::
 
     $ config_demo.py print_config with a=6
     INFO - config_demo - Running command 'print_config'
