@@ -17,6 +17,7 @@ class Handler(object):
         self.dump = dump
         self.mode = mode
 
+
 HANDLER_BY_EXT = {
     '.json': Handler(json.load, json.dump, ''),
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),
