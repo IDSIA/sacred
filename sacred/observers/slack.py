@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 from sacred.observers.base import RunObserver
 from sacred.config.config_files import load_config_file
-import requests
+from sacred.optional import requests
 import json
 
 
@@ -42,9 +42,12 @@ class SlackObserver(RunObserver):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
-        self.completed_text = ":white_check_mark: *{ex_info[name]}* ({_id}) completed after {elapsed_time} with result={result}"
-        self.interrupted_text = ":warning: *{ex_info[name]}* ({_id}) interrupted after {elapsed_time}"
-        self.failed_text = ":x: *{ex_info[name]}* ({_id}) failed with `{error}`"
+        self.completed_text = ":white_check_mark: *{ex_info[name]}* ({_id}) " \
+            "completed after {elapsed_time} with result={result}"
+        self.interrupted_text = ":warning: *{ex_info[name]}* ({_id}) " \
+            "interrupted after {elapsed_time}"
+        self.failed_text = ":x: *{ex_info[name]}* ({_id}) failed " \
+            "with '{error}'"
         self.run = None
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -58,18 +61,28 @@ class SlackObserver(RunObserver):
             'host_info': host_info,
         }
 
+    def format_completed(self, run):
+        return self.completed_text.format(**run)
+
+    def format_interrupted(self, run):
+        return self.interrupted_text.format(**run)
+
+    def format_failed(self, run):
+        return self.failed_text.format(**run)
+
     def completed_event(self, stop_time, result):
         if self.completed_text is None:
             return
 
         self.run['result'] = result
         self.run['stop_time'] = stop_time
-        self.run['elapsed_time'] = td_format(stop_time - self.run['start_time'])
+        self.run['elapsed_time'] = td_format(stop_time -
+                                             self.run['start_time'])
 
         data = {
             "username": self.bot_name,
             "icon_emoji": self.icon,
-            "text": self.completed_text.format(**self.run)
+            "text": self.format_completed(self.run)
         }
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
@@ -80,7 +93,8 @@ class SlackObserver(RunObserver):
 
         self.run['status'] = status
         self.run['interrupt_time'] = interrupt_time
-        self.run['elapsed_time'] = td_format(interrupt_time - self.run['start_time'])
+        self.run['elapsed_time'] = td_format(interrupt_time -
+                                             self.run['start_time'])
 
         data = {
             "username": self.bot_name,
@@ -97,7 +111,8 @@ class SlackObserver(RunObserver):
         self.run['fail_trace'] = fail_trace
         self.run['error'] = fail_trace[-1].strip()
         self.run['fail_time'] = fail_time
-        self.run['elapsed_time'] = td_format(fail_time - self.run['start_time'])
+        self.run['elapsed_time'] = td_format(fail_time -
+                                             self.run['start_time'])
 
         data = {
             "username": self.bot_name,

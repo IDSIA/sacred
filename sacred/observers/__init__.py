@@ -58,5 +58,11 @@ else:
                               'missing tinydb dependency')
 
 
+if opt.has_requests:
+    from sacred.observers.slack import SlackObserver
+else:
+    SlackObserver = opt.MissingDependencyMock('requests')
+
+
 __all__ = ('FileStorageObserver', 'RunObserver', 'MongoObserver',
-           'SqlObserver', 'TinyDbObserver', 'TinyDbReader')
+           'SqlObserver', 'TinyDbObserver', 'TinyDbReader', 'SlackObserver')
