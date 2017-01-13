@@ -37,6 +37,7 @@ def _non_unicode_repr(objekt, context, maxlevels, level):
         repr_string = repr_string[1:]
     return repr_string, isreadable, isrecursive
 
+
 PRINTER = pprint.PrettyPrinter()
 PRINTER.format = _non_unicode_repr
 
