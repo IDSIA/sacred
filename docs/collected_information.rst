@@ -146,20 +146,98 @@ captured output. To interpret control characters like a console this would do:
 
 Resources and Artifacts
 =======================
-adding resources
-adding artifacts
+It is possible to add files to an experiment, that will then be added to the database
+(or stored by whatever observer you are using).
+Apart from the source files (that are automatically added) there are two more
+types of files: Resources and Artifacts.
+
+Resources
+---------
+Resources are files that are needed by the experiment to run, such as datasets
+or further configuration files.
+If a file is opened through :py:meth:`~sacred.experiment.Experiment.open_resource`
+then sacred will collect information about that file and send it to the observers.
+The observers will then store the file, but not duplicate it, if it is already stored.
 
 
-Other Information
-=================
-* once: meta info
-  * comment
-  * priority
-  * queue time
+Artifacts
+---------
+Artifacts, on the other hand, are files that are produced by a run.
+They might, for example, contain a detailed dump of the results or the weights
+of a trained model.
+They can be added to the run by :py:meth:`~sacred.experiment.Experiment.add_artifact`
+Artifacts are stored with a name, which (if it isn't explicitly specified)
+defaults to the filename.
 
-* start time
-* status
-* heartbeat time
+
+
+Bookeeping
+==========
+Finally, Sacred stores some additional bookeeping information, and some custom
+meta information about the runs.
+This information is reported to the observers as soon as it is available, and
+can also be accessed through the :ref:`Run object <api_run>` using the
+following keys.
+
+    ==================  =======================================================
+    Key                 Description
+    ==================  =======================================================
+    ``start_time``      The datetime when this run was started
+    ``stop_time``       The datetime when this run stopped
+    ``heartbeat_time``  The last time this run communicated with the observers
+    ``status``          The status of the run (see below)
+    ``fail_trace``      The stacktrace of an exception that occurred (if so)
+    ``result``          The return value of the main function (if successful)
+    ==================  =======================================================
+
+
+Status
+------
+The status describes in what state a run currently is and takes one of the
+following values:
+
+    ===============  =========================================================
+    Status           Description
+    ===============  =========================================================
+    ``QUEUED``       The run was just :ref:`queued <queuing>` and not run yet
+    ``RUNNING``      Currently running (but see below)
+    ``COMPLETED``    Completed successfully
+    ``FAILED``       The run failde due to an exception
+    ``INTERRUPTED``  The run was cancelled with a :py:class:`KeyboardInterrupt`
+    ``TIMED_OUT``    The run was aborted using a :py:class:`~sacred.utils.TimeoutInterrupt`
+    *[custom]*       A custom py:class:`~sacred.utils.SacredInterrupt` occurred
+    ===============  =========================================================
+
+If a run crashes in a way that doesn't allow Sacred to tell the observers
+(e.g. power outage, kernel panic, ...), then the status of the crashed run
+will still be ``RUNNING``.
+To find these *dead* runs, one can look at the ``heartbeat_time`` of the runs
+with a ``RUNNING`` status:
+If the ``heartbeat_time`` lies significantly longer in the past than the
+heartbeat interval (default 10sec), then the run can be considered ``DEAD``.
+
+Meta Information
+----------------
+The meta-information is meant as a place to store custom information about a
+run once in the beginning.
+It can be added to the run by passing it to
+:py:meth:`~sacred.experiment.Experiment.run`, but some commandline flags or
+tools also add meta information.
+It is reported to the observers as part of the
+:ref:`started_event <event_started>` or the :ref:`queued_event <event_queued>`.
+It can also be accessed as a dictionary through the ``meta_info`` property of
+the :ref:`Run object <api_run>`.
+The builtin usecases include:
+
+    ===============  =========================================================
+    Key              Description
+    ===============  =========================================================
+    ``comment``      A comment for that run (added by the :ref:`comment flag <comment_flag>`)
+    ``priority``     A priority for scheduling queued runs (added by the :ref:`priority flag <priority_flag>`)
+    ``queue_time``   The datetime when this run was queued (stored automatically)
+    ===============  =========================================================
+
+
 
 
 

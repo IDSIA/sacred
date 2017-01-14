@@ -297,6 +297,8 @@ Help
 This prints a help/usage message for your experiment.
 It is equivalent to typing just ``help``.
 
+.. _comment_flag:
+
 Comment
 -------
 

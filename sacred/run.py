@@ -6,7 +6,7 @@ import datetime
 import os.path
 import sys
 import threading
-import traceback
+import traceback as tb
 
 from tempfile import NamedTemporaryFile
 
@@ -67,6 +67,9 @@ class Run(object):
         self.result = None
         """The return value of the main function"""
 
+        self.status = None
+        """The current status of the run, from QUEUED to COMPLETED"""
+
         self.start_time = None
         """The datetime when this run was started"""
 
@@ -96,6 +99,9 @@ class Run(object):
 
         self.captured_out_filter = captured_out_filter
         """Filter function to be applied to captured output"""
+
+        self.fail_trace = None
+        """A stacktrace, in case the run failed"""
 
         self._heartbeat = None
         self._failed_observers = []
@@ -234,6 +240,7 @@ class Run(object):
         self._emit_heartbeat()  # one final beat to flush pending changes
 
     def _emit_queued(self):
+        self.status = 'QUEUED'
         queue_time = datetime.datetime.now()
         self.meta_info['queue_time'] = queue_time
         command = join_paths(self.main_function.prefix,
@@ -260,6 +267,7 @@ class Run(object):
             self.run_logger.info('Queued-up run with ID "{}"'.format(self._id))
 
     def _emit_started(self):
+        self.status = 'RUNNING'
         self.start_time = datetime.datetime.now()
         command = join_paths(self.main_function.prefix,
                              self.main_function.signature.name)
@@ -300,12 +308,14 @@ class Run(object):
         return elapsed_time
 
     def _emit_completed(self, result):
+        self.status = 'COMPLETED'
         for observer in self.observers:
             self._final_call(observer, 'completed_event',
                              stop_time=self.stop_time,
                              result=result)
 
     def _emit_interrupted(self, status):
+        self.status = status
         elapsed_time = self._stop_time()
         self.run_logger.warning("Aborted after %s!", elapsed_time)
         for observer in self.observers:
@@ -314,13 +324,14 @@ class Run(object):
                              status=status)
 
     def _emit_failed(self, exc_type, exc_value, trace):
+        self.status = 'FAILED'
         elapsed_time = self._stop_time()
         self.run_logger.error("Failed after %s!", elapsed_time)
-        fail_trace = traceback.format_exception(exc_type, exc_value, trace)
+        self.fail_trace = tb.format_exception(exc_type, exc_value, trace)
         for observer in self.observers:
             self._final_call(observer, 'failed_event',
                              fail_time=self.stop_time,
-                             fail_trace=fail_trace)
+                             fail_trace=self.fail_trace)
 
     def _emit_resource_added(self, filename):
         for observer in self.observers:
@@ -352,7 +363,7 @@ class Run(object):
                 # Feels dirty to catch all exceptions, but it is just for
                 # finishing up, so we don't want one observer to kill the
                 # others
-                self.run_logger.error(traceback.format_exc())
+                self.run_logger.error(tb.format_exc())
 
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:

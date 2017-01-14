@@ -227,6 +227,8 @@ be used as a ``captured_out_filter``.
 For a simple example see `examples/captured_out_filter.py <https://github.com/IDSIA/sacred/tree/master/examples/captured_out_filter.py>`_.
 
 
+.. _queuing:
+
 Queuing a Run
 =============
 Sacred also supports queuing runs by passing the :ref:`cmdline_queue` flag
