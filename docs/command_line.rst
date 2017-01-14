@@ -125,10 +125,34 @@ Supported formats are the same as with :ref:`config_files`.
 If there should ever be a name-collision between a named config and a config
 file the latter takes precedence.
 
+Commands
+========
+
+Apart from running the main function (the default command), the command-line
+interface also supports other (built-in or custom) commands.
+The name of the command has to be first on the commandline::
+
+    >>> ./my_demo.py COMMAND_NAME with seed=123
+
+If the COMMAND_NAME is ommitted it defaults to the main function, but the name
+of that function can also explicitly used as the name of the command.
+So for this experiment
+
+.. code-block:: python
+
+    @ex.automain
+    def my_main():
+        return 42
+
+the following two lines are equivalent::
+
+    >>> ./my_demo.py with seed=123
+    >>> ./my_demo.py my_main with seed=123
+
 .. _print_config:
 
 Print Config
-============
+------------
 
 To inspect the configuration of your experiment and see how changes from the
 command-line affect it you can use the ``print_config`` command. The full
@@ -182,7 +206,7 @@ help you find typos and update mistakes::
 .. _print_dependencies:
 
 Print Dependencies
-==================
+------------------
 
 The ``print_dependencies`` command shows the package dependencies, source files,
 and (optionally) the state of version control for the experiment. For example::
@@ -210,8 +234,34 @@ The M at the beginning of the git line signals that the repository is currently
 dirty, i.e. has uncommitted changes.
 
 
+.. _save_config:
+
+Save Configuration
+------------------
+
+Use the ``save_config`` command for saving the current/updated configuration
+into a file::
+
+    ./03_hello_config_scope.py save_config with recipient=Bob
+
+This will store a file called ``config.json`` with the following content::
+
+    {
+      "message": "Hello Bob!",
+      "recipient": "Bob",
+      "seed": 151625947
+    }
+
+The filename can be configured by setting ``config_filename`` like this::
+
+    ./03_hello_config_scope.py save_config with recipient=Bob config_filename=mine.yaml
+
+The format for exporting the config is inferred from the filename and can be
+any format supported for :ref:`config files <config_files>`.
+
+
 Custom Commands
-===============
+---------------
 If you just run an experiment file it will execute the default command, that
 is the method you decorated with ``@ex.main`` or ``@ex.automain``. But you
 can also add other commands to the experiment by using ``@ex.command``:
@@ -490,6 +540,19 @@ This entry will contain all the information about the experiment and the
 configuration. But the experiment will not be run. This can be useful to have
 some distributed workers fetch and start the queued up runs.
 
+.. _cmdline_priority:
+
+Priority
+--------
+
++---------------+-----------------------------------------+
+| ``-p``        |  Only queue this run, do not start it.  |
++---------------+                                         |
+| ``--queue``   |                                         |
++---------------+-----------------------------------------+
+
+
+
 .. _cmdline_enforce_clean:
 
 Enforce Clean
@@ -513,11 +576,11 @@ repository, i.e. with no uncommitted changes.
 
 Print Config
 ------------
-+---------------------+----------------------------------------------------+
-| ``-P``              |  Always print the config first.                    |
-+---------------------+                                                    |
-| ``--print_config``  |                                                    |
-+---------------------+----------------------------------------------------+
++-------------------------+---------------------------------------------------+
+| ``-P PRIORITY``         |  Always print the config first.                   |
++-------------------------+                                                   |
+| ``--priority PRIORITY`` |                                                   |
++-------------------------+---------------------------------------------------+
 
 If this flag is set, sacred will always print the current configuration
 including modifications (like the :ref:`print_config` command) before running

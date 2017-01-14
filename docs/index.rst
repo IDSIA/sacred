@@ -45,7 +45,6 @@ Contents
    quickstart
    experiment
    configuration
-   config_injection
    command_line
    collected_information
    observers

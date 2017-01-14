@@ -71,7 +71,7 @@ And we could of course set these parameters from the command-line using
 Overwriting the Default Configuration
 =====================================
 You can change the default configuration of an Ingredient in each Experiment by
-adding another :ref:`another ConfigScope <multiple_config_scopes>`:
+adding :ref:`another ConfigScope <multiple_config_scopes>`:
 
 .. code-block:: python
 

@@ -92,7 +92,7 @@ def print_dependencies(_run):
     print('')
 
 
-def save_config(_config, config_filename='config.json'):
+def save_config(_config, _log, config_filename='config.json'):
     """
     Store the updated configuration in a file.
 
@@ -101,6 +101,7 @@ def save_config(_config, config_filename='config.json'):
     """
     if 'config_filename' in _config:
         del _config['config_filename']
+    _log.info('Saving config to "{}"'.format(config_filename))
     save_config_file(flatten(_config), config_filename)
 
 

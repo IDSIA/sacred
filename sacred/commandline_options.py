@@ -192,10 +192,11 @@ class ForceOption(CommandLineOption):
 
 
 class PriorityOption(CommandLineOption):
-    """Adds a message to the run."""
+    """Sets the priority for a queued up experiment."""
 
+    short_flag = 'P'
     arg = 'PRIORITY'
-    arg_description = 'Sets the priority for a queued up experiment.'
+    arg_description = 'The (numeric) priority for this run.'
 
     @classmethod
     def apply(cls, args, run):
@@ -228,8 +229,6 @@ class EnforceCleanOption(CommandLineOption):
 
 class PrintConfigOption(CommandLineOption):
     """Always print the configuration first."""
-
-    short_flag = 'P'
 
     @classmethod
     def apply(cls, args, run):

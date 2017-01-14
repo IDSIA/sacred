@@ -16,7 +16,7 @@ they are suspicious. Suspicious changes include adding configuration entries
 that are not used anywhere, or typechanges of existing entries.
 
 The easiest way to inspect this information is from the commandline using the
-:ref:`print_config` command or alternatively the ``-P / --print_config``
+:ref:`print_config` command or alternatively the ``-p / --print_config``
 :ref:`flag <cmdline_print_config>`.
 The config is also passed to the observers as part of the
 :ref:`started_event <event_started>` or the :ref:`queued_event <event_queued>`.
@@ -233,7 +233,7 @@ The builtin usecases include:
     Key              Description
     ===============  =========================================================
     ``comment``      A comment for that run (added by the :ref:`comment flag <comment_flag>`)
-    ``priority``     A priority for scheduling queued runs (added by the :ref:`priority flag <priority_flag>`)
+    ``priority``     A priority for scheduling queued runs (added by the :ref:`priority flag <cmdline_priority>`)
     ``queue_time``   The datetime when this run was queued (stored automatically)
     ===============  =========================================================
 

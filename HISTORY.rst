@@ -8,11 +8,12 @@ Release History
            of the experiment (if available and if gitpython is installed)
 * Feature: new ``--enforce-clean`` flag that cancels a run if the
            git repository is dirty
-* Feature: config is now serialized using jsonpickle, which supports arbitrary
-           python types.
+* Feature: config now supports arbitrary python types by using jsonpickle
 * Feature: added new TinyDbObserver and TinyDbReader
 * Feature: added new SqlObserver
 * Feature: added new FileStorageObserver
+* Feature: added new SlackObserver
+* Feature: added save_config command
 * Feature: added queue flag to just queue a run instead of executing it
 * Feature: added TimeoutInterrupt to signal that a run timed out
 * Feature: experiments can now be run in Jupyter notebook, but will fail with
