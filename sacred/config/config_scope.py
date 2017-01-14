@@ -212,13 +212,14 @@ def get_config_comments(func):
             for e in target.elts:
                 add_doc(e)
 
-    for ast_entry in body_code.body:
-        if isinstance(ast_entry, ast.Assign):
-            # we found an assignment statement
-            # go through all targets of the assignment
-            # usually a single entry, but can be more for statements like:
-            # a = b = 5
-            for t in ast_entry.targets:
-                add_doc(t)
+    for ast_root in body_code.body:
+        for ast_entry in [ast_root] + list(ast.iter_child_nodes(ast_root)):
+            if isinstance(ast_entry, ast.Assign):
+                # we found an assignment statement
+                # go through all targets of the assignment
+                # usually a single entry, but can be more for statements like:
+                # a = b = 5
+                for t in ast_entry.targets:
+                    add_doc(t)
 
     return variables
