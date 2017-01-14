@@ -23,7 +23,7 @@ class Handler(object):
 
 
 HANDLER_BY_EXT = {
-    '.json': Handler(lambda fp: restore(json.load(fp.read())),
+    '.json': Handler(lambda fp: restore(json.load(fp)),
                      lambda obj, fp: json.dump(flatten(obj), fp,
                                                sort_keys=True, indent=2), ''),
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),

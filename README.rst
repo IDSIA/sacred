@@ -113,7 +113,7 @@ MongoDB.
 
 `SacredBrowser <https://github.com/michaelwand/SacredBrowser>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-.. image:: docs/images/SacredBrowser.png
+.. image:: docs/images/sacred_browser.png
 
 SacredBrowser is a PyQt4 application to browse the MongoDB entries created by
 sacred experiments.

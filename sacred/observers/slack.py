@@ -11,6 +11,9 @@ import json
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
 def td_format(td_object):
     seconds = int(td_object.total_seconds())
+    if seconds == 0:
+        return "less than a second"
+
     periods = [
         ('year', 60 * 60 * 24 * 365),
         ('month', 60 * 60 * 24 * 30),
@@ -57,12 +60,12 @@ class SlackObserver(RunObserver):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
-        self.completed_text = ":white_check_mark: *{ex_info[name]}* " \
-            "completed after {elapsed_time} with result={result}"
-        self.interrupted_text = ":warning: *{ex_info[name]}* " \
-            "interrupted after {elapsed_time}"
-        self.failed_text = ":x: *{ex_info[name]}* failed " \
-            "with '{error}'"
+        self.completed_text = ":white_check_mark: *{experiment[name]}* " \
+            "completed after _{elapsed_time}_ with result=`{result}`"
+        self.interrupted_text = ":warning: *{experiment[name]}* " \
+                                "interrupted after _{elapsed_time}_"
+        self.failed_text = ":x: *{experiment[name]}* failed after " \
+                           "_{elapsed_time}_ with `{error}`"
         self.run = None
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -71,18 +74,18 @@ class SlackObserver(RunObserver):
             '_id': _id,
             'config': config,
             'start_time': start_time,
-            'ex_info': ex_info,
+            'experiment': ex_info,
             'command': command,
             'host_info': host_info,
         }
 
-    def get_completed_text(self, run):
+    def get_completed_text(self):
         return self.completed_text.format(**self.run)
 
-    def get_interrupted_text(self, run):
+    def get_interrupted_text(self):
         return self.interrupted_text.format(**self.run)
 
-    def get_failed_text(self, run):
+    def get_failed_text(self):
         return self.failed_text.format(**self.run)
 
     def completed_event(self, stop_time, result):

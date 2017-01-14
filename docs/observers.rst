@@ -585,6 +585,51 @@ Schema
 .. image:: images/sql_schema.png
 
 
+
+Slack Observer
+==============
+
+The :py:class:`~sacred.observers.slack.SlackObserver` sends a message to
+`Slack <https://slack.com/>`_ using an
+`incoming webhook <https://api.slack.com/incoming-webhooks>`_ everytime an
+experiment stops:
+
+.. image:: images/slack_observer.png
+
+It requires the `requests <http://docs.python-requests.org>`_ package to be
+installed and the ``webhook_url`` of the incoming webhook configured in Slack.
+This url is something you shouldn't share with others, so the recommended way
+of adding a SlackObserver is from a configuration file:
+
+.. code-block:: python
+
+    from sacred.observers import SlackObserver
+
+    slack_obs = SlackObserver.from_config('slack.json')
+    ex.observers.append(slack_obs)
+
+Where ``slack.json`` at least specifies the ``webhook_url``::
+
+    # Content of file 'slack.json':
+    {
+        "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+    }
+
+But it can optionally also customize the other attributes::
+
+    # Content of file 'slack.json':
+    {
+        "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+        "icon": ":imp:",
+        "bot_name": "my-sacred-bot",
+        "completed_text": "YAY! {ex_info[name] completed with result=`{result}`"
+        "interrupted_text": null,
+        "failed_text": "Oh noes! {ex_info[name] failed saying `{error}`"
+    }
+
+
+
+
 Events
 ======
 A ``started_event`` is fired when a run starts.
