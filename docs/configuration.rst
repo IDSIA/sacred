@@ -42,6 +42,8 @@ for setting up the parameters:
 
     @ex.config
     def my_config():
+        """This is my demo configuration"""
+
         # some integer
         a = 10
 
@@ -70,6 +72,7 @@ Or use the ``print_config`` command from the :doc:`command_line`::
     INFO - config_demo - Running command 'print_config'
     INFO - config_demo - Started
     Configuration (modified, added, typechanged, doc):
+      """This is my demo configuration"""
       a = 10                             # some integer
       e = 5.0                            # cool: a dynamic entry
       seed = 954471586                   # the random seed for this experiment
@@ -78,8 +81,9 @@ Or use the ``print_config`` command from the :doc:`command_line`::
         bar = 'my_string10'
     INFO - config_demo - Completed after 0:00:00
 
-Notice how Sacred picked up on the line comments used in the configuration.
-This can be used to improve user-friendliness of your script.
+Notice how Sacred picked up on the doc-string and the line comments used in the
+configuration. This can be used to improve user-friendliness of your script.
+
 
 
 .. warning::
