@@ -44,8 +44,8 @@ def test_run_state_attributes(run):
 
 def test_run_run(run):
     assert run() == 123
-    assert (run.start_time - datetime.now()).total_seconds() < 1
-    assert (run.stop_time - datetime.now()).total_seconds() < 1
+    assert (run.start_time - datetime.utcnow()).total_seconds() < 1
+    assert (run.stop_time - datetime.utcnow()).total_seconds() < 1
     assert run.result == 123
     assert run.captured_out == ''
 
@@ -123,7 +123,7 @@ def test_run_heartbeat_event(run):
     call_args, call_kwargs = observer.heartbeat_event.call_args_list[0]
     assert call_kwargs['info'] == run.info
     assert call_kwargs['captured_out'] == ""
-    assert (call_kwargs['beat_time'] - datetime.now()).total_seconds() < 1
+    assert (call_kwargs['beat_time'] - datetime.utcnow()).total_seconds() < 1
 
 
 def test_run_artifact_event(run):

@@ -80,7 +80,7 @@ def test_serialize_pandas_dataframes():
 
 # def test_serialize_datetime():
 #     from datetime import datetime
-#     t = datetime.now()
+#     t = datetime.utcnow()
 #     assert restore(flatten(t)) == t
 
 

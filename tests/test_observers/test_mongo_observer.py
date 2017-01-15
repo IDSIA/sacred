@@ -170,7 +170,7 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
 def test_force_bson_encodable_doesnt_change_valid_document():
     d = {'int': 1, 'string': 'foo', 'float': 23.87, 'list': ['a', 1, True],
          'bool': True, 'cr4zy: _but_ [legal) Key!': '$illegal.key.as.value',
-         'datetime': datetime.datetime.now(), 'tuple': (1, 2.0, 'three'),
+         'datetime': datetime.datetime.utcnow(), 'tuple': (1, 2.0, 'three'),
          'none': None}
     assert force_bson_encodeable(d) == d
 

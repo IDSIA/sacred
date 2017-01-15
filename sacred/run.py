@@ -241,7 +241,7 @@ class Run(object):
 
     def _emit_queued(self):
         self.status = 'QUEUED'
-        queue_time = datetime.datetime.now()
+        queue_time = datetime.datetime.utcnow()
         self.meta_info['queue_time'] = queue_time
         command = join_paths(self.main_function.prefix,
                              self.main_function.signature.name)
@@ -268,7 +268,7 @@ class Run(object):
 
     def _emit_started(self):
         self.status = 'RUNNING'
-        self.start_time = datetime.datetime.now()
+        self.start_time = datetime.datetime.utcnow()
         command = join_paths(self.main_function.prefix,
                              self.main_function.signature.name)
         self.run_logger.info("Running command '%s'", command)
@@ -293,7 +293,7 @@ class Run(object):
             self.run_logger.info('Started run with ID "{}"'.format(self._id))
 
     def _emit_heartbeat(self):
-        beat_time = datetime.datetime.now()
+        beat_time = datetime.datetime.utcnow()
         self._get_captured_output()
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
@@ -302,7 +302,7 @@ class Run(object):
                             beat_time=beat_time)
 
     def _stop_time(self):
-        self.stop_time = datetime.datetime.now()
+        self.stop_time = datetime.datetime.utcnow()
         elapsed_time = datetime.timedelta(
             seconds=round((self.stop_time - self.start_time).total_seconds()))
         return elapsed_time

@@ -177,7 +177,7 @@ Finally, Sacred stores some additional bookeeping information, and some custom
 meta information about the runs.
 This information is reported to the observers as soon as it is available, and
 can also be accessed through the :ref:`Run object <api_run>` using the
-following keys.
+following keys:
 
     ==================  =======================================================
     Key                 Description
@@ -189,6 +189,9 @@ following keys.
     ``fail_trace``      The stacktrace of an exception that occurred (if so)
     ``result``          The return value of the main function (if successful)
     ==================  =======================================================
+
+.. note::
+    All stored times are UTC times!
 
 
 Status
