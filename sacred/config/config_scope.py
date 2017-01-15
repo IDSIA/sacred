@@ -10,6 +10,7 @@ import sys
 from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 from copy import copy
 
+from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 
@@ -163,6 +164,13 @@ def get_function_body_code(func):
     return body_code
 
 
+def is_ignored(line):
+    for pattern in SETTINGS.IGNORED_CONFIG_COMMENTS:
+        if re.match(pattern, line) is not None:
+            return True
+    return False
+
+
 def find_doc_for(ast_entry, body_lines):
     lineno = ast_entry.lineno - 1
     line_io = io.BytesIO(body_lines[lineno].encode())
@@ -174,14 +182,19 @@ def find_doc_for(ast_entry, body_lines):
             tokens = generate_tokens(line_io.readline)
             line_comments = [s for (t, s, _, _, _) in tokens if t == COMMENT]
         if line_comments:
-                return line_comments[0][1:].strip()
+            formatted_lcs = [l[1:].strip() for l in line_comments]
+            filtered_lcs = [l for l in formatted_lcs if not is_ignored(l)]
+            if filtered_lcs:
+                return filtered_lcs[0]
     except TokenError:
         pass
 
     lineno -= 1
     while lineno >= 0:
         if iscomment(body_lines[lineno]):
-            return body_lines[lineno].strip('# ')
+            comment = body_lines[lineno].strip('# ')
+            if not is_ignored(comment):
+                return comment
         if not body_lines[lineno].strip() == '':
             return None
         lineno -= 1

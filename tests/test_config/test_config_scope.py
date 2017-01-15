@@ -23,6 +23,7 @@ def conf_scope():
         e = [1, 2, 3]  # inline description for e
         f = {'a': 'b', 'c': 'd'}
         composit1 = a + b
+        # pylint: this comment is filtered out
         composit2 = f['c'] + "ada"
 
         func1 = lambda: 23

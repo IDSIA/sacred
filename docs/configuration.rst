@@ -44,8 +44,7 @@ for setting up the parameters:
     def my_config():
         """This is my demo configuration"""
 
-        # some integer
-        a = 10
+        a = 10  # some integer
 
         # a dictionary
         foo = {

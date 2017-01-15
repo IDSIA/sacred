@@ -22,4 +22,8 @@ SETTINGS = munchify({
         'ENFORCE_STRING': False,
         # make sure no config key contains an equals sign
         'ENFORCE_NO_EQUALS': True
-    }})
+    },
+    # regex patterns to filter out certain IDE or linter directives from
+    # inline comments in the documentation
+    'IGNORED_CONFIG_COMMENTS': ['^pylint:', '^noinspection']
+})
