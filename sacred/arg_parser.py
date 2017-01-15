@@ -18,6 +18,7 @@ from docopt import docopt
 from sacred.commandline_options import gather_command_line_options
 from sacred.commands import help_for_command
 from sacred.serializer import restore
+from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -240,5 +241,8 @@ def _convert_value(value):
     try:
         return restore(ast.literal_eval(value))
     except (ValueError, SyntaxError):
+        if SETTINGS.COMMAND_LINE.STRICT_PARSING:
+            raise
         # use as string if nothing else worked
         return value
+

@@ -9,6 +9,7 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 from sacred.utils import optional_kwargs_decorator, FileNotFoundError
+from sacred.settings import SETTINGS
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -101,27 +102,27 @@ def _cpu():
             if model_pattern.match(line):
                 return model_pattern.sub("", line, 1).strip()
 
+if SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
+    @host_info_getter(name='gpus')
+    def _gpus():
+        try:
+            xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
+        except (FileNotFoundError, OSError, subprocess.CalledProcessError):
+            raise IgnoreHostInfo()
 
-@host_info_getter(name='gpus')
-def _gpus():
-    try:
-        xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
-    except (FileNotFoundError, OSError, subprocess.CalledProcessError):
-        raise IgnoreHostInfo()
+        gpu_info = {'gpus': []}
+        for child in ET.fromstring(xml):
+            if child.tag == 'driver_version':
+                gpu_info['driver_version'] = child.text
+            if child.tag != 'gpu':
+                continue
+            gpu = {
+                'model': child.find('product_name').text,
+                'total_memory': int(child.find('fb_memory_usage').find('total')
+                                    .text.split()[0]),
+                'persistence_mode': (child.find('persistence_mode').text ==
+                                     'Enabled')
+            }
+            gpu_info['gpus'].append(gpu)
 
-    gpu_info = {'gpus': []}
-    for child in ET.fromstring(xml):
-        if child.tag == 'driver_version':
-            gpu_info['driver_version'] = child.text
-        if child.tag != 'gpu':
-            continue
-        gpu = {
-            'model': child.find('product_name').text,
-            'total_memory': int(child.find('fb_memory_usage').find('total')
-                                .text.split()[0]),
-            'persistence_mode': (child.find('persistence_mode').text ==
-                                 'Enabled')
-        }
-        gpu_info['gpus'].append(gpu)
-
-    return gpu_info
+        return gpu_info

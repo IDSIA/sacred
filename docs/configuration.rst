@@ -16,8 +16,8 @@ Through :ref:`config_scopes`, :ref:`config_dictionaries`, and
     restrictions apply. The keys of all dictionaries cannot contain
     ``.``, ``=``, or ``$``.
     Furthermore they cannot be ``jsonpickle`` keywords like ``py/object``.
-    If absolutely necessary, these restrictions can be configured using
-    ``sacred.settings.SETTINGS.CONFIG_KEYS``.
+    If absolutely necessary, these restrictions can be configured in
+    ``sacred.settings.SETTINGS.CONFIG``.
 
 Defining a Configuration
 ========================

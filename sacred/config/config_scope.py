@@ -165,7 +165,7 @@ def get_function_body_code(func):
 
 
 def is_ignored(line):
-    for pattern in SETTINGS.IGNORED_CONFIG_COMMENTS:
+    for pattern in SETTINGS.CONFIG.IGNORED_COMMENTS:
         if re.match(pattern, line) is not None:
             return True
     return False
