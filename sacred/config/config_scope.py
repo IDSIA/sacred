@@ -201,6 +201,22 @@ def find_doc_for(ast_entry, body_lines):
     return None
 
 
+def add_doc(target, variables, body_lines):
+    if isinstance(target, ast.Name):
+        # if it is a variable name add it to the doc
+        name = target.id
+        if name not in variables:
+            doc = find_doc_for(target, body_lines)
+            if doc is not None:
+                variables[name] = doc
+    elif isinstance(target, ast.Tuple):
+        # if it is a tuple then iterate the elements
+        # this can happen like this:
+        # a, b = 1, 2
+        for e in target.elts:
+            add_doc(e, variables, body_lines)
+
+
 def get_config_comments(func):
     filename = inspect.getfile(func)
     func_body, line_offset = get_function_body(func)
@@ -210,21 +226,6 @@ def get_config_comments(func):
 
     variables = {'seed': 'the random seed for this experiment'}
 
-    def add_doc(target):
-        if isinstance(target, ast.Name):
-            # if it is a variable name add it to the doc
-            name = target.id
-            if name not in variables:
-                doc = find_doc_for(target, body_lines)
-                if doc is not None:
-                    variables[name] = doc
-        elif isinstance(target, ast.Tuple):
-            # if it is a tuple then iterate the elements
-            # this can happen like this:
-            # a, b = 1, 2
-            for e in target.elts:
-                add_doc(e)
-
     for ast_root in body_code.body:
         for ast_entry in [ast_root] + list(ast.iter_child_nodes(ast_root)):
             if isinstance(ast_entry, ast.Assign):
@@ -233,6 +234,6 @@ def get_config_comments(func):
                 # usually a single entry, but can be more for statements like:
                 # a = b = 5
                 for t in ast_entry.targets:
-                    add_doc(t)
+                    add_doc(t, variables, body_lines)
 
     return variables

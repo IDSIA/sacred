@@ -55,7 +55,7 @@ if opt.has_pandas:
         def flatten(self, obj, data):
             # TODO: this is slow
             data['values'] = json.loads(obj.to_json())
-            data['dtypes'] = {k: str(v) for k, v in obj.dtypes.items()}
+            data['dtypes'] = {k: str(v) for k, v in dict(obj.dtypes).items()}
             return data
 
         def restore(self, obj):
