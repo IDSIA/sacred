@@ -227,18 +227,6 @@ be used as a ``captured_out_filter``.
 For a simple example see `examples/captured_out_filter.py <https://github.com/IDSIA/sacred/tree/master/examples/captured_out_filter.py>`_.
 
 
-.. _queuing:
-
-Queuing a Run
-=============
-Sacred also supports queuing runs by passing the :ref:`cmdline_queue` flag
-(``-q``/``--queue``). This will **not** run the experiment, but instead only
-create a database entry that holds all information needed to start the run.
-This feature could be useful for having a distributed pool of workers that get
-configurations from the database and run them. As of yet, however, there is
-no further support for this workflow.
-
-
 Interrupted and Failed Experiments
 ==================================
 If a run is interrupted (e.g. Ctrl+C) or if an exception occurs, Sacred will
@@ -316,3 +304,15 @@ member like this:
 
 When this exception is raised during any run, its status is set to
 ``MY_CUSTOM_STATUS``.
+
+
+.. _queuing:
+
+Queuing a Run
+=============
+Sacred also supports queuing runs by passing the :ref:`cmdline_queue` flag
+(``-q``/``--queue``). This will **not** run the experiment, but instead only
+create a database entry that holds all information needed to start the run.
+This feature could be useful for having a distributed pool of workers that get
+configurations from the database and run them. As of yet, however, there is
+no further support for this workflow.

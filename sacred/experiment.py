@@ -369,6 +369,8 @@ class Experiment(Ingredient):
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
                          force=options.get(ForceOption.get_flag(), False))
+        run.meta_info['command'] = command_name
+        run.meta_info['options'] = options
 
         if meta_info:
             run.meta_info.update(meta_info)

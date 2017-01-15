@@ -232,12 +232,9 @@ The builtin usecases include:
     ===============  =========================================================
     Key              Description
     ===============  =========================================================
+    ``command``      The name of the command that is being run
+    ``options``      A dictionary with all the commandline options
     ``comment``      A comment for that run (added by the :ref:`comment flag <comment_flag>`)
     ``priority``     A priority for scheduling queued runs (added by the :ref:`priority flag <cmdline_priority>`)
     ``queue_time``   The datetime when this run was queued (stored automatically)
     ===============  =========================================================
-
-
-
-
-

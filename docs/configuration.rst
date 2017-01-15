@@ -13,9 +13,11 @@ Through :ref:`config_scopes`, :ref:`config_dictionaries`, and
 
 .. note::
     Because configuration entries are saved to the database directly, some
-    restrictions apply. First of all only objects that are JSON-serializable
-    can be part of the configuration. Also the keys of all dictionaries have
-    to be strings, and they cannot contain ``.`` or ``$``.
+    restrictions apply. The keys of all dictionaries cannot contain
+    ``.``, ``=``, or ``$``.
+    Furthermore they cannot be ``jsonpickle`` keywords like ``py/object``.
+    If absolutely necessary, these restrictions can be configured using
+    ``sacred.settings.SETTINGS.CONFIG_KEYS``.
 
 Defining a Configuration
 ========================
