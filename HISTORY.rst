@@ -24,7 +24,13 @@ Release History
 * Feature: observers now share the id of a run and it is available during
            runtime as ``run._id``.
 * Feature: new ``--print_config`` flag to always print config first
+* Feature: added sacred.SETTINGS as a place to configure some of the behaviour
+* Feature: ConfigScopes now extract docstrings and line comments and display
+           them when calling ``print_config``
+* API Change: all times are now in UTC
 * API Change: significantly changed the mongoDB layout
+* API Change: MongoObserver and FileStorageObserver now use consecutive
+              integers as _id
 * API Change: the name passed to Experiment is now optional and defaults to the
               name of the file in which it was instantiated.
               (The name is still required for interactive mode)

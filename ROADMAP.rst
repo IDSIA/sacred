@@ -25,6 +25,7 @@ Also, this would make reproducing experiments extremely easy.
 Other Ideas
 -----------
 
+- add more examples for common usecases like tensorflow, theano, ...
 - use Sacred with non-python experiments by making the python part a thin
   wrapper around the external program, but add tools to make them interact
   nicely.
