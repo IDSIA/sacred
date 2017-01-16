@@ -65,7 +65,7 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
     sample_run['_id'] = None
     _id = obs.started_event(**sample_run)
     assert _id is not None
-    run_dir = basedir.join(_id)
+    run_dir = basedir.join(str(_id))
     assert run_dir.exists()
     assert run_dir.join('cout.txt').exists()
     config = json.loads(run_dir.join('config.json').read())
@@ -208,7 +208,7 @@ def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run,
     # let's have another run from a different observer
     sample_run['_id'] = None
     _id = obs2.started_event(**sample_run)
-    run_dir = basedir.join(_id)
+    run_dir = basedir.join(str(_id))
     obs2.resource_event(tmpfile.name)
 
     res_dir = basedir.join('_resources')
