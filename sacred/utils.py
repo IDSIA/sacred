@@ -394,3 +394,13 @@ def apply_backspaces_and_linefeeds(text):
                 cursor += 1
         lines.append(''.join(chars))
     return '\n'.join(lines)
+
+
+# Code adapted from here:
+# https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
+def natural_sort(l):
+    def alphanum_key(key):
+        return [int(c) if c.isdigit() else c.lower()
+                for c in re.split('([0-9]+)', key)]
+
+    return sorted(l, key=alphanum_key)

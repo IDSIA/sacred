@@ -102,6 +102,7 @@ def _cpu():
             if model_pattern.match(line):
                 return model_pattern.sub("", line, 1).strip()
 
+
 if SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
     @host_info_getter(name='gpus')
     def _gpus():

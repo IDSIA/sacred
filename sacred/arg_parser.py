@@ -245,4 +245,3 @@ def _convert_value(value):
             raise
         # use as string if nothing else worked
         return value
-
