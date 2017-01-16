@@ -12,7 +12,7 @@ import bson
 import gridfs
 import pymongo
 import sacred.optional as opt
-from pymongo.errors import AutoReconnect, InvalidDocument
+from pymongo.errors import AutoReconnect, InvalidDocument, DuplicateKeyError
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
@@ -92,7 +92,7 @@ class MongoObserver(RunObserver):
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
         if self.overwrite is None:
-            self.run_entry = {}
+            self.run_entry = {'_id': _id}
         else:
             if self.run_entry is not None:
                 raise RuntimeError("Cannot overwrite more than once!")
@@ -116,12 +116,10 @@ class MongoObserver(RunObserver):
             'info': {},
             'heartbeat': None
         })
-        # set ID if given
-        if _id is not None:
-            self.run_entry['_id'] = _id
+
         # save sources
         self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
-        self.save()
+        self.insert()
         return self.run_entry['_id']
 
     def heartbeat_event(self, info, captured_out, beat_time):
@@ -172,9 +170,29 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
+    def insert(self):
+        if self.overwrite:
+            return self.save()
+
+        autoinc_key = self.run_entry['_id'] is None
+        while True:
+            if autoinc_key:
+                c = self.runs.find({}, {'_id': 1}).sort({'_id': -1}).limit(1)
+                self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
+            try:
+                self.runs.insert_one(self.run_entry)
+            except InvalidDocument:
+                raise ObserverError('Run contained an unserializable entry.'
+                                    '(most likely in the info)')
+            except DuplicateKeyError:
+                if not autoinc_key:
+                    raise
+            return
+
     def save(self):
         try:
-            self.runs.save(self.run_entry)
+            self.runs.replace_one({'_id': self.run_entry['_id']},
+                                  self.run_entry)
         except AutoReconnect:
             pass  # just wait for the next save
         except InvalidDocument:
