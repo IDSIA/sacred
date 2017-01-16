@@ -177,7 +177,8 @@ class MongoObserver(RunObserver):
         autoinc_key = self.run_entry['_id'] is None
         while True:
             if autoinc_key:
-                c = self.runs.find({}, {'_id': 1}).sort({'_id': -1}).limit(1)
+                c = self.runs.find({}, {'_id': 1})
+                c = c.sort('_id', pymongo.DESCENDING).limit(1)
                 self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
             try:
                 self.runs.insert_one(self.run_entry)

@@ -43,7 +43,8 @@ def assert_is_valid_key(key):
         raise KeyError('Invalid key "{}". Config-keys cannot '
                        'contain "." or start with "$"'.format(key))
 
-    if SETTINGS.CONFIG.ENFORCE_KEYS_JSONPICKLE_COMPATIBLE and (
+    if SETTINGS.CONFIG.ENFORCE_KEYS_JSONPICKLE_COMPATIBLE and \
+            isinstance(key, basestring) and (
             key in jsonpickle.tags.RESERVED or key.startswith('json://')):
         raise KeyError('Invalid key "{}". Config-keys cannot be one of the'
                        'reserved jsonpickle tags: {}'

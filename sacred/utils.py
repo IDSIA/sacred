@@ -291,7 +291,7 @@ def iter_prefixes(path):
 
 def join_paths(*parts):
     """Join different parts together to a valid dotted path."""
-    return '.'.join(p.strip('.') for p in parts if p)
+    return '.'.join(str(p).strip('.') for p in parts if p)
 
 
 def is_prefix(pre_path, path):
