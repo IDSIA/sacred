@@ -84,16 +84,6 @@ containing all the values that you wish to update. For more information see
 
     r = ex.run(config_updates={'foo': 23})
 
-You can also specify the log-level while calling ``run`` like so. See
-:doc:`logging` for more information:
-
-.. code-block:: python
-
-    from my_experiment import ex
-
-    r = ex.run(loglevel='DEBUG')
-
-
 .. note::
 
     Under the hood a ``Run`` object is created every time you run an
@@ -154,11 +144,11 @@ To see how that works we need to *capture* some function:
         bar = 'baz'
 
     @ex.capture
-    def some_function(a, foo, bar=10)
+    def some_function(a, foo, bar=10):
         print(a, foo, bar)
 
     @ex.main
-    def my_main()
+    def my_main():
         some_function(1, 2, 3)     #  1  2   3
         some_function(1)           #  1  42  'baz'
         some_function(1, bar=12)   #  1  42  12
