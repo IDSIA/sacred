@@ -1,9 +1,11 @@
+import contextlib
+
 from ..optional import tensorflow
-import wrapt
 
 
 class ContextDecorator():
     """A helper ContextManager decorating a method with a custom function."""
+
     def __init__(self, classx, method_name, decorator_func):
         """
         Create a new context manager decorating a function within its scope.
@@ -42,29 +44,57 @@ class ContextDecorator():
         setattr(self.classx, self.method_name, self.original_method)
 
 
-def log_summary_writer(experiment):
+class LogSummaryWriter(contextlib.ContextDecorator, ContextDecorator):
     """
     Intercept ``logdir`` each time a new ``SummaryWriter`` instance is created.
 
-    Inside the annotated function, the corresponding log directory path is
-    appended to the list in experiment.info["tensorflow"]["logdirs"].
+    :param experiment: Tensorflow experiment.
 
-    :param experiment: Tensorflow experiment. The state of the experiment
-    must be running when entering the annotated
-    function.
+    The state of the experiment must be running when entering the annotated
+    function / the context manager.
 
-    Example:
-    ex = Experiment("my experiment")
-    @log_summary_writer(ex)
-    def run_experiment(_run):
-        with tf.Session() as s:
-            swr = tf.train.SummaryWriter("/tmp/1", s.graph)
-            # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
-            swr2 tf.train.SummaryWriter("./test", s.graph)
-            #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+    When creating ``SummaryWriters`` in Tensorflow, you might want to
+    store the path to the produced log files in the sacred database.
+
+    In the scope of ``LogSummaryWriter``, the corresponding log directory path is
+    appended to a list in experiment.info["tensorflow"]["logdirs"].
+
+    ``LogSummaryWriter`` can be used both as a context manager or as an annotation
+    (decorator) on a function.
+
+
+    Example usage as decorator::
+
+        ex = Experiment("my experiment")
+        @LogSummaryWriter(ex)
+        def run_experiment(_run):
+            with tf.Session() as s:
+                swr = tf.train.SummaryWriter("/tmp/1", s.graph)
+                # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
+                swr2 tf.train.SummaryWriter("./test", s.graph)
+                #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+
+
+    Example usage as context manager::
+
+        ex = Experiment("my experiment")
+        def run_experiment(_run):
+            with tf.Session() as s:
+                with LogSummaryWriter(ex):
+                    swr = tf.train.SummaryWriter("/tmp/1", s.graph)
+                    # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
+                    swr3 = tf.train.SummaryWriter("./test", s.graph)
+                    #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+                # This is called outside the scope and won't be captured
+                swr3 = tf.train.SummaryWriter("./nothing", s.graph)
+                # Nothing has changed:
+                #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+
     """
-    @wrapt.decorator
-    def wrapper(wrapped, instance, args, kwargs):
+
+    def __init__(self, experiment):
+        self.experiment = experiment
+
         def log_writer_decorator(instance, original_method, original_args,
                                  original_kwargs):
             result = original_method(instance, *original_args,
@@ -73,11 +103,9 @@ def log_summary_writer(experiment):
                 logdir = original_kwargs["logdir"]
             else:
                 logdir = original_args[0]
-            experiment.info.setdefault("tensorflow", {}).setdefault(
+            self.experiment.info.setdefault("tensorflow", {}).setdefault(
                 "logdirs", []).append(logdir)
             return result
 
-        with ContextDecorator(tensorflow.train.SummaryWriter, "__init__",
-                              log_writer_decorator):
-            return wrapped(*args, **kwargs)
-    return wrapper
+        ContextDecorator.__init__(self, tensorflow.train.SummaryWriter, "__init__",
+                                  log_writer_decorator)

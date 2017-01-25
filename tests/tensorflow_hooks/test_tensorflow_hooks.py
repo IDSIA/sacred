@@ -1,5 +1,5 @@
 from sacred.tensorflow_hooks.tensorflow_hooks import ContextDecorator
-from sacred.tensorflow_hooks import log_summary_writer
+from sacred.tensorflow_hooks import LogSummaryWriter
 from sacred import Experiment
 import pytest
 
@@ -14,7 +14,7 @@ def test_context_decorator():
             print("foo")
             print(y)
             print(z)
-            return y*self.x + z
+            return y * self.x + z
 
     def decorate_three_times(instance, original_method, original_args,
                              original_kwargs):
@@ -25,7 +25,7 @@ def test_context_decorator():
 
     with ContextDecorator(FooClass, "do_foo", decorate_three_times):
         foo = FooClass(10)
-        assert foo.do_foo(5, 6) == (5*10 + 6)*3
+        assert foo.do_foo(5, 6) == (5 * 10 + 6) * 3
         assert foo.do_foo(5, z=6) == (5 * 10 + 6) * 3
         assert foo.do_foo(y=5, z=6) == (5 * 10 + 6) * 3
     assert foo.do_foo(5, 6) == (5 * 10 + 6)
@@ -41,7 +41,7 @@ def test_context_decorator():
         with ContextDecorator(FooClass, "do_foo",
                               decorate_three_times_with_exception):
             foo = FooClass(10)
-            this_should_raise_exception =  foo.do_foo(5, 6)
+            this_should_raise_exception = foo.do_foo(5, 6)
     except RuntimeError:
         exception = True
     assert foo.do_foo(5, 6) == (5 * 10 + 6)
@@ -61,7 +61,7 @@ def tf():
     if has_tensorflow:
         return tensorflow
     else:
-        #Let's define a mocked tensorflow
+        # Let's define a mocked tensorflow
         class tensorflow():
             class train():
                 class SummaryWriter():
@@ -79,19 +79,20 @@ def tf():
 
                 def __exit__(self, exc_type, exc_val, exc_tb):
                     pass
-        #Set tensorflow_hooks to use the mock as the test
+
+        # Set tensorflow_hooks to use the mock as the test
         import sacred.tensorflow_hooks.tensorflow_hooks
         sacred.tensorflow_hooks.tensorflow_hooks.tensorflow = tensorflow
         return tensorflow
 
 
 # Tests whether logdir is stored into the info dictionary when creating a new SummaryWriter object
-def test_summary_writer_log(ex, tf):
-    TEST_LOG_DIR="/dev/null"
+def test_log_summary_writer(ex, tf):
+    TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
     @ex.main
-    @log_summary_writer(ex)
+    @LogSummaryWriter(ex)
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         with tf.Session() as s:
@@ -104,17 +105,46 @@ def test_summary_writer_log(ex, tf):
     ex.run()
 
 
+def test_log_summary_writer_as_context_manager(ex, tf):
+    """ Check that Tensorflow log directory is captured by LogSummaryWriter context manager"""
+    TEST_LOG_DIR = "/dev/null"
+    TEST_LOG_DIR2 = "/tmp/sacred_test"
+
+    @ex.main
+    def run_experiment(_run):
+        assert _run.info.get("tensorflow", None) is None
+        with tf.Session() as s:
+            # Without using the LogSummaryWriter context manager, nothing should change
+            swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            assert swr is not None
+            assert _run.info.get("tensorflow", None) is None
+
+            # Capturing the log directory should be done only in scope of the context manager
+            with LogSummaryWriter(ex):
+                swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+                assert swr is not None
+                assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
+                tf.train.SummaryWriter(TEST_LOG_DIR2, s.graph)
+                assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
+
+            # This should not be captured:
+            tf.train.SummaryWriter("whatever", s.graph)
+            assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
+
+    ex.run()
+
+
 # Tests whether logdir is stored into the info dictionary when creating a new SummaryWriter object,
 # but this time on a method of a class
-def test_summary_writer_log_class(ex, tf):
-    TEST_LOG_DIR="/dev/null"
+def test_log_summary_writer_class(ex, tf):
+    TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
     class FooClass():
         def __init__(self):
             pass
 
-        @log_summary_writer(ex)
+        @LogSummaryWriter(ex)
         def hello(self, argument):
             with tf.Session() as s:
                 tf.train.SummaryWriter(argument, s.graph)
@@ -136,5 +166,5 @@ def test_summary_writer_log_class(ex, tf):
             swr = tf.train.SummaryWriter(TEST_LOG_DIR, s.graph)
             # Nothing should be added, because SummaryWritter was again not called in an annotated function
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR2]
-    ex.run()
 
+    ex.run()
