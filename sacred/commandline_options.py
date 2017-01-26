@@ -221,8 +221,8 @@ class EnforceCleanOption(CommandLineOption):
                                'Make sure that your sources under VCS and the '
                                'corresponding python package is installed.')
         else:
-            for repo, (commit, is_dirty) in repos.items():
-                if is_dirty:
+            for repo in repos:
+                if repo['dirty']:
                     raise RuntimeError('EnforceClean: Uncommited changes in '
                                        'the "{}" repository.'.format(repo))
 
