@@ -1,5 +1,4 @@
-import contextlib
-
+from functools import wraps
 from ..optional import tensorflow
 
 
@@ -44,7 +43,30 @@ class ContextDecorator():
         setattr(self.classx, self.method_name, self.original_method)
 
 
-class LogSummaryWriter(contextlib.ContextDecorator, ContextDecorator):
+class ContextlibDecorator(object):
+    "A base class or mixin that enables context managers to work as decorators."
+
+    def _recreate_cm(self):
+        """Return a recreated instance of self.
+
+        Allows an otherwise one-shot context manager like
+        _GeneratorContextManager to support use as
+        a decorator via implicit recreation.
+
+        This is a private interface just for _GeneratorContextManager.
+        See issue #11647 (https://bugs.python.org/issue11647) for details.
+        """
+        return self
+
+    def __call__(self, func):
+        @wraps(func)
+        def inner(*args, **kwds):
+            with self._recreate_cm():
+                return func(*args, **kwds)
+        return inner
+
+
+class LogSummaryWriter(ContextlibDecorator, ContextDecorator):
     """
     Intercept ``logdir`` each time a new ``SummaryWriter`` instance is created.
 
@@ -109,3 +131,4 @@ class LogSummaryWriter(contextlib.ContextDecorator, ContextDecorator):
 
         ContextDecorator.__init__(self, tensorflow.train.SummaryWriter, "__init__",
                                   log_writer_decorator)
+
