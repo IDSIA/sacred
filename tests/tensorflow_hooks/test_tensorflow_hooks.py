@@ -128,11 +128,33 @@ def test_log_summary_writer_as_context_manager(ex, tf):
                 assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
 
             # This should not be captured:
-            tf.train.SummaryWriter("whatever", s.graph)
+            tf.train.SummaryWriter("/tmp/whatever", s.graph)
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
 
     ex.run()
 
+def test_log_summary_writer_as_context_manager_with_exception(ex, tf):
+    """ Check that Tensorflow log directory is captured by LogSummaryWriter context manager"""
+    TEST_LOG_DIR = "/tmp/sacred_test"
+
+    @ex.main
+    def run_experiment(_run):
+        assert _run.info.get("tensorflow", None) is None
+        with tf.Session() as s:
+            # Capturing the log directory should be done only in scope of the context manager
+            try:
+                with LogSummaryWriter(ex):
+                    swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+                    assert swr is not None
+                    assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
+                    raise ValueError("I want to be raised!")
+            except ValueError:
+                pass
+            # This should not be captured:
+            tf.train.SummaryWriter("/tmp/whatever", s.graph)
+            assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
+
+    ex.run()
 
 # Tests whether logdir is stored into the info dictionary when creating a new SummaryWriter object,
 # but this time on a method of a class
