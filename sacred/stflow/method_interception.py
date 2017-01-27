@@ -15,11 +15,11 @@ class LogSummaryWriter(ContextDecorator, ContextMethodDecorator):
     When creating ``SummaryWriters`` in Tensorflow, you might want to
     store the path to the produced log files in the sacred database.
 
-    In the scope of ``LogSummaryWriter``, the corresponding log directory path is
-    appended to a list in experiment.info["tensorflow"]["logdirs"].
+    In the scope of ``LogSummaryWriter``, the corresponding log directory path
+    is appended to a list in experiment.info["tensorflow"]["logdirs"].
 
-    ``LogSummaryWriter`` can be used both as a context manager or as an annotation
-    (decorator) on a function.
+    ``LogSummaryWriter`` can be used both as a context manager or as
+     an annotation (decorator) on a function.
 
 
     Example usage as decorator::
@@ -66,6 +66,7 @@ class LogSummaryWriter(ContextDecorator, ContextMethodDecorator):
                 "logdirs", []).append(logdir)
             return result
 
-        ContextMethodDecorator.__init__(self, tensorflow.train.SummaryWriter, "__init__",
-                              log_writer_decorator)
-
+        ContextMethodDecorator.__init__(self,
+                                        tensorflow.train.SummaryWriter,
+                                        "__init__",
+                                        log_writer_decorator)

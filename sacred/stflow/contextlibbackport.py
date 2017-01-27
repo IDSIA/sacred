@@ -8,7 +8,7 @@ Taken from contextlib2 library, modified to work with sacred
 
 
 class ContextDecorator(object):
-    "A base class or mixin that enables context managers to work as decorators."
+    """A base class enabling context managers to work as decorators."""
 
     def _recreate_cm(self):
         """Return a recreated instance of self.
