@@ -1,10 +1,11 @@
-from sacred.tensorflow_hooks.tensorflow_hooks import ContextDecorator
-from sacred.tensorflow_hooks import LogSummaryWriter
+# -*- coding: utf8 -*-
+from sacred.stflow.internal import ContextMethodDecorator
+from sacred.stflow import LogSummaryWriter
 from sacred import Experiment
 import pytest
 
 
-# Tests whether ContextDecorator works as expected
+# Tests whether ContextMethodDecorator works as expected
 def test_context_decorator():
     class FooClass():
         def __init__(self, x):
@@ -23,7 +24,7 @@ def test_context_decorator():
         print(original_kwargs)
         return original_method(instance, *original_args, **original_kwargs) * 3
 
-    with ContextDecorator(FooClass, "do_foo", decorate_three_times):
+    with ContextMethodDecorator(FooClass, "do_foo", decorate_three_times):
         foo = FooClass(10)
         assert foo.do_foo(5, 6) == (5 * 10 + 6) * 3
         assert foo.do_foo(5, z=6) == (5 * 10 + 6) * 3
@@ -38,8 +39,8 @@ def test_context_decorator():
 
     exception = False
     try:
-        with ContextDecorator(FooClass, "do_foo",
-                              decorate_three_times_with_exception):
+        with ContextMethodDecorator(FooClass, "do_foo",
+                                    decorate_three_times_with_exception):
             foo = FooClass(10)
             this_should_raise_exception = foo.do_foo(5, 6)
     except RuntimeError:
@@ -80,9 +81,9 @@ def tf():
                 def __exit__(self, exc_type, exc_val, exc_tb):
                     pass
 
-        # Set tensorflow_hooks to use the mock as the test
-        import sacred.tensorflow_hooks.tensorflow_hooks
-        sacred.tensorflow_hooks.tensorflow_hooks.tensorflow = tensorflow
+        # Set stflow to use the mock as the test
+        import sacred.stflow.method_interception
+        sacred.stflow.method_interception.tensorflow = tensorflow
         return tensorflow
 
 
@@ -190,3 +191,4 @@ def test_log_summary_writer_class(ex, tf):
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR2]
 
     ex.run()
+
