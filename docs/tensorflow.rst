@@ -1,7 +1,7 @@
 Integration with Tensorflow
 ***************************
 
-Sacred provides ways to intereact with the Tensorflow_ library.
+Sacred provides ways to interact with the Tensorflow_ library.
 The goal is to provide an API to track certain information about
 how Tensorflow is used with Sacred. The collected data are stored
 in ``experiment.info["tensorflow"]`` where they can be accessed
@@ -22,7 +22,7 @@ Example usage as decorator
 
 .. code-block:: python
 
-    from sacred.tensorflow_hooks import LogSummaryWriter
+    from sacred.stflow import LogSummaryWriter
     from sacred import Experiment
     import tensorflow as tf
 
@@ -34,7 +34,7 @@ Example usage as decorator
         with tf.Session() as s:
             swr = tf.train.SummaryWriter("/tmp/1", s.graph)
             # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
-            swr2 tf.train.SummaryWriter("./test", s.graph)
+            swr2 = tf.train.SummaryWriter("./test", s.graph)
             #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
 
 
@@ -51,9 +51,9 @@ Example usage as context manager
                     swr = tf.train.SummaryWriter("/tmp/1", s.graph)
                     # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
                     swr3 = tf.train.SummaryWriter("./test", s.graph)
-                    #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+                    # _run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
                 # This is called outside the scope and won't be captured
                 swr3 = tf.train.SummaryWriter("./nothing", s.graph)
                 # Nothing has changed:
-                #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
+                # _run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
 .. _Tensorflow: http://www.tensorflow.org/
