@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-
+import datetime
+import mock
 import pytest
+
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
 
-import datetime
-import mock
-
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
-from sacred import optional as opt
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
