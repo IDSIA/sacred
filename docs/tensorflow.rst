@@ -2,23 +2,33 @@ Integration with Tensorflow
 ***************************
 
 Sacred provides ways to interact with the Tensorflow_ library.
-The goal is to provide an API to track certain information about
-how Tensorflow is used with Sacred. The collected data are stored
-in ``experiment.info["tensorflow"]`` where they can be accessed
-by various :doc:`observers <observers>`.
+The goal is to provide an API that would allow tracking certain
+information about how Tensorflow is being used with Sacred.
+The collected data are stored in ``experiment.info["tensorflow"]``
+where they can be accessed by various :doc:`observers <observers>`.
 
-Storing Tensorflow logs
+Storing Tensorflow Logs (FileWriter)
 -----------------------
-It is possible to store Tensorflow summaries paths (created by
-``tensorflow.summary.FileWriter``) into the database under
-``info.tensorflow.logdirs``. This is done automatically whenever a new
-``FileWriter`` instantiation is detected, provided that the
-instantiation occurs within a scope
-of a function  method annotated with ``LogFileWriter(ex)``
-or the code is run inside ``with LogFileWriter(ex):`` context.
+To store the location of summaries produced by Tensorflow
+(created by ``tensorflow.summary.FileWriter``) into the experiment record
+specified by the ``ex`` argument, use the ``sacred.stflow.LogFileWriter(ex)``
+decorator or context manager.
+Whenever a new ``FileWriter`` instantiation is detected in a scope of the
+decorator or the context manager, the path of the log is
+copied to the experiment record exactly as passed to the FileWriter.
 
-Example usage as decorator
+The location(s) can be then found under ``info["tensorflow"]["logdirs"]``
+of the experiment.
+
+**Important**: The experiment must be in the *RUNNING* state before calling
+the decorated method or entering the context.
+
+
+Example Usage As a Decorator
 ...........................
+
+``LogFileWriter(ex)`` as a decorator can be used either on a function or
+on a class method.
 
 .. code-block:: python
 
@@ -39,8 +49,11 @@ Example usage as decorator
 
 
 
-Example usage as context manager
+Example Usage As a Context Manager
 .................................
+
+There is a context manager available to catch the paths
+in a smaller portion of code.
 
 .. code-block:: python
 
