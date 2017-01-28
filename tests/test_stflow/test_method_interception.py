@@ -53,7 +53,8 @@ def test_log_file_writer(ex, tf):
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         with tf.Session() as s:
-            swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            with LogFileWriter(ex):
+                swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
             assert swr is not None
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
             tf.summary.FileWriter(TEST_LOG_DIR2, s.graph)
@@ -148,3 +149,5 @@ def test_log_summary_writer_class(ex, tf):
 
     ex.run()
 
+if __name__ == "__main__":
+    test_log_file_writer(ex(), tf())
