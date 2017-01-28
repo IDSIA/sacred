@@ -67,4 +67,3 @@ if sys.version_info[0] == 3:
 else:
     basestring = basestring
     int_types = (int, long)
-
