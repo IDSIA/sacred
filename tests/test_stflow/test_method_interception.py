@@ -2,7 +2,7 @@
 import pytest
 
 from sacred import Experiment
-from sacred.stflow import LogSummaryWriter
+from sacred.stflow import LogFileWriter
 
 
 @pytest.fixture
@@ -20,12 +20,12 @@ def tf():
     else:
         # Let's define a mocked tensorflow
         class tensorflow():
-            class train():
-                class SummaryWriter():
+            class summary():
+                class FileWriter():
                     def __init__(self, logdir, graph):
                         self.logdir = logdir
                         self.graph = graph
-                        print("Mocked SummaryWriter got logdir=%s, graph=%s" % (logdir, graph))
+                        print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
 
             class Session():
                 def __init__(self):
@@ -43,27 +43,27 @@ def tf():
         return tensorflow
 
 
-# Tests whether logdir is stored into the info dictionary when creating a new SummaryWriter object
-def test_log_summary_writer(ex, tf):
+# Tests whether logdir is stored into the info dictionary when creating a new FileWriter object
+def test_log_file_writer(ex, tf):
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
     @ex.main
-    @LogSummaryWriter(ex)
+    @LogFileWriter(ex)
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         with tf.Session() as s:
-            swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
             assert swr is not None
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
-            tf.train.SummaryWriter(TEST_LOG_DIR2, s.graph)
+            tf.summary.FileWriter(TEST_LOG_DIR2, s.graph)
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
 
     ex.run()
 
 
 def test_log_summary_writer_as_context_manager(ex, tf):
-    """ Check that Tensorflow log directory is captured by LogSummaryWriter context manager"""
+    """ Check that Tensorflow log directory is captured by LogFileWriter context manager"""
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
@@ -71,27 +71,27 @@ def test_log_summary_writer_as_context_manager(ex, tf):
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         with tf.Session() as s:
-            # Without using the LogSummaryWriter context manager, nothing should change
-            swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            # Without using the LogFileWriter context manager, nothing should change
+            swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
             assert swr is not None
             assert _run.info.get("tensorflow", None) is None
 
             # Capturing the log directory should be done only in scope of the context manager
-            with LogSummaryWriter(ex):
-                swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+            with LogFileWriter(ex):
+                swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
                 assert swr is not None
                 assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
-                tf.train.SummaryWriter(TEST_LOG_DIR2, s.graph)
+                tf.summary.FileWriter(TEST_LOG_DIR2, s.graph)
                 assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
 
             # This should not be captured:
-            tf.train.SummaryWriter("/tmp/whatever", s.graph)
+            tf.summary.FileWriter("/tmp/whatever", s.graph)
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
 
     ex.run()
 
-def test_log_summary_writer_as_context_manager_with_exception(ex, tf):
-    """ Check that Tensorflow log directory is captured by LogSummaryWriter context manager"""
+def test_log_file_writer_as_context_manager_with_exception(ex, tf):
+    """ Check that Tensorflow log directory is captured by LogFileWriter context manager"""
     TEST_LOG_DIR = "/tmp/sacred_test"
 
     @ex.main
@@ -100,20 +100,20 @@ def test_log_summary_writer_as_context_manager_with_exception(ex, tf):
         with tf.Session() as s:
             # Capturing the log directory should be done only in scope of the context manager
             try:
-                with LogSummaryWriter(ex):
-                    swr = tf.train.SummaryWriter(logdir=TEST_LOG_DIR, graph=s.graph)
+                with LogFileWriter(ex):
+                    swr = tf.summary.FileWriter(logdir=TEST_LOG_DIR, graph=s.graph)
                     assert swr is not None
                     assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
                     raise ValueError("I want to be raised!")
             except ValueError:
                 pass
             # This should not be captured:
-            tf.train.SummaryWriter("/tmp/whatever", s.graph)
+            tf.summary.FileWriter("/tmp/whatever", s.graph)
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
 
     ex.run()
 
-# Tests whether logdir is stored into the info dictionary when creating a new SummaryWriter object,
+# Tests whether logdir is stored into the info dictionary when creating a new FileWriter object,
 # but this time on a method of a class
 def test_log_summary_writer_class(ex, tf):
     TEST_LOG_DIR = "/dev/null"
@@ -123,27 +123,27 @@ def test_log_summary_writer_class(ex, tf):
         def __init__(self):
             pass
 
-        @LogSummaryWriter(ex)
+        @LogFileWriter(ex)
         def hello(self, argument):
             with tf.Session() as s:
-                tf.train.SummaryWriter(argument, s.graph)
+                tf.summary.FileWriter(argument, s.graph)
 
     @ex.main
     def run_experiment(_run):
         assert _run.info.get("tensorflow", None) is None
         foo = FooClass()
         with tf.Session() as s:
-            swr = tf.train.SummaryWriter(TEST_LOG_DIR, s.graph)
+            swr = tf.summary.FileWriter(TEST_LOG_DIR, s.graph)
             assert swr is not None
-            # Because SummaryWritter was not called in an annotated function
+            # Because FileWriter was not called in an annotated function
             assert _run.info.get("tensorflow", None) is None
         foo.hello(TEST_LOG_DIR2)
         # Because foo.hello was anotated
         assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR2]
 
         with tf.Session() as s:
-            swr = tf.train.SummaryWriter(TEST_LOG_DIR, s.graph)
-            # Nothing should be added, because SummaryWritter was again not called in an annotated function
+            swr = tf.summary.FileWriter(TEST_LOG_DIR, s.graph)
+            # Nothing should be added, because FileWriter was again not called in an annotated function
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR2]
 
     ex.run()

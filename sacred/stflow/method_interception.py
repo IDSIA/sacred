@@ -3,34 +3,34 @@ from .internal import ContextMethodDecorator
 from ..optional import tensorflow
 
 
-class LogSummaryWriter(ContextDecorator, ContextMethodDecorator):
+class LogFileWriter(ContextDecorator, ContextMethodDecorator):
     """
-    Intercept ``logdir`` each time a new ``SummaryWriter`` instance is created.
+    Intercept ``logdir`` each time a new ``FileWriter`` instance is created.
 
     :param experiment: Tensorflow experiment.
 
     The state of the experiment must be running when entering the annotated
     function / the context manager.
 
-    When creating ``SummaryWriters`` in Tensorflow, you might want to
+    When creating ``FileWriters`` in Tensorflow, you might want to
     store the path to the produced log files in the sacred database.
 
-    In the scope of ``LogSummaryWriter``, the corresponding log directory path
+    In the scope of ``LogFileWriter``, the corresponding log directory path
     is appended to a list in experiment.info["tensorflow"]["logdirs"].
 
-    ``LogSummaryWriter`` can be used both as a context manager or as
+    ``LogFileWriter`` can be used both as a context manager or as
      an annotation (decorator) on a function.
 
 
     Example usage as decorator::
 
         ex = Experiment("my experiment")
-        @LogSummaryWriter(ex)
+        @LogFileWriter(ex)
         def run_experiment(_run):
             with tf.Session() as s:
-                swr = tf.train.SummaryWriter("/tmp/1", s.graph)
+                swr = tf.summary.FileWriter("/tmp/1", s.graph)
                 # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
-                swr2 tf.train.SummaryWriter("./test", s.graph)
+                swr2 tf.summary.FileWriter("./test", s.graph)
                 #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
 
 
@@ -39,13 +39,13 @@ class LogSummaryWriter(ContextDecorator, ContextMethodDecorator):
         ex = Experiment("my experiment")
         def run_experiment(_run):
             with tf.Session() as s:
-                with LogSummaryWriter(ex):
-                    swr = tf.train.SummaryWriter("/tmp/1", s.graph)
+                with LogFileWriter(ex):
+                    swr = tf.summary.FileWriter("/tmp/1", s.graph)
                     # _run.info["tensorflow"]["logdirs"] == ["/tmp/1"]
-                    swr3 = tf.train.SummaryWriter("./test", s.graph)
+                    swr3 = tf.summary.FileWriter("./test", s.graph)
                     #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
                 # This is called outside the scope and won't be captured
-                swr3 = tf.train.SummaryWriter("./nothing", s.graph)
+                swr3 = tf.summary.FileWriter("./nothing", s.graph)
                 # Nothing has changed:
                 #_run.info["tensorflow"]["logdirs"] == ["/tmp/1", "./test"]
 
@@ -67,6 +67,6 @@ class LogSummaryWriter(ContextDecorator, ContextMethodDecorator):
             return result
 
         ContextMethodDecorator.__init__(self,
-                                        tensorflow.train.SummaryWriter,
+                                        tensorflow.summary.FileWriter,
                                         "__init__",
                                         log_writer_decorator)

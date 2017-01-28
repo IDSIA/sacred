@@ -1,11 +1,5 @@
 import wrapt
 
-"""
-Provide support for Python 2.7 which doesn't have contextlib.ContextDecorator
-
-Taken from contextlib2 library, modified to work with sacred
-"""
-
 
 class ContextDecorator(object):
     """A base class enabling context managers to work as decorators."""

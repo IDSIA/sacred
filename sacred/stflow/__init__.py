@@ -1,3 +1,3 @@
-from .method_interception import LogSummaryWriter
+from .method_interception import LogFileWriter
 
-__all__ = ("LogSummaryWriter", )
+__all__ = ("LogFileWriter",)
