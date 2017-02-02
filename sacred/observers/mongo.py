@@ -130,7 +130,7 @@ class MongoObserver(RunObserver):
 
     def completed_event(self, stop_time, result):
         self.run_entry['stop_time'] = stop_time
-        self.run_entry['result'] = result
+        self.run_entry['result'] = flatten(result)
         self.run_entry['status'] = 'COMPLETED'
         self.final_save(attempts=10)
 
