@@ -107,7 +107,7 @@ class Run(object):
         self._failed_observers = []
         self._output_file = None
 
-    def open_resource(self, filename):
+    def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -124,6 +124,8 @@ class Run(object):
         ----------
         filename : str
             name of the file that should be opened
+        mode : str
+            mode that file will be open
 
         Returns
         -------
@@ -132,7 +134,7 @@ class Run(object):
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
-        return open(filename, 'r')  # TODO: How to deal with binary mode?
+        return open(filename, mode)
 
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
