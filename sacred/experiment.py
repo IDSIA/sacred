@@ -251,7 +251,7 @@ class Experiment(Ingredient):
             else:
                 print_filtered_stacktrace()
 
-    def open_resource(self, filename):
+    def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -269,6 +269,8 @@ class Experiment(Ingredient):
         ----------
         filename: str
             name of the file that should be opened
+        mode : str
+            mode that file will be open
 
         Returns
         -------
@@ -276,7 +278,7 @@ class Experiment(Ingredient):
             the opened file-object
         """
         assert self.current_run is not None, "Can only be called during a run."
-        return self.current_run.open_resource(filename)
+        return self.current_run.open_resource(filename, mode)
 
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
