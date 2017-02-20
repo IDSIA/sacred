@@ -86,7 +86,7 @@ class MongoObserver(RunObserver):
             self.run_entry['_id'] = _id
         # save sources
         self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
-        self.final_save(attempts=1)
+        self.insert()
         return self.run_entry['_id']
 
     def started_event(self, ex_info, command, host_info, start_time, config,
