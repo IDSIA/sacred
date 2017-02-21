@@ -52,7 +52,8 @@ class TelegramObserver(RunObserver):
         d = load_config_file(filename)
         obs = None
         if 'token' in d and 'chat_id' in d:
-            obs = cls(**d)
+            bot = telegram.Bot(d['token'])
+            obs = cls(bot, **d)
         else:
             raise ValueError("Telegram configuration file must contain "
                              "entries for 'token' and 'chat_id'!")
@@ -61,15 +62,11 @@ class TelegramObserver(RunObserver):
                 setattr(obs, k, d[k])
         return obs
 
-    def __init__(self, token, chat_id, silent_completion=False,
-                 bot_name="sacred-bot", icon=":angel:", **kwargs):
-        self.token = token
-        self.bot_name = bot_name
+    def __init__(self, bot, chat_id, silent_completion=False, **kwargs):
         self.silent_completion = silent_completion
-        self.icon = icon
         self.chat_id = chat_id
+        self.bot = bot
 
-        # FIXME: do these work in telegram?
         self.started_text = "♻ *{experiment[name]}* " \
                             "started at _{start_time}_ " \
                             "on host `{host_info[hostname]}`"
@@ -94,11 +91,10 @@ class TelegramObserver(RunObserver):
             'host_info': host_info,
         }
         try:
-            bot = telegram.Bot(self.token)
-            bot.send_message(chat_id=self.chat_id,
-                             text=self.get_started_text(),
-                             disable_notification=True,
-                             parse_mode=telegram.ParseMode.MARKDOWN)
+            self.bot.send_message(chat_id=self.chat_id,
+                                  text=self.get_started_text(),
+                                  disable_notification=True,
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
             log.warning('failed to send start_event message via telegram.',
@@ -127,11 +123,10 @@ class TelegramObserver(RunObserver):
                                              self.run['start_time'])
 
         try:
-            bot = telegram.Bot(self.token)
-            bot.send_message(chat_id=self.chat_id,
-                             text=self.get_completed_text(),
-                             disable_notification=self.silent_completion,
-                             parse_mode=telegram.ParseMode.MARKDOWN)
+            self.bot.send_message(chat_id=self.chat_id,
+                                  text=self.get_completed_text(),
+                                  disable_notification=self.silent_completion,
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
             log.warning('failed to send completed_event message via telegram.',
@@ -147,11 +142,10 @@ class TelegramObserver(RunObserver):
                                              self.run['start_time'])
 
         try:
-            bot = telegram.Bot(self.token)
-            bot.send_message(chat_id=self.chat_id,
-                             text=self.get_interrupted_text(),
-                             disable_notification=False,
-                             parse_mode=telegram.ParseMode.MARKDOWN)
+            self.bot.send_message(chat_id=self.chat_id,
+                                  text=self.get_interrupted_text(),
+                                  disable_notification=False,
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
             log.warning('failed to send interrupted_event message '
@@ -168,11 +162,10 @@ class TelegramObserver(RunObserver):
                                              self.run['start_time'])
 
         try:
-            bot = telegram.Bot(self.token)
-            bot.send_message(chat_id=self.chat_id,
-                             text=self.get_failed_text(),
-                             disable_notification=False,
-                             parse_mode=telegram.ParseMode.MARKDOWN)
+            self.bot.send_message(chat_id=self.chat_id,
+                                  text=self.get_failed_text(),
+                                  disable_notification=False,
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
             log.warning('failed to send failed_event message via telegram.',
