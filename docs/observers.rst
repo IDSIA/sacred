@@ -628,7 +628,56 @@ But it can optionally also customize the other attributes::
     }
 
 
+Telegram Observer
+==============
 
+The :py:class:`~sacred.observers.slack.TelegramObserver` sends status updates to
+`Telegram <https://telegram.org/>`_ using their
+`Python Telegram Bot API <https://github.com/python-telegram-bot/python-telegram-bot>`_ which
+obviously has to be installed to use this observer.
+
+
+Before using this observer, three steps need to be taken:
+
+  * `Create the bot with @BotFather <https://core.telegram.org/bots#6-botfather>`
+  * Write **to** the newly-created bot, since only users can initiate conversations with telegram bots.
+  * Retrieve the ``chat_id`` for the chat the bot will send updates to.
+
+The last step can be accomplished using the following script:
+
+.. code-block:: python
+
+    import  telegram
+
+    TOKEN = 'token obtained from @BotFather'
+
+    bot = telegram.Bot(TOKEN)
+    for u in bot.get_updates():
+        print('{}: [{}] {}'.format(u.message.date, u.message.chat_id, u.message.text))
+
+As with the :py:class:`~sacred.observers.slack.SlackObserver`, the
+:py:class:`~sacred.observers.slack.TelegramObserver` needs to be provided with a json, yaml
+or pickle file containing...
+
+  * ``token``: the HTTP API token acquired while
+  * ``chat_id``: the ID (not username) of the chat to write the updates to.
+    This can be a user or a group chat ID
+  * optionally: a boolean for ``silent_completion``. If set to true, regular experiment completions
+    will use no or less intrusive notifications, depending on the receiving device's platform.
+    Experiment starts will always be sent silently, interruptions and failures always with full notifications.
+
+The observer is then added to the experment like this:
+
+.. code-block:: python
+
+    from sacred.observers import TelegramObserver
+
+    telegram_obs = TelegramObserver.from_config('telegram.json')
+    ex.observers.append(telegram_obs)
+
+
+To set the bot's profile photo and description, use @BotFather's commands ``/setuserpic`` and ``/setdescription``.
+Note that ``/setuserpic`` requires a *minimum* picture size.
 
 Events
 ======
