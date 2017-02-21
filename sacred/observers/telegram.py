@@ -71,13 +71,16 @@ class TelegramObserver(RunObserver):
 
         # FIXME: do these work in telegram?
         self.started_text = "♻ *{experiment[name]}* " \
-                              "started at _{start_time}_ on host `{host_info[hostname]}`"
+                            "started at _{start_time}_ " \
+                            "on host `{host_info[hostname]}`"
         self.completed_text = "✅ *{experiment[name]}* " \
-            "completed after _{elapsed_time}_ with result=`{result}`"
+                              "completed after _{elapsed_time}_ " \
+                              "with result=`{result}`"
         self.interrupted_text = "⚠ *{experiment[name]}* " \
                                 "interrupted after _{elapsed_time}_"
         self.failed_text = "❌ *{experiment[name]}* failed after " \
-                           "_{elapsed_time}_ with `{error}`\n\nBacktrace:\n```{backtrace}```"
+                           "_{elapsed_time}_ with `{error}`\n\n" \
+                           "Backtrace:\n```{backtrace}```"
         self.run = None
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -98,8 +101,8 @@ class TelegramObserver(RunObserver):
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
-            log.warning('failed to send start_event message via telegram.', exc_info=e)
-
+            log.warning('failed to send start_event message via telegram.',
+                        exc_info=e)
 
     def get_started_text(self):
         return self.started_text.format(**self.run)
@@ -111,7 +114,8 @@ class TelegramObserver(RunObserver):
         return self.interrupted_text.format(**self.run)
 
     def get_failed_text(self):
-        return self.failed_text.format(**self.run, backtrace=''.join(self.run['fail_trace']))
+        return self.failed_text.format(
+            backtrace=''.join(self.run['fail_trace']), **self.run)
 
     def completed_event(self, stop_time, result):
         if self.completed_text is None:
@@ -130,7 +134,8 @@ class TelegramObserver(RunObserver):
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
-            log.warning('failed to send completed_event message via telegram.', exc_info=e)
+            log.warning('failed to send completed_event message via telegram.',
+                        exc_info=e)
 
     def interrupted_event(self, interrupt_time, status):
         if self.interrupted_text is None:
@@ -149,7 +154,8 @@ class TelegramObserver(RunObserver):
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
-            log.warning('failed to send interrupted_event message via telegram.', exc_info=e)
+            log.warning('failed to send interrupted_event message '
+                        'via telegram.', exc_info=e)
 
     def failed_event(self, fail_time, fail_trace):
         if self.failed_text is None:
@@ -169,5 +175,5 @@ class TelegramObserver(RunObserver):
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except Exception as e:
             log = logging.getLogger('telegram-observer')
-            log.warning('failed to send failed_event message via telegram.', exc_info=e)
-
+            log.warning('failed to send failed_event message via telegram.',
+                        exc_info=e)
