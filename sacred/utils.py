@@ -128,26 +128,27 @@ def tee_output(target):
     final_output = []
 
     try:
-        try:
-            tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
-            tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-        except (FileNotFoundError, OSError):
-            tee_stdout = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stderr=target_fd)
-            tee_stderr = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stdout=target_fd)
+        tee_stdout = subprocess.Popen(
+            ['tee', '-a', '/dev/stderr'],
+            stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
+        tee_stderr = subprocess.Popen(
+            ['tee', '-a', '/dev/stderr'],
+            stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
+    except (FileNotFoundError, OSError):
+        tee_stdout = subprocess.Popen(
+            [sys.executable, "-m", "sacred.pytee"],
+            stdin=subprocess.PIPE, stderr=target_fd)
+        tee_stderr = subprocess.Popen(
+            [sys.executable, "-m", "sacred.pytee"],
+            stdin=subprocess.PIPE, stdout=target_fd)
 
-        flush()
-        os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
-        os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
+    flush()
+    os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
+    os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
 
+    try:
         yield final_output  # let the caller do their printing
+    finally:
         flush()
 
         # then redirect stdout back to the saved fd
@@ -172,7 +173,6 @@ def tee_output(target):
         finally:
             tee_timer.cancel()
 
-    finally:
         os.close(saved_stdout_fd)
         os.close(saved_stderr_fd)
         target.flush()
