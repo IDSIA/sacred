@@ -17,6 +17,9 @@ from sacred import optional as opt
 from sacred.serializer import flatten
 
 
+DEFAULT_FILE_STORAGE_PRIORITY = 20
+
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code."""
     if isinstance(obj, datetime):
@@ -30,7 +33,7 @@ class FileStorageObserver(RunObserver):
 
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
-               template=None):
+               template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
@@ -43,13 +46,15 @@ class FileStorageObserver(RunObserver):
             template = os.path.join(basedir, 'template.html')
             if not os.path.exists(template):
                 template = None
-        return cls(basedir, resource_dir, source_dir, template)
+        return cls(basedir, resource_dir, source_dir, template, priority)
 
-    def __init__(self, basedir, resource_dir, source_dir, template):
+    def __init__(self, basedir, resource_dir, source_dir, template,
+                 priority=DEFAULT_FILE_STORAGE_PRIORITY):
         self.basedir = basedir
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.template = template
+        self.priority = priority
         self.dir = None
         self.run_entry = None
         self.config = None

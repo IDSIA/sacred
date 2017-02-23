@@ -22,7 +22,7 @@ def run():
     signature.name = 'main_func'
     main_func = mock.Mock(return_value=123, prefix='', signature=signature)
     logger = mock.Mock()
-    observer = [mock.Mock()]
+    observer = [mock.Mock(priority=10)]
     return Run(config, config_mod, main_func, observer, logger, logger, {},
                {}, [], [])
 
@@ -182,7 +182,7 @@ def test_run_exception_in_heartbeat_is_not_caught(run):
 
 def test_run_exception_in_completed_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.completed_event.side_effect = TypeError
     run()
@@ -192,7 +192,7 @@ def test_run_exception_in_completed_event_is_caught(run):
 
 def test_run_exception_in_interrupted_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.interrupted_event.side_effect = TypeError
     run.main_function.side_effect = KeyboardInterrupt
@@ -204,7 +204,7 @@ def test_run_exception_in_interrupted_event_is_caught(run):
 
 def test_run_exception_in_failed_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.failed_event.side_effect = TypeError
     run.main_function.side_effect = AttributeError

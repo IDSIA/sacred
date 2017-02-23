@@ -10,6 +10,8 @@ __all__ = ('RunObserver',)
 class RunObserver(object):
     """Defines the interface for all run observers."""
 
+    priority = 0
+
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
                      _id):
         pass

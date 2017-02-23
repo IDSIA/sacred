@@ -5,6 +5,9 @@ such that you can analyse the results, and reproduce them if needed.
 Sacred helps you doing that by providing an *Observer Interface* for your
 experiments. By attaching an Observer you can gather all the information about
 the run even while it is still running.
+Observers have a ``priority`` attribute, and are run in order of descending
+priority. The first observer determines the ``_id`` of the run.
+
 
 At the moment there are four observers that are shipped with Sacred:
 

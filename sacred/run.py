@@ -175,6 +175,8 @@ class Run(object):
 
         if self.unobserved:
             self.observers = []
+        else:
+            self.observers = sorted(self.observers, key=lambda x: -x.priority)
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])

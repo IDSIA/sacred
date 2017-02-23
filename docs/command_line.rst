@@ -400,7 +400,7 @@ MongoDB Observer
 
 
 This flag can be used to add a MongoDB observer to your experiment. ``DB`` must
-be of the form ``db_name`` or ``[host:port:]db_name``.
+be of the form ``[host:port:]db_name[.collection][!priority]``.
 
 See :ref:`mongo_observer` for more details.
 
