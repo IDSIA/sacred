@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import traceback as tb
+from threading import Timer
 from functools import partial
 from contextlib import contextmanager
 
@@ -157,8 +158,20 @@ def tee_output(target):
         os.dup2(saved_stdout_fd, original_stdout_fd)
         os.dup2(saved_stderr_fd, original_stderr_fd)
 
-        tee_stdout.wait()
-        tee_stderr.wait()
+        # wait for completion of the tee processes with timeout
+        # implemented using a timer because timeout support is py3 only
+        def kill_tees():
+            tee_stdout.kill()
+            tee_stderr.kill()
+
+        tee_timer = Timer(1, kill_tees)
+        try:
+            tee_timer.start()
+            tee_stdout.wait()
+            tee_stderr.wait()
+        finally:
+            tee_timer.cancel()
+
     finally:
         os.close(saved_stdout_fd)
         os.close(saved_stderr_fd)
