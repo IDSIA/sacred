@@ -8,6 +8,8 @@ from sacred.optional import telegram  # type: telegram
 import logging
 
 
+DEFAULT_SLACK_PRIORITY = 10
+
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
 def td_format(td_object):
     seconds = int(td_object.total_seconds())
@@ -62,7 +64,8 @@ class TelegramObserver(RunObserver):
                 setattr(obs, k, d[k])
         return obs
 
-    def __init__(self, bot, chat_id, silent_completion=False, **kwargs):
+    def __init__(self, bot, chat_id, silent_completion=False,
+                 priority=DEFAULT_SLACK_PRIORITY, **kwargs):
         self.silent_completion = silent_completion
         self.chat_id = chat_id
         self.bot = bot
@@ -79,6 +82,7 @@ class TelegramObserver(RunObserver):
                            "_{elapsed_time}_ with `{error}`\n\n" \
                            "Backtrace:\n```{backtrace}```"
         self.run = None
+        self.priority = priority
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -90,6 +94,8 @@ class TelegramObserver(RunObserver):
             'command': command,
             'host_info': host_info,
         }
+        if self.started_text is None:
+            return
         try:
             self.bot.send_message(chat_id=self.chat_id,
                                   text=self.get_started_text(),
