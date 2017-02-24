@@ -63,6 +63,12 @@ if opt.has_requests:
 else:
     SlackObserver = opt.MissingDependencyMock('requests')
 
+if opt.has_telegram:
+    from sacred.observers.telegram import TelegramObserver
+else:
+    TelegramObserver = opt.MissingDependencyMock('telegram')
+
 
 __all__ = ('FileStorageObserver', 'RunObserver', 'MongoObserver',
-           'SqlObserver', 'TinyDbObserver', 'TinyDbReader', 'SlackObserver')
+           'SqlObserver', 'TinyDbObserver', 'TinyDbReader',
+           'SlackObserver', 'TelegramObserver')
