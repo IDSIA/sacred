@@ -290,7 +290,8 @@ class Ingredient(object):
         for dep in dependencies:
             dep.fill_missing_version()
 
-        mainfile = self.mainfile.to_json(self.base_dir)[0] if self.mainfile else None
+        mainfile = (self.mainfile.to_json(self.base_dir)[0]
+                    if self.mainfile else None)
 
         return dict(
             name=self.path,
