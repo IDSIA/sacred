@@ -148,9 +148,11 @@ def test_package_dependency_repr():
 
 def test_gather_sources_and_dependencies():
     from tests.dependency_example import some_func
-    sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
+    assert main == Source.create('tests/dependency_example.py')
     expected_sources = {
         Source.create('tests/__init__.py'),
         Source.create('tests/dependency_example.py'),

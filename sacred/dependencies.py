@@ -237,6 +237,7 @@ def gather_sources_and_dependencies(globs, interactive=False):
                                " want to run it pass interactive=True")
         sources = set()
         experiment_path = os.path.abspath(os.path.curdir)
+        main = None
     else:
         main = Source.create(globs.get('__file__'))
         sources = {main}
@@ -261,4 +262,4 @@ def gather_sources_and_dependencies(globs, interactive=False):
         # Add numpy as a dependency because it might be used for randomness
         dependencies.add(PackageDependency.create(opt.np))
 
-    return sources, dependencies
+    return main, sources, dependencies
