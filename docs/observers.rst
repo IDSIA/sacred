@@ -639,6 +639,9 @@ The :py:class:`~sacred.observers.slack.TelegramObserver` sends status updates to
 `Python Telegram Bot API <https://github.com/python-telegram-bot/python-telegram-bot>`_ which
 obviously has to be installed to use this observer.
 
+.. code-block:: bash
+pip install --upgrade python-telegram-bot
+
 
 Before using this observer, three steps need to be taken:
 
