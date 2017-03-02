@@ -98,14 +98,16 @@ class Scaffold(object):
         else:
             self.named_configs_to_use.append(self.named_configs[config_name])
 
-    def set_up_config(self):
+    def evaluate_named_configs(self):
         # named configs go first
-        self.config_updates, _ = chain_evaluate_config_scopes(
+        config_updates, _ = chain_evaluate_config_scopes(
             self.named_configs_to_use,
             fixed=self.config_updates,
             preset={},
             fallback=self.fallback)
+        return {self.path: config_updates}
 
+    def set_up_config(self):
         # unnamed (default) configs second
         self.config, self.summaries = chain_evaluate_config_scopes(
             self.config_scopes,
@@ -291,6 +293,13 @@ def create_run(experiment, command_name, config_updates=None,
     config_updates = config_updates or {}
     config_updates = convert_to_nested_dict(config_updates)
     root_logger, run_logger = initialize_logging(experiment, scaffolding)
+
+    past_paths = set()
+    for scaffold in scaffolding.values():
+        scaffold.pick_relevant_config_updates(config_updates, past_paths)
+        past_paths.add(scaffold.path)
+        scaffold.gather_fallbacks()
+        recursive_update(config_updates, scaffold.evaluate_named_configs())
 
     past_paths = set()
     for scaffold in scaffolding.values():

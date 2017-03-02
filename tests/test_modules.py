@@ -98,3 +98,40 @@ def test_experiment_run_subingredient_function():
         return get_answer()
 
     assert ex.run().result == 'foo'
+
+
+def test_experiment_named_config_subingredient():
+    somemod = Ingredient("somemod")
+
+    @somemod.config
+    def sub_cfg():
+        a = 15
+
+    @somemod.capture
+    def get_answer(a):
+        return a
+
+    @somemod.named_config
+    def nsubcfg():
+        a = 16
+
+    ex = Experiment("some_experiment", ingredients=[somemod])
+
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.named_config
+    def ncfg():
+        a = 2
+        somemod = {'a': 25}
+
+    @ex.main
+    def main(a):
+        return a, get_answer()
+
+    assert ex.run().result == (1, 15)
+    assert ex.run(named_configs=['somemod.nsubcfg']).result == (1, 16)
+    assert ex.run(named_configs=['ncfg']).result == (2, 25)
+    assert ex.run(named_configs=['ncfg', 'somemod.nsubcfg']).result == (2, 25)
+
