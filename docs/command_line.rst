@@ -579,12 +579,23 @@ Print Config
 +-------------------------+---------------------------------------------------+
 | ``-P PRIORITY``         |  Always print the config first.                   |
 +-------------------------+                                                   |
-| ``--priority PRIORITY`` |                                                   |
+| ``--priority=PRIORITY`` |                                                   |
 +-------------------------+---------------------------------------------------+
 
 If this flag is set, sacred will always print the current configuration
 including modifications (like the :ref:`print_config` command) before running
 the main method.
+
+
+Name
+----
++-----------------+---------------------------------------------------+
+| ``-n NAME``     |  Set the name for this run.                       |
++-----------------+                                                   |
+| ``--name=NAME`` |                                                   |
++-----------------+---------------------------------------------------+
+
+This option changes the name of the experiment before starting the run.
 
 
 Custom Flags

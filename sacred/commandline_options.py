@@ -234,3 +234,14 @@ class PrintConfigOption(CommandLineOption):
     def apply(cls, args, run):
         print_config(run)
         print('-' * 79)
+
+
+class NameOption(CommandLineOption):
+    """Set the name for this run."""
+    arg = 'NAME'
+    arg_description = 'Name for this run.'
+
+    @classmethod
+    def apply(cls, args, run):
+        run.experiment_info['name'] = args
+        run.run_logger = run.root_logger.getChild(args)
