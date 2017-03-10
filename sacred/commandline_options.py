@@ -238,6 +238,7 @@ class PrintConfigOption(CommandLineOption):
 
 class NameOption(CommandLineOption):
     """Set the name for this run."""
+
     arg = 'NAME'
     arg_description = 'Name for this run.'
 
