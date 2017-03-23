@@ -136,6 +136,24 @@ class Run(object):
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
         return open(filename, mode)
 
+    def add_resource(self, filename):
+        """Add a file as a resource.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        See also :py:meth:`sacred.Experiment.add_resource`.
+
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as a resource
+        """
+        filename = os.path.abspath(filename)
+        self._emit_resource_added(filename)
+
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
 

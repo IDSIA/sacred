@@ -280,6 +280,25 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename, mode)
 
+    def add_resource(self, filename):
+        """Add a file as a resource.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.add_resource` method.
+
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as a resource
+        """
+        assert self.current_run is not None, "Can only be called during a run."
+        self.current_run.add_resource(filename)
+
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
 
