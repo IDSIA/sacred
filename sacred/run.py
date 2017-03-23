@@ -154,7 +154,7 @@ class Run(object):
             Defaults to the relative file-path.
         """
         filename = os.path.abspath(filename)
-        name = os.path.relpath(filename) if name is None else name
+        name = os.path.basename(filename) if name is None else name
         self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
