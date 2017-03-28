@@ -1,5 +1,8 @@
+import datetime
+
 import pytest
 from sacred import Experiment, messagequeue
+from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 
 @pytest.fixture()
@@ -23,5 +26,29 @@ def test_log_value(ex):
     messages = test_log_value.metrics_consumer.read_all()
     assert len(messages) == (100 - 10)/5
     for i in range(len(messages)-1):
-        assert messages[i]["timestep"] < messages[i+1]["timestep"]
-        assert messages[i]["timestamp"] <= messages[i + 1]["timestamp"]
+        assert messages[i].timestep < messages[i+1].timestep
+        assert messages[i].timestamp <= messages[i + 1].timestamp
+
+
+def test_linearize_metrics():
+    entries = [ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 100),
+               ScalarMetricLogEntry("training.accuracy", 5, datetime.datetime.utcnow(), 50),
+               ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 200),
+               ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
+               ScalarMetricLogEntry("training.accuracy", 15, datetime.datetime.utcnow(), 150),
+               ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300)]
+    linearized = linearize_metrics(entries)
+    assert type(linearized) == dict
+    assert len(linearized.keys()) == 2
+    assert "training.loss" in linearized
+    assert "training.accuracy" in linearized
+    assert len(linearized["training.loss"]["x"]) == 2
+    assert len(linearized["training.loss"]["y"]) == 2
+    assert len(linearized["training.loss"]["timestamps"]) == 2
+    assert len(linearized["training.accuracy"]["x"]) == 4
+    assert len(linearized["training.accuracy"]["y"]) == 4
+    assert len(linearized["training.accuracy"]["timestamps"]) == 4
+    assert linearized["training.accuracy"]["x"] == [5, 10, 15, 30]
+    assert linearized["training.accuracy"]["y"] == [50, 100, 150, 300]
+    assert linearized["training.loss"]["x"] == [10, 20]
+    assert linearized["training.loss"]["y"] == [100, 200]

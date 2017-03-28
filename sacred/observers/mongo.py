@@ -171,8 +171,11 @@ class MongoObserver(RunObserver):
         self.save()
 
     def log_metrics(self, logged_metrics):
+        metrics_by_name = self._linearize_metrics(logged_metrics)
 
-        pass
+        for key in metrics_by_name:
+            pass
+
 
     def insert(self):
         if self.overwrite:
