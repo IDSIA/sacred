@@ -10,6 +10,7 @@ import traceback as tb
 
 from tempfile import NamedTemporaryFile
 
+from sacred import metrics_logger
 from sacred.randomness import set_global_seed
 from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
                           join_paths, flush)
@@ -106,6 +107,9 @@ class Run(object):
         self._heartbeat = None
         self._failed_observers = []
         self._output_file = None
+
+        self.metrics = metrics_logger.MetricsLogger()
+        self.metrics_consumer = self.metrics.register_listener()
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -295,11 +299,16 @@ class Run(object):
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.utcnow()
         self._get_captured_output()
+        # Read all measured metrics since last heartbeat
+        logged_metrics = self.metrics_consumer.read_all()
+
         for observer in self.observers:
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
                             beat_time=beat_time)
+            self._safe_call(observer, 'log_metrics',
+                            logged_metrics=logged_metrics)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()

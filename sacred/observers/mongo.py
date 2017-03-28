@@ -170,6 +170,10 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
+    def log_metrics(self, logged_metrics):
+
+        pass
+
     def insert(self):
         if self.overwrite:
             return self.save()
