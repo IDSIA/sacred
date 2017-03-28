@@ -12,11 +12,11 @@ class MetricsLogger:
     def register_listener(self):
         return self.mq.add_consumer()
 
-    def log_scalar_metric(self, metric_name, step, value):
+    def log_scalar_metric(self, metric_name, timestep, value):
         log_entry = {
             "name": metric_name,
             "type": "scalar",
-            "step": step,
+            "timestep": timestep,
             "value": value,
             "timestamp": datetime.datetime.utcnow()
         }
