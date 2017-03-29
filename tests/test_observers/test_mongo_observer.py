@@ -5,6 +5,8 @@ import datetime
 import mock
 import pytest
 
+from sacred.metrics_logger import ScalarMetricLogEntry
+
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
 
@@ -19,8 +21,9 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 def mongo_obs():
     db = mongomock.MongoClient().db
     runs = db.runs
+    metrics = db.metrics
     fs = mock.MagicMock()
-    return MongoObserver(runs, fs)
+    return MongoObserver(runs, fs, metrics_collection=metrics)
 
 
 @pytest.fixture()
@@ -203,3 +206,64 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
         '12,7': 'illegal because it is not a string key'
     }
     assert force_bson_encodeable(d) == expected
+
+
+def test_log_metrics(mongo_obs, sample_run):
+    mongo_obs.started_event(**sample_run)
+
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+    logged_metrics = [
+        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
+        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
+        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
+
+        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
+        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300)
+    ]
+
+    mongo_obs.log_metrics(logged_metrics)
+    mongo_obs.heartbeat_event(info=mongo_obs.run_entry["info"], captured_out=outp, beat_time=T1)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert "metrics" in db_run['info']
+
+    assert mongo_obs.metrics.count() == 2
+    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
+    assert "training.loss" in [x["name"] for x in db_run['info']["metrics"]]
+    assert loss["x"] == [10, 20, 30]
+    assert loss["y"] == [1, 2, 3]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
+    assert "training.accuracy" in [x["name"] for x in db_run['info']["metrics"]]
+    assert accuracy["x"] == [10, 20, 30]
+    assert accuracy["y"] == [100, 200, 300]
+    # Add another bunch of measurements
+    logged_metrics = [
+        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
+        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
+        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
+    ]
+    mongo_obs.log_metrics(logged_metrics)
+    mongo_obs.heartbeat_event(info=db_run["info"], captured_out=outp, beat_time=T2)
+
+    assert mongo_obs.runs.count() == 1
+    db_run = mongo_obs.runs.find_one()
+    assert "metrics" in db_run['info']
+
+    assert mongo_obs.metrics.count() == 2
+    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
+    assert "training.loss" in [x["name"] for x in db_run['info']["metrics"]]
+    assert loss["x"] == [10, 20, 30, 40, 50, 60]
+    assert loss["y"] == [1, 2, 3, 10, 20, 30]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
+    assert "training.accuracy" in [x["name"] for x in db_run['info']["metrics"]]
+    assert accuracy["x"] == [10, 20, 30]
+    assert accuracy["y"] == [100, 200, 300]

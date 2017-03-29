@@ -303,12 +303,12 @@ class Run(object):
         logged_metrics = self.metrics_consumer.read_all()
 
         for observer in self.observers:
+            self._safe_call(observer, 'log_metrics',
+                            logged_metrics=logged_metrics)
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
                             beat_time=beat_time)
-            self._safe_call(observer, 'log_metrics',
-                            logged_metrics=logged_metrics)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()

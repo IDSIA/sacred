@@ -19,7 +19,6 @@ class MetricsLogger:
                                  value))
 
 
-
 class ScalarMetricLogEntry:
     def __init__(self, name, timestep, timestamp, value):
         self.name = name

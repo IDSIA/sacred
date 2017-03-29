@@ -15,6 +15,7 @@ import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument, DuplicateKeyError
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
+from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
@@ -61,11 +62,16 @@ class MongoObserver(RunObserver):
             raise KeyError('Collection name "{}" is reserved. '
                            'Please use a different one.'.format(collection))
         runs_collection = database[collection]
+        metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return MongoObserver(runs_collection, fs, overwrite=overwrite)
+        return MongoObserver(runs_collection,
+                             fs, overwrite=overwrite,
+                             metrics_collection=metrics_collection)
 
-    def __init__(self, runs_collection, fs, overwrite=None):
+    def __init__(self, runs_collection,
+                 fs, overwrite=None, metrics_collection=None):
         self.runs = runs_collection
+        self.metrics = metrics_collection
         self.fs = fs
         self.overwrite = overwrite
         self.run_entry = None
@@ -171,11 +177,24 @@ class MongoObserver(RunObserver):
         self.save()
 
     def log_metrics(self, logged_metrics):
-        metrics_by_name = self._linearize_metrics(logged_metrics)
-
+        if self.metrics is None:
+            # If - for whatever reason - the metrics collection has not been set
+            # do not try to save there anything
+            return
+        metrics_by_name = linearize_metrics(logged_metrics)
         for key in metrics_by_name:
-            pass
-
+            query = {"run": self.run_entry['_id'],
+                     "name": key}
+            update = {"$push": {"x": {"$each": metrics_by_name[key]["x"]},
+                                "y": {"$each": metrics_by_name[key]["y"]},
+                                "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
+                                }}
+            result = self.metrics.update_one(query, update, upsert=True)
+            if result.upserted_id is not None:
+                # This is the first time we are storing this metric
+                self.run_entry["info"] \
+                    .setdefault("metrics", []) \
+                    .append({"name": key, "id": result.upserted_id})
 
     def insert(self):
         if self.overwrite:
@@ -263,9 +282,9 @@ class MongoDbOption(CommandLineOption):
 
     DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
     HOSTNAME_PATTERN = \
-        r"(?=.{1,255}$)"\
-        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
-        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
+        r"(?=.{1,255}$)" \
+        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*" \
         r"\.?"
     URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
 
