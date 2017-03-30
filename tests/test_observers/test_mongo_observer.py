@@ -223,8 +223,8 @@ def test_log_metrics(mongo_obs, sample_run):
         ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300)
     ]
 
-    mongo_obs.log_metrics(logged_metrics)
-    mongo_obs.heartbeat_event(info=mongo_obs.run_entry["info"], captured_out=outp, beat_time=T1)
+    mongo_obs.log_metrics(logged_metrics, info)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -248,8 +248,8 @@ def test_log_metrics(mongo_obs, sample_run):
         ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
         ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
     ]
-    mongo_obs.log_metrics(logged_metrics)
-    mongo_obs.heartbeat_event(info=db_run["info"], captured_out=outp, beat_time=T2)
+    mongo_obs.log_metrics(logged_metrics, info)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()

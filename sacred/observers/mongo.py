@@ -176,7 +176,7 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
-    def log_metrics(self, logged_metrics):
+    def log_metrics(self, logged_metrics, info):
         if self.metrics is None:
             # If - for whatever reason - the metrics collection has not been set
             # do not try to save there anything
@@ -192,9 +192,9 @@ class MongoObserver(RunObserver):
             result = self.metrics.update_one(query, update, upsert=True)
             if result.upserted_id is not None:
                 # This is the first time we are storing this metric
-                self.run_entry["info"] \
+                info \
                     .setdefault("metrics", []) \
-                    .append({"name": key, "id": result.upserted_id})
+                    .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
         if self.overwrite:
