@@ -15,7 +15,6 @@ import sacred.optional as opt
 from pymongo.errors import AutoReconnect, InvalidDocument, DuplicateKeyError
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
-from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
@@ -178,16 +177,17 @@ class MongoObserver(RunObserver):
 
     def log_metrics(self, metrics_by_name, info):
         if self.metrics is None:
-            # If - for whatever reason - the metrics collection has not been set
+            # If, for whatever reason, the metrics collection has not been set
             # do not try to save there anything
             return
         for key in metrics_by_name:
             query = {"run_id": self.run_entry['_id'],
                      "name": key}
-            update = {"$push": {"x": {"$each": metrics_by_name[key]["x"]},
-                                "y": {"$each": metrics_by_name[key]["y"]},
-                                "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
-                                }}
+            push = {"x": {"$each": metrics_by_name[key]["x"]},
+                    "y": {"$each": metrics_by_name[key]["y"]},
+                    "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
+                    }
+            update = {"$push": push}
             result = self.metrics.update_one(query, update, upsert=True)
             if result.upserted_id is not None:
                 # This is the first time we are storing this metric

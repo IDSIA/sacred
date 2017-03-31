@@ -6,6 +6,7 @@ from sacred import messagequeue as mq
 
 
 class MetricsLogger:
+    """MetricsLogger is a part of the Sacred Metrics API"""
     def __init__(self):
         self.mq = mq.SacredMQ()
 
@@ -37,7 +38,10 @@ def linearize_metrics(logged_metrics):
                 "timestamps": [],
                 "name": metric_entry.name
             }
-        metrics_by_name[metric_entry.name]["x"].append(metric_entry.step)
-        metrics_by_name[metric_entry.name]["y"].append(metric_entry.value)
-        metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
+        metrics_by_name[metric_entry.name]["x"]\
+            .append(metric_entry.step)
+        metrics_by_name[metric_entry.name]["y"]\
+            .append(metric_entry.value)
+        metrics_by_name[metric_entry.name]["timestamps"]\
+            .append(metric_entry.timestamp)
     return metrics_by_name
