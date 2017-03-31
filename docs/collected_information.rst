@@ -153,6 +153,9 @@ Sacred supports tracking of numerical series (e.g. int, float) using the Metrics
 To access the API in experiments, the experiment must be running and the variable referencing the current run
 must be available in the scope. The ``_run.metrics.log_scalar_metric(metric_name, step, value)`` method takes
 a metric name (e.g. "training.loss"), the step in which the value was measured and the value itself.
+
+It is important that the value is a Python native type (int, float) and not e.g. a numpy.float64.
+
 Step should be an integer describing the position of the value in the series. Steps can be numbered either sequentially
 0, 1, 2, 3, ... or they may be given a different meaning, for instance the current iteration round. This is useful
 when the logging occurs only every e.g. 10th iteration: The step can be first 10, then 20, etc.
