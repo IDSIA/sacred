@@ -50,7 +50,7 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
-                                 'system.indexes', 'seach_space'}
+                                 'system.indexes', 'search_space', 'metrics'}
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
