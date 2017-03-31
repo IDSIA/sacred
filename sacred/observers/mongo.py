@@ -176,6 +176,13 @@ class MongoObserver(RunObserver):
         self.save()
 
     def log_metrics(self, metrics_by_name, info):
+        """Store new measurements to the database.
+
+        Take measurements and store them into
+        the metrics collection in the database.
+        Additionally, reference the metrics
+        in the info["metrics"] dictionary.
+        """
         if self.metrics is None:
             # If, for whatever reason, the metrics collection has not been set
             # do not try to save there anything

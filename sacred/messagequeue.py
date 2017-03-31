@@ -9,6 +9,17 @@ else:
 
 
 class SacredMQ:
+    """A simple message queue for Sacred.
+
+    The queue allows publishing messages
+    to multiple consumers. Each of the
+    consumers is responsible for checking
+    the queue. Otherwise, it might grow forever.
+
+    The backing implementation of Queue should be
+    thread-safe. However, adding the consumers is
+    not thread-safe.
+    """
 
     def __init__(self):
         self.consumers = []
