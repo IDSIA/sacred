@@ -5,7 +5,7 @@ import datetime
 import mock
 import pytest
 
-from sacred.metrics_logger import ScalarMetricLogEntry
+from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
@@ -250,7 +250,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Take first 6 measured events, group them by metric name
     # and store the measured series to the 'metrics' collection
     # and reference the newly created records in the 'info' dictionary.
-    mongo_obs.log_metrics(logged_metrics[:6], info)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
     # Call standard heartbeat event (store the info dictionary to the database)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
 
@@ -281,7 +281,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
 
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
-    mongo_obs.log_metrics(logged_metrics[6:], info)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
 
     assert mongo_obs.runs.count() == 1
@@ -309,7 +309,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     sample_run["_id"] = "NEWID"
     # Start the experiment
     mongo_obs.started_event(**sample_run)
-    mongo_obs.log_metrics(logged_metrics[:4], info)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
     # A new run has been created
     assert mongo_obs.runs.count() == 2

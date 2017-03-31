@@ -11,6 +11,7 @@ import traceback as tb
 from tempfile import NamedTemporaryFile
 
 from sacred import metrics_logger
+from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
 from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
                           join_paths, flush)
@@ -301,10 +302,10 @@ class Run(object):
         self._get_captured_output()
         # Read all measured metrics since last heartbeat
         logged_metrics = self.metrics_consumer.read_all()
-
+        metrics_by_name = linearize_metrics(logged_metrics)
         for observer in self.observers:
             self._safe_call(observer, 'log_metrics',
-                            logged_metrics=logged_metrics,
+                            metrics_by_name=metrics_by_name,
                             info=self.info)
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,

@@ -176,12 +176,11 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
-    def log_metrics(self, logged_metrics, info):
+    def log_metrics(self, metrics_by_name, info):
         if self.metrics is None:
             # If - for whatever reason - the metrics collection has not been set
             # do not try to save there anything
             return
-        metrics_by_name = linearize_metrics(logged_metrics)
         for key in metrics_by_name:
             query = {"run": self.run_entry['_id'],
                      "name": key}
