@@ -182,7 +182,7 @@ class MongoObserver(RunObserver):
             # do not try to save there anything
             return
         for key in metrics_by_name:
-            query = {"run": self.run_entry['_id'],
+            query = {"run_id": self.run_entry['_id'],
                      "name": key}
             update = {"$push": {"x": {"$each": metrics_by_name[key]["x"]},
                                 "y": {"$each": metrics_by_name[key]["y"]},

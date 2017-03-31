@@ -266,7 +266,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.metrics.count() == 2
     # Read the training.loss metric and make sure it references the correct run
     # and that the run (in the info dictionary) references the correct metric record.
-    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
+    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
     assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
     assert loss["x"] == [10, 20, 30]
     assert loss["y"] == [1, 2, 3]
@@ -274,7 +274,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
     # Read the training.accuracy metric and check the references as with the training.loss above
-    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
+    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
     assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
     assert accuracy["x"] == [10, 20, 30]
     assert accuracy["y"] == [100, 200, 300]
@@ -291,7 +291,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # The newly added metrics belong to the same run and have the same names, so the total number
     # of metrics should not change.
     assert mongo_obs.metrics.count() == 2
-    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
+    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
     assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
     # ... but the values should be appended to the original list
     assert loss["x"] == [10, 20, 30, 40, 50, 60]
@@ -299,7 +299,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
-    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
+    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
     assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
     assert accuracy["x"] == [10, 20, 30]
     assert accuracy["y"] == [100, 200, 300]
