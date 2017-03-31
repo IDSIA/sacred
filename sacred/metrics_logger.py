@@ -33,15 +33,15 @@ def linearize_metrics(logged_metrics):
     for metric_entry in logged_metrics:
         if metric_entry.name not in metrics_by_name:
             metrics_by_name[metric_entry.name] = {
-                "x": [],
-                "y": [],
+                "steps": [],
+                "values": [],
                 "timestamps": [],
                 "name": metric_entry.name
             }
-        metrics_by_name[metric_entry.name]["x"]\
+        metrics_by_name[metric_entry.name]["steps"] \
             .append(metric_entry.step)
-        metrics_by_name[metric_entry.name]["y"]\
+        metrics_by_name[metric_entry.name]["values"] \
             .append(metric_entry.value)
-        metrics_by_name[metric_entry.name]["timestamps"]\
+        metrics_by_name[metric_entry.name]["timestamps"] \
             .append(metric_entry.timestamp)
     return metrics_by_name

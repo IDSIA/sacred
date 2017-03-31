@@ -183,8 +183,8 @@ class MongoObserver(RunObserver):
         for key in metrics_by_name:
             query = {"run_id": self.run_entry['_id'],
                      "name": key}
-            push = {"x": {"$each": metrics_by_name[key]["x"]},
-                    "y": {"$each": metrics_by_name[key]["y"]},
+            push = {"steps": {"$each": metrics_by_name[key]["steps"]},
+                    "values": {"$each": metrics_by_name[key]["values"]},
                     "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
                     }
             update = {"$push": push}

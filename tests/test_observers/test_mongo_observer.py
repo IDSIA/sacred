@@ -268,16 +268,16 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # and that the run (in the info dictionary) references the correct metric record.
     loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
     assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
-    assert loss["x"] == [10, 20, 30]
-    assert loss["y"] == [1, 2, 3]
+    assert loss["steps"] == [10, 20, 30]
+    assert loss["values"] == [1, 2, 3]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
     # Read the training.accuracy metric and check the references as with the training.loss above
     accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
     assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
-    assert accuracy["x"] == [10, 20, 30]
-    assert accuracy["y"] == [100, 200, 300]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]
 
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
@@ -294,15 +294,15 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
     assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
     # ... but the values should be appended to the original list
-    assert loss["x"] == [10, 20, 30, 40, 50, 60]
-    assert loss["y"] == [1, 2, 3, 10, 20, 30]
+    assert loss["steps"] == [10, 20, 30, 40, 50, 60]
+    assert loss["values"] == [1, 2, 3, 10, 20, 30]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
     accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
     assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
-    assert accuracy["x"] == [10, 20, 30]
-    assert accuracy["y"] == [100, 200, 300]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]
 
     # Make sure that when starting a new experiment, new records in metrics are created
     # instead of appending to the old ones.

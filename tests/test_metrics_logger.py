@@ -42,13 +42,13 @@ def test_linearize_metrics():
     assert len(linearized.keys()) == 2
     assert "training.loss" in linearized
     assert "training.accuracy" in linearized
-    assert len(linearized["training.loss"]["x"]) == 2
-    assert len(linearized["training.loss"]["y"]) == 2
+    assert len(linearized["training.loss"]["steps"]) == 2
+    assert len(linearized["training.loss"]["values"]) == 2
     assert len(linearized["training.loss"]["timestamps"]) == 2
-    assert len(linearized["training.accuracy"]["x"]) == 4
-    assert len(linearized["training.accuracy"]["y"]) == 4
+    assert len(linearized["training.accuracy"]["steps"]) == 4
+    assert len(linearized["training.accuracy"]["values"]) == 4
     assert len(linearized["training.accuracy"]["timestamps"]) == 4
-    assert linearized["training.accuracy"]["x"] == [5, 10, 15, 30]
-    assert linearized["training.accuracy"]["y"] == [50, 100, 150, 300]
-    assert linearized["training.loss"]["x"] == [10, 20]
-    assert linearized["training.loss"]["y"] == [100, 200]
+    assert linearized["training.accuracy"]["steps"] == [5, 10, 15, 30]
+    assert linearized["training.accuracy"]["values"] == [50, 100, 150, 300]
+    assert linearized["training.loss"]["steps"] == [10, 20]
+    assert linearized["training.loss"]["values"] == [100, 200]
