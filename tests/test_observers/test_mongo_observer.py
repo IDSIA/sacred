@@ -208,62 +208,110 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
     assert force_bson_encodeable(d) == expected
 
 
-def test_log_metrics(mongo_obs, sample_run):
-    mongo_obs.started_event(**sample_run)
-
-    info = {'my_info': [1, 2, 3], 'nr': 7}
-    outp = 'some output'
-    logged_metrics = [
+@pytest.fixture
+def logged_metrics():
+    return [
         ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
         ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
         ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
 
         ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
         ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
-        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300)
+        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+
+        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
+        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
+        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
     ]
 
-    mongo_obs.log_metrics(logged_metrics, info)
+
+def test_log_metrics(mongo_obs, sample_run, logged_metrics):
+    """
+    Test storing scalar measurements
+    
+    Test whether measurements logged using _run.metrics.log_scalar_metric
+    are being stored in the 'metrics' collection
+    and that the experiment 'info' dictionary contains a valid reference 
+    to the metrics collection for each of the metric.
+    
+    Metrics are identified by name (e.g.: 'training.loss') and by the 
+    experiment run that produced them. Each metric contains a list of x values
+    (e.g. timesteps), y values (measured values) and timestamps of when 
+    each of the measurements was taken.
+    """
+
+    # Start the experiment
+    mongo_obs.started_event(**sample_run)
+
+    # Initialize the info dictionary and standard output with arbitrary values
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+
+    # Take first 6 measured events, group them by metric name
+    # and store the measured series to the 'metrics' collection
+    # and reference the newly created records in the 'info' dictionary.
+    mongo_obs.log_metrics(logged_metrics[:6], info)
+    # Call standard heartbeat event (store the info dictionary to the database)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
 
+    # There should be only one run stored
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
+    # ... and the info dictionary should contain a list of created metrics
     assert "metrics" in db_run['info']
+    assert type(db_run['info']["metrics"]) == list
 
+    # The metrics, stored in the metrics collection,
+    # should be two (training.loss and training.accuracy)
     assert mongo_obs.metrics.count() == 2
+    # Read the training.loss metric and make sure it references the correct run
+    # and that the run (in the info dictionary) references the correct metric record.
     loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
-    assert "training.loss" in [x["name"] for x in db_run['info']["metrics"]]
+    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
     assert loss["x"] == [10, 20, 30]
     assert loss["y"] == [1, 2, 3]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
+    # Read the training.accuracy metric and check the references as with the training.loss above
     accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
-    assert "training.accuracy" in [x["name"] for x in db_run['info']["metrics"]]
+    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
     assert accuracy["x"] == [10, 20, 30]
     assert accuracy["y"] == [100, 200, 300]
-    # Add another bunch of measurements
-    logged_metrics = [
-        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
-        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
-        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
-    ]
-    mongo_obs.log_metrics(logged_metrics, info)
+
+    # Now, process the remaining events
+    # The metrics shouldn't be overwritten, but appended instead.
+    mongo_obs.log_metrics(logged_metrics[6:], info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
     assert "metrics" in db_run['info']
 
+    # The newly added metrics belong to the same run and have the same names, so the total number
+    # of metrics should not change.
     assert mongo_obs.metrics.count() == 2
     loss = mongo_obs.metrics.find_one({"name": "training.loss", "run": db_run['_id']})
-    assert "training.loss" in [x["name"] for x in db_run['info']["metrics"]]
+    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
+    # ... but the values should be appended to the original list
     assert loss["x"] == [10, 20, 30, 40, 50, 60]
     assert loss["y"] == [1, 2, 3, 10, 20, 30]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
     accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run": db_run['_id']})
-    assert "training.accuracy" in [x["name"] for x in db_run['info']["metrics"]]
+    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
     assert accuracy["x"] == [10, 20, 30]
     assert accuracy["y"] == [100, 200, 300]
+
+    # Make sure that when starting a new experiment, new records in metrics are created
+    # instead of appending to the old ones.
+    sample_run["_id"] = "NEWID"
+    # Start the experiment
+    mongo_obs.started_event(**sample_run)
+    mongo_obs.log_metrics(logged_metrics[:4], info)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
+    # A new run has been created
+    assert mongo_obs.runs.count() == 2
+    # Another 2 metrics have been created
+    assert mongo_obs.metrics.count() == 4
