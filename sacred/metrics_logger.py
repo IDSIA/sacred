@@ -12,17 +12,17 @@ class MetricsLogger:
     def register_listener(self):
         return self.mq.add_consumer()
 
-    def log_scalar_metric(self, metric_name, timestep, value):
+    def log_scalar_metric(self, metric_name, step, value):
         self.mq.publish(
-            ScalarMetricLogEntry(metric_name, timestep,
+            ScalarMetricLogEntry(metric_name, step,
                                  datetime.datetime.utcnow(),
                                  value))
 
 
 class ScalarMetricLogEntry:
-    def __init__(self, name, timestep, timestamp, value):
+    def __init__(self, name, step, timestamp, value):
         self.name = name
-        self.timestep = timestep
+        self.step = step
         self.timestamp = timestamp
         self.value = value
 
@@ -37,7 +37,7 @@ def linearize_metrics(logged_metrics):
                 "timestamps": [],
                 "name": metric_entry.name
             }
-        metrics_by_name[metric_entry.name]["x"].append(metric_entry.timestep)
+        metrics_by_name[metric_entry.name]["x"].append(metric_entry.step)
         metrics_by_name[metric_entry.name]["y"].append(metric_entry.value)
         metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
     return metrics_by_name

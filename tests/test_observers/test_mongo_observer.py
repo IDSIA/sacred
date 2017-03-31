@@ -236,7 +236,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     
     Metrics are identified by name (e.g.: 'training.loss') and by the 
     experiment run that produced them. Each metric contains a list of x values
-    (e.g. timesteps), y values (measured values) and timestamps of when 
+    (e.g. iteration step), y values (measured values) and timestamps of when 
     each of the measurements was taken.
     """
 

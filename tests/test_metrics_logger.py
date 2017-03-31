@@ -26,7 +26,7 @@ def test_log_scalar_metric(ex):
     messages = test_log_scalar_metric.metrics_consumer.read_all()
     assert len(messages) == (100 - 10)/5
     for i in range(len(messages)-1):
-        assert messages[i].timestep < messages[i+1].timestep
+        assert messages[i].step < messages[i+1].step
         assert messages[i].timestamp <= messages[i + 1].timestamp
 
 
