@@ -215,8 +215,9 @@ class Run(object):
                         self.run_logger.info('Result: {}'.format(self.result))
                     elapsed_time = self._stop_time()
                     self.run_logger.info('Completed after %s', elapsed_time)
+                    self._get_captured_output()
             finally:
-                self.captured_out = final_out[0]
+                self._get_captured_output()
                 if self.captured_out_filter is not None:
                     self.captured_out = self.captured_out_filter(
                         self.captured_out)
@@ -242,8 +243,9 @@ class Run(object):
             return  # nothing we can do
         flush()
         self._output_file.flush()
-        self._output_file.seek(0)
         text = self._output_file.read().decode()
+        if self.captured_out:
+            text = self.captured_out + text
         if self.captured_out_filter is not None:
             text = self.captured_out_filter(text)
         self.captured_out = text
