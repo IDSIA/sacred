@@ -391,7 +391,7 @@ def apply_backspaces_and_linefeeds(text):
     orig_lines_len = len(orig_lines)
     lines = []
     for line_idx, line in enumerate(orig_lines):
-        if line[-1] == '\r':
+        if len(line) > 0 and line[-1] == '\r':
             end_with_carriage = True
         else:
             end_with_carriage = False
