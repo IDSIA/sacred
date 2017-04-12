@@ -12,7 +12,7 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
-                          convert_camel_case_to_snake_case, tee_output,
+                          convert_camel_case_to_snake_case,
                           apply_backspaces_and_linefeeds)
 
 
@@ -170,37 +170,3 @@ def test_convert_camel_case_to_snake_case(name, expected):
 ])
 def test_apply_backspaces_and_linefeeds(text, expected):
     assert apply_backspaces_and_linefeeds(text) == expected
-
-
-def test_tee_output(capsys):
-    from sacred.optional import libc
-
-    expected_lines = {
-        "captured stdout\n",
-        "captured stderr\n",
-        "and this is from echo\n"}
-    if not sys.platform.startswith('win'):
-        # FIXME: this line randomly doesn't show on windows (skip for now)
-        expected_lines.add("stdout from C\n")
-
-    with capsys.disabled():
-        try:
-            print('before (stdout)')
-            print('before (stderr)')
-            with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
-                print("captured stdout")
-                print("captured stderr")
-                if not sys.platform.startswith('win'):
-                    libc.puts(b'stdout from C')
-                    libc.fflush(None)
-                os.system('echo and this is from echo')
-
-            print('after (stdout)')
-            print('after (stderr)')
-
-            with open(f.name, 'r') as f:
-                lines = set(f.readlines())
-                assert lines == expected_lines
-        finally:
-            print('deleting', f.name)
-            os.remove(f.name)

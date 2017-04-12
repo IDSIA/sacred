@@ -8,11 +8,9 @@ import sys
 import threading
 import traceback as tb
 
-from tempfile import NamedTemporaryFile
-
 from sacred.randomness import set_global_seed
-from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
-                          join_paths, flush)
+from sacred.utils import ObserverError, SacredInterrupt, join_paths
+from sacred.stdout_capturing import get_stdcapturer, flush
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -199,12 +197,14 @@ class Run(object):
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
 
+        capture_stdout = get_stdcapturer()
+
         if self.queue_only:
             self._emit_queued()
             return
         try:
             try:
-                with NamedTemporaryFile() as f, tee_output(f) as final_out:
+                with capture_stdout() as (f, final_out):
                     self._output_file = f
                     self._emit_started()
                     self._start_heartbeat()
