@@ -15,6 +15,17 @@ import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
+# A PY2 compatible FileNotFoundError
+if sys.version_info[0] == 2:
+    import errno
+
+    class FileNotFoundError(IOError):
+        def __init__(self, msg):
+            super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+else:
+    # Reassign so that we can import it from here
+    FileNotFoundError = FileNotFoundError
+
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
 
