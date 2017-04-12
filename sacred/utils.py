@@ -251,7 +251,7 @@ def set_by_dotted_path(d, path, value):
     current_option[split_path[-1]] = value
 
 
-def get_by_dotted_path(d, path):
+def get_by_dotted_path(d, path, default=None):
     """
     Get an entry from nested dictionaries using a dotted path.
 
@@ -265,7 +265,7 @@ def get_by_dotted_path(d, path):
     current_option = d
     for p in split_path:
         if p not in current_option:
-            return None
+            return default
         current_option = current_option[p]
     return current_option
 

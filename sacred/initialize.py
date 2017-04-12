@@ -154,7 +154,8 @@ class Scaffold(object):
 
         for cfunc in self._captured_functions:
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix)
+            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix,
+                                              default={})
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run

@@ -125,7 +125,7 @@ def test_considers_captured_functions_for_fail_on_unused_config(ex):
         ex.run(config_updates={'c': 3})
 
 
-def test_used_prefix_for_fail_on_unused_config(ex):
+def test_considers_prefix_for_fail_on_unused_config(ex):
     @ex.config
     def cfg():
         a = {'b': 1}
@@ -145,6 +145,18 @@ def test_used_prefix_for_fail_on_unused_config(ex):
 
     with pytest.raises(KeyError):
         ex.run(config_updates={'a': {'c': 5}})
+
+
+def test_non_existing_prefix_is_treatet_as_empty_dict(ex):
+    @ex.capture(prefix='nonexisting')
+    def transmogrify(b=10):
+        return b
+
+    @ex.main
+    def foo():
+        return transmogrify()
+
+    assert ex.run().result == 10
 
 
 def test_using_a_named_config(ex):
