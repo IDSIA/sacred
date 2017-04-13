@@ -387,30 +387,24 @@ def apply_backspaces_and_linefeeds(text):
     Interpret text like a terminal by removing backspace and linefeed
     characters and applying them line by line.
     """
-    orig_lines = text.rstrip('\n').split('\n')
+    orig_lines = text.split('\n')
     orig_lines_len = len(orig_lines)
     lines = []
     for line_idx, line in enumerate(orig_lines):
-        if len(line) > 0 and line[-1] == '\r':
-            end_with_carriage = True
-        else:
-            end_with_carriage = False
-        if not end_with_carriage or line_idx == orig_lines_len - 1:
-            line = line.rstrip('\r').split('\r')[-1]
-            chars, cursor = [], 0
-            for ch in line:
-                if ch == '\b':
-                    cursor = max(0, cursor - 1)
+        chars, cursor = [], 0
+        for char_idx, ch in enumerate(line):
+            if ch == '\r' and (char_idx != len(line) - 1 or line_idx != orig_lines_len - 1):
+                cursor = 0
+            elif ch == '\b':
+                cursor = max(0, cursor - 1)
+            else:
+                # normal character
+                if cursor == len(chars):
+                    chars.append(ch)
                 else:
-                    # normal character
-                    if cursor == len(chars):
-                        chars.append(ch)
-                    else:
-                        chars[cursor] = ch
-                    cursor += 1
-            if end_with_carriage:
-                chars.append('\r')
-            lines.append(''.join(chars))
+                    chars[cursor] = ch
+                cursor += 1
+        lines.append(''.join(chars))
     return '\n'.join(lines)
 
 
