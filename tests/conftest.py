@@ -8,6 +8,8 @@ import shlex
 import sys
 from imp import reload
 
+from sacred.settings import SETTINGS
+
 EXAMPLES_PATH = os.path.abspath('examples')
 BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)
 
@@ -67,3 +69,7 @@ def pytest_addoption(parser):
 collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_config/test_signature_py3.py")
+
+# Deactivate GPU info to speed up tests
+SETTINGS.HOST_INFO.INCLUDE_GPU_INFO = False
+print('SETTINGS')
