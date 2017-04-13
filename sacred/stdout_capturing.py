@@ -146,3 +146,4 @@ def tee_output_fd():
 
             os.close(saved_stdout_fd)
             os.close(saved_stderr_fd)
+            target.flush()
