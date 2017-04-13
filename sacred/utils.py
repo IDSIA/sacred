@@ -6,25 +6,14 @@ import collections
 import logging
 import os.path
 import re
-import subprocess
 import sys
 import traceback as tb
-from threading import Timer
 from functools import partial
-from contextlib import contextmanager
 
 import wrapt
 
-from sacred.optional import libc
 
 __sacred__ = True  # marks files that should be filtered from stack traces
-
-NO_LOGGER = logging.getLogger('ignore')
-NO_LOGGER.disabled = 1
-
-PATHCHANGE = object()
-
-PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
 # A PY2 compatible FileNotFoundError
 if sys.version_info[0] == 2:
@@ -37,18 +26,12 @@ else:
     # Reassign so that we can import it from here
     FileNotFoundError = FileNotFoundError
 
+NO_LOGGER = logging.getLogger('ignore')
+NO_LOGGER.disabled = 1
 
-def flush():
-    """Try to flush all stdio buffers, both from python and from C."""
-    try:
-        sys.stdout.flush()
-        sys.stderr.flush()
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
-    try:
-        libc.fflush(None)
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
+PATHCHANGE = object()
+
+PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
 
 class CircularDependencyError(Exception):
@@ -108,73 +91,6 @@ def recursive_update(d, u):
         else:
             d[k] = u[k]
     return d
-
-
-# Duplicate stdout and stderr to a file. Inspired by:
-# http://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/
-# http://stackoverflow.com/a/651718/1388435
-# http://stackoverflow.com/a/22434262/1388435
-@contextmanager
-def tee_output(target):
-    original_stdout_fd = 1
-    original_stderr_fd = 2
-
-    # Save a copy of the original stdout and stderr file descriptors
-    saved_stdout_fd = os.dup(original_stdout_fd)
-    saved_stderr_fd = os.dup(original_stderr_fd)
-
-    target_fd = target.fileno()
-
-    final_output = []
-
-    try:
-        tee_stdout = subprocess.Popen(
-            ['tee', '-a', '/dev/stderr'],
-            stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
-        tee_stderr = subprocess.Popen(
-            ['tee', '-a', '/dev/stderr'],
-            stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-    except (FileNotFoundError, OSError):
-        tee_stdout = subprocess.Popen(
-            [sys.executable, "-m", "sacred.pytee"],
-            stdin=subprocess.PIPE, stderr=target_fd)
-        tee_stderr = subprocess.Popen(
-            [sys.executable, "-m", "sacred.pytee"],
-            stdin=subprocess.PIPE, stdout=target_fd)
-
-    flush()
-    os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
-    os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
-
-    try:
-        yield final_output  # let the caller do their printing
-    finally:
-        flush()
-
-        # then redirect stdout back to the saved fd
-        tee_stdout.stdin.close()
-        tee_stderr.stdin.close()
-
-        # restore original fds
-        os.dup2(saved_stdout_fd, original_stdout_fd)
-        os.dup2(saved_stderr_fd, original_stderr_fd)
-
-        # wait for completion of the tee processes with timeout
-        # implemented using a timer because timeout support is py3 only
-        def kill_tees():
-            tee_stdout.kill()
-            tee_stderr.kill()
-
-        tee_timer = Timer(1, kill_tees)
-        try:
-            tee_timer.start()
-            tee_stdout.wait()
-            tee_stderr.wait()
-        finally:
-            tee_timer.cancel()
-
-        os.close(saved_stdout_fd)
-        os.close(saved_stderr_fd)
 
 
 def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
@@ -248,7 +164,7 @@ def set_by_dotted_path(d, path, value):
     current_option[split_path[-1]] = value
 
 
-def get_by_dotted_path(d, path):
+def get_by_dotted_path(d, path, default=None):
     """
     Get an entry from nested dictionaries using a dotted path.
 
@@ -262,7 +178,7 @@ def get_by_dotted_path(d, path):
     current_option = d
     for p in split_path:
         if p not in current_option:
-            return None
+            return default
         current_option = current_option[p]
     return current_option
 
