@@ -195,7 +195,7 @@ the step number can be found in ``metric["steps"][i]`` and the time of the measu
     ``run_id``          The identifier of the run (``_id`` in the runs collection)
     ``steps``               Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
     ``values``               Array of measured values
-    ``timestamps``      Array of times of the individual
+    ``timestamps``      Array of times of capturing the individual measurements
     ==================  =======================================================
 
 
