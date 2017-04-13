@@ -12,7 +12,7 @@ def test_python_tee_output(capsys):
         "captured stdout",
         "captured stderr"}
 
-    capture_stdout = get_stdcapturer("PY")
+    capture_stdout = get_stdcapturer("sys")
     with capsys.disabled():
         print('before (stdout)')
         print('before (stderr)')
@@ -35,7 +35,7 @@ def test_fd_tee_output(capsys):
         # FIXME: this line randomly doesn't show on windows (skip for now)
         expected_lines.add("stdout from C")
 
-    capture_stdout = get_stdcapturer("FD")
+    capture_stdout = get_stdcapturer("fd")
     with capsys.disabled():
         print('before (stdout)')
         print('before (stderr)')

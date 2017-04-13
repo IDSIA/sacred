@@ -31,12 +31,11 @@ def flush():
 
 
 def get_stdcapturer(mode=None):
-    mode = mode if mode is not None else SETTINGS.STDOUT_CAPTURING
+    mode = mode if mode is not None else SETTINGS.CAPTURE_MODE
     return {
-        None: no_tee,
-        "None": no_tee,
-        "FD": tee_output_fd,
-        "PY": tee_output_python}[mode]
+        "no": no_tee,
+        "fd": tee_output_fd,
+        "sys": tee_output_python}[mode]
 
 
 class TeeingStreamProxy(wrapt.ObjectProxy):
@@ -59,8 +58,10 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
 def no_tee():
     out = StringIO()
     final_out = [""]
-    yield out, final_out
-    out.close()
+    try:
+        yield out, final_out
+    finally:
+        out.close()
 
 
 @contextmanager
@@ -72,11 +73,13 @@ def tee_output_python():
     orig_stdout, orig_stderr = sys.stdout, sys.stderr
     sys.stdout = TeeingStreamProxy(sys.stdout, out)
     sys.stderr = TeeingStreamProxy(sys.stderr, out)
-    yield out, final_out
-    flush()
-    sys.stdout, sys.stderr = orig_stdout, orig_stderr
-    final_out.append(out.getvalue())
-    out.close()
+    try:
+        yield out, final_out
+    finally:
+        flush()
+        sys.stdout, sys.stderr = orig_stdout, orig_stderr
+        final_out.append(out.getvalue())
+        out.close()
 
 
 # Duplicate stdout and stderr to a file. Inspired by:

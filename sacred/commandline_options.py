@@ -246,3 +246,15 @@ class NameOption(CommandLineOption):
     def apply(cls, args, run):
         run.experiment_info['name'] = args
         run.run_logger = run.root_logger.getChild(args)
+
+
+class CaptureOption(CommandLineOption):
+    """Control the way stdout and stderr are captured."""
+
+    short_flag = 'C'
+    arg = 'CAPTURE_MODE'
+    arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
+
+    @classmethod
+    def apply(cls, args, run):
+        run.capture_mode = args
