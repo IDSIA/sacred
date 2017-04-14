@@ -246,7 +246,6 @@ class Run(object):
         return self.result
 
     def _get_captured_output(self):
-        import json
         if self._output_file.closed:
             return  # nothing we can do
         flush()
