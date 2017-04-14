@@ -29,6 +29,9 @@ class Run(object):
         self.captured_out = None
         """Captured stdout and stderr"""
 
+        self.captured_out_cursor = 0
+        """Cursor on captured_out to read by chunks"""
+
         self.config = config
         """The final configuration used for this run"""
 
@@ -100,6 +103,9 @@ class Run(object):
 
         self.fail_trace = None
         """A stacktrace, in case the run failed"""
+
+        self.capture_mode = None
+        """Determines the way the stdout/stderr are captured"""
 
         self._heartbeat = None
         self._failed_observers = []
@@ -197,7 +203,11 @@ class Run(object):
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
 
-        capture_stdout = get_stdcapturer()
+        if self.capture_mode is None and not self.observers:
+            capture_mode = "no"
+        else:
+            capture_mode = self.capture_mode
+        capture_stdout = get_stdcapturer(capture_mode)
 
         if self.queue_only:
             self._emit_queued()
@@ -218,9 +228,6 @@ class Run(object):
                     self._get_captured_output()
             finally:
                 self._get_captured_output()
-                if self.captured_out_filter is not None:
-                    self.captured_out = self.captured_out_filter(
-                        self.captured_out)
             self._stop_heartbeat()
             self._emit_completed(self.result)
         except (SacredInterrupt, KeyboardInterrupt) as e:
@@ -239,11 +246,16 @@ class Run(object):
         return self.result
 
     def _get_captured_output(self):
+        import json
         if self._output_file.closed:
             return  # nothing we can do
         flush()
         self._output_file.flush()
-        text = self._output_file.read().decode()
+        self._output_file.seek(self.captured_out_cursor)
+        text = self._output_file.read()
+        if isinstance(text, bytes):
+            text = text.decode()
+        self.captured_out_cursor += len(text)
         if self.captured_out:
             text = self.captured_out + text
         if self.captured_out_filter is not None:

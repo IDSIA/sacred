@@ -183,11 +183,12 @@ def test_captured_out_filter(ex, capsys):
         sys.stdout.flush()
         for i in range(10):
             sys.stdout.write('\b')
-            sys.stdout.write(str(i))
+            sys.stdout.write("{}".format(i))
             sys.stdout.flush()
 
     ex.captured_out_filter = apply_backspaces_and_linefeeds
-    options = {'--loglevel': 'CRITICAL'}  # to disable logging
+    # disable logging and set capture mode to python
+    options = {'--loglevel': 'CRITICAL', '--capture': 'sys'}
     with capsys.disabled():
         assert ex.run(options=options).captured_out == 'progress 9'
 

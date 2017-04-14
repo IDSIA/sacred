@@ -35,6 +35,6 @@ SETTINGS = munchify({
         # disallow string fallback, if parsing a value from command-line failed
         'STRICT_PARSING': False
     },
-    # configure capture how stdout/stderr are captured. ['None', 'PY', 'FD']
-    'STDOUT_CAPTURING': "PY" if platform.system() == "Windows" else "FD"
+    # configure capture how stdout/stderr are captured. ['no', 'sys', 'fd']
+    'CAPTURE_MODE': "sys" if platform.system() == "Windows" else "fd"
 })
