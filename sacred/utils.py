@@ -302,26 +302,30 @@ def apply_backspaces_and_linefeeds(text):
 
     Interpret text like a terminal by removing backspace and linefeed
     characters and applying them line by line.
+
+    If final line ends with a carriage it keeps it to be concatanable with next output chunk
     """
     orig_lines = text.split('\n')
     orig_lines_len = len(orig_lines)
-    lines = []
-    for line_idx, line in enumerate(orig_lines):
+    new_lines = []
+    for orig_line_idx, orig_line in enumerate(orig_lines):
         chars, cursor = [], 0
-        for char_idx, ch in enumerate(line):
-            if ch == '\r' and (char_idx != len(line) - 1 or line_idx != orig_lines_len - 1):
+        orig_line_len = len(orig_line)
+        for orig_char_idx, orig_char in enumerate(orig_line):
+            if orig_char == '\r' and (orig_char_idx != orig_line_len - 1 or orig_line_idx != orig_lines_len - 1):
                 cursor = 0
-            elif ch == '\b':
+            elif orig_char == '\b':
                 cursor = max(0, cursor - 1)
             else:
-                # normal character
+                if orig_char == '\r' and orig_char_idx == orig_line_len - 1 and orig_line_idx == orig_lines_len - 1:
+                    cursor = len(chars)
                 if cursor == len(chars):
-                    chars.append(ch)
+                    chars.append(orig_char)
                 else:
-                    chars[cursor] = ch
+                    chars[cursor] = orig_char
                 cursor += 1
-        lines.append(''.join(chars))
-    return '\n'.join(lines)
+        new_lines.append(''.join(chars))
+    return '\n'.join(new_lines)
 
 
 # Code adapted from here:
