@@ -325,10 +325,11 @@ class SqlObserver(RunObserver):
         self.session.commit()
         return _id or self.run.run_id
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.run.info = json.dumps(flatten(info))
         self.run.captured_out = captured_out
         self.run.heartbeat = beat_time
+        self.run.result = result
         self.session.commit()
 
     def completed_event(self, stop_time, result):

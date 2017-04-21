@@ -219,10 +219,11 @@ class TinyDbObserver(RunObserver):
         self.save()
         return self.run_entry['_id']
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.run_entry['info'] = info
         self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
+        self.run_entry['result'] = result
         self.save()
 
     def completed_event(self, stop_time, result):

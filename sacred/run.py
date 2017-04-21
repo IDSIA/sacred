@@ -331,7 +331,8 @@ class Run(object):
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
-                            beat_time=beat_time)
+                            beat_time=beat_time,
+                            result=self.result)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()

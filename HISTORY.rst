@@ -29,6 +29,7 @@ Release History
            them when calling ``print_config``
 * Feature: observers are now run in order of priority (settable)
 * Feature: new ``--name=NAME`` option to set the name of experiment for this run
+* Feature: the heartbeat event now stores an intermediate result (if set).
 * API Change: all times are now in UTC
 * API Change: significantly changed the mongoDB layout
 * API Change: MongoObserver and FileStorageObserver now use consecutive

@@ -179,11 +179,13 @@ def test_tinydb_observer_heartbeat_event_updates_run(tinydb_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                               result=42)
 
     assert len(tinydb_obs.runs) == 1
     db_run = tinydb_obs.runs.get(eid=1)
     assert db_run['heartbeat'] == T2
+    assert db_run['result'] == 42
     assert db_run['info'] == info
     assert db_run['captured_out'] == outp
 
