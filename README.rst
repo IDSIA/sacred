@@ -6,17 +6,6 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
-
-+------------------------------------------------------------------------------------------+
-|  **Announcement**   :loudspeaker:                                                        | 
-+------------------------------------------------------------------------------------------+
-|  `Sacredboard <https://github.com/chovanecm/sacredboard>`_ is doing a user-study to find |
-|  out what a good frontend for Sacred should look like.                                   |
-|  If you use Sacred and are interested in a frontend to browse through your               |
-|  results, please consider `participating <https://goo.gl/forms/4UX2Cx0zHCTUdD6k2>`_.     |
-|  Thank you!                                                                              |
-+------------------------------------------------------------------------------------------+
-
 |pypi| |py_versions| |license| |doi|
 
 |unix_build| |windows_build| |coverage| |code_quality| |codacy|
