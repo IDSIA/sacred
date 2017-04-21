@@ -72,4 +72,3 @@ if sys.version_info[0] < 3:
 
 # Deactivate GPU info to speed up tests
 SETTINGS.HOST_INFO.INCLUDE_GPU_INFO = False
-print('SETTINGS')
