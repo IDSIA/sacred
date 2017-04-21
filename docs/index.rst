@@ -52,6 +52,7 @@ Contents
    logging
    ingredients
    optional
+   settings
    examples
    apidoc
    internals

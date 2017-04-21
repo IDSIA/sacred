@@ -124,11 +124,21 @@ While an experiment is running, sacred collects some live information and
 reports them in regular intervals (default 10sec) to the observers via the
 :ref:`heartbeat_event <heartbeat>`. This includes the captured ``stdout`` and
 ``stderr`` and the contents of the :ref:`info_dict` which can be used to store
-custom information like training curves.
+custom information like training curves. It also includes the current
+intermediate result if set. It can be set using the ``_run`` object:
 
-Output capturing in sacred is done on the file descriptor level, which means
-that it should even capture outputs made from called c-functions or
-subprocesses.
+.. code-block:: python
+
+    @ex.capture
+    def some_function(_run):
+        ...
+        _run.result = 42
+        ...
+
+Output capturing in sacred can be done in different modes. On linux the default
+is to capture on the file descriptor level, which means that it should even
+capture outputs made from called c-functions or subprocesses. On Windows the
+default mode is ``sys`` which only captures outputs made from within python.
 
 Note that, the captured output behaves differently from a console in that
 it doesn't by default interpret control characters like backspace

@@ -597,6 +597,21 @@ Name
 
 This option changes the name of the experiment before starting the run.
 
+.. _cmdline_capture:
+
+Capture Mode
+------------
++----------------------------+------------------------------------------------------+
+| ``-C CAPTURE_MODE``        |  Control the way stdout and stderr are captured.     |
++----------------------------+                                                      |
+| ``--capture=CAPTURE_MODE`` |                                                      |
++----------------------------+------------------------------------------------------+
+
+This option controls how sacred captures outputs to stdout and stderr.
+Possible values for ``CAPTURE_MODE`` are ``no``, ``sys`` (default under Windows),
+or ``fd`` (default for Linux/OSX). For more information see :ref:`here <capturing>`.
+
+
 
 Custom Flags
 ============

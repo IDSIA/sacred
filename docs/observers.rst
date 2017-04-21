@@ -632,7 +632,7 @@ But it can optionally also customize the other attributes::
 
 
 Telegram Observer
-==============
+=================
 
 The :py:class:`~sacred.observers.slack.TelegramObserver` sends status updates to
 `Telegram <https://telegram.org/>`_ using their
@@ -640,7 +640,8 @@ The :py:class:`~sacred.observers.slack.TelegramObserver` sends status updates to
 obviously has to be installed to use this observer.
 
 .. code-block:: bash
-pip install --upgrade python-telegram-bot
+
+    pip install --upgrade python-telegram-bot
 
 
 Before using this observer, three steps need to be taken:
@@ -745,9 +746,9 @@ of a ``started_event``. It contains the same information as the
 Heartbeat
 ---------
 While the experiment is running, every 10 seconds a Heartbeat event is fired.
-It updates the **captured stdout and stderr** of the experiment and the custom
-``info`` (see below). The heartbeat event is also a way of monitoring if an
-experiment is still running.
+It updates the **captured stdout and stderr** of the experiment, the custom
+``info`` (see below), and the current result. The heartbeat event is also a
+way of monitoring if an experiment is still running.
 
 
 Stop
@@ -864,7 +865,7 @@ The easiest way to implement a custom observer is to inherit from
                           config, meta_info, _id):
             pass
 
-        def heartbeat_event(self, info, captured_out, beat_time):
+        def heartbeat_event(self, info, captured_out, beat_time, result):
             pass
 
         def completed_event(self, stop_time, result):
