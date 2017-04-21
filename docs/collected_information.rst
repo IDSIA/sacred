@@ -94,10 +94,14 @@ also collected. The default host info includes:
     os               Info about the operating system
     python_version   Version of python
     gpu              Information about NVidia GPUs (if any)
+    ENV              captured ENVIRONMENT variables (if set)
     ===============  ==========================================
 
 Host information is available from the :ref:api_run through ``run.host_info``.
 It is sent to the observers by the :ref:`started_event <event_started>`.
+
+The list of captured ENVIRONMENT variables (empty by default) can be extended
+by appending the relevant keys to ``sacred.SETTINGS.HOST_INFO.CAPTURED_ENV``.
 
 It is possible to extend the host information with custom functions decorated
 by :py:meth:`~sacred.host_info.host_info_getter` like this:

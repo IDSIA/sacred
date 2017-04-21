@@ -1,7 +1,7 @@
 Release History
 ---------------
 
-0.7.0 (2017-01-??)
+0.7.0 (2017-??-??)
 ++++++++++++++++++
 * Feature: host info now contains information about NVIDIA GPUs (if available)
 * Feature: git integration: sacred now collects info about the git repository
@@ -30,6 +30,7 @@ Release History
 * Feature: observers are now run in order of priority (settable)
 * Feature: new ``--name=NAME`` option to set the name of experiment for this run
 * Feature: the heartbeat event now stores an intermediate result (if set).
+* Feature: ENVIRONMENT variables can be captured as part of host info.
 * API Change: all times are now in UTC
 * API Change: significantly changed the mongoDB layout
 * API Change: MongoObserver and FileStorageObserver now use consecutive

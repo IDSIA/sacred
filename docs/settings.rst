@@ -43,6 +43,9 @@ Here a brief list of all currently available options.
   * ``INCLUDE_GPU_INFO`` *(default: True)*
     Try to collect information about GPUs using the nvidia-smi tool
     Deactivating this can cut the start-up time of a sacred run by about 1 sec.
+  * ``CAPTURED_ENV`` *(default: [])*
+    List of ENVIRONMENT variable names to store in the host-info.
+
 
 * ``COMMAND_LINE``
 

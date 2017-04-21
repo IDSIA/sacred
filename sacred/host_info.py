@@ -129,3 +129,9 @@ def _gpus():
         gpu_info['gpus'].append(gpu)
 
     return gpu_info
+
+
+@host_info_getter(name='ENV')
+def _environment():
+    keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
+    return {k: os.environ[k] for k in keys_to_capture if k in os.environ}

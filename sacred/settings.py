@@ -29,7 +29,9 @@ SETTINGS = munchify({
     },
     'HOST_INFO': {
         # Collect information about GPUs using the nvidia-smi tool
-        'INCLUDE_GPU_INFO': True
+        'INCLUDE_GPU_INFO': True,
+        # List of ENVIRONMENT variables to store in host-info
+        'CAPTURED_ENV': []
     },
     'COMMAND_LINE': {
         # disallow string fallback, if parsing a value from command-line failed
