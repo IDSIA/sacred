@@ -54,6 +54,7 @@ Release History
           certain attributes of ``sys.stdout`` or ``sys.stderr``.
 * Bugfix: @main, @automain, @command and @capture now support functions with
            Python3 style annotations.
+* Bugfix: fixe a problem with config-docs from ingredients not being propagated
 
 0.6.10 (2016-08-08)
 +++++++++++++++++++

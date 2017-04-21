@@ -9,6 +9,7 @@ import tempfile
 
 from sacred.config import ConfigScope, ConfigDict
 from sacred.dependencies import Source, PackageDependency
+from sacred.experiment import Experiment
 from sacred.ingredient import Ingredient
 from sacred.utils import CircularDependencyError
 from sacred.serializer import json
@@ -253,3 +254,19 @@ def test_gather_commands(ing):
     commands = list(ing2.gather_commands())
     assert ('other.bar', bar) in commands
     assert ('tickle.foo', foo) in commands
+
+
+def test_config_docs_are_preserved(ing):
+    @ing.config
+    def ing_cfg():
+        a = 5  # documented entry
+
+    ex = Experiment(ingredients=[ing])
+
+    @ex.main
+    def run():
+        return 5
+
+    run = ex._create_run()
+    assert 'tickle.a' in run.config_modifications.docs
+    assert run.config_modifications.docs['tickle.a'] == 'documented entry'
