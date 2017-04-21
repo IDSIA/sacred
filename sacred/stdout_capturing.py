@@ -32,7 +32,7 @@ def flush():
 
 def get_stdcapturer(mode=None):
     mode = mode if mode is not None else SETTINGS.CAPTURE_MODE
-    return {
+    return mode, {
         "no": no_tee,
         "fd": tee_output_fd,
         "sys": tee_output_python}[mode]
@@ -102,18 +102,21 @@ def tee_output_fd():
         final_output = []
 
         try:
+            # we call os.setsid to move process to a new process group
+            # this is done to avoid receiving KeyboardInterrupts (see #149)
+            # in Python 3 we could just pass start_new_session=True
             tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
+                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
             tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
+                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
         except (FileNotFoundError, OSError):
             tee_stdout = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
+                [sys.executable, "-m", "sacred.pytee"], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stderr=target_fd)
             tee_stderr = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
+                [sys.executable, "-m", "sacred.pytee"], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stdout=target_fd)
 
         flush()

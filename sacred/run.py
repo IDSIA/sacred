@@ -204,7 +204,8 @@ class Run(object):
             capture_mode = "no"
         else:
             capture_mode = self.capture_mode
-        capture_stdout = get_stdcapturer(capture_mode)
+        capture_mode, capture_stdout = get_stdcapturer(capture_mode)
+        self.run_logger.debug('Using capture mode "%s"', capture_mode)
 
         if self.queue_only:
             self._emit_queued()
