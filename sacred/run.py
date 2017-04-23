@@ -109,8 +109,8 @@ class Run(object):
         self._failed_observers = []
         self._output_file = None
 
-        self.metrics = metrics_logger.MetricsLogger()
-        self.metrics_consumer = self.metrics.register_listener()
+        self._metrics = metrics_logger.MetricsLogger()
+        self._metrics_consumer = self._metrics.register_listener()
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -301,7 +301,7 @@ class Run(object):
         beat_time = datetime.datetime.utcnow()
         self._get_captured_output()
         # Read all measured metrics since last heartbeat
-        logged_metrics = self.metrics_consumer.read_all()
+        logged_metrics = self._metrics_consumer.read_all()
         metrics_by_name = linearize_metrics(logged_metrics)
         for observer in self.observers:
             self._safe_call(observer, 'log_metrics',
@@ -392,3 +392,20 @@ class Run(object):
     def warn_if_unobserved(self):
         if not self.observers and not self.debug and not self.unobserved:
             self.run_logger.warning("No observers have been added to this run")
+
+    def log_scalar(self, metric_name, step, value):
+        """
+        Add a new measurement.
+
+        The measurement will be processed by the MongoDB* observer
+        during a heartbeat event.
+        *Other observers not yet supported.
+
+        :param metric_name: The name of the metric, e.g. training.loss
+        :param step: The step number (an integer), e.g. the iteration number
+        :param value: The measured value
+        """
+        # Method added in change https://github.com/chovanecm/sacred/issues/4
+        # The same as Experiment.log_scalar (if something changes,
+        # update the docstring too!)
+        return self._metrics.log_scalar_metric(metric_name, step, value)

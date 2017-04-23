@@ -38,10 +38,11 @@ class MetricsLogger:
         """
         Add a new measurement.
 
-        The measurement will be processed by the MongoDB observer
+        The measurement will be processed by the MongoDB* observer
         during a heartbeat event.
+        *Other observers not yet supported.
 
-        :param metric_name: The ame of the metric, e.g. training.loss
+        :param metric_name: The name of the metric, e.g. training.loss
         :param step: The step number (an integer), e.g. the iteration number
         :param value: The measured value
         """
