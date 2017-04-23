@@ -170,10 +170,10 @@ class Run(object):
             name of the file to be stored as artifact
         name : str, optional
             optionally set the name of the artifact.
-            Defaults to the relative file-path.
+            Defaults to the filename.
         """
         filename = os.path.abspath(filename)
-        name = os.path.relpath(filename) if name is None else name
+        name = os.path.basename(filename) if name is None else name
         self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
