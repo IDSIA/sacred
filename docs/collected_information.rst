@@ -194,7 +194,7 @@ Metrics Records
 ...............
 
 A metric record is composed of the metric name, the id of the corresponding experiment run,
-and of the measured values, arranged in an array in the order they were captured using the ``log_scalar_metric(...)``
+and of the measured values, arranged in an array in the order they were captured using the ``log_scalar(...)``
 function.
 For the value located in the i-th index (``metric["values"][i]``),
 the step number can be found in ``metric["steps"][i]`` and the time of the measurement in ``metric["timestamps"][i]``.
