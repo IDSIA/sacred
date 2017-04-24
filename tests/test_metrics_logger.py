@@ -12,42 +12,101 @@ def ex():
 
 def test_log_scalar_metric_with_run(ex):
     test_log_scalar_metric_with_run.metrics_consumer = None #type: messagequeue.Consumer
+    START = 10
+    END = 100
+    STEP_SIZE = 5
     @ex.main
     def main_function(_run):
         test_log_scalar_metric_with_run.metrics_consumer = _run._metrics.register_listener()
-        for i in range(10, 100, 5):
+        for i in range(START, END, STEP_SIZE):
             val = i*i
-            _run.log_scalar("training.loss", i, val)
+            _run.log_scalar("training.loss", val, i)
 
     ex.run()
     assert ex.current_run is not None
     assert test_log_scalar_metric_with_run.metrics_consumer is not None
     assert test_log_scalar_metric_with_run.metrics_consumer.has_message()
     messages = test_log_scalar_metric_with_run.metrics_consumer.read_all()
-    assert len(messages) == (100 - 10)/5
+    assert len(messages) == (END - START)/STEP_SIZE
     for i in range(len(messages)-1):
         assert messages[i].step < messages[i+1].step
+        assert messages[i].step == START + i * STEP_SIZE
         assert messages[i].timestamp <= messages[i + 1].timestamp
 
 
-def test_log_scalar_metric_with_ex(ex : Experiment):
+def test_log_scalar_metric_with_ex(ex):
     test_log_scalar_metric_with_ex.metrics_consumer = None #type: messagequeue.Consumer
+    START = 10
+    END = 100
+    STEP_SIZE = 5
     @ex.main
     def main_function(_run):
         test_log_scalar_metric_with_ex.metrics_consumer = _run._metrics.register_listener()
-        for i in range(10, 100, 5):
+        for i in range(START, END, STEP_SIZE):
             val = i*i
-            ex.log_scalar("training.loss", i, val)
-    ex.log
+            ex.log_scalar("training.loss", val, i)
     ex.run()
     assert ex.current_run is not None
     assert test_log_scalar_metric_with_ex.metrics_consumer is not None
     assert test_log_scalar_metric_with_ex.metrics_consumer.has_message()
     messages = test_log_scalar_metric_with_ex.metrics_consumer.read_all()
-    assert len(messages) == (100 - 10)/5
+    assert len(messages) == (END - START) / STEP_SIZE
     for i in range(len(messages)-1):
         assert messages[i].step < messages[i+1].step
+        assert messages[i].step == START + i * STEP_SIZE
         assert messages[i].timestamp <= messages[i + 1].timestamp
+
+
+def test_log_scalar_metric_with_implicit_step(ex):
+    test_log_scalar_metric_with_implicit_step.metrics_consumer = None #type: messagequeue.Consumer
+
+    @ex.main
+    def main_function(_run):
+        test_log_scalar_metric_with_implicit_step.metrics_consumer = _run._metrics.register_listener()
+        for i in range(10):
+            val = i*i
+            ex.log_scalar("training.loss", val)
+    ex.run()
+    assert ex.current_run is not None
+    assert test_log_scalar_metric_with_implicit_step.metrics_consumer is not None
+    assert test_log_scalar_metric_with_implicit_step.metrics_consumer.has_message()
+    messages = test_log_scalar_metric_with_implicit_step.metrics_consumer.read_all()
+    assert len(messages) == 10
+    for i in range(len(messages)-1):
+        assert messages[i].step < messages[i+1].step
+        assert messages[i].step == i
+        assert messages[i].timestamp <= messages[i + 1].timestamp
+
+
+def test_log_scalar_metrics_with_implicit_step(ex):
+    test_log_scalar_metrics_with_implicit_step.metrics_consumer = None #type: messagequeue.Consumer
+
+    @ex.main
+    def main_function(_run):
+        test_log_scalar_metrics_with_implicit_step.metrics_consumer = _run._metrics.register_listener()
+        for i in range(10):
+            val = i*i
+            ex.log_scalar("training.loss", val)
+            ex.log_scalar("training.accuracy", val + 1)
+    ex.run()
+    assert ex.current_run is not None
+    assert test_log_scalar_metrics_with_implicit_step.metrics_consumer is not None
+    assert test_log_scalar_metrics_with_implicit_step.metrics_consumer.has_message()
+    messages = test_log_scalar_metrics_with_implicit_step.metrics_consumer.read_all()
+    tr_loss_messages = [m for m in messages if m.name == "training.loss"]
+    tr_acc_messages = [m for m in messages if m.name == "training.accuracy"]
+
+    assert len(tr_loss_messages) == 10
+    # both should have 10 records
+    assert len(tr_acc_messages) == len(tr_loss_messages)
+    for i in range(len(tr_loss_messages) - 1):
+        assert tr_loss_messages[i].step < tr_loss_messages[i + 1].step
+        assert tr_loss_messages[i].step == i
+        assert tr_loss_messages[i].timestamp <= tr_loss_messages[i + 1].timestamp
+
+        assert tr_acc_messages[i].step < tr_acc_messages[i + 1].step
+        assert tr_acc_messages[i].step == i
+        assert tr_acc_messages[i].timestamp <= tr_acc_messages[i + 1].timestamp
 
 
 def test_linearize_metrics():

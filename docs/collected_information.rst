@@ -147,18 +147,21 @@ captured output. To interpret control characters like a console this would do:
 Metrics API
 -----------------
 You might want to measure various values during your experiments, such as
-the progress of prediction accuracy over the training steps.
+the progress of prediction accuracy over training steps.
 
 Sacred supports tracking of numerical series (e.g. int, float) using the Metrics API.
-To access the API in experiments, the experiment must be running and the variable referencing the current run
-must be available in the scope. The ``_run.metrics.log_scalar_metric(metric_name, step, value)`` method takes
-a metric name (e.g. "training.loss"), the step in which the value was measured and the value itself.
+To access the API in experiments, the experiment must be running and the variable referencing the current experiment
+or run must be available in the scope. The ``_run.log_scalar(metric_name, value, step)`` method takes
+a metric name (e.g. "training.loss"), the measured value and the iteration step in which the value was taken.
+If no step is specified, a counter that increments by one automatically is set up for each metric.
 
 It is important that the value is a Python native type (int, float) and not e.g. a numpy.float64.
 
 Step should be an integer describing the position of the value in the series. Steps can be numbered either sequentially
-0, 1, 2, 3, ... or they may be given a different meaning, for instance the current iteration round. This is useful
-when the logging occurs only every e.g. 10th iteration: The step can be first 10, then 20, etc.
+0, 1, 2, 3, ... or they may be given a different meaning, for instance the current iteration round.
+The earlier behaviour can be achieved automatically when omitting the step parameter.
+The latter approach is useful when logging occurs only every e.g. 10th iteration:
+The step can be first 10, then 20, etc.
 In any case, the numbers should form an increasing sequence.
 
 .. code-block:: python
@@ -171,12 +174,21 @@ In any case, the numbers should form an increasing sequence.
             value = counter
             ms_to_wait = random.randint(5, 5000)
             time.sleep(ms_to_wait/1000)
-            _run.metrics.log_scalar_metric("training.loss", counter, value * 1.5)
-            _run.metrics.log_scalar_metric("training.accuracy", counter, value * 2)
+            # This will add an entry for training.loss metric in every second iteration.
+            # The resulting sequence of steps for training.loss will be 0, 2, 4, ...
+             if counter % 2 == 0:
+                _run.log_scalar("training.loss", value * 1.5, counter)
+            # Implicit step counter (0, 1, 2, 3, ...)
+            # incremented with each call for training.accuracy:
+            _run.log_scalar("training.accuracy", value * 2)
+            # Another option is to use the Experiment object (must be running)
+            # The training.diff has its own step counter (0, 1, 2, ...) too
+            ex.log_scalar("training.diff", value * 2)
 
 
-Currently, the information is collected only by the :ref:`mongo_observer`. Metrics are stored in the metrics collection
+Currently, the information is collected only by the :ref:`mongo_observer`. Metrics are stored in the ``metrics`` collection
 of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to.
+
 
 Metrics Records
 ...............

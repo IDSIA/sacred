@@ -18,6 +18,8 @@ class MetricsLogger:
         # Create a message queue that remembers
         # calls of the log_scalar_metric
         self.mq = mq.SacredMQ()
+        self.metric_step_counter = {}
+        """Remembers the last number of each metric."""
 
     def register_listener(self):
         """
@@ -34,22 +36,27 @@ class MetricsLogger:
         """
         return self.mq.add_consumer()
 
-    def log_scalar_metric(self, metric_name, step, value):
+    def log_scalar_metric(self, metric_name, value, step=None):
         """
         Add a new measurement.
 
-        The measurement will be processed by the MongoDB* observer
+        The measurement will be processed by the MongoDB observer
         during a heartbeat event.
-        *Other observers not yet supported.
+        Other observers are not yet supported.
 
         :param metric_name: The name of the metric, e.g. training.loss
-        :param step: The step number (an integer), e.g. the iteration number
         :param value: The measured value
+        :param step: The step number (integer), e.g. the iteration number
+                    If not specified, an internal counter for each metric
+                    is used, incremented by one.
         """
+        if step is None:
+            step = self.metric_step_counter.get(metric_name, -1) + 1
         self.mq.publish(
             ScalarMetricLogEntry(metric_name, step,
                                  datetime.datetime.utcnow(),
                                  value))
+        self.metric_step_counter[metric_name] = step
 
 
 class ScalarMetricLogEntry:

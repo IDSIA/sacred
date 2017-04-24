@@ -393,19 +393,22 @@ class Run(object):
         if not self.observers and not self.debug and not self.unobserved:
             self.run_logger.warning("No observers have been added to this run")
 
-    def log_scalar(self, metric_name, step, value):
+    def log_scalar(self, metric_name, value, step=None):
         """
         Add a new measurement.
 
-        The measurement will be processed by the MongoDB* observer
+        The measurement will be processed by the MongoDB observer
         during a heartbeat event.
-        *Other observers not yet supported.
+        Other observers are not yet supported.
 
         :param metric_name: The name of the metric, e.g. training.loss
-        :param step: The step number (an integer), e.g. the iteration number
         :param value: The measured value
+        :param step: The step number (integer), e.g. the iteration number
+                    If not specified, an internal counter for each metric
+                    is used, incremented by one.
         """
         # Method added in change https://github.com/chovanecm/sacred/issues/4
         # The same as Experiment.log_scalar (if something changes,
         # update the docstring too!)
-        return self._metrics.log_scalar_metric(metric_name, step, value)
+
+        return self._metrics.log_scalar_metric(metric_name, value, step)
