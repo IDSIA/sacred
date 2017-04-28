@@ -49,7 +49,10 @@ class Scaffold(object):
         if self.seed is not None:
             return
 
-        self.seed = self.config.get('seed') or get_seed(rnd)
+        self.seed = self.config.get('seed')
+        if self.seed is None:
+            self.seed = get_seed(rnd)
+
         self.rnd = create_rnd(self.seed)
 
         if self.generate_seed:
