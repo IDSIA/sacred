@@ -9,10 +9,12 @@ import re
 import sys
 from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 from copy import copy
+from functools import partial
 
 from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
-from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
+from sacred.config.utils import (dogmatize, normalize_or_die,
+                                 recursive_fill_in, NameSpace, enter_namespace)
 
 __sacred__ = True
 
@@ -73,7 +75,12 @@ class ConfigScope(object):
                 fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
-        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+        config_globals = copy(self._func.__globals__)
+        loc = NameSpace(cfg_locals)
+        loc['__ns__'] = partial(enter_namespace, loc)
+
+        eval(self._body_code, config_globals, loc)
+        del loc.dogdict['__ns__']
 
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(added, cfg_locals.modified,
@@ -147,6 +154,7 @@ def get_function_body_code(func):
     try:
         body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
         body_code = ast.increment_lineno(body_code, n=line_offset)
+        ReplaceWithStr().visit(body_code)
         body_code = compile(body_code, filename, "exec")
     except SyntaxError as e:
         if e.args[0] == "'return' outside function":
@@ -237,3 +245,35 @@ def get_config_comments(func):
                     add_doc(t, variables, body_lines)
 
     return variables
+
+
+def find_max_line(*nodes):
+    max_line = -1
+    for node in nodes:
+        for c in ast.walk(node):
+            max_line = max(max_line, getattr(c, "lineno", -1))
+    return max_line
+
+
+class ReplaceWithStr(ast.NodeTransformer):
+    def visit_With(self, node):
+        if len(node.items) == 1:
+            wi = node.items[0]
+            if isinstance(wi.context_expr, ast.Str):
+                name = ast.Name(id='__ns__', ctx=ast.Load())
+                max_line = find_max_line(*node.body)
+                call = ast.Call(func=name, args=[wi.context_expr,
+                                                 ast.Num(n=node.lineno),
+                                                 ast.Num(n=max_line)],
+                                keywords=[],
+                                starargs=None, kwargs=None)
+                with_items = [ast.withitem(context_expr=call,
+                                           optional_vars=wi.optional_vars)]
+                new_with = ast.With(body=[self.visit(b) for b in node.body],
+                                    items=with_items,
+                                    lineno=node.lineno,
+                                    col_offset=node.col_offset)
+                for n in ast.walk(with_items[0]):
+                    ast.copy_location(n, node)
+                return new_with
+        return node

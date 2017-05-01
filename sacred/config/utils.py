@@ -2,7 +2,9 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+from contextlib import contextmanager
 import jsonpickle.tags
+from copy import copy
 
 from sacred import SETTINGS
 import sacred.optional as opt
@@ -134,3 +136,63 @@ def undogmatize(obj):
         return tuple(undogmatize(value) for value in obj)
     else:
         return obj
+
+
+class NameSpace(dict):
+    def __init__(self, dogdict):
+        super().__init__()
+        self.dogdict = dogdict
+        self._prefixes = []
+        self.history = []
+
+    def __setitem__(self, key, value):
+        curr = self.dogdict
+        for p in self._prefixes:
+            curr = curr[p]
+        curr[key] = value
+
+    def __getitem__(self, item):
+        potential_matches = []
+        curr = self.dogdict
+        for p in self._prefixes:
+            if item in curr:
+                potential_matches.append(curr[item])
+            curr = curr[p]
+        if potential_matches:
+            return curr.get(item, potential_matches[-1])
+        else:
+            return curr[item]
+
+    def get(self, k, default=None):
+        try:
+            return self[k]
+        except KeyError:
+            return default
+
+    def __contains__(self, item):
+        try:
+            _ = self[item]
+            return True
+        except KeyError:
+            return False
+
+    def __delitem__(self, key):
+        curr = self.dogdict
+        for p in self._prefixes:
+            curr = curr[p]
+        del curr[key]
+
+    def push_prefix(self, prefix, start, stop):
+        self[prefix] = {}
+        self._prefixes.append(prefix)
+        self.history.append((copy(self._prefixes), start, stop))
+
+    def pop_prefix(self):
+        self._prefixes.pop()
+
+
+@contextmanager
+def enter_namespace(namespace, name, start, stop=None):
+    namespace.push_prefix(name, start, stop)
+    yield
+    namespace.pop_prefix()

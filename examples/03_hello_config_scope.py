@@ -42,6 +42,7 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 
 # A ConfigScope is a function like this decorated with @ex.config
 # All local variables of this function will be put into the configuration
+# noinspection PyUnusedLocal
 @ex.config
 def cfg():
     # The recipient of the greeting
@@ -49,6 +50,11 @@ def cfg():
 
     # The message used for greeting
     message = "Hello {}!".format(recipient)
+
+    with "woot":
+        this_is = 'cool'
+        this_is += '!!'
+
 
 
 # again we can access the message here by taking it as an argument
