@@ -211,7 +211,6 @@ def find_doc_for(ast_entry, body_lines):
 
 
 def add_doc(prefix, target, variables, body_lines):
-    prefix = prefix + "." if prefix else ""
     if isinstance(target, ast.Name):
         # if it is a variable name add it to the doc
         name = prefix + target.id
@@ -232,7 +231,7 @@ def add_doc(prefix, target, variables, body_lines):
         # this can happen like this:
         # a, b = 1, 2
         for e in target.elts:
-            add_doc(e, variables, body_lines)
+            add_doc(prefix, e, variables, body_lines)
 
 
 def get_config_comments(func, namespace_history):
@@ -249,30 +248,25 @@ def get_config_comments(func, namespace_history):
             if isinstance(ast_entry, ast.Assign):
                 # we found an assignment statement
                 # determine if there are any namespaces involved
-                prefixes = sorted(filter(lambda x: x[0] <= ast_entry.lineno <= x[1], namespace_history))
-                prefix = ".".join([p[2] for p in prefixes])
-                print("PREFIX", ast_entry.lineno, prefix, namespace_history)
+                prefix = get_prefix(ast_entry.lineno, namespace_history)
                 # go through all targets of the assignment
                 # usually a single entry, but can be more for statements like:
                 # a = b = 5
                 for t in ast_entry.targets:
                     add_doc(prefix, t, variables, body_lines)
-            elif isinstance(ast_entry, ast.With):
-                if len(ast_entry.items) == 1:
-                    ctx_item = ast_entry.items[0].context_expr
-                    if isinstance(ctx_item, ast.Str):
-                        # we found a with "namespace" statement
-                        prefixes = sorted(
-                            filter(lambda x: x[0] < ast_entry.lineno <= x[1],
-                                   namespace_history))
-                        prefix = ".".join([p[2] for p in prefixes])
-                        print("WITH", ctx_item.lineno, prefix,
-                              namespace_history)
-                        add_doc(prefix, ctx_item, variables, body_lines)
-
-
-
+            elif isinstance(ast_entry, ast.With) and len(ast_entry.items) == 1:
+                ctx_item = ast_entry.items[0].context_expr
+                if isinstance(ctx_item, ast.Str):
+                    # we found a with "namespace" statement
+                    prefix = get_prefix(ctx_item.lineno, namespace_history)
+                    add_doc(prefix, ctx_item, variables, body_lines)
     return variables
+
+
+def get_prefix(lineno, history):
+    prefixes = sorted(filter(lambda x: x[0] < lineno <= x[1], history))
+    prefix = ".".join([p[2] for p in prefixes])
+    return prefix + "." if prefix else ""
 
 
 def find_max_line(*nodes):
