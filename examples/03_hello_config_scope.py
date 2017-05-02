@@ -51,9 +51,14 @@ def cfg():
     # The message used for greeting
     message = "Hello {}!".format(recipient)
 
-    with "woot":
-        this_is = 'cool'
-        this_is += '!!'
+    with "woot":  # requires more
+        # please find
+        this_is = 'tough'
+        # wow
+        with "this":
+            is_soo = 'cool'  # whereami
+
+
 
 
 

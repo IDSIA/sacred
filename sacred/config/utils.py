@@ -4,7 +4,6 @@ from __future__ import division, print_function, unicode_literals
 
 from contextlib import contextmanager
 import jsonpickle.tags
-from copy import copy
 
 from sacred import SETTINGS
 import sacred.optional as opt
@@ -185,7 +184,7 @@ class NameSpace(dict):
     def push_prefix(self, prefix, start, stop):
         self[prefix] = {}
         self._prefixes.append(prefix)
-        self.history.append((copy(self._prefixes), start, stop))
+        self.history.append((start, stop, prefix))
 
     def pop_prefix(self):
         self._prefixes.pop()
