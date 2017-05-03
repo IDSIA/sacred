@@ -51,16 +51,6 @@ def cfg():
     # The message used for greeting
     message = "Hello {}!".format(recipient)
 
-    with "woot":  # requires more
-        # please find
-        this_is = 'tough'
-        # wow
-        with "this":
-            is_soo = 'cool'  # whereami
-
-
-
-
 
 # again we can access the message here by taking it as an argument
 @ex.automain
