@@ -9,7 +9,7 @@ import shlex
 import sys
 from collections import OrderedDict
 
-from sacred.arg_parser import get_config_updates, parse_args
+from sacred.arg_parser import parse_updates, parse_args
 from sacred.commandline_options import gather_command_line_options, ForceOption
 from sacred.commands import print_config, print_dependencies, save_config
 from sacred.config.signature import Signature
@@ -156,7 +156,7 @@ class Experiment(Ingredient):
     # =========================== Public Interface ============================
 
     def run(self, command_name=None, config_updates=None, named_configs=(),
-            meta_info=None, options=None):
+            meta_info=None, options=None, tags=()):
         """
         Run the main function of the experiment or a given command.
 
@@ -177,11 +177,16 @@ class Experiment(Ingredient):
         options : dict, optional
             Dictionary of options to use
 
+        tags : list[str], optional
+            list of tags for this run
+
         Returns
         -------
         sacred.run.Run
             the Run object corresponding to the finished run
         """
+        meta_info = dict(meta_info or {})
+        meta_info.setdefault('tags', []).extend(tags)
         run = self._create_run(command_name, config_updates, named_configs,
                                meta_info, options)
         run()
@@ -235,11 +240,12 @@ class Experiment(Ingredient):
         args = parse_args(argv,
                           description=self.doc,
                           commands=OrderedDict(all_commands))
-        config_updates, named_configs = get_config_updates(args['UPDATE'])
+        config_updates, named_configs, tags = parse_updates(args['UPDATE'])
         cmd_name = args.get('COMMAND') or self.default_command
 
         try:
-            return self.run(cmd_name, config_updates, named_configs, {}, args)
+            return self.run(cmd_name, config_updates, named_configs, {}, args,
+                            tags)
         except Exception:
             if not self.current_run or self.current_run.debug:
                 raise

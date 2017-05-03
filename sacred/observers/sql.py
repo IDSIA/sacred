@@ -216,6 +216,7 @@ class Run(Base):
     # meta info
     priority = sa.Column(sa.Float)
     comment = sa.Column(sa.Text)
+    # TODO: separate out list of tags  from metafor better filtering
 
     fail_trace = sa.Column(sa.Text)
 

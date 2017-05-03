@@ -23,7 +23,7 @@ from sacred.utils import set_by_dotted_path
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ('parse_args', 'get_config_updates')
+__all__ = ('parse_args', 'parse_updates')
 
 
 USAGE_TEMPLATE = """Usage:
@@ -81,7 +81,7 @@ def parse_args(argv, description="", commands=None, print_help=True):
         sys.exit()
 
 
-def get_config_updates(updates):
+def parse_updates(updates):
     """
     Parse the UPDATES given on the commandline.
 
@@ -97,10 +97,14 @@ def get_config_updates(updates):
     """
     config_updates = {}
     named_configs = []
+    tags = []
     if not updates:
-        return config_updates, named_configs
+        return config_updates, named_configs, tags
     for upd in updates:
         if upd == '':
+            continue
+        if upd.startswith('@'):
+            tags.append(upd[1:])
             continue
         path, sep, value = upd.partition('=')
         if sep == '=':
@@ -109,7 +113,7 @@ def get_config_updates(updates):
             set_by_dotted_path(config_updates, path, _convert_value(value))
         else:
             named_configs.append(path)
-    return config_updates, named_configs
+    return config_updates, named_configs, tags
 
 
 def _format_options_usage(options):

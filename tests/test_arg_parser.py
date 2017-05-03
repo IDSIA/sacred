@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 
 import pytest
 import shlex
-from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
+from sacred.arg_parser import (_convert_value, parse_updates, parse_args)
 
 
 @pytest.mark.parametrize("argv,expected", [
@@ -63,10 +63,10 @@ def test_parse_compound_arglist2():
     (["f=23.5"],        {'f': 23.5}),
     (["n=None"],        {'n': None}),
     (["t=True"],        {'t': True}),
-    (["f=False"],       {'f': False}),
+    (["f=False"],       {'f': False})
 ])
-def test_get_config_updates(update, expected):
-    assert get_config_updates(update) == (expected, [])
+def test_parse_updates(update, expected):
+    assert parse_updates(update) == (expected, [], [])
 
 
 @pytest.mark.parametrize("value,expected", [
