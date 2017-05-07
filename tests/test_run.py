@@ -245,7 +245,7 @@ def test_stdout_capturing_sys(run, capsys):
         sys.stdout.flush()
 
     run.main_function.side_effect = print_mock_progress
-    run.capture_mode = "fd"
+    run.capture_mode = "sys"
     with capsys.disabled():
         run()
     assert run.captured_out == '0123456789'
