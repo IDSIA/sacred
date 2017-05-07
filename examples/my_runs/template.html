@@ -8,6 +8,7 @@
 
 <%
 from datetime import datetime
+import dateutil.parser
 
 import matplotlib.pyplot as plt
 
@@ -54,7 +55,7 @@ def plot(obj, t):
 <table>
     <tr><td>Status</td><td>${run['status'] }</td></tr>
     <tr><td>Result</td><td>${run.get('result') }</td></tr>
-    <tr><td>Elapsed Time</td><td>${run['stop_time'] - run['start_time'] }</td></tr>
+    <tr><td>Elapsed Time</td><td>${(dateutil.parser.parse(run['stop_time']) - dateutil.parser.parse(run['start_time'])).total_seconds() / 60 } minutes</td></tr>
     <tr><td>Start Time</td><td>${run['start_time']}</td></tr>
     <tr><td>Stop Time</td><td>${run['stop_time']}</td></tr>
     <tr><td>Heartbeat</td><td>${run['heartbeat']}</td></tr>
