@@ -35,6 +35,7 @@ def test_fd_tee_output(capsys):
     expected_lines = {
         "captured stdout",
         "captured stderr",
+        "stdout from C",
         "and this is from echo"}
 
     capture_mode, capture_stdout = get_stdcapturer("fd")

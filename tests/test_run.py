@@ -253,7 +253,7 @@ def test_stdout_capturing_sys(run, capsys):
 
 @pytest.mark.skipif(sys.platform.startswith('win'),
                     reason="does not work on windows")
-def test_stdout_capturing_fd(run, capsys, capture_mode):
+def test_stdout_capturing_fd(run, capsys):
     def print_mock_progress():
         for i in range(10):
             print(i, end="")
