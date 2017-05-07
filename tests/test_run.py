@@ -225,6 +225,21 @@ def test_unobserved_run_doesnt_emit(run):
     assert not observer.failed_event.called
 
 
+@pytest.mark.parametrize("capture_mode", ["no", "sys", "fd"])
+def test_stdout_capturing(run, capsys, capture_mode):
+    def print_mock_progress():
+        for i in range(10):
+            print(i, end="")
+        sys.stdout.flush()
+
+    run.main_function.side_effect = print_mock_progress
+    run.capture_mode = capture_mode
+    with capsys.disabled():
+        run()
+    if capture_mode != "no":
+        assert run.captured_out == '0123456789'
+
+
 def test_captured_out_filter(run, capsys):
     def print_mock_progress():
         sys.stdout.write('progress 0')

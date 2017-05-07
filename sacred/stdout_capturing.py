@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 import os
 import sys
-from io import StringIO
 import subprocess
 from threading import Timer
 from contextlib import contextmanager
@@ -11,7 +10,7 @@ import wrapt
 from sacred.optional import libc
 from tempfile import NamedTemporaryFile
 from sacred.settings import SETTINGS
-from sacred.utils import FileNotFoundError
+from sacred.utils import FileNotFoundError, StringIO
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -110,11 +109,13 @@ def tee_output_fd():
                 ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
         except (FileNotFoundError, OSError):
+            # No tee found in this operating system. Trying to use a python
+            # implementation of tee. However this is slow and error-prone.
             tee_stdout = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"], preexec_fn=os.setsid,
+                [sys.executable, "-m", "sacred.pytee"],
                 stdin=subprocess.PIPE, stderr=target_fd)
             tee_stderr = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"], preexec_fn=os.setsid,
+                [sys.executable, "-m", "sacred.pytee"],
                 stdin=subprocess.PIPE, stdout=target_fd)
 
         flush()

@@ -22,9 +22,11 @@ if sys.version_info[0] == 2:
     class FileNotFoundError(IOError):
         def __init__(self, msg):
             super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+    from StringIO import StringIO
 else:
     # Reassign so that we can import it from here
     FileNotFoundError = FileNotFoundError
+    from io import StringIO
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -303,7 +305,8 @@ def apply_backspaces_and_linefeeds(text):
     Interpret text like a terminal by removing backspace and linefeed
     characters and applying them line by line.
 
-    If final line ends with a carriage it keeps it to be concatanable with next output chunk
+    If final line ends with a carriage it keeps it to be concatenable with next
+    output chunk.
     """
     orig_lines = text.split('\n')
     orig_lines_len = len(orig_lines)
@@ -312,12 +315,15 @@ def apply_backspaces_and_linefeeds(text):
         chars, cursor = [], 0
         orig_line_len = len(orig_line)
         for orig_char_idx, orig_char in enumerate(orig_line):
-            if orig_char == '\r' and (orig_char_idx != orig_line_len - 1 or orig_line_idx != orig_lines_len - 1):
+            if orig_char == '\r' and (orig_char_idx != orig_line_len - 1 or
+                                      orig_line_idx != orig_lines_len - 1):
                 cursor = 0
             elif orig_char == '\b':
                 cursor = max(0, cursor - 1)
             else:
-                if orig_char == '\r' and orig_char_idx == orig_line_len - 1 and orig_line_idx == orig_lines_len - 1:
+                if (orig_char == '\r' and
+                        orig_char_idx == orig_line_len - 1 and
+                        orig_line_idx == orig_lines_len - 1):
                     cursor = len(chars)
                 if cursor == len(chars):
                     chars.append(orig_char)
