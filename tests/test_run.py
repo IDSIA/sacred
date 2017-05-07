@@ -227,6 +227,9 @@ def test_unobserved_run_doesnt_emit(run):
 
 @pytest.mark.parametrize("capture_mode", ["no", "sys", "fd"])
 def test_stdout_capturing(run, capsys, capture_mode):
+    if sys.platform.startswith('win') and capture_mode == "fd":
+        return  # skip fd mode under windows
+
     def print_mock_progress():
         for i in range(10):
             print(i, end="")
