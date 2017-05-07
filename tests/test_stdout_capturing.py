@@ -19,11 +19,13 @@ def test_python_tee_output(capsys):
         with capture_stdout() as (f, final_out):
             print("captured stdout")
             print("captured stderr")
+            f.seek(0)
+            output = f.read()
 
         print('after (stdout)')
         print('after (stderr)')
 
-        assert set(final_out[0].strip().split("\n")) == expected_lines
+        assert set(output.strip().split("\n")) == expected_lines
 
 
 def test_fd_tee_output(capsys):
@@ -46,8 +48,10 @@ def test_fd_tee_output(capsys):
                 libc.puts(b'stdout from C')
                 libc.fflush(None)
             os.system('echo and this is from echo')
+            f.seek(0)
+            output = f.read().decode()
 
         print('after (stdout)')
         print('after (stderr)')
 
-        assert set(final_out[0].strip().split("\n")) == expected_lines
+        assert set(output.strip().split("\n")) == expected_lines

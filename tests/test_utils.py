@@ -157,16 +157,19 @@ def test_convert_camel_case_to_snake_case(name, expected):
 @pytest.mark.parametrize('text,expected', [
     ('', ''),
     ('\b', ''),
-    ('\r', ''),
+    ('\r', '\r'),
+    ('\r\n', '\n'),
     ('ab\bc', 'ac'),
     ('\ba', 'a'),
     ('ab\nc\b\bd', 'ab\nd'),
     ('abc\rdef', 'def'),
-    ('abc\r', 'abc'),
+    ('abc\r', 'abc\r'),
     ('abc\rd', 'dbc'),
     ('abc\r\nd', 'abc\nd'),
     ('abc\ndef\rg', 'abc\ngef'),
-    ('abc\ndef\r\rg', 'abc\ngef')
+    ('abc\ndef\r\rg', 'abc\ngef'),
+    ('abcd\refg\r', 'efgd\r'),
+    ('abcd\refg\r\n', 'efgd\n')
 ])
 def test_apply_backspaces_and_linefeeds(text, expected):
     assert apply_backspaces_and_linefeeds(text) == expected

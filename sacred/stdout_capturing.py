@@ -78,8 +78,6 @@ def tee_output_python():
     finally:
         flush()
         sys.stdout, sys.stderr = orig_stdout, orig_stderr
-        final_out.append(out.getvalue())
-        out.close()
 
 
 # Duplicate stdout and stderr to a file. Inspired by:
@@ -153,5 +151,3 @@ def tee_output_fd():
             os.close(saved_stdout_fd)
             os.close(saved_stderr_fd)
             target.flush()
-            target.seek(0)
-            final_output.append(target.read().decode())
