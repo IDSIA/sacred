@@ -15,6 +15,17 @@ import wrapt
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
+__all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
+           "ObserverError", "SacredInterrupt", "TimeoutInterrupt",
+           "create_basic_stream_logger", "recursive_update",
+           "iterate_flattened", "iterate_flattened_separately",
+           "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
+           "iter_prefixes", "join_paths", "is_prefix",
+           "convert_to_nested_dict", "convert_camel_case_to_snake_case",
+           "print_filtered_stacktrace", "is_subdir",
+           "optional_kwargs_decorator", "get_inheritors",
+           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError"]
+
 # A PY2 compatible FileNotFoundError
 if sys.version_info[0] == 2:
     import errno
@@ -332,13 +343,3 @@ def apply_backspaces_and_linefeeds(text):
                 cursor += 1
         new_lines.append(''.join(chars))
     return '\n'.join(new_lines)
-
-
-# Code adapted from here:
-# https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
-def natural_sort(l):
-    def alphanum_key(key):
-        return [int(c) if c.isdigit() else c.lower()
-                for c in re.split('([0-9]+)', key)]
-
-    return sorted(l, key=alphanum_key)
