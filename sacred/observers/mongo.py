@@ -198,8 +198,7 @@ class MongoObserver(RunObserver):
             result = self.metrics.update_one(query, update, upsert=True)
             if result.upserted_id is not None:
                 # This is the first time we are storing this metric
-                info \
-                    .setdefault("metrics", []) \
+                info.setdefault("metrics", []) \
                     .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
