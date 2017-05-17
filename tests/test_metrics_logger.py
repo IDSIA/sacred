@@ -18,6 +18,8 @@ def test_log_scalar_metric_with_run(ex):
     messages = {}
     @ex.main
     def main_function(_run):
+        # First, make sure the queue is empty:
+        assert len(ex.current_run._metrics.get_last_metrics()) == 0
         for i in range(START, END, STEP_SIZE):
             val = i*i
             _run.log_scalar("training.loss", val, i)
