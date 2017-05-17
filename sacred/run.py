@@ -110,7 +110,6 @@ class Run(object):
         self._output_file = None
 
         self._metrics = metrics_logger.MetricsLogger()
-        self._metrics_consumer = self._metrics.register_listener()
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -301,7 +300,7 @@ class Run(object):
         beat_time = datetime.datetime.utcnow()
         self._get_captured_output()
         # Read all measured metrics since last heartbeat
-        logged_metrics = self._metrics_consumer.read_all()
+        logged_metrics = self._metrics.get_last_metrics()
         metrics_by_name = linearize_metrics(logged_metrics)
         for observer in self.observers:
             self._safe_call(observer, 'log_metrics',

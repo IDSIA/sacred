@@ -1,7 +1,8 @@
 import datetime
+from time import sleep
 
 import pytest
-from sacred import Experiment, messagequeue
+from sacred import Experiment
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 
@@ -11,22 +12,23 @@ def ex():
 
 
 def test_log_scalar_metric_with_run(ex):
-    test_log_scalar_metric_with_run.metrics_consumer = None #type: messagequeue.Consumer
     START = 10
     END = 100
     STEP_SIZE = 5
+    messages = {}
     @ex.main
     def main_function(_run):
-        test_log_scalar_metric_with_run.metrics_consumer = _run._metrics.register_listener()
         for i in range(START, END, STEP_SIZE):
             val = i*i
             _run.log_scalar("training.loss", val, i)
-
+        messages["messages"] = ex.current_run._metrics.get_last_metrics()
+        """Calling get_last_metrics clears the metrics logger internal queue.
+        If we don't call it here, it would be called during Sacred heartbeat 
+        event after the run finishes, and the data we want to test would 
+        be lost."""
     ex.run()
     assert ex.current_run is not None
-    assert test_log_scalar_metric_with_run.metrics_consumer is not None
-    assert test_log_scalar_metric_with_run.metrics_consumer.has_message()
-    messages = test_log_scalar_metric_with_run.metrics_consumer.read_all()
+    messages = messages["messages"]
     assert len(messages) == (END - START)/STEP_SIZE
     for i in range(len(messages)-1):
         assert messages[i].step < messages[i+1].step
@@ -35,21 +37,19 @@ def test_log_scalar_metric_with_run(ex):
 
 
 def test_log_scalar_metric_with_ex(ex):
-    test_log_scalar_metric_with_ex.metrics_consumer = None #type: messagequeue.Consumer
+    messages = {}
     START = 10
     END = 100
     STEP_SIZE = 5
     @ex.main
     def main_function(_run):
-        test_log_scalar_metric_with_ex.metrics_consumer = _run._metrics.register_listener()
         for i in range(START, END, STEP_SIZE):
             val = i*i
             ex.log_scalar("training.loss", val, i)
+        messages["messages"] = ex.current_run._metrics.get_last_metrics()
     ex.run()
     assert ex.current_run is not None
-    assert test_log_scalar_metric_with_ex.metrics_consumer is not None
-    assert test_log_scalar_metric_with_ex.metrics_consumer.has_message()
-    messages = test_log_scalar_metric_with_ex.metrics_consumer.read_all()
+    messages = messages["messages"]
     assert len(messages) == (END - START) / STEP_SIZE
     for i in range(len(messages)-1):
         assert messages[i].step < messages[i+1].step
@@ -58,19 +58,16 @@ def test_log_scalar_metric_with_ex(ex):
 
 
 def test_log_scalar_metric_with_implicit_step(ex):
-    test_log_scalar_metric_with_implicit_step.metrics_consumer = None #type: messagequeue.Consumer
-
+    messages = {}
     @ex.main
     def main_function(_run):
-        test_log_scalar_metric_with_implicit_step.metrics_consumer = _run._metrics.register_listener()
         for i in range(10):
             val = i*i
             ex.log_scalar("training.loss", val)
+        messages["messages"] = ex.current_run._metrics.get_last_metrics()
     ex.run()
     assert ex.current_run is not None
-    assert test_log_scalar_metric_with_implicit_step.metrics_consumer is not None
-    assert test_log_scalar_metric_with_implicit_step.metrics_consumer.has_message()
-    messages = test_log_scalar_metric_with_implicit_step.metrics_consumer.read_all()
+    messages = messages["messages"]
     assert len(messages) == 10
     for i in range(len(messages)-1):
         assert messages[i].step < messages[i+1].step
@@ -79,20 +76,18 @@ def test_log_scalar_metric_with_implicit_step(ex):
 
 
 def test_log_scalar_metrics_with_implicit_step(ex):
-    test_log_scalar_metrics_with_implicit_step.metrics_consumer = None #type: messagequeue.Consumer
+    messages = {}
 
     @ex.main
     def main_function(_run):
-        test_log_scalar_metrics_with_implicit_step.metrics_consumer = _run._metrics.register_listener()
         for i in range(10):
             val = i*i
             ex.log_scalar("training.loss", val)
             ex.log_scalar("training.accuracy", val + 1)
+        messages["messages"] = ex.current_run._metrics.get_last_metrics()
     ex.run()
     assert ex.current_run is not None
-    assert test_log_scalar_metrics_with_implicit_step.metrics_consumer is not None
-    assert test_log_scalar_metrics_with_implicit_step.metrics_consumer.has_message()
-    messages = test_log_scalar_metrics_with_implicit_step.metrics_consumer.read_all()
+    messages = messages["messages"]
     tr_loss_messages = [m for m in messages if m.name == "training.loss"]
     tr_acc_messages = [m for m in messages if m.name == "training.accuracy"]
 

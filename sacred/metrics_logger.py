@@ -1,40 +1,29 @@
 #!/usr/bin/env python
 # coding=utf-8
 import datetime
+import sys
 
-from sacred import messagequeue as mq
+if sys.version_info[0] == 2:
+    from Queue import Queue, Empty
+else:
+    from queue import Queue, Empty
 
 
-class MetricsLogger:
+class MetricsLogger(object):
     """MetricsLogger collects metrics measured during experiments.
 
     MetricsLogger is the (only) part of the Metrics API.
-    An instance of the class should be created for the
-    Run class, such that the log_scalar_metric method is accessible
-    from running experiments using _run.metrics.log_scalar_metric.
+    An instance of the class should be created for the Run class, such that the
+    log_scalar_metric method is accessible from running experiments using
+    _run.metrics.log_scalar_metric.
     """
 
     def __init__(self):
         # Create a message queue that remembers
         # calls of the log_scalar_metric
-        self.mq = mq.SacredMQ()
-        self.metric_step_counter = {}
+        self._logged_metrics = Queue()
+        self._metric_step_counter = {}
         """Remembers the last number of each metric."""
-
-    def register_listener(self):
-        """
-        Add a new metrics listener.
-
-        The returned object is used to access the recently logged
-        metrics values. Once the object is created, it should be
-        cleared from time to time using the read_all method.
-        Otherwise, its content may grow forever.
-
-        (Alternatively, someone could implement a method that would
-        detach the listener from the message queue in order to
-        stop new messages from being added)
-        """
-        return self.mq.add_consumer()
 
     def log_scalar_metric(self, metric_name, value, step=None):
         """
@@ -44,22 +33,41 @@ class MetricsLogger:
         during a heartbeat event.
         Other observers are not yet supported.
 
-        :param metric_name: The name of the metric, e.g. training.loss
-        :param value: The measured value
+        :param metric_name: The name of the metric, e.g. training.loss.
+        :param value: The measured value.
         :param step: The step number (integer), e.g. the iteration number
                     If not specified, an internal counter for each metric
                     is used, incremented by one.
         """
         if step is None:
-            step = self.metric_step_counter.get(metric_name, -1) + 1
-        self.mq.publish(
+            step = self._metric_step_counter.get(metric_name, -1) + 1
+        self._logged_metrics.put(
             ScalarMetricLogEntry(metric_name, step,
                                  datetime.datetime.utcnow(),
                                  value))
-        self.metric_step_counter[metric_name] = step
+        self._metric_step_counter[metric_name] = step
+
+    def get_last_metrics(self):
+        """Read all measurement events since last call of the method.
+
+        :return List[ScalarMetricLogEntry]
+        """
+        read_up_to = self._logged_metrics.qsize()
+        messages = []
+        for i in range(read_up_to):
+            try:
+                messages.append(self._logged_metrics.get_nowait())
+            except Empty:
+                pass
+        return messages
 
 
-class ScalarMetricLogEntry:
+class ScalarMetricLogEntry():
+    """Container for measurements of scalar metrics.
+
+    There is exactly one ScalarMetricLogEntry per logged scalar metric value.
+    """
+
     def __init__(self, name, step, timestamp, value):
         self.name = name
         self.step = step
