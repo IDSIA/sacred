@@ -181,7 +181,7 @@ class MongoObserver(RunObserver):
         if self.overwrite:
             return self.save()
 
-        autoinc_key = self.run_entry['_id'] is None
+        autoinc_key = self.run_entry.get('_id') is None
         while True:
             if autoinc_key:
                 c = self.runs.find({}, {'_id': 1})
