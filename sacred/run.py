@@ -10,6 +10,8 @@ import traceback as tb
 
 from tempfile import NamedTemporaryFile
 
+from sacred import metrics_logger
+from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
 from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
                           join_paths, flush)
@@ -106,6 +108,8 @@ class Run(object):
         self._heartbeat = None
         self._failed_observers = []
         self._output_file = None
+
+        self._metrics = metrics_logger.MetricsLogger()
 
     def open_resource(self, filename):
         """Open a file and also save it as a resource.
@@ -295,7 +299,13 @@ class Run(object):
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.utcnow()
         self._get_captured_output()
+        # Read all measured metrics since last heartbeat
+        logged_metrics = self._metrics.get_last_metrics()
+        metrics_by_name = linearize_metrics(logged_metrics)
         for observer in self.observers:
+            self._safe_call(observer, 'log_metrics',
+                            metrics_by_name=metrics_by_name,
+                            info=self.info)
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
@@ -381,3 +391,23 @@ class Run(object):
     def warn_if_unobserved(self):
         if not self.observers and not self.debug and not self.unobserved:
             self.run_logger.warning("No observers have been added to this run")
+
+    def log_scalar(self, metric_name, value, step=None):
+        """
+        Add a new measurement.
+
+        The measurement will be processed by the MongoDB observer
+        during a heartbeat event.
+        Other observers are not yet supported.
+
+        :param metric_name: The name of the metric, e.g. training.loss
+        :param value: The measured value
+        :param step: The step number (integer), e.g. the iteration number
+                    If not specified, an internal counter for each metric
+                    is used, incremented by one.
+        """
+        # Method added in change https://github.com/chovanecm/sacred/issues/4
+        # The same as Experiment.log_scalar (if something changes,
+        # update the docstring too!)
+
+        return self._metrics.log_scalar_metric(metric_name, value, step)

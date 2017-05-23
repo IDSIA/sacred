@@ -49,7 +49,7 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
-                                 'system.indexes', 'seach_space'}
+                                 'system.indexes', 'search_space', 'metrics'}
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
@@ -61,11 +61,16 @@ class MongoObserver(RunObserver):
             raise KeyError('Collection name "{}" is reserved. '
                            'Please use a different one.'.format(collection))
         runs_collection = database[collection]
+        metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return MongoObserver(runs_collection, fs, overwrite=overwrite)
+        return MongoObserver(runs_collection,
+                             fs, overwrite=overwrite,
+                             metrics_collection=metrics_collection)
 
-    def __init__(self, runs_collection, fs, overwrite=None):
+    def __init__(self, runs_collection,
+                 fs, overwrite=None, metrics_collection=None):
         self.runs = runs_collection
+        self.metrics = metrics_collection
         self.fs = fs
         self.overwrite = overwrite
         self.run_entry = None
@@ -170,6 +175,32 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
+    def log_metrics(self, metrics_by_name, info):
+        """Store new measurements to the database.
+
+        Take measurements and store them into
+        the metrics collection in the database.
+        Additionally, reference the metrics
+        in the info["metrics"] dictionary.
+        """
+        if self.metrics is None:
+            # If, for whatever reason, the metrics collection has not been set
+            # do not try to save there anything
+            return
+        for key in metrics_by_name:
+            query = {"run_id": self.run_entry['_id'],
+                     "name": key}
+            push = {"steps": {"$each": metrics_by_name[key]["steps"]},
+                    "values": {"$each": metrics_by_name[key]["values"]},
+                    "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
+                    }
+            update = {"$push": push}
+            result = self.metrics.update_one(query, update, upsert=True)
+            if result.upserted_id is not None:
+                # This is the first time we are storing this metric
+                info.setdefault("metrics", []) \
+                    .append({"name": key, "id": str(result.upserted_id)})
+
     def insert(self):
         if self.overwrite:
             return self.save()
@@ -256,9 +287,9 @@ class MongoDbOption(CommandLineOption):
 
     DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
     HOSTNAME_PATTERN = \
-        r"(?=.{1,255}$)"\
-        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
-        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
+        r"(?=.{1,255}$)" \
+        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*" \
         r"\.?"
     URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
 

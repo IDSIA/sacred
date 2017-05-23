@@ -144,6 +144,73 @@ captured output. To interpret control characters like a console this would do:
     ex.captured_out_filter = apply_backspaces_and_linefeeds
 
 
+Metrics API
+-----------------
+You might want to measure various values during your experiments, such as
+the progress of prediction accuracy over training steps.
+
+Sacred supports tracking of numerical series (e.g. int, float) using the Metrics API.
+To access the API in experiments, the experiment must be running and the variable referencing the current experiment
+or run must be available in the scope. The ``_run.log_scalar(metric_name, value, step)`` method takes
+a metric name (e.g. "training.loss"), the measured value and the iteration step in which the value was taken.
+If no step is specified, a counter that increments by one automatically is set up for each metric.
+
+It is important that the value is a Python native type (int, float) and not e.g. a numpy.float64.
+
+Step should be an integer describing the position of the value in the series. Steps can be numbered either sequentially
+0, 1, 2, 3, ... or they may be given a different meaning, for instance the current iteration round.
+The earlier behaviour can be achieved automatically when omitting the step parameter.
+The latter approach is useful when logging occurs only every e.g. 10th iteration:
+The step can be first 10, then 20, etc.
+In any case, the numbers should form an increasing sequence.
+
+.. code-block:: python
+
+    @ex.automain
+    def example_metrics(_run):
+        counter = 0
+        while counter < 20:
+            counter+=1
+            value = counter
+            ms_to_wait = random.randint(5, 5000)
+            time.sleep(ms_to_wait/1000)
+            # This will add an entry for training.loss metric in every second iteration.
+            # The resulting sequence of steps for training.loss will be 0, 2, 4, ...
+             if counter % 2 == 0:
+                _run.log_scalar("training.loss", value * 1.5, counter)
+            # Implicit step counter (0, 1, 2, 3, ...)
+            # incremented with each call for training.accuracy:
+            _run.log_scalar("training.accuracy", value * 2)
+            # Another option is to use the Experiment object (must be running)
+            # The training.diff has its own step counter (0, 1, 2, ...) too
+            ex.log_scalar("training.diff", value * 2)
+
+
+Currently, the information is collected only by the :ref:`mongo_observer`. Metrics are stored in the ``metrics`` collection
+of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to.
+
+
+Metrics Records
+...............
+
+A metric record is composed of the metric name, the id of the corresponding experiment run,
+and of the measured values, arranged in an array in the order they were captured using the ``log_scalar(...)``
+function.
+For the value located in the i-th index (``metric["values"][i]``),
+the step number can be found in ``metric["steps"][i]`` and the time of the measurement in ``metric["timestamps"][i]``.
+
+    ==================  =======================================================
+    Key                 Description
+    ==================  =======================================================
+    ``_id``             Unique identifier
+    ``name``            The name of the metric (e.g. training.loss)
+    ``run_id``          The identifier of the run (``_id`` in the runs collection)
+    ``steps``               Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
+    ``values``               Array of measured values
+    ``timestamps``      Array of times of capturing the individual measurements
+    ==================  =======================================================
+
+
 Resources and Artifacts
 =======================
 It is possible to add files to an experiment, that will then be added to the database
