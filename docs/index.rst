@@ -54,6 +54,7 @@ Contents
    optional
    settings
    examples
+   tensorflow
    apidoc
    internals
 
