@@ -68,14 +68,27 @@ def get_commit_if_possible(filename):
     return None, None, None
 
 
-@functools.total_ordering
-class Source(object):
-    def __init__(self, filename, digest, repo, commit, isdirty):
-        self.filename = filename
-        self.digest = digest
+class Repository(object):
+    def __init__(self, repo, commit, isdirty):
         self.repo = repo
         self.commit = commit
         self.is_dirty = isdirty
+
+    def __eq__(self, other):
+        if isinstance(other, Repository):
+            return (self.commit == other.commit and
+                    not self.is_dirty and
+                    not other.is_dirty)
+        else:
+            return False
+
+
+@functools.total_ordering
+class Source(Repository):
+    def __init__(self, filename, digest, repo=None, commit=None, isdirty=None):
+        self.filename = filename
+        self.digest = digest
+        super(Source, self).__init__(repo, commit, isdirty)
 
     @staticmethod
     def create(filename):
@@ -98,7 +111,8 @@ class Source(object):
 
     def __eq__(self, other):
         if isinstance(other, Source):
-            return self.filename == other.filename
+            return (self.filename == other.filename and
+                    super(Source, self).__eq__(other))
         else:
             return False
 
@@ -110,10 +124,11 @@ class Source(object):
 
 
 @functools.total_ordering
-class PackageDependency(object):
-    def __init__(self, name, version):
+class PackageDependency(Repository):
+    def __init__(self, name, version, repo=None, commit=None, isdirty=None):
         self.name = name
         self.version = version
+        super(PackageDependency, self).__init__(repo, commit, isdirty)
 
     def fill_missing_version(self):
         if self.version is not None:
@@ -131,7 +146,9 @@ class PackageDependency(object):
 
     def __eq__(self, other):
         if isinstance(other, PackageDependency):
-            return self.name == other.name
+            return (self.name == other.name and
+                    super(PackageDependency, self).__eq__(other))
+
         else:
             return False
 
@@ -161,7 +178,11 @@ class PackageDependency(object):
     def create(mod):
         modname = mod.__name__
         version = PackageDependency.get_version_heuristic(mod)
-        return PackageDependency(modname, version)
+        if hasattr(mod, "__file__"):
+            repo, commit, is_dirty = get_commit_if_possible(mod.__file__)
+            return PackageDependency(modname, version, repo, commit, is_dirty)
+        else:
+            return PackageDependency(modname, version)
 
 
 def create_source_or_dep(modname, mod, dependencies, sources, experiment_path):
