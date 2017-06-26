@@ -65,7 +65,7 @@ This config scope would return the following configuration, and in fact, if you
 want to play around with this you can just execute ``my_config``::
 
     >>> my_config()
-    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 5}
+    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 11.5}
 
 Or use the ``print_config`` command from the :doc:`command_line`::
 
