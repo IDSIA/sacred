@@ -36,7 +36,7 @@ setup(
 
     url=about['__url__'],
 
-    packages=['sacred', 'sacred.observers', 'sacred.config'],
+    packages=['sacred', 'sacred.observers', 'sacred.config', 'sacred.stflow'],
     scripts=[],
     install_requires=[
         'docopt>=0.3, <1.0',

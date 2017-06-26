@@ -335,6 +335,24 @@ class Experiment(Ingredient):
         """
         return self.current_run.info
 
+    def log_scalar(self, name, value, step=None):
+        """
+        Add a new measurement.
+
+        The measurement will be processed by the MongoDB* observer
+        during a heartbeat event.
+        Other observers are not yet supported.
+
+        :param metric_name: The name of the metric, e.g. training.loss
+        :param value: The measured value
+        :param step: The step number (integer), e.g. the iteration number
+                    If not specified, an internal counter for each metric
+                    is used, incremented by one.
+        """
+        # Method added in change https://github.com/chovanecm/sacred/issues/4
+        # The same as Run.log_scalar
+        return self.current_run.log_scalar(name, value, step)
+
     def gather_commands(self):
         """Iterator over all commands of this experiment.
 
