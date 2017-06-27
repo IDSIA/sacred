@@ -400,7 +400,7 @@ MongoDB Observer
 
 
 This flag can be used to add a MongoDB observer to your experiment. ``DB`` must
-be of the form ``db_name`` or ``[host:port:]db_name``.
+be of the form ``[host:port:]db_name[.collection][!priority]``.
 
 See :ref:`mongo_observer` for more details.
 
@@ -579,12 +579,38 @@ Print Config
 +-------------------------+---------------------------------------------------+
 | ``-P PRIORITY``         |  Always print the config first.                   |
 +-------------------------+                                                   |
-| ``--priority PRIORITY`` |                                                   |
+| ``--priority=PRIORITY`` |                                                   |
 +-------------------------+---------------------------------------------------+
 
 If this flag is set, sacred will always print the current configuration
 including modifications (like the :ref:`print_config` command) before running
 the main method.
+
+
+Name
+----
++-----------------+---------------------------------------------------+
+| ``-n NAME``     |  Set the name for this run.                       |
++-----------------+                                                   |
+| ``--name=NAME`` |                                                   |
++-----------------+---------------------------------------------------+
+
+This option changes the name of the experiment before starting the run.
+
+.. _cmdline_capture:
+
+Capture Mode
+------------
++----------------------------+------------------------------------------------------+
+| ``-C CAPTURE_MODE``        |  Control the way stdout and stderr are captured.     |
++----------------------------+                                                      |
+| ``--capture=CAPTURE_MODE`` |                                                      |
++----------------------------+------------------------------------------------------+
+
+This option controls how sacred captures outputs to stdout and stderr.
+Possible values for ``CAPTURE_MODE`` are ``no``, ``sys`` (default under Windows),
+or ``fd`` (default for Linux/OSX). For more information see :ref:`here <capturing>`.
+
 
 
 Custom Flags

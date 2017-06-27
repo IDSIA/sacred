@@ -8,13 +8,11 @@ import sys
 import threading
 import traceback as tb
 
-from tempfile import NamedTemporaryFile
-
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
-from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
-                          join_paths, flush)
+from sacred.utils import ObserverError, SacredInterrupt, join_paths
+from sacred.stdout_capturing import get_stdcapturer, flush
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -32,6 +30,9 @@ class Run(object):
 
         self.captured_out = None
         """Captured stdout and stderr"""
+
+        self.captured_out_cursor = 0
+        """Cursor on captured_out to read by chunks"""
 
         self.config = config
         """The final configuration used for this run"""
@@ -105,13 +106,16 @@ class Run(object):
         self.fail_trace = None
         """A stacktrace, in case the run failed"""
 
+        self.capture_mode = None
+        """Determines the way the stdout/stderr are captured"""
+
         self._heartbeat = None
         self._failed_observers = []
         self._output_file = None
 
         self._metrics = metrics_logger.MetricsLogger()
 
-    def open_resource(self, filename):
+    def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -128,6 +132,8 @@ class Run(object):
         ----------
         filename : str
             name of the file that should be opened
+        mode : str
+            mode that file will be open
 
         Returns
         -------
@@ -136,7 +142,25 @@ class Run(object):
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
-        return open(filename, 'r')  # TODO: How to deal with binary mode?
+        return open(filename, mode)
+
+    def add_resource(self, filename):
+        """Add a file as a resource.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        See also :py:meth:`sacred.Experiment.add_resource`.
+
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as a resource
+        """
+        filename = os.path.abspath(filename)
+        self._emit_resource_added(filename)
 
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
@@ -153,10 +177,10 @@ class Run(object):
             name of the file to be stored as artifact
         name : str, optional
             optionally set the name of the artifact.
-            Defaults to the relative file-path.
+            Defaults to the filename.
         """
         filename = os.path.abspath(filename)
-        name = os.path.relpath(filename) if name is None else name
+        name = os.path.basename(filename) if name is None else name
         self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
@@ -177,16 +201,25 @@ class Run(object):
 
         if self.unobserved:
             self.observers = []
+        else:
+            self.observers = sorted(self.observers, key=lambda x: -x.priority)
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
+
+        if self.capture_mode is None and not self.observers:
+            capture_mode = "no"
+        else:
+            capture_mode = self.capture_mode
+        capture_mode, capture_stdout = get_stdcapturer(capture_mode)
+        self.run_logger.debug('Using capture mode "%s"', capture_mode)
 
         if self.queue_only:
             self._emit_queued()
             return
         try:
             try:
-                with NamedTemporaryFile() as f, tee_output(f) as final_out:
+                with capture_stdout() as (f, final_out):
                     self._output_file = f
                     self._emit_started()
                     self._start_heartbeat()
@@ -197,11 +230,9 @@ class Run(object):
                         self.run_logger.info('Result: {}'.format(self.result))
                     elapsed_time = self._stop_time()
                     self.run_logger.info('Completed after %s', elapsed_time)
+                    self._get_captured_output()
             finally:
-                self.captured_out = final_out[0]
-                if self.captured_out_filter is not None:
-                    self.captured_out = self.captured_out_filter(
-                        self.captured_out)
+                self._get_captured_output()
             self._stop_heartbeat()
             self._emit_completed(self.result)
         except (SacredInterrupt, KeyboardInterrupt) as e:
@@ -224,8 +255,13 @@ class Run(object):
             return  # nothing we can do
         flush()
         self._output_file.flush()
-        self._output_file.seek(0)
-        text = self._output_file.read().decode()
+        self._output_file.seek(self.captured_out_cursor)
+        text = self._output_file.read()
+        if isinstance(text, bytes):
+            text = text.decode()
+        self.captured_out_cursor += len(text)
+        if self.captured_out:
+            text = self.captured_out + text
         if self.captured_out_filter is not None:
             text = self.captured_out_filter(text)
         self.captured_out = text
@@ -309,7 +345,8 @@ class Run(object):
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
-                            beat_time=beat_time)
+                            beat_time=beat_time,
+                            result=self.result)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()

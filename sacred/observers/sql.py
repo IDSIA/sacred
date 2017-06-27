@@ -13,6 +13,8 @@ from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten, restore
 
+DEFAULT_SQL_PRIORITY = 40
+
 # ################################ ORM ###################################### #
 Base = declarative_base()
 
@@ -271,13 +273,14 @@ class Run(Base):
 
 class SqlObserver(RunObserver):
     @classmethod
-    def create(cls, url, echo=False):
+    def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         engine = sa.create_engine(url, echo=echo)
-        return cls(engine, sessionmaker(bind=engine)())
+        return cls(engine, sessionmaker(bind=engine)(), priority)
 
-    def __init__(self, engine, session):
+    def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
         self.session = session
+        self.priority = priority
         self.run = None
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -322,10 +325,11 @@ class SqlObserver(RunObserver):
         self.session.commit()
         return _id or self.run.run_id
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.run.info = json.dumps(flatten(info))
         self.run.captured_out = captured_out
         self.run.heartbeat = beat_time
+        self.run.result = result
         self.session.commit()
 
     def completed_event(self, stop_time, result):

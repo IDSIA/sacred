@@ -6,24 +6,25 @@ import collections
 import logging
 import os.path
 import re
-import subprocess
 import sys
 import traceback as tb
 from functools import partial
-from contextlib import contextmanager
 
 import wrapt
 
-from sacred.optional import libc
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-NO_LOGGER = logging.getLogger('ignore')
-NO_LOGGER.disabled = 1
-
-PATHCHANGE = object()
-
-PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
+__all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
+           "ObserverError", "SacredInterrupt", "TimeoutInterrupt",
+           "create_basic_stream_logger", "recursive_update",
+           "iterate_flattened", "iterate_flattened_separately",
+           "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
+           "iter_prefixes", "join_paths", "is_prefix",
+           "convert_to_nested_dict", "convert_camel_case_to_snake_case",
+           "print_filtered_stacktrace", "is_subdir",
+           "optional_kwargs_decorator", "get_inheritors",
+           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError"]
 
 # A PY2 compatible FileNotFoundError
 if sys.version_info[0] == 2:
@@ -32,22 +33,18 @@ if sys.version_info[0] == 2:
     class FileNotFoundError(IOError):
         def __init__(self, msg):
             super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+    from StringIO import StringIO
 else:
     # Reassign so that we can import it from here
     FileNotFoundError = FileNotFoundError
+    from io import StringIO
 
+NO_LOGGER = logging.getLogger('ignore')
+NO_LOGGER.disabled = 1
 
-def flush():
-    """Try to flush all stdio buffers, both from python and from C."""
-    try:
-        sys.stdout.flush()
-        sys.stderr.flush()
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
-    try:
-        libc.fflush(None)
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
+PATHCHANGE = object()
+
+PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
 
 class CircularDependencyError(Exception):
@@ -107,64 +104,6 @@ def recursive_update(d, u):
         else:
             d[k] = u[k]
     return d
-
-
-# Duplicate stdout and stderr to a file. Inspired by:
-# http://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/
-# http://stackoverflow.com/a/651718/1388435
-# http://stackoverflow.com/a/22434262/1388435
-@contextmanager
-def tee_output(target):
-    original_stdout_fd = 1
-    original_stderr_fd = 2
-
-    # Save a copy of the original stdout and stderr file descriptors
-    saved_stdout_fd = os.dup(original_stdout_fd)
-    saved_stderr_fd = os.dup(original_stderr_fd)
-
-    target_fd = target.fileno()
-
-    final_output = []
-
-    try:
-        try:
-            tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
-            tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-        except (FileNotFoundError, OSError):
-            tee_stdout = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stderr=target_fd)
-            tee_stderr = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stdout=target_fd)
-
-        flush()
-        os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
-        os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
-
-        yield final_output  # let the caller do their printing
-        flush()
-
-        # then redirect stdout back to the saved fd
-        tee_stdout.stdin.close()
-        tee_stderr.stdin.close()
-
-        # restore original fds
-        os.dup2(saved_stdout_fd, original_stdout_fd)
-        os.dup2(saved_stderr_fd, original_stderr_fd)
-
-        tee_stdout.wait()
-        tee_stderr.wait()
-    finally:
-        os.close(saved_stdout_fd)
-        os.close(saved_stderr_fd)
-        target.flush()
-        target.seek(0)
-        final_output.append(target.read().decode())
 
 
 def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
@@ -238,7 +177,7 @@ def set_by_dotted_path(d, path, value):
     current_option[split_path[-1]] = value
 
 
-def get_by_dotted_path(d, path):
+def get_by_dotted_path(d, path, default=None):
     """
     Get an entry from nested dictionaries using a dotted path.
 
@@ -252,7 +191,7 @@ def get_by_dotted_path(d, path):
     current_option = d
     for p in split_path:
         if p not in current_option:
-            return None
+            return default
         current_option = current_option[p]
     return current_option
 
@@ -376,31 +315,31 @@ def apply_backspaces_and_linefeeds(text):
 
     Interpret text like a terminal by removing backspace and linefeed
     characters and applying them line by line.
+
+    If final line ends with a carriage it keeps it to be concatenable with next
+    output chunk.
     """
-    lines = []
-    for line in text.split('\n'):
+    orig_lines = text.split('\n')
+    orig_lines_len = len(orig_lines)
+    new_lines = []
+    for orig_line_idx, orig_line in enumerate(orig_lines):
         chars, cursor = [], 0
-        for ch in line:
-            if ch == '\b':
-                cursor = max(0, cursor - 1)
-            elif ch == '\r':
+        orig_line_len = len(orig_line)
+        for orig_char_idx, orig_char in enumerate(orig_line):
+            if orig_char == '\r' and (orig_char_idx != orig_line_len - 1 or
+                                      orig_line_idx != orig_lines_len - 1):
                 cursor = 0
+            elif orig_char == '\b':
+                cursor = max(0, cursor - 1)
             else:
-                # normal character
+                if (orig_char == '\r' and
+                        orig_char_idx == orig_line_len - 1 and
+                        orig_line_idx == orig_lines_len - 1):
+                    cursor = len(chars)
                 if cursor == len(chars):
-                    chars.append(ch)
+                    chars.append(orig_char)
                 else:
-                    chars[cursor] = ch
+                    chars[cursor] = orig_char
                 cursor += 1
-        lines.append(''.join(chars))
-    return '\n'.join(lines)
-
-
-# Code adapted from here:
-# https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
-def natural_sort(l):
-    def alphanum_key(key):
-        return [int(c) if c.isdigit() else c.lower()
-                for c in re.split('([0-9]+)', key)]
-
-    return sorted(l, key=alphanum_key)
+        new_lines.append(''.join(chars))
+    return '\n'.join(new_lines)

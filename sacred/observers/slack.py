@@ -8,6 +8,9 @@ from sacred.optional import requests
 import json
 
 
+DEFAULT_SLACK_PRIORITY = 10
+
+
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
 def td_format(td_object):
     seconds = int(td_object.total_seconds())
@@ -62,7 +65,8 @@ class SlackObserver(RunObserver):
                 setattr(obs, k, d[k])
         return obs
 
-    def __init__(self, webhook_url, bot_name="sacred-bot", icon=":angel:"):
+    def __init__(self, webhook_url, bot_name="sacred-bot", icon=":angel:",
+                 priority=DEFAULT_SLACK_PRIORITY):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
@@ -73,6 +77,7 @@ class SlackObserver(RunObserver):
         self.failed_text = ":x: *{experiment[name]}* failed after " \
                            "_{elapsed_time}_ with `{error}`"
         self.run = None
+        self.priority = priority
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):

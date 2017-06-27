@@ -70,7 +70,8 @@ def run_test_experiment(exp_name, exp_id, root_dir):
     # Heartbeat
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                               result=7)
     # Add Artifact
     filename = "sacred/__about__.py"
     name = 'about'

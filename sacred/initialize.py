@@ -49,7 +49,10 @@ class Scaffold(object):
         if self.seed is not None:
             return
 
-        self.seed = self.config.get('seed') or get_seed(rnd)
+        self.seed = self.config.get('seed')
+        if self.seed is None:
+            self.seed = get_seed(rnd)
+
         self.rnd = create_rnd(self.seed)
 
         if self.generate_seed:
@@ -154,7 +157,8 @@ class Scaffold(object):
 
         for cfunc in self._captured_functions:
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix)
+            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix,
+                                              default={})
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run

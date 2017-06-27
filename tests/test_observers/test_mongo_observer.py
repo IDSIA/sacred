@@ -92,11 +92,13 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=1337)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run['heartbeat'] == T2
+    assert db_run['result'] == 1337
     assert db_run['info'] == info
     assert db_run['captured_out'] == outp
 

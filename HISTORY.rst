@@ -1,18 +1,18 @@
 Release History
 ---------------
 
-0.7.0 (2017-01-??)
+0.7.0 (2017-05-07)
 ++++++++++++++++++
 * Feature: host info now contains information about NVIDIA GPUs (if available)
 * Feature: git integration: sacred now collects info about the git repository
            of the experiment (if available and if gitpython is installed)
 * Feature: new ``--enforce-clean`` flag that cancels a run if the
            git repository is dirty
-* Feature: config now supports arbitrary python types by using jsonpickle
-* Feature: added new TinyDbObserver and TinyDbReader
+* Feature: added new TinyDbObserver and TinyDbReader (thanks to @MrKriss)
 * Feature: added new SqlObserver
 * Feature: added new FileStorageObserver
 * Feature: added new SlackObserver
+* Feature: added new TelegramObserver (thanks to @black-puppydog)
 * Feature: added save_config command
 * Feature: added queue flag to just queue a run instead of executing it
 * Feature: added TimeoutInterrupt to signal that a run timed out
@@ -27,6 +27,12 @@ Release History
 * Feature: added sacred.SETTINGS as a place to configure some of the behaviour
 * Feature: ConfigScopes now extract docstrings and line comments and display
            them when calling ``print_config``
+* Feature: observers are now run in order of priority (settable)
+* Feature: new ``--name=NAME`` option to set the name of experiment for this run
+* Feature: the heartbeat event now stores an intermediate result (if set).
+* Feature: ENVIRONMENT variables can be captured as part of host info.
+* Feature: sped up the applying_lines_and_backfeeds stdout filter. (thanks to @remss)
+* Feature: adding resources by name (thanks to @d4nst)
 * API Change: all times are now in UTC
 * API Change: significantly changed the mongoDB layout
 * API Change: MongoObserver and FileStorageObserver now use consecutive
@@ -50,6 +56,8 @@ Release History
           certain attributes of ``sys.stdout`` or ``sys.stderr``.
 * Bugfix: @main, @automain, @command and @capture now support functions with
            Python3 style annotations.
+* Bugfix: fixed a problem with config-docs from ingredients not being propagated
+* Bugfix: fixed setting seed to 0 being ignored
 
 0.6.10 (2016-08-08)
 +++++++++++++++++++

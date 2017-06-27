@@ -53,7 +53,7 @@ class Ingredient(object):
         mainfile_name = _caller_globals.get('__file__', '.')
         self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
         self.doc = _caller_globals.get('__doc__', "")
-        self.sources, self.dependencies = \
+        self.mainfile, self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals, interactive)
 
     # =========================== Decorators ==================================
@@ -290,12 +290,16 @@ class Ingredient(object):
         for dep in dependencies:
             dep.fill_missing_version()
 
+        mainfile = (self.mainfile.to_json(self.base_dir)[0]
+                    if self.mainfile else None)
+
         return dict(
             name=self.path,
             base_dir=self.base_dir,
             sources=[s.to_json(self.base_dir) for s in sorted(sources)],
             dependencies=[d.to_json() for d in sorted(dependencies)],
-            repositories=collect_repositories(sources)
+            repositories=collect_repositories(sources),
+            mainfile=mainfile
         )
 
     def traverse_ingredients(self):
