@@ -90,11 +90,11 @@ Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. Pull repuests should be made on their own branch or against develop (not master).
+1. Pull requests should be made on their own branch or against master.
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.3, and 3.4.
+3. The pull request should work for Python 2.7 and >3.3.
    Check https://travis-ci.org/IDSIA/sacred/pull_requests
    for active pull requests or run the ``tox`` command and make sure that the tests pass for all supported Python versions.
