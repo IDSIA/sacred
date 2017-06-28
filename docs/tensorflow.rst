@@ -8,7 +8,8 @@ The collected data are stored in ``experiment.info["tensorflow"]``
 where they can be accessed by various :doc:`observers <observers>`.
 
 Storing Tensorflow Logs (FileWriter)
------------------------
+------------------------------------
+
 To store the location of summaries produced by Tensorflow
 (created by ``tensorflow.summary.FileWriter``) into the experiment record
 specified by the ``ex`` argument, use the ``sacred.stflow.LogFileWriter(ex)``
@@ -25,7 +26,7 @@ the decorated method or entering the context.
 
 
 Example Usage As a Decorator
-...........................
+............................
 
 ``LogFileWriter(ex)`` as a decorator can be used either on a function or
 on a class method.
@@ -50,7 +51,7 @@ on a class method.
 
 
 Example Usage As a Context Manager
-.................................
+..................................
 
 There is a context manager available to catch the paths
 in a smaller portion of code.
