@@ -59,6 +59,8 @@ has_tinydb, tinydb = optional_import('tinydb', 'tinydb_serialization',
 has_requests, requests = optional_import('requests')
 has_tensorflow, tensorflow = optional_import("tensorflow")
 has_telegram, telegram = optional_import('telegram')
+has_tensorflow, tensorflow = optional_import("tensorflow")
+
 
 # Python 2 and 3 compatible basestring
 if sys.version_info[0] == 3:
