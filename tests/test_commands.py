@@ -142,15 +142,15 @@ def test_format_config(cfg):
     cfg_text = _format_config(cfg, ConfigSummary())
     lines = cfg_text.split('\n')
     assert lines[0].startswith('Configuration')
-    assert lines[1].find(' a = 0') > -1
-    assert lines[2].find(' b = {}') > -1
-    assert lines[3].find(' c:') > -1
-    assert lines[4].find(' cA = 3') > -1
-    assert lines[5].find(' cB = 4') > -1
-    assert lines[6].find(' cC:') > -1
-    assert lines[7].find(' cC1 = 6') > -1
-    assert lines[8].find(' d:') > -1
-    assert lines[9].find(' dA = 8') > -1
+    assert ' a = 0' in lines[1]
+    assert ' b = {}' in lines[2]
+    assert ' c:' in lines[3]
+    assert ' cA = 3' in lines[4]
+    assert ' cB = 4' in lines[5]
+    assert ' cC:' in lines[6]
+    assert ' cC1 = 6' in lines[7]
+    assert ' d:' in lines[8]
+    assert ' dA = 8' in lines[9]
 
 
 def test_help_for_command():
@@ -159,5 +159,5 @@ def test_help_for_command():
         pass
 
     help_text = help_for_command(my_command)
-    assert help_text.find("my_command") > -1
-    assert help_text.find("This is my docstring") > -1
+    assert "my_command" in help_text
+    assert "This is my docstring" in help_text
