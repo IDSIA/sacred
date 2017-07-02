@@ -254,7 +254,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # and reference the newly created records in the 'info' dictionary.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
     # Call standard heartbeat event (store the info dictionary to the database)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
 
     # There should be only one run stored
     assert mongo_obs.runs.count() == 1
@@ -284,7 +285,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=0)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -312,7 +314,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Start the experiment
     mongo_obs.started_event(**sample_run)
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
     # A new run has been created
     assert mongo_obs.runs.count() == 2
     # Another 2 metrics have been created
