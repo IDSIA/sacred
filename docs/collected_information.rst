@@ -286,7 +286,7 @@ following values:
     ``QUEUED``       The run was just :ref:`queued <queuing>` and not run yet
     ``RUNNING``      Currently running (but see below)
     ``COMPLETED``    Completed successfully
-    ``FAILED``       The run failde due to an exception
+    ``FAILED``       The run failed due to an exception
     ``INTERRUPTED``  The run was cancelled with a :py:class:`KeyboardInterrupt`
     ``TIMED_OUT``    The run was aborted using a :py:class:`~sacred.utils.TimeoutInterrupt`
     *[custom]*       A custom py:class:`~sacred.utils.SacredInterrupt` occurred
