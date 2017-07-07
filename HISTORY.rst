@@ -1,6 +1,12 @@
 Release History
 ---------------
 
+0.7.1 (??)
+++++++++++
+* Refactor: lazy importing of many optional dependencies
+* Feature: set seed of tensorflow if it is imported
+* Bugfix: failed runs now return with exit code 1 by default
+
 0.7.0 (2017-05-07)
 ++++++++++++++++++
 * Feature: host info now contains information about NVIDIA GPUs (if available)

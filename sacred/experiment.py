@@ -250,6 +250,7 @@ class Experiment(Ingredient):
                 pdb.post_mortem()
             else:
                 print_filtered_stacktrace()
+                exit(1)
 
     def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
