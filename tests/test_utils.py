@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import os
-import sys
-import tempfile
 
 import pytest
 
@@ -13,7 +10,8 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
                           convert_camel_case_to_snake_case,
-                          apply_backspaces_and_linefeeds)
+                          apply_backspaces_and_linefeeds, module_exists,
+                          module_is_imported, module_is_in_cache)
 
 
 def test_recursive_update():
@@ -173,3 +171,32 @@ def test_convert_camel_case_to_snake_case(name, expected):
 ])
 def test_apply_backspaces_and_linefeeds(text, expected):
     assert apply_backspaces_and_linefeeds(text) == expected
+
+
+def test_module_exists_base_level_modules():
+    assert module_exists('pytest')
+    assert not module_exists('clearly_non_existing_module_name')
+
+
+def test_module_exists_does_not_import_module():
+    assert module_exists('tests.donotimport')
+
+
+def test_module_is_in_cache():
+    assert module_is_in_cache('pytest')
+    assert module_is_in_cache('pkgutil')
+    assert not module_is_in_cache('does_not_even_exist')
+
+
+def test_module_is_imported():
+    globs = globals()
+    assert module_is_imported('pytest', scope=globs)
+    assert not module_is_imported('pkgutil', scope=globs)
+    assert not module_is_imported('does_not_even_exist', scope=globs)
+
+
+def test_module_is_imported_uses_caller_globals_by_default():
+    assert module_is_imported('pytest')
+    assert not module_is_imported('pkgutil')
+    assert not module_is_imported('does_not_even_exist')
+

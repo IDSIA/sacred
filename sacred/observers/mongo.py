@@ -8,11 +8,7 @@ import os.path
 import sys
 import time
 
-import bson
-import gridfs
-import pymongo
 import sacred.optional as opt
-from pymongo.errors import AutoReconnect, InvalidDocument, DuplicateKeyError
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
@@ -32,6 +28,7 @@ def force_valid_bson_key(key):
 
 
 def force_bson_encodeable(obj):
+    import bson
     if isinstance(obj, dict):
         try:
             bson.BSON.encode(obj, check_keys=True)
@@ -58,6 +55,8 @@ class MongoObserver(RunObserver):
     @staticmethod
     def create(url='localhost', db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY, **kwargs):
+        import pymongo
+        import gridfs
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
@@ -209,6 +208,8 @@ class MongoObserver(RunObserver):
                     .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
+        import pymongo.errors
+
         if self.overwrite:
             return self.save()
 
@@ -220,33 +221,37 @@ class MongoObserver(RunObserver):
                 self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
             try:
                 self.runs.insert_one(self.run_entry)
-            except InvalidDocument:
+            except pymongo.errors.InvalidDocument:
                 raise ObserverError('Run contained an unserializable entry.'
                                     '(most likely in the info)')
-            except DuplicateKeyError:
+            except pymongo.errors.DuplicateKeyError:
                 if not autoinc_key:
                     raise
             return
 
     def save(self):
+        import pymongo.errors
+
         try:
             self.runs.replace_one({'_id': self.run_entry['_id']},
                                   self.run_entry)
-        except AutoReconnect:
+        except pymongo.errors.AutoReconnect:
             pass  # just wait for the next save
-        except InvalidDocument:
+        except pymongo.errors.InvalidDocument:
             raise ObserverError('Run contained an unserializable entry.'
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
+        import pymongo.errors
+
         for i in range(attempts):
             try:
                 self.runs.save(self.run_entry)
                 return
-            except AutoReconnect:
+            except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:
                     time.sleep(1)
-            except InvalidDocument:
+            except pymongo.errors.InvalidDocument:
                 self.run_entry = force_bson_encodeable(self.run_entry)
                 print("Warning: Some of the entries of the run were not "
                       "BSON-serializable!\n They have been altered such that "
@@ -287,6 +292,8 @@ class MongoObserver(RunObserver):
 
 class MongoDbOption(CommandLineOption):
     """Add a MongoDB Observer to the experiment."""
+
+    __depends_on__ = 'pymongo'
 
     arg = 'DB'
     arg_description = "Database specification. Can be " \

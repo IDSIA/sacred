@@ -3,8 +3,9 @@
 from __future__ import division, print_function, unicode_literals
 
 import random
-import sys
+
 import sacred.optional as opt
+from sacred.utils import module_is_in_cache
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -30,6 +31,6 @@ def set_global_seed(seed):
     random.seed(seed)
     if opt.has_numpy:
         opt.np.random.seed(seed)
-    if 'tensorflow' in sys.modules:
+    if module_is_in_cache('tensorflow'):
         import tensorflow as tf
         tf.set_random_seed(seed)

@@ -3,8 +3,10 @@
 from __future__ import division, print_function, unicode_literals
 
 import collections
+import inspect
 import logging
 import os.path
+import pkgutil
 import re
 import sys
 import traceback as tb
@@ -343,3 +345,33 @@ def apply_backspaces_and_linefeeds(text):
                 cursor += 1
         new_lines.append(''.join(chars))
     return '\n'.join(new_lines)
+
+
+def module_exists(modname):
+    """Checks if a module exists without actually importing it."""
+    return pkgutil.find_loader(modname) is not None
+
+
+def modules_exist(*modnames):
+    return all(module_exists(m) for m in modnames)
+
+
+def module_is_in_cache(modname):
+    """Checks if a module was imported before (is in the import cache)."""
+    return modname in sys.modules
+
+
+def module_is_imported(modname, scope=None):
+    """Checks if a module is imported within the current namespace."""
+    # return early if modname is not even cached
+    if not module_is_in_cache(modname):
+        return False
+
+    if scope is None:  # use globals() of the caller by default
+        scope = inspect.stack()[1][0].f_globals
+
+    for m in scope.values():
+        if isinstance(m, type(sys)) and m.__name__ == modname:
+            return True
+
+    return False

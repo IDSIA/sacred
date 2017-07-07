@@ -4,7 +4,6 @@ from __future__ import division, print_function, unicode_literals
 
 from sacred.observers.base import RunObserver
 from sacred.config.config_files import load_config_file
-from sacred.optional import telegram  # type: telegram
 import logging
 
 
@@ -52,6 +51,7 @@ class TelegramObserver(RunObserver):
         ``silent_completion``,``completed_text``, ``interrupted_text``, and
         ``failed_text``.
         """
+        import telegram
         d = load_config_file(filename)
         obs = None
         if 'token' in d and 'chat_id' in d:
@@ -87,6 +87,7 @@ class TelegramObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
+        import telegram.ParseMode
         self.run = {
             '_id': _id,
             'config': config,
@@ -121,6 +122,8 @@ class TelegramObserver(RunObserver):
             backtrace=''.join(self.run['fail_trace']), **self.run)
 
     def completed_event(self, stop_time, result):
+        import telegram
+
         if self.completed_text is None:
             return
 
@@ -140,6 +143,8 @@ class TelegramObserver(RunObserver):
                         exc_info=e)
 
     def interrupted_event(self, interrupt_time, status):
+        import telegram
+
         if self.interrupted_text is None:
             return
 
@@ -159,6 +164,8 @@ class TelegramObserver(RunObserver):
                         'via telegram.', exc_info=e)
 
     def failed_event(self, fail_time, fail_trace):
+        import telegram
+
         if self.failed_text is None:
             return
 

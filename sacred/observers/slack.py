@@ -4,7 +4,6 @@ from __future__ import division, print_function, unicode_literals
 
 from sacred.observers.base import RunObserver
 from sacred.config.config_files import load_config_file
-from sacred.optional import requests
 import json
 
 
@@ -100,6 +99,7 @@ class SlackObserver(RunObserver):
         return self.failed_text.format(**self.run)
 
     def completed_event(self, stop_time, result):
+        import requests
         if self.completed_text is None:
             return
 
@@ -117,6 +117,7 @@ class SlackObserver(RunObserver):
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def interrupted_event(self, interrupt_time, status):
+        import requests
         if self.interrupted_text is None:
             return
 
@@ -134,6 +135,7 @@ class SlackObserver(RunObserver):
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def failed_event(self, fail_time, fail_trace):
+        import requests
         if self.failed_text is None:
             return
 

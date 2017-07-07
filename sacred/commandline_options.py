@@ -9,10 +9,51 @@ Some further options that add observers to the run are defined alongside those.
 
 from __future__ import division, print_function, unicode_literals
 from sacred.commands import print_config
-from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+from sacred.settings import SETTINGS
+from sacred.utils import (convert_camel_case_to_snake_case, get_inheritors,
+                          module_exists)
+from six import with_metaclass
 
 
-class CommandLineOption(object):
+def parse_mod_deps(depends_on):
+    if not isinstance(depends_on, (list, tuple)):
+        depends_on = [depends_on]
+    module_names = []
+    package_names = []
+    for d in depends_on:
+        mod, _, pkg = d.partition('#')
+        module_names.append(mod)
+        package_names.append(pkg or mod)
+    return module_names, package_names
+
+
+class CheckDependencies(type):
+    """Modifies the CommandLineOption if a specified dependency is not met."""
+    def __init__(cls, what, bases=None, dict_=None):  # noqa
+        if '__depends_on__' in dict_:
+            mod_names, package_names = parse_mod_deps(dict_['__depends_on__'])
+            mods_exist = [module_exists(m) for m in mod_names]
+
+            if not all(mods_exist):
+                missing_pkgs = [p for p, x in zip(package_names, mods_exist)
+                                if not x]
+                if len(missing_pkgs) > 1:
+                    error_msg = '{} depends on missing [{}] packages.'.format(
+                        cls.__name__, ", ".join(missing_pkgs))
+                else:
+                    error_msg = '{} depends on missing "{}" package.'.format(
+                        cls.__name__, missing_pkgs[0])
+
+                def _apply(cls, args, run):
+                    raise ImportError(error_msg)
+                cls.__doc__ = '( ' + error_msg + ')'
+                cls.apply = classmethod(_apply)
+                cls._enabled = False
+
+        type.__init__(cls, what, bases, dict_)
+
+
+class CommandLineOption(with_metaclass(CheckDependencies, object)):
     """
     Base class for all command-line options.
 
@@ -25,7 +66,18 @@ class CommandLineOption(object):
     Finally you need to implement the `execute` classmethod. It receives the
     value of the argument (if applicable) and the current run. You can modify
     the run object in any way.
+
+    If the command line option depends on one or more installed packages, this
+    should be specified as the `__depends_on__` attribute.
+    It can be either a string with the name of the module, or a list/tuple of
+    such names.
+    If the module name (import name) differs from the name of the package, the
+    latter can be specified using a '#' to improve the description and error
+    message.
+    For example `__depends_on__ = 'git#GitPython'`.
     """
+
+    _enabled = True
 
     short_flag = None
     """ The (one-letter) short form (defaults to first letter of flag) """
@@ -91,9 +143,13 @@ class CommandLineOption(object):
         pass
 
 
-def gather_command_line_options():
+def gather_command_line_options(filter_disabled=None):
     """Get a sorted list of all CommandLineOption subclasses."""
-    return sorted(get_inheritors(CommandLineOption), key=lambda x: x.__name__)
+    if filter_disabled is None:
+        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
+    options = [opt for opt in get_inheritors(CommandLineOption)
+               if not filter_disabled or opt._enabled]
+    return sorted(options, key=lambda opt: opt.__name__)
 
 
 class HelpOption(CommandLineOption):
@@ -211,6 +267,8 @@ class PriorityOption(CommandLineOption):
 
 class EnforceCleanOption(CommandLineOption):
     """Fail if any version control repository is dirty."""
+
+    __depends_on__ = 'git#GitPython'
 
     @classmethod
     def apply(cls, args, run):
