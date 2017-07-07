@@ -6,6 +6,7 @@ Release History
 * Refactor: lazy importing of many optional dependencies
 * Feature: set seed of tensorflow if it is imported
 * Bugfix: failed runs now return with exit code 1 by default
+* Bugfix: fixed a problem with UTF-8 symbols in stdout
 
 0.7.0 (2017-05-07)
 ++++++++++++++++++

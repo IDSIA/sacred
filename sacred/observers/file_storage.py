@@ -151,7 +151,7 @@ class FileStorageObserver(RunObserver):
 
     def save_cout(self):
         with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
-            f.write(self.cout)
+            f.write(self.cout.encode('utf-8'))
 
     def render_template(self):
         if opt.has_mako and self.template:
