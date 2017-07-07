@@ -4,6 +4,7 @@ from __future__ import (division, print_function, unicode_literals,
                         absolute_import)
 
 import datetime
+import os
 import tempfile
 import io
 
@@ -28,7 +29,7 @@ def sample_run():
         'name': 'test_exp',
         'sources': [],
         'doc': '',
-        'base_dir': '/tmp',
+        'base_dir': os.path.join(os.path.dirname(__file__), '..', '..'),
         'dependencies': ['sacred==0.7b0']
     }
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}

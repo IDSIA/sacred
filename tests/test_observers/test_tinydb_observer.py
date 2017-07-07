@@ -33,7 +33,8 @@ def tinydb_obs(tmpdir):
 
 @pytest.fixture()
 def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
+    exp = {'name': 'test_exp', 'sources': [], 'doc': '',
+           'base_dir': os.path.join(os.path.dirname(__file__), '..', '..')}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
