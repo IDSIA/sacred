@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 import hashlib
 import json
+import os
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -145,15 +146,16 @@ if opt.has_sqlalchemy:  # noqa
         __tablename__ = 'source'
 
         @classmethod
-        def get_or_create(cls, filename, md5sum, session):
+        def get_or_create(cls, filename, md5sum, session, basedir):
             instance = session.query(cls).filter_by(filename=filename,
                                                     md5sum=md5sum).first()
             if instance:
                 return instance
-            md5sum_ = get_digest(filename)
+            full_path = os.path.join(basedir, filename)
+            md5sum_ = get_digest(full_path)
             assert md5sum_ == md5sum, 'found md5 mismatch for {}: {} != {}'\
                 .format(filename, md5sum, md5sum_)
-            with open(filename, 'r') as f:
+            with open(full_path, 'r') as f:
                 return cls(filename=filename, md5sum=md5sum, content=f.read())
 
         source_id = sa.Column(sa.Integer, primary_key=True)
@@ -285,7 +287,8 @@ if opt.has_sqlalchemy:  # noqa
 
             dependencies = [Dependency.get_or_create(d, session)
                             for d in ex_info['dependencies']]
-            sources = [Source.get_or_create(s, md5sum, session)
+            sources = [Source.get_or_create(s, md5sum, session,
+                                            ex_info['base_dir'])
                        for s, md5sum in ex_info['sources']]
 
             return cls(name=name, dependencies=dependencies, sources=sources,

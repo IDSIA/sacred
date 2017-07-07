@@ -108,8 +108,9 @@ class TinyDbObserver(RunObserver):
         for source_name, md5 in ex_info['sources']:
 
             # Substitute any HOME or Environment Vars to get absolute path
-            abs_path = os.path.expanduser(source_name)
-            abs_path = os.path.expandvars(source_name)
+            abs_path = os.path.join(ex_info['base_dir'], source_name)
+            abs_path = os.path.expanduser(abs_path)
+            abs_path = os.path.expandvars(abs_path)
             handle = BufferedReaderWrapper(open(abs_path, 'rb'))
 
             file = self.fs.get(md5)

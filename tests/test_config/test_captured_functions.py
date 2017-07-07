@@ -86,3 +86,17 @@ def test_captured_function_magic_run_argument():
     cf.run = mock.MagicMock()
 
     assert cf() == cf.run
+
+
+def test_captured_function_call_doesnt_modify_kwargs():
+    def foo(a, _log):
+        if _log is not None:
+            return a
+
+    cf = create_captured_function(foo)
+    cf.logger = mock.MagicMock()
+    cf.run = mock.MagicMock()
+
+    d = {'a': 7}
+    assert cf(**d) == 7
+    assert d == {'a': 7}
