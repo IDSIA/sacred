@@ -120,7 +120,8 @@ class PackageDependency(object):
             return
         try:
             self.version = pkg_resources.get_distribution(self.name).version
-        except pkg_resources.DistributionNotFound:
+        except (pkg_resources.ResolutionError,
+                pkg_resources.RequirementParseError):
             self.version = '<unknown>'
 
     def to_json(self):
