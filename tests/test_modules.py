@@ -133,5 +133,41 @@ def test_experiment_named_config_subingredient():
     assert ex.run().result == (1, 15)
     assert ex.run(named_configs=['somemod.nsubcfg']).result == (1, 16)
     assert ex.run(named_configs=['ncfg']).result == (2, 25)
-    assert ex.run(named_configs=['ncfg', 'somemod.nsubcfg']).result == (2, 25)
+    assert ex.run(named_configs=['ncfg', 'somemod.nsubcfg']).result == (2, 16)
+    assert ex.run(named_configs=['somemod.nsubcfg', 'ncfg']).result == (2, 25)
+
+
+def test_experiment_double_named_config():
+    ex = Experiment()
+
+    @ex.config
+    def config():
+        a = 0
+        d = {
+            'e': 0,
+            'f': 0
+        }
+
+    @ex.named_config
+    def A():
+        a = 2
+        d = {
+            'e': 2,
+            'f': 2
+        }
+
+    @ex.named_config
+    def B():
+        d = {'f': -1}
+
+    @ex.main
+    def run(a, d):
+        return a, d['e'], d['f']
+
+    assert ex.run().result == (0, 0, 0)
+    assert ex.run(named_configs=['A']).result == (2, 2, 2)
+    assert ex.run(named_configs=['B']).result == (0, 0, -1)
+    assert ex.run(named_configs=['A', 'B']).result == (2, 2, -1)
+    assert ex.run(named_configs=['B', 'A']).result == (2, 2, 2)
+
 
