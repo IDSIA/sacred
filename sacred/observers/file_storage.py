@@ -150,7 +150,7 @@ class FileStorageObserver(RunObserver):
         copyfile(filename, os.path.join(self.dir, target_name))
 
     def save_cout(self):
-        with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
+        with open(os.path.join(self.dir, 'cout.txt'), 'wb') as f:
             f.write(self.cout.encode('utf-8'))
 
     def render_template(self):
