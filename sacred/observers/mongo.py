@@ -136,7 +136,7 @@ class MongoObserver(RunObserver):
         self.run_entry['info'] = flatten(info)
         self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
-        self.run_entry['result'] = result
+        self.run_entry['result'] = flatten(result)
         self.save()
 
     def completed_event(self, stop_time, result):
@@ -221,9 +221,9 @@ class MongoObserver(RunObserver):
                 self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
             try:
                 self.runs.insert_one(self.run_entry)
-            except pymongo.errors.InvalidDocument:
+            except pymongo.errors.InvalidDocument as e:
                 raise ObserverError('Run contained an unserializable entry.'
-                                    '(most likely in the info)')
+                                    '(most likely in the info)\n{}'.format(e))
             except pymongo.errors.DuplicateKeyError:
                 if not autoinc_key:
                     raise
