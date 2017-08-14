@@ -47,6 +47,9 @@ dicts, strings and combinations thereof::
     >>> ./example.py with 'mask=0b111000'
     >>> ./example.py with 'message="Hello Bob!"'
 
+.. note::
+    Note however, that changing individual elements of a list is not supported now.
+
 **Dotted Notation**
 
 If you want to set individual entries of a dictionary you can use the dotted
