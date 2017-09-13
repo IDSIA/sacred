@@ -1,12 +1,24 @@
 Release History
 ---------------
 
-0.7.1 (??)
+0.7.1 (2017-09-14)
 ++++++++++
 * Refactor: lazy importing of many optional dependencies
+* Feature: added metrics API for adding live monitoring information to the MongoDB
+* Feature: added integration with tensorflow for automatic capturing of LogWriter paths
 * Feature: set seed of tensorflow if it is imported
 * Bugfix: failed runs now return with exit code 1 by default
 * Bugfix: fixed a problem with UTF-8 symbols in stdout
+* Bugfix: fixed a threading issue with the SQLObserver
+* Bugfix: fixed a problem with consecutive ids in the SQLObserver
+* Bugfix: heartbeat events now also serialize the intermediate results
+* Bugfix: reapeatedly calling run from python with an option for adding an
+          observer, no longer duplicates observers
+* Bugfix: fixed a problem where **kwargs of captured functions might be modified
+* Bugfix: fixed an encoding problem with the FileStorageObserver
+* Bugfix: fixed an issue where determining the version of some packages would crash
+* Bugfix: fixed handling of relative filepaths in the SQLObserver and the TinyDBObserver
+
 
 0.7.0 (2017-05-07)
 ++++++++++++++++++
