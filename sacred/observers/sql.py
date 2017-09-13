@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 import hashlib
 import json
 import os
+from threading import Lock
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -27,6 +28,7 @@ class SqlObserver(RunObserver):
         self.session = session
         self.priority = priority
         self.run = None
+        self.lock = Lock()
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -47,7 +49,7 @@ class SqlObserver(RunObserver):
                        host=sql_host,
                        status='RUNNING')
         self.session.add(self.run)
-        self.session.commit()
+        self.save()
         return _id or self.run.run_id
 
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
@@ -67,7 +69,7 @@ class SqlObserver(RunObserver):
                        experiment=sql_exp,
                        status='QUEUED')
         self.session.add(self.run)
-        self.session.commit()
+        self.save()
         return _id or self.run.run_id
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
@@ -75,34 +77,38 @@ class SqlObserver(RunObserver):
         self.run.captured_out = captured_out
         self.run.heartbeat = beat_time
         self.run.result = result
-        self.session.commit()
+        self.save()
 
     def completed_event(self, stop_time, result):
         self.run.stop_time = stop_time
         self.run.result = result
         self.run.status = 'COMPLETED'
-        self.session.commit()
+        self.save()
 
     def interrupted_event(self, interrupt_time, status):
         self.run.stop_time = interrupt_time
         self.run.status = status
-        self.session.commit()
+        self.save()
 
     def failed_event(self, fail_time, fail_trace):
         self.run.stop_time = fail_time
         self.run.fail_trace = '\n'.join(fail_trace)
         self.run.status = 'FAILED'
-        self.session.commit()
+        self.save()
 
     def resource_event(self, filename):
         res = Resource.get_or_create(filename, self.session)
         self.run.resources.append(res)
-        self.session.commit()
+        self.save()
 
     def artifact_event(self, name, filename):
         a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
-        self.session.commit()
+        self.save()
+
+    def save(self):
+        with self.lock:
+            self.session.commit()
 
     def query(self, _id):
         run = self.session.query(Run).filter_by(id=_id).first()
