@@ -23,4 +23,3 @@ def cfg():
 def main(message):
     print(__name__)
     print(message)
-    return 1/0

@@ -30,6 +30,7 @@ $
 
 
 def get_py_file_if_possible(pyc_name):
+    """Try to retrieve a X.py file for a given X.py[c] file."""
     if pyc_name.endswith('.py'):
         return pyc_name
     assert pyc_name.endswith('.pyc')
@@ -40,6 +41,7 @@ def get_py_file_if_possible(pyc_name):
 
 
 def get_digest(filename):
+    """Compute the MD5 hash for a given file."""
     h = hashlib.md5()
     with open(filename, 'rb') as f:
         data = f.read(1 * MB)
@@ -50,6 +52,23 @@ def get_digest(filename):
 
 
 def get_commit_if_possible(filename):
+    """Try to retrieve VCS information for a given file.
+
+    Currently only supports git using the gitpython package.
+
+    Parameters
+    ----------
+    filename : str
+
+    Returns
+    -------
+        path: str
+            The base path of the repository
+        commit: str
+            The commit hash
+        is_dirty: bool
+            True if there are uncommitted changes in the repository
+    """
     # git
     if opt.has_gitpython:
         from git import Repo, InvalidGitRepositoryError
@@ -183,11 +202,31 @@ def create_source_or_dep(modname, mod, dependencies, sources, experiment_path):
             dependencies.add(pdep)
 
 
-# Credit to Trent Mick from here:
-# https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
 def splitall(path):
+    """Split a path into a list of directory names (and optionally a filename).
+
+    Parameters
+    ----------
+    path: str
+        The path (absolute or relative).
+
+    Returns
+    -------
+    allparts: list[str]
+        List of directory names (and optionally a filename)
+
+    Example
+    -------
+    "foo/bar/baz.py" => ["foo", "bar", "baz.py"]
+    "/absolute/path.py" => ["/", "absolute", "baz.py"]
+
+    Notes
+    -----
+    Credit to Trent Mick. Taken from
+    https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
+    """
     allparts = []
-    while 1:
+    while True:
         parts = os.path.split(path)
         if parts[0] == path:  # sentinel for absolute paths
             allparts.insert(0, parts[0])
@@ -201,32 +240,58 @@ def splitall(path):
     return allparts
 
 
-def get_relevant_path_parts(path):
-    path_parts = splitall(path)
-    if path_parts[-1] in ['__init__.py', '__init__.pyc']:
-        path_parts = path_parts[:-1]
+def convert_path_to_module_parts(path):
+    """Convert path to a python file into list of module names."""
+    module_parts = splitall(path)
+    if module_parts[-1] in ['__init__.py', '__init__.pyc']:
+        # remove trailing __init__.py
+        module_parts = module_parts[:-1]
     else:
-        path_parts[-1], _ = os.path.splitext(path_parts[-1])
-    return path_parts
+        # remove file extension
+        module_parts[-1], _ = os.path.splitext(module_parts[-1])
+    return module_parts
 
 
 def is_local_source(filename, modname, experiment_path):
+    """Check if a module comes from the given experiment path.
+
+    Check if a module, given by name and filename, is from (a subdirectory of )
+    the given experiment path.
+    This is used to determine if the module is a local source file, or rather
+    a package dependency.
+
+    Parameters
+    ----------
+    filename: str
+        The absolute filename of the module in question (Usually module.__file__).
+    modname: str
+        The full name of the module including parent namespaces.
+    experiment_path: str
+        The base path of the experiment.
+
+    Returns
+    -------
+    bool:
+        True if the module was imported locally from (a subdir of) the
+        experiment_path, and False otherwise.
+    """
     if not is_subdir(filename, experiment_path):
         return False
     rel_path = os.path.relpath(filename, experiment_path)
-    path_parts = get_relevant_path_parts(rel_path)
+    path_parts = convert_path_to_module_parts(rel_path)
 
     mod_parts = modname.split('.')
     if path_parts == mod_parts:
         return True
     if len(path_parts) > len(mod_parts):
         return False
-    abs_path_parts = get_relevant_path_parts(os.path.abspath(filename))
+    abs_path_parts = convert_path_to_module_parts(os.path.abspath(filename))
     return all([p == m for p, m in zip(reversed(abs_path_parts),
                                        reversed(mod_parts))])
 
 
 def gather_sources_and_dependencies(globs, interactive=False):
+    """Scan the given globals for modules and return them as dependencies."""
     dependencies = set()
     filename = globs.get('__file__')
 
