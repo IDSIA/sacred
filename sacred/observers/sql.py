@@ -34,10 +34,10 @@ class SqlObserver(RunObserver):
         sql_exp = Experiment.get_or_create(ex_info, self.session)
         sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
-            _id = '0' if i is None else str(int(i.run_id) + 1)
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            _id = 0 if i is None else i.id + 1
 
-        self.run = Run(run_id=_id,
+        self.run = Run(run_id=str(_id),
                        start_time=start_time,
                        config=json.dumps(flatten(config)),
                        command=command,
@@ -56,10 +56,10 @@ class SqlObserver(RunObserver):
         Base.metadata.create_all(self.engine)
         sql_exp = Experiment.get_or_create(ex_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
-            _id = '0' if i is None else str(int(i.id) + 1)
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            _id = 0 if i is None else i.id + 1
 
-        self.run = Run(run_id=_id,
+        self.run = Run(run_id=str(_id),
                        config=json.dumps(flatten(config)),
                        command=command,
                        priority=meta_info.get('priority', 0),
@@ -321,8 +321,9 @@ if opt.has_sqlalchemy:  # noqa
 
     class Run(Base):
         __tablename__ = 'run'
+        id = sa.Column(sa.Integer, primary_key=True)
 
-        run_id = sa.Column(sa.String(24), primary_key=True)
+        run_id = sa.Column(sa.String(24))
 
         command = sa.Column(sa.String(64))
 
