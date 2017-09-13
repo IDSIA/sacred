@@ -263,6 +263,15 @@ class Ingredient(object):
         self.dependencies.add(PackageDependency(package_name, version))
 
     def gather_commands(self):
+        """Collect all commands from this ingredient and its sub-ingredients.
+
+        Yields
+        ------
+        cmd_name: str
+            The full (dotted) name of the command.
+        cmd: function
+            The corresponding captured function.
+        """
         for cmd_name, cmd in self.commands.items():
             yield self.path + '.' + cmd_name, cmd
 
@@ -303,6 +312,19 @@ class Ingredient(object):
         )
 
     def traverse_ingredients(self):
+        """Recursively traverse this ingredient and its sub-ingredients.
+        Yields
+        ------
+        ingredient: sacred.Ingredient
+            The ingredient as traversed in preorder.
+        depth: int
+            The depth of the ingredient starting from 0.
+
+        Raises
+        ------
+        CircularDependencyError:
+            If a circular structure among ingredients was detected.
+        """
         if self._is_traversing:
             raise CircularDependencyError()
         else:
