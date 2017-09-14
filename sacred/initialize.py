@@ -7,13 +7,13 @@ from collections import OrderedDict, defaultdict
 from copy import copy, deepcopy
 
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
-                           load_config_file)
+                           load_config_file, undogmatize)
 from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
-                          get_by_dotted_path, is_prefix, iter_path_splits,
+                          get_by_dotted_path, is_prefix,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes, join_paths)
 
@@ -33,6 +33,7 @@ class Scaffold(object):
         self.named_configs_to_use = []
         self.config = None
         self.fallback = None
+        self.presets = {}
         self.fixture = None  # TODO: rename
         self.logger = None
         self.seed = None
@@ -65,19 +66,6 @@ class Scaffold(object):
             if is_prefix(self.path, subrunner_path):
                 subrunner.set_up_seed(self.rnd)
 
-    def pick_relevant_config_updates(self, config_updates, past_paths):
-        if config_updates is None:
-            return
-
-        for path, value in iterate_flattened(config_updates):
-            for prefix, suffix in reversed(list(iter_path_splits(path))):
-                if prefix in past_paths:
-                    # don't use config_updates for prior ingredients
-                    break
-                elif prefix == self.path:
-                    set_by_dotted_path(self.config_updates, suffix, value)
-                    break
-
     def gather_fallbacks(self):
         fallback = {}
         for sr_path, subrunner in self.subrunners.items():
@@ -91,24 +79,19 @@ class Scaffold(object):
         self.fallback = dogmatize(fallback)
         self.fallback.revelation()
 
-    def use_named_config(self, config_name):
+    def run_named_config(self, config_name):
         if os.path.exists(config_name):
-            self.named_configs_to_use.append(
-                ConfigDict(load_config_file(config_name)))
+            nc = ConfigDict(load_config_file(config_name))
         else:
-            self.named_configs_to_use.append(self.named_configs[config_name])
+            nc = self.named_configs[config_name]
 
-    def evaluate_named_configs(self):
-        # named configs go first
-        config_updates, _ = chain_evaluate_config_scopes(
-            self.named_configs_to_use,
-            fixed=self.config_updates,
-            preset={},
-            fallback=self.fallback)
-        return {self.path: config_updates}
+        cfg = nc(fixed=self.config_updates,
+                 preset=self.presets,
+                 fallback=self.fallback)
+
+        return undogmatize(cfg)
 
     def set_up_config(self):
-        # unnamed (default) configs second
         self.config, self.summaries = chain_evaluate_config_scopes(
             self.config_scopes,
             fixed=self.config_updates,
@@ -185,6 +168,9 @@ class Scaffold(object):
                     'Ignored attempt to set value of "%s", because it is an '
                     'ingredient.' % key
                 )
+
+    def __repr__(self):
+        return "<Scaffold: '{}'>".format(self.path)
 
 
 def get_configuration(scaffolding):
@@ -282,29 +268,74 @@ def get_command(scaffolding, command_path):
             raise KeyError('Command "%s" not found' % command_name)
 
 
+def find_best_match(path, prefixes):
+    """Find the Ingredient that shares the longest prefix with path."""
+    path_parts = path.split('.')
+    for p in prefixes:
+        if len(p) <= len(path_parts) and p == path_parts[:len(p)]:
+            return '.'.join(p), '.'.join(path_parts[len(p):])
+    return '', path
+
+
+def distribute_presets(prefixes, scaffolding, config_updates):
+    for path, value in iterate_flattened(config_updates):
+        scaffold_name, suffix = find_best_match(path, prefixes)
+        scaff = scaffolding[scaffold_name]
+        set_by_dotted_path(scaff.presets, suffix, value)
+
+
+def distribute_config_updates(prefixes, scaffolding, config_updates):
+    for path, value in iterate_flattened(config_updates):
+        scaffold_name, suffix = find_best_match(path, prefixes)
+        scaff = scaffolding[scaffold_name]
+        set_by_dotted_path(scaff.config_updates, suffix, value)
+
+
+def get_scaffolding_and_config_name(named_config, scaffolding):
+    if os.path.exists(named_config):
+        path, cfg_name = '', named_config
+    else:
+        path, _, cfg_name = named_config.rpartition('.')
+
+        if path not in scaffolding:
+            raise KeyError('Ingredient for named config "{}" not found'
+                           .format(named_config))
+    scaff = scaffolding[path]
+    return scaff, cfg_name
+
+
 def create_run(experiment, command_name, config_updates=None,
                named_configs=(), force=False):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = create_scaffolding(experiment, sorted_ingredients)
+    # get all split non-empty prefixes sorted from deepest to shallowest
+    prefixes = sorted([s.split('.') for s in scaffolding if s != ''],
+                      reverse=True, key=lambda p: len(p))
 
     # --------- configuration process -------------------
-    distribute_named_configs(scaffolding, named_configs)
+
+    # Phase 1: Config updates
     config_updates = config_updates or {}
     config_updates = convert_to_nested_dict(config_updates)
     root_logger, run_logger = initialize_logging(experiment, scaffolding)
+    distribute_config_updates(prefixes, scaffolding, config_updates)
 
-    past_paths = set()
-    for scaffold in scaffolding.values():
-        scaffold.pick_relevant_config_updates(config_updates, past_paths)
-        past_paths.add(scaffold.path)
-        scaffold.gather_fallbacks()
-        recursive_update(config_updates, scaffold.evaluate_named_configs())
+    # Phase 2: Named Configs
+    for ncfg in named_configs:
+        scaff, cfg_name = get_scaffolding_and_config_name(ncfg, scaffolding)
+        scaff.gather_fallbacks()
+        ncfg_updates = scaff.run_named_config(cfg_name)
+        distribute_presets(prefixes, scaffolding, ncfg_updates)
+        for ncfg_key, value in iterate_flattened(ncfg_updates):
+            set_by_dotted_path(config_updates,
+                               join_paths(scaff.path, ncfg_key),
+                               value)
 
-    past_paths = set()
+    distribute_config_updates(prefixes, scaffolding, config_updates)
+
+    # Phase 3: Normal config scopes
     for scaffold in scaffolding.values():
-        scaffold.pick_relevant_config_updates(config_updates, past_paths)
-        past_paths.add(scaffold.path)
         scaffold.gather_fallbacks()
         scaffold.set_up_config()
 
@@ -314,6 +345,7 @@ def create_run(experiment, command_name, config_updates=None,
         config_updates = scaffold.run_config_hooks(config, config_updates,
                                                    command_name, run_logger)
 
+    # Phase 4: finalize seeding
     for scaffold in reversed(list(scaffolding.values())):
         scaffold.set_up_seed()  # partially recursive
 
