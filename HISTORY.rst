@@ -7,6 +7,7 @@ Release History
 * Feature: added metrics API for adding live monitoring information to the MongoDB
 * Feature: added integration with tensorflow for automatic capturing of LogWriter paths
 * Feature: set seed of tensorflow if it is imported
+* Feature: named_configs can now affect the config of ingredients
 * Bugfix: failed runs now return with exit code 1 by default
 * Bugfix: fixed a problem with UTF-8 symbols in stdout
 * Bugfix: fixed a threading issue with the SQLObserver
