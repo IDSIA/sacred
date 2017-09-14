@@ -139,6 +139,7 @@ class Run(object):
         -------
         file
             the opened file-object
+
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
@@ -194,6 +195,7 @@ class Run(object):
         Returns
         -------
             the return value of the main function
+
         """
         if self.start_time is not None:
             raise RuntimeError('A run can only be started once. '

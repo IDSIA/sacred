@@ -263,7 +263,8 @@ def is_local_source(filename, modname, experiment_path):
     Parameters
     ----------
     filename: str
-        The absolute filename of the module in question (Usually module.__file__).
+        The absolute filename of the module in question.
+        (Usually module.__file__)
     modname: str
         The full name of the module including parent namespaces.
     experiment_path: str

@@ -161,7 +161,8 @@ def set_by_dotted_path(d, path, value):
 
     Will create dictionaries as needed.
 
-    Examples:
+    Examples
+    --------
     >>> d = {'foo': {'bar': 7}}
     >>> set_by_dotted_path(d, 'foo.bar', 10)
     >>> d
@@ -169,6 +170,7 @@ def set_by_dotted_path(d, path, value):
     >>> set_by_dotted_path(d, 'foo.d.baz', 3)
     >>> d
     {'foo': {'bar': 10, 'd': {'baz': 3}}}
+
     """
     split_path = path.split('.')
     current_option = d

@@ -52,6 +52,7 @@ class Experiment(Ingredient):
             mode (e.g. IPython or Jupyter notebooks).
             However, this mode is discouraged since it won't allow storing the
             source-code or reliable reproduction of the runs.
+
         """
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
@@ -181,6 +182,7 @@ class Experiment(Ingredient):
         -------
         sacred.run.Run
             the Run object corresponding to the finished run
+
         """
         run = self._create_run(command_name, config_updates, named_configs,
                                meta_info, options)
@@ -216,6 +218,7 @@ class Experiment(Ingredient):
         -------
         sacred.run.Run
             The Run object corresponding to the finished run.
+
         """
         if argv is None:
             argv = sys.argv
@@ -277,6 +280,7 @@ class Experiment(Ingredient):
         -------
         file
             the opened file-object
+
         """
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename, mode)
@@ -317,6 +321,7 @@ class Experiment(Ingredient):
         name : str, optional
             optionally set the name of the artifact.
             Defaults to the relative file-path.
+
         """
         assert self.current_run is not None, "Can only be called during a run."
         self.current_run.add_artifact(filename, name)
@@ -364,6 +369,7 @@ class Experiment(Ingredient):
         (str, function)
             A tuple consisting of the (dotted) command-name and the
             corresponding captured function.
+
         """
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
@@ -381,6 +387,7 @@ class Experiment(Ingredient):
             A dictionary containing option keys of the form '--beat_interval'.
             Their values are boolean if the option is a flag, otherwise None or
             its default value.
+
         """
         all_commands = self.gather_commands()
         args = parse_args(["dummy"],

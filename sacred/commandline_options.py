@@ -20,10 +20,10 @@ def with_metaclass(meta, *bases):
     # This requires a bit of explanation: the basic idea is to make a dummy
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
-    class metaclass(meta):
+    class Metaclass(meta):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
-    return type.__new__(metaclass, str('temporary_class'), (), {})
+    return type.__new__(Metaclass, str('temporary_class'), (), {})
 
 
 def parse_mod_deps(depends_on):
