@@ -12,7 +12,18 @@ from sacred.commands import print_config
 from sacred.settings import SETTINGS
 from sacred.utils import (convert_camel_case_to_snake_case, get_inheritors,
                           module_exists)
-from six import with_metaclass
+
+
+# from six.with_metaclass
+def with_metaclass(meta, *bases):
+    """Create a base class with a metaclass."""
+    # This requires a bit of explanation: the basic idea is to make a dummy
+    # metaclass for one level of class instantiation that replaces itself with
+    # the actual metaclass.
+    class metaclass(meta):
+        def __new__(cls, name, this_bases, d):
+            return meta(name, bases, d)
+    return type.__new__(metaclass, str('temporary_class'), (), {})
 
 
 def parse_mod_deps(depends_on):
@@ -120,6 +131,7 @@ class CommandLineOption(with_metaclass(CheckDependencies, object)):
         -------
         (str, str)
             tuple of short-flag, and long-flag
+
         """
         return cls.get_short_flag(), cls.get_flag()
 
@@ -139,6 +151,7 @@ class CommandLineOption(with_metaclass(CheckDependencies, object)):
             Otherwise it is either True or False.
         run :  sacred.run.Run
             The current run to be modified
+
         """
         pass
 

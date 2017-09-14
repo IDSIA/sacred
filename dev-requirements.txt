@@ -19,7 +19,6 @@ pytz==2016.10
 PyYAML==3.12
 scandir==1.4
 sentinels==1.0.0
-six==1.10.0
 smmap2==2.0.1
 SQLAlchemy==1.1.4
 tinydb==3.2.1
