@@ -125,7 +125,7 @@ def test_considers_captured_functions_for_fail_on_unused_config(ex):
         ex.run(config_updates={'c': 3})
 
 
-def test_used_prefix_for_fail_on_unused_config(ex):
+def test_considers_prefix_for_fail_on_unused_config(ex):
     @ex.config
     def cfg():
         a = {'b': 1}
@@ -145,6 +145,18 @@ def test_used_prefix_for_fail_on_unused_config(ex):
 
     with pytest.raises(KeyError):
         ex.run(config_updates={'a': {'c': 5}})
+
+
+def test_non_existing_prefix_is_treatet_as_empty_dict(ex):
+    @ex.capture(prefix='nonexisting')
+    def transmogrify(b=10):
+        return b
+
+    @ex.main
+    def foo():
+        return transmogrify()
+
+    assert ex.run().result == 10
 
 
 def test_using_a_named_config(ex):
@@ -171,11 +183,12 @@ def test_captured_out_filter(ex, capsys):
         sys.stdout.flush()
         for i in range(10):
             sys.stdout.write('\b')
-            sys.stdout.write(str(i))
+            sys.stdout.write("{}".format(i))
             sys.stdout.flush()
 
     ex.captured_out_filter = apply_backspaces_and_linefeeds
-    options = {'--loglevel': 'CRITICAL'}  # to disable logging
+    # disable logging and set capture mode to python
+    options = {'--loglevel': 'CRITICAL', '--capture': 'sys'}
     with capsys.disabled():
         assert ex.run(options=options).captured_out == 'progress 9'
 

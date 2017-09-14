@@ -12,8 +12,8 @@ data_ingredient = Ingredient('dataset')
 
 @data_ingredient.config
 def cfg1():
-    filename = 'my_dataset.npy'
-    normalize = True
+    filename = 'my_dataset.npy'  # dataset filename
+    normalize = True  # normalize dataset
 
 
 @data_ingredient.capture

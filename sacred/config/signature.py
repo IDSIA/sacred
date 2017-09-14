@@ -148,10 +148,11 @@ class Signature(object):
 
     def _fill_in_options(self, args, kwargs, options, bound):
         free_params = self.get_free_parameters(args, kwargs, bound)
+        new_kwargs = dict(kwargs) if free_params else kwargs
         for param in free_params:
             if param in options:
-                kwargs[param] = options[param]
-        return args, kwargs
+                new_kwargs[param] = options[param]
+        return args, new_kwargs
 
     def _assert_no_missing_args(self, args, kwargs, bound):
         free_params = self.get_free_parameters(args, kwargs, bound)

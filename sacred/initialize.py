@@ -50,7 +50,10 @@ class Scaffold(object):
         if self.seed is not None:
             return
 
-        self.seed = self.config.get('seed') or get_seed(rnd)
+        self.seed = self.config.get('seed')
+        if self.seed is None:
+            self.seed = get_seed(rnd)
+
         self.rnd = create_rnd(self.seed)
 
         if self.generate_seed:
@@ -139,7 +142,8 @@ class Scaffold(object):
 
         for cfunc in self._captured_functions:
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix)
+            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix,
+                                              default={})
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run
@@ -361,8 +365,9 @@ def create_run(experiment, command_name, config_updates=None,
     post_runs = [pr for ing in sorted_ingredients for pr in ing.post_run_hooks]
 
     run = Run(config, config_modifications, main_function,
-              experiment.observers, root_logger, run_logger, experiment_info,
-              host_info, pre_runs, post_runs, experiment.captured_out_filter)
+              copy(experiment.observers), root_logger, run_logger,
+              experiment_info, host_info, pre_runs, post_runs,
+              experiment.captured_out_filter)
 
     if hasattr(main_function, 'unobserved'):
         run.unobserved = main_function.unobserved

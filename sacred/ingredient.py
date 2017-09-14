@@ -53,7 +53,7 @@ class Ingredient(object):
         mainfile_name = _caller_globals.get('__file__', '.')
         self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
         self.doc = _caller_globals.get('__doc__', "")
-        self.sources, self.dependencies = \
+        self.mainfile, self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals, interactive)
 
     # =========================== Decorators ==================================
@@ -263,6 +263,15 @@ class Ingredient(object):
         self.dependencies.add(PackageDependency(package_name, version))
 
     def gather_commands(self):
+        """Collect all commands from this ingredient and its sub-ingredients.
+
+        Yields
+        ------
+        cmd_name: str
+            The full (dotted) name of the command.
+        cmd: function
+            The corresponding captured function.
+        """
         for cmd_name, cmd in self.commands.items():
             yield self.path + '.' + cmd_name, cmd
 
@@ -290,15 +299,32 @@ class Ingredient(object):
         for dep in dependencies:
             dep.fill_missing_version()
 
+        mainfile = (self.mainfile.to_json(self.base_dir)[0]
+                    if self.mainfile else None)
+
         return dict(
             name=self.path,
             base_dir=self.base_dir,
             sources=[s.to_json(self.base_dir) for s in sorted(sources)],
             dependencies=[d.to_json() for d in sorted(dependencies)],
-            repositories=collect_repositories(sources)
+            repositories=collect_repositories(sources),
+            mainfile=mainfile
         )
 
     def traverse_ingredients(self):
+        """Recursively traverse this ingredient and its sub-ingredients.
+        Yields
+        ------
+        ingredient: sacred.Ingredient
+            The ingredient as traversed in preorder.
+        depth: int
+            The depth of the ingredient starting from 0.
+
+        Raises
+        ------
+        CircularDependencyError:
+            If a circular structure among ingredients was detected.
+        """
         if self._is_traversing:
             raise CircularDependencyError()
         else:

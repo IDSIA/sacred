@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-
+import platform
 from munch import munchify
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -29,10 +29,16 @@ SETTINGS = munchify({
     },
     'HOST_INFO': {
         # Collect information about GPUs using the nvidia-smi tool
-        'INCLUDE_GPU_INFO': True
+        'INCLUDE_GPU_INFO': True,
+        # List of ENVIRONMENT variables to store in host-info
+        'CAPTURED_ENV': []
     },
     'COMMAND_LINE': {
         # disallow string fallback, if parsing a value from command-line failed
-        'STRICT_PARSING': False
-    }
+        'STRICT_PARSING': False,
+        # show command line options that are disabled (e.g. unmet dependencies)
+        'SHOW_DISABLED_OPTIONS': True
+    },
+    # configure how stdout/stderr are captured. ['no', 'sys', 'fd']
+    'CAPTURE_MODE': "sys" if platform.system() == "Windows" else "fd"
 })

@@ -8,16 +8,15 @@ import os.path
 import sys
 import time
 
-import bson
-import gridfs
-import pymongo
 import sacred.optional as opt
-from pymongo.errors import AutoReconnect, InvalidDocument, DuplicateKeyError
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
+
+
+DEFAULT_MONGO_PRIORITY = 30
 
 
 def force_valid_bson_key(key):
@@ -29,6 +28,7 @@ def force_valid_bson_key(key):
 
 
 def force_bson_encodeable(obj):
+    import bson
     if isinstance(obj, dict):
         try:
             bson.BSON.encode(obj, check_keys=True)
@@ -54,21 +54,31 @@ class MongoObserver(RunObserver):
 
     @staticmethod
     def create(url='localhost', db_name='sacred', collection='runs',
-               overwrite=None, **kwargs):
+               overwrite=None, priority=DEFAULT_MONGO_PRIORITY, **kwargs):
+        import pymongo
+        import gridfs
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
         if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError('Collection name "{}" is reserved. '
                            'Please use a different one.'.format(collection))
         runs_collection = database[collection]
+        metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return MongoObserver(runs_collection, fs, overwrite=overwrite)
+        return MongoObserver(runs_collection,
+                             fs, overwrite=overwrite,
+                             metrics_collection=metrics_collection,
+                             priority=priority)
 
-    def __init__(self, runs_collection, fs, overwrite=None):
+    def __init__(self, runs_collection,
+                 fs, overwrite=None, metrics_collection=None,
+                 priority=DEFAULT_MONGO_PRIORITY):
         self.runs = runs_collection
+        self.metrics = metrics_collection
         self.fs = fs
         self.overwrite = overwrite
         self.run_entry = None
+        self.priority = priority
 
     def queued_event(self, ex_info, command, queue_time, config, meta_info,
                      _id):
@@ -86,7 +96,7 @@ class MongoObserver(RunObserver):
             self.run_entry['_id'] = _id
         # save sources
         self.run_entry['experiment']['sources'] = self.save_sources(ex_info)
-        self.final_save(attempts=1)
+        self.insert()
         return self.run_entry['_id']
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -122,15 +132,16 @@ class MongoObserver(RunObserver):
         self.insert()
         return self.run_entry['_id']
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.run_entry['info'] = flatten(info)
         self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
+        self.run_entry['result'] = flatten(result)
         self.save()
 
     def completed_event(self, stop_time, result):
         self.run_entry['stop_time'] = stop_time
-        self.run_entry['result'] = result
+        self.run_entry['result'] = flatten(result)
         self.run_entry['status'] = 'COMPLETED'
         self.final_save(attempts=10)
 
@@ -170,11 +181,39 @@ class MongoObserver(RunObserver):
                                             'file_id': file_id})
         self.save()
 
+    def log_metrics(self, metrics_by_name, info):
+        """Store new measurements to the database.
+
+        Take measurements and store them into
+        the metrics collection in the database.
+        Additionally, reference the metrics
+        in the info["metrics"] dictionary.
+        """
+        if self.metrics is None:
+            # If, for whatever reason, the metrics collection has not been set
+            # do not try to save there anything
+            return
+        for key in metrics_by_name:
+            query = {"run_id": self.run_entry['_id'],
+                     "name": key}
+            push = {"steps": {"$each": metrics_by_name[key]["steps"]},
+                    "values": {"$each": metrics_by_name[key]["values"]},
+                    "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
+                    }
+            update = {"$push": push}
+            result = self.metrics.update_one(query, update, upsert=True)
+            if result.upserted_id is not None:
+                # This is the first time we are storing this metric
+                info.setdefault("metrics", []) \
+                    .append({"name": key, "id": str(result.upserted_id)})
+
     def insert(self):
+        import pymongo.errors
+
         if self.overwrite:
             return self.save()
 
-        autoinc_key = self.run_entry['_id'] is None
+        autoinc_key = self.run_entry.get('_id') is None
         while True:
             if autoinc_key:
                 c = self.runs.find({}, {'_id': 1})
@@ -182,33 +221,37 @@ class MongoObserver(RunObserver):
                 self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
             try:
                 self.runs.insert_one(self.run_entry)
-            except InvalidDocument:
+            except pymongo.errors.InvalidDocument as e:
                 raise ObserverError('Run contained an unserializable entry.'
-                                    '(most likely in the info)')
-            except DuplicateKeyError:
+                                    '(most likely in the info)\n{}'.format(e))
+            except pymongo.errors.DuplicateKeyError:
                 if not autoinc_key:
                     raise
             return
 
     def save(self):
+        import pymongo.errors
+
         try:
             self.runs.replace_one({'_id': self.run_entry['_id']},
                                   self.run_entry)
-        except AutoReconnect:
+        except pymongo.errors.AutoReconnect:
             pass  # just wait for the next save
-        except InvalidDocument:
+        except pymongo.errors.InvalidDocument:
             raise ObserverError('Run contained an unserializable entry.'
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
+        import pymongo.errors
+
         for i in range(attempts):
             try:
                 self.runs.save(self.run_entry)
                 return
-            except AutoReconnect:
+            except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:
                     time.sleep(1)
-            except InvalidDocument:
+            except pymongo.errors.InvalidDocument:
                 self.run_entry = force_bson_encodeable(self.run_entry)
                 print("Warning: Some of the entries of the run were not "
                       "BSON-serializable!\n They have been altered such that "
@@ -250,45 +293,59 @@ class MongoObserver(RunObserver):
 class MongoDbOption(CommandLineOption):
     """Add a MongoDB Observer to the experiment."""
 
+    __depends_on__ = 'pymongo'
+
     arg = 'DB'
     arg_description = "Database specification. Can be " \
-                      "[host:port:]db_name[.collection]"
+                      "[host:port:]db_name[.collection][!priority]"
 
-    DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z!#%&'()+\-;=@\[\]^_{}.]{0,63}"
+    DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z#%&'()+\-;=@\[\]^_{}.]{0,63}"
     HOSTNAME_PATTERN = \
-        r"(?=.{1,255}$)"\
-        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"\
-        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*"\
+        r"(?=.{1,255}$)" \
+        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*" \
         r"\.?"
     URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
-
-    DB_NAME = re.compile("^" + DB_NAME_PATTERN + "$")
-    URL = re.compile("^" + URL_PATTERN + "$")
+    PRIORITY_PATTERN = "(?P<priority>!-?\d+)?"
+    DB_NAME = re.compile("^" + DB_NAME_PATTERN + PRIORITY_PATTERN + "$")
+    URL = re.compile("^" + URL_PATTERN + PRIORITY_PATTERN + "$")
     URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
-                             "(?P<db_name>" + DB_NAME_PATTERN + ")$")
+                             "(?P<db_name>" + DB_NAME_PATTERN + ")" +
+                             PRIORITY_PATTERN + "$")
 
     @classmethod
     def apply(cls, args, run):
-        url, db_name, collection = cls.parse_mongo_db_arg(args)
+        url, db_name, collection, priority = cls.parse_mongo_db_arg(args)
         if collection:
             mongo = MongoObserver.create(db_name=db_name, url=url,
-                                         collection=collection)
+                                         collection=collection,
+                                         priority=priority)
         else:
-            mongo = MongoObserver.create(db_name=db_name, url=url)
+            mongo = MongoObserver.create(db_name=db_name, url=url,
+                                         priority=priority)
 
         run.observers.append(mongo)
 
     @classmethod
     def parse_mongo_db_arg(cls, mongo_db):
+        def get_priority(pattern):
+            prio_str = pattern.match(mongo_db).group('priority')
+            if prio_str is None:
+                return DEFAULT_MONGO_PRIORITY
+            else:
+                return int(prio_str[1:])
+
         if cls.DB_NAME.match(mongo_db):
             db_name, _, collection = mongo_db.partition('.')
-            return 'localhost:27017', db_name, collection
+            return ('localhost:27017', db_name, collection,
+                    get_priority(cls.DB_NAME))
         elif cls.URL.match(mongo_db):
-            return mongo_db, 'sacred', ''
+            return mongo_db, 'sacred', '', get_priority(cls.URL)
         elif cls.URL_DB_NAME.match(mongo_db):
             match = cls.URL_DB_NAME.match(mongo_db)
             db_name, _, collection = match.group('db_name').partition('.')
-            return match.group('url'), db_name, collection
+            return (match.group('url'), db_name, collection,
+                    get_priority(cls.URL_DB_NAME))
         else:
             raise ValueError('mongo_db argument must have the form "db_name" '
                              'or "host:port[:db_name]" but was {}'

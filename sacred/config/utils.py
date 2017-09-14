@@ -38,8 +38,7 @@ def assert_is_valid_key(key):
       if the key violates any requirements
     """
     if SETTINGS.CONFIG.ENFORCE_KEYS_MONGO_COMPATIBLE and (
-            isinstance(key, basestring) and (key.find('.') > -1 or
-                                             key.startswith('$'))):
+            isinstance(key, basestring) and ('.' in key or key[0] == '$')):
         raise KeyError('Invalid key "{}". Config-keys cannot '
                        'contain "." or start with "$"'.format(key))
 

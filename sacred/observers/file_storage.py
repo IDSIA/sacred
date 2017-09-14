@@ -17,6 +17,9 @@ from sacred import optional as opt
 from sacred.serializer import flatten
 
 
+DEFAULT_FILE_STORAGE_PRIORITY = 20
+
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code."""
     if isinstance(obj, datetime):
@@ -30,7 +33,7 @@ class FileStorageObserver(RunObserver):
 
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
-               template=None):
+               template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
@@ -43,13 +46,15 @@ class FileStorageObserver(RunObserver):
             template = os.path.join(basedir, 'template.html')
             if not os.path.exists(template):
                 template = None
-        return cls(basedir, resource_dir, source_dir, template)
+        return cls(basedir, resource_dir, source_dir, template, priority)
 
-    def __init__(self, basedir, resource_dir, source_dir, template):
+    def __init__(self, basedir, resource_dir, source_dir, template,
+                 priority=DEFAULT_FILE_STORAGE_PRIORITY):
         self.basedir = basedir
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.template = template
+        self.priority = priority
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -145,8 +150,8 @@ class FileStorageObserver(RunObserver):
         copyfile(filename, os.path.join(self.dir, target_name))
 
     def save_cout(self):
-        with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
-            f.write(self.cout)
+        with open(os.path.join(self.dir, 'cout.txt'), 'wb') as f:
+            f.write(self.cout.encode('utf-8'))
 
     def render_template(self):
         if opt.has_mako and self.template:
@@ -161,9 +166,10 @@ class FileStorageObserver(RunObserver):
             with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
                 f.write(report)
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
         self.run_entry['heartbeat'] = beat_time.isoformat()
+        self.run_entry['result'] = result
         self.cout = captured_out
         self.save_cout()
         self.save_json(self.run_entry, 'run.json')

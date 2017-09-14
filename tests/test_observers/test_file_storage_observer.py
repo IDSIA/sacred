@@ -114,12 +114,14 @@ def test_fs_observer_heartbeat_event_updates_run(dir_obs, sample_run):
     _id = obs.started_event(**sample_run)
     run_dir = basedir.join(_id)
     info = {'my_info': [1, 2, 3], 'nr': 7}
-    obs.heartbeat_event(info=info, captured_out='some output', beat_time=T2)
+    obs.heartbeat_event(info=info, captured_out='some output', beat_time=T2,
+                        result=17)
 
     assert run_dir.join('cout.txt').read() == 'some output'
     run = json.loads(run_dir.join('run.json').read())
 
     assert run['heartbeat'] == T2.isoformat()
+    assert run['result'] == 17
 
     assert run_dir.join('info.json').exists()
     i = json.loads(run_dir.join('info.json').read())

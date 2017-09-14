@@ -33,7 +33,8 @@ def tinydb_obs(tmpdir):
 
 @pytest.fixture()
 def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
+    exp = {'name': 'test_exp', 'sources': [], 'doc': '',
+           'base_dir': os.path.join(os.path.dirname(__file__), '..', '..')}
     host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
@@ -179,11 +180,13 @@ def test_tinydb_observer_heartbeat_event_updates_run(tinydb_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                               result=42)
 
     assert len(tinydb_obs.runs) == 1
     db_run = tinydb_obs.runs.get(eid=1)
     assert db_run['heartbeat'] == T2
+    assert db_run['result'] == 42
     assert db_run['info'] == info
     assert db_run['captured_out'] == outp
 
