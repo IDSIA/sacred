@@ -252,9 +252,9 @@ defaults to the filename.
 
 
 
-Bookeeping
+Bookkeeping
 ==========
-Finally, Sacred stores some additional bookeeping information, and some custom
+Finally, Sacred stores some additional bookkeeping information, and some custom
 meta information about the runs.
 This information is reported to the observers as soon as it is available, and
 can also be accessed through the :ref:`Run object <api_run>` using the
