@@ -76,6 +76,12 @@ class MongoObserver(RunObserver):
         self.runs = runs_collection
         self.metrics = metrics_collection
         self.fs = fs
+        if isinstance(overwrite, (int, str)):
+            run = self.runs.find_one({'_id': self.overwrite})
+            if run is None:
+                raise RuntimeError("Couldn't find run to overwrite with _id='{}'".format(self.overwrite))
+            else:
+                overwrite = run
         self.overwrite = overwrite
         self.run_entry = None
         self.priority = priority
@@ -297,29 +303,40 @@ class MongoDbOption(CommandLineOption):
 
     arg = 'DB'
     arg_description = "Database specification. Can be " \
-                      "[host:port:]db_name[.collection][!priority]"
+                      "[host:port:]db_name[.collection[:id]][!priority]"
 
-    DB_NAME_PATTERN = r"[_A-Za-z][0-9A-Za-z#%&'()+\-;=@\[\]^_{}.]{0,63}"
-    HOSTNAME_PATTERN = \
-        r"(?=.{1,255}$)" \
-        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
-        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*" \
-        r"\.?"
-    URL_PATTERN = "(?:" + HOSTNAME_PATTERN + ")" + ":" + "(?:[0-9]{1,5})"
-    PRIORITY_PATTERN = "(?P<priority>!-?\d+)?"
-    DB_NAME = re.compile("^" + DB_NAME_PATTERN + PRIORITY_PATTERN + "$")
-    URL = re.compile("^" + URL_PATTERN + PRIORITY_PATTERN + "$")
-    URL_DB_NAME = re.compile("^(?P<url>" + URL_PATTERN + ")" + ":" +
-                             "(?P<db_name>" + DB_NAME_PATTERN + ")" +
-                             PRIORITY_PATTERN + "$")
+    RUN_ID_PATTERN = r"(?P<run_id>\d{1,12})"
+    PORT1_PATTERN = r"(?P<port1>\d{1,5})"
+    PORT2_PATTERN = r"(?P<port2>\d{1,5})"
+    PRIORITY_PATTERN = "(?P<priority>-?\d+)?"
+    DB_NAME_PATTERN = r"(?P<db>[_A-Za-z][0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+    COLL_NAME_PATTERN = r"(?P<coll>[_A-Za-z][0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+    HOSTNAME1_PATTERN = r"(?P<host1>" \
+                        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+                        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*)"
+    HOSTNAME2_PATTERN = r"(?P<host2>" \
+                        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+                        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*)"
+
+    HOST_ONLY = r"^(?:{host}:{port})$".format(host=HOSTNAME1_PATTERN, port=PORT1_PATTERN)
+    FULL = r"^(?:{host}:{port}:)?{db}(?:\.{collection}(?::{rid})?)?(?:!{priority})?$".format(
+        host=HOSTNAME2_PATTERN,
+        port=PORT2_PATTERN,
+        db=DB_NAME_PATTERN,
+        collection=COLL_NAME_PATTERN,
+        rid=RUN_ID_PATTERN,
+        priority=PRIORITY_PATTERN)
+
+    PATTERN = r"{host_only}|{full}".format(host_only=HOST_ONLY, full=FULL)
 
     @classmethod
     def apply(cls, args, run):
-        url, db_name, collection, priority = cls.parse_mongo_db_arg(args)
+        url, db_name, collection, run_id, priority = cls.parse_mongo_db_arg(args)
         if collection:
             mongo = MongoObserver.create(db_name=db_name, url=url,
                                          collection=collection,
-                                         priority=priority)
+                                         priority=priority,
+                                         overwrite=run_id)
         else:
             mongo = MongoObserver.create(db_name=db_name, url=url,
                                          priority=priority)
@@ -328,25 +345,14 @@ class MongoDbOption(CommandLineOption):
 
     @classmethod
     def parse_mongo_db_arg(cls, mongo_db):
-        def get_priority(pattern):
-            prio_str = pattern.match(mongo_db).group('priority')
-            if prio_str is None:
-                return DEFAULT_MONGO_PRIORITY
-            else:
-                return int(prio_str[1:])
-
-        if cls.DB_NAME.match(mongo_db):
-            db_name, _, collection = mongo_db.partition('.')
-            return ('localhost:27017', db_name, collection,
-                    get_priority(cls.DB_NAME))
-        elif cls.URL.match(mongo_db):
-            return mongo_db, 'sacred', '', get_priority(cls.URL)
-        elif cls.URL_DB_NAME.match(mongo_db):
-            match = cls.URL_DB_NAME.match(mongo_db)
-            db_name, _, collection = match.group('db_name').partition('.')
-            return (match.group('url'), db_name, collection,
-                    get_priority(cls.URL_DB_NAME))
-        else:
+        g = re.match(cls.PATTERN, mongo_db).groupdict()
+        if g is None:
             raise ValueError('mongo_db argument must have the form "db_name" '
                              'or "host:port[:db_name]" but was {}'
                              .format(mongo_db))
+        if g['host1']:
+            return '{}:{}'.format(g['host1'], g['port1']), 'sacred', None, None, DEFAULT_MONGO_PRIORITY
+        else:
+            host, port = (g['host2'], g['port2']) if g['host2'] else ('localhost', 27017)
+            priority = int(g['priority']) if g['priority'] is not None else DEFAULT_MONGO_PRIORITY
+            return '{}:{}'.format(host, port), g['db'], g['coll'], g['run_id'], priority
