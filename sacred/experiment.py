@@ -8,10 +8,11 @@ import os.path
 import shlex
 import sys
 from collections import OrderedDict
+from docopt import docopt, printable_usage
 
-from sacred.arg_parser import get_config_updates, parse_args
+from sacred.arg_parser import get_config_updates, parse_args, format_usage
 from sacred.commandline_options import gather_command_line_options, ForceOption
-from sacred.commands import print_config, print_dependencies, save_config
+from sacred.commands import print_config, print_dependencies, save_config, help_for_command
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
@@ -156,6 +157,15 @@ class Experiment(Ingredient):
 
     # =========================== Public Interface ============================
 
+    def get_usage(self, program_name=None):
+        """Get the commandline usage string for this experiment."""
+        program_name = program_name or sys.argv[0]
+        all_commands = OrderedDict(self.gather_commands())
+        options = gather_command_line_options()
+        long_usage = format_usage(program_name, self.doc, all_commands, options)
+        short_usage = printable_usage(long_usage)
+        return short_usage, long_usage
+
     def run(self, command_name=None, config_updates=None, named_configs=(),
             meta_info=None, options=None):
         """
@@ -233,13 +243,31 @@ class Experiment(Ingredient):
                 raise ValueError("argv must be list of str but contained the "
                                  "following elements: {}".format(problems))
 
-        all_commands = self.gather_commands()
-
-        args = parse_args(argv,
-                          description=self.doc,
-                          commands=OrderedDict(all_commands))
-        config_updates, named_configs = get_config_updates(args['UPDATE'])
+        short_usage, usage = self.get_usage()
+        args = docopt(usage, [str(a) for a in argv[1:]], help=False)
+        commands = OrderedDict(self.gather_commands())
         cmd_name = args.get('COMMAND') or self.default_command
+        config_updates, named_configs = get_config_updates(args['UPDATE'])
+
+        if cmd_name is not None and cmd_name not in commands:
+            print(short_usage)
+            print('Error: Command "{}" not found. Available commands are: '
+                  '{}'.format(cmd_name, ", ".join(commands.keys())))
+            exit(1)
+
+        if args['help'] or args['--help']:
+            if args['COMMAND'] is None:
+                print(usage)
+            else:
+                print(help_for_command(commands[args['COMMAND']]))
+            exit()
+
+        if cmd_name is None:
+            print(short_usage)
+            print('Error: No command found to be run. Specify a command'
+                  ' or define main function. Available commands'
+                  ' are: {}'.format(", ".join(commands.keys())))
+            exit(1)
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
