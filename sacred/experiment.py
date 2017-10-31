@@ -72,7 +72,7 @@ class Experiment(Ingredient):
                                          ingredients=ingredients,
                                          interactive=interactive,
                                          _caller_globals=caller_globals)
-        self.default_command = ""
+        self.default_command = None
         self.command(print_config, unobserved=True)
         self.command(print_dependencies, unobserved=True)
         self.command(save_config, unobserved=True)
