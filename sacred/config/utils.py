@@ -7,8 +7,7 @@ import jsonpickle.tags
 from sacred import SETTINGS
 import sacred.optional as opt
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
-from sacred.utils import PYTHON_IDENTIFIER
-from sacred.optional import basestring
+from sacred.utils import PYTHON_IDENTIFIER, basestring
 
 
 def assert_is_valid_key(key):

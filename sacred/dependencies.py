@@ -9,11 +9,10 @@ import re
 import sys
 
 import pkg_resources
-from pip.commands.show import search_packages_info
 
 import sacred.optional as opt
 from sacred import SETTINGS
-from sacred.utils import is_subdir, iter_prefixes
+from sacred.utils import is_subdir, iter_prefixes, basestring
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -121,7 +120,7 @@ class Source(object):
     def __eq__(self, other):
         if isinstance(other, Source):
             return self.filename == other.filename
-        elif isinstance(other, opt.basestring):
+        elif isinstance(other, basestring):
             return self.filename == other
         else:
             return False
@@ -169,7 +168,7 @@ class PackageDependency(object):
         for vattr in possible_version_attributes:
             if hasattr(mod, vattr):
                 version = getattr(mod, vattr)
-                if isinstance(version, opt.basestring) and \
+                if isinstance(version, basestring) and \
                         PEP440_VERSION_PATTERN.match(version):
                     return version
                 if isinstance(version, tuple):
@@ -400,7 +399,7 @@ dependency_discovery_strategies = {
 }
 
 
-def gather_sources_and_dependencies(globs, interactive=False):
+def gather_sources_and_dependencies(globs):
     """Scan the given globals for modules and return them as dependencies."""
 
     experiment_path, main = get_main_file(globs)

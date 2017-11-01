@@ -11,8 +11,8 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
-from sacred.optional import basestring
-from sacred.utils import CircularDependencyError, optional_kwargs_decorator
+from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
+                          basestring)
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -54,7 +54,7 @@ class Ingredient(object):
         self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
         self.doc = _caller_globals.get('__doc__', "")
         self.mainfile, self.sources, self.dependencies = \
-            gather_sources_and_dependencies(_caller_globals, interactive)
+            gather_sources_and_dependencies(_caller_globals)
         if self.mainfile is None and not interactive:
             raise RuntimeError("Defining an experiment in interactive mode! "
                                "The sourcecode cannot be stored and the "

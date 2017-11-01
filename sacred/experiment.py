@@ -4,20 +4,20 @@
 from __future__ import division, print_function, unicode_literals
 
 import inspect
-import os.path
-import shlex
 import sys
+
+import os.path
 from collections import OrderedDict
 from docopt import docopt, printable_usage
 
-from sacred.arg_parser import get_config_updates, parse_args, format_usage
-from sacred.commandline_options import gather_command_line_options, ForceOption
-from sacred.commands import print_config, print_dependencies, save_config, help_for_command
+from sacred.arg_parser import format_usage, get_config_updates, parse_args
+from sacred.commandline_options import ForceOption, gather_command_line_options
+from sacred.commands import (help_for_command, print_config,
+                             print_dependencies, save_config)
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
-from sacred.optional import basestring
-from sacred.utils import print_filtered_stacktrace
+from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -160,9 +160,9 @@ class Experiment(Ingredient):
     def get_usage(self, program_name=None):
         """Get the commandline usage string for this experiment."""
         program_name = program_name or sys.argv[0]
-        all_commands = OrderedDict(self.gather_commands())
+        commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
-        long_usage = format_usage(program_name, self.doc, all_commands, options)
+        long_usage = format_usage(program_name, self.doc, commands, options)
         short_usage = printable_usage(long_usage)
         return short_usage, long_usage
 
@@ -230,44 +230,21 @@ class Experiment(Ingredient):
             The Run object corresponding to the finished run.
 
         """
-        if argv is None:
-            argv = sys.argv
-        elif isinstance(argv, basestring):
-            argv = shlex.split(argv)
-        else:
-            if not isinstance(argv, (list, tuple)):
-                raise ValueError("argv must be str or list, but was {}"
-                                 .format(type(argv)))
-            if not all([isinstance(a, basestring) for a in argv]):
-                problems = [a for a in argv if not isinstance(a, basestring)]
-                raise ValueError("argv must be list of str but contained the "
-                                 "following elements: {}".format(problems))
-
+        argv = ensure_wellformed_argv(argv)
         short_usage, usage = self.get_usage()
         args = docopt(usage, [str(a) for a in argv[1:]], help=False)
-        commands = OrderedDict(self.gather_commands())
+
         cmd_name = args.get('COMMAND') or self.default_command
         config_updates, named_configs = get_config_updates(args['UPDATE'])
 
-        if cmd_name is not None and cmd_name not in commands:
+        err = self._check_command(cmd_name)
+        if not args['help'] and err:
             print(short_usage)
-            print('Error: Command "{}" not found. Available commands are: '
-                  '{}'.format(cmd_name, ", ".join(commands.keys())))
+            print(err)
             exit(1)
 
-        if args['help'] or args['--help']:
-            if args['COMMAND'] is None:
-                print(usage)
-            else:
-                print(help_for_command(commands[args['COMMAND']]))
+        if self._handle_help(args, usage):
             exit()
-
-        if cmd_name is None:
-            print(short_usage)
-            print('Error: No command found to be run. Specify a command'
-                  ' or define main function. Available commands'
-                  ' are: {}'.format(", ".join(commands.keys())))
-            exit(1)
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
@@ -457,3 +434,25 @@ class Experiment(Ingredient):
 
         self.current_run = run
         return run
+
+    def _check_command(self, cmd_name):
+        commands = dict(self.gather_commands())
+        if cmd_name is not None and cmd_name not in commands:
+            return 'Error: Command "{}" not found. Available commands are: '\
+                   '{}'.format(cmd_name, ", ".join(commands.keys()))
+
+        if cmd_name is None:
+            return 'Error: No command found to be run. Specify a command'\
+                   ' or define main function. Available commands'\
+                   ' are: {}'.format(", ".join(commands.keys()))
+
+    def _handle_help(self, args, usage):
+        if args['help'] or args['--help']:
+            if args['COMMAND'] is None:
+                print(usage)
+                return True
+            else:
+                commands = dict(self.gather_commands())
+                print(help_for_command(commands[args['COMMAND']]))
+                return True
+        return False

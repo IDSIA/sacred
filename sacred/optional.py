@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import importlib
-import sys
 from sacred.utils import modules_exist
 
 
@@ -59,12 +58,3 @@ has_tinydb = modules_exist('tinydb', 'tinydb_serialization', 'hashfs')
 has_requests = modules_exist('requests')
 has_tensorflow = modules_exist("tensorflow")
 has_telegram = modules_exist('telegram')
-
-
-# Python 2 and 3 compatible basestring
-if sys.version_info[0] == 3:
-    basestring = str
-    int_types = (int, )
-else:
-    basestring = basestring
-    int_types = (int, long)

@@ -8,6 +8,7 @@ import logging
 import os.path
 import pkgutil
 import re
+import shlex
 import sys
 import traceback as tb
 from functools import partial
@@ -28,8 +29,11 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "optional_kwargs_decorator", "get_inheritors",
            "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError"]
 
-# A PY2 compatible FileNotFoundError
+# A PY2 compatible basestring, int_types and FileNotFoundError
 if sys.version_info[0] == 2:
+    basestring = basestring
+    int_types = (int, long)
+
     import errno
 
     class FileNotFoundError(IOError):
@@ -37,9 +41,13 @@ if sys.version_info[0] == 2:
             super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
     from StringIO import StringIO
 else:
+    basestring = str
+    int_types = (int,)
+
     # Reassign so that we can import it from here
     FileNotFoundError = FileNotFoundError
     from io import StringIO
+
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -377,3 +385,19 @@ def module_is_imported(modname, scope=None):
             return True
 
     return False
+
+
+def ensure_wellformed_argv(argv):
+    if argv is None:
+        argv = sys.argv
+    elif isinstance(argv, basestring):
+        argv = shlex.split(argv)
+    else:
+        if not isinstance(argv, (list, tuple)):
+            raise ValueError("argv must be str or list, but was {}"
+                             .format(type(argv)))
+        if not all([isinstance(a, basestring) for a in argv]):
+            problems = [a for a in argv if not isinstance(a, basestring)]
+            raise ValueError("argv must be list of str but contained the "
+                             "following elements: {}".format(problems))
+    return argv
