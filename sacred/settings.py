@@ -40,5 +40,9 @@ SETTINGS = munchify({
         'SHOW_DISABLED_OPTIONS': True
     },
     # configure how stdout/stderr are captured. ['no', 'sys', 'fd']
-    'CAPTURE_MODE': "sys" if platform.system() == "Windows" else "fd"
+    'CAPTURE_MODE': "sys" if platform.system() == "Windows" else "fd",
+    # configure how dependencies are discovered. [none, imported, sys, pkg]
+    'DISCOVER_DEPENDENCIES': "imported",
+    # configure how source-files are discovered. [none, imported, sys, dir]
+    'DISCOVER_SOURCES': "imported"
 })

@@ -55,6 +55,11 @@ class Ingredient(object):
         self.doc = _caller_globals.get('__doc__', "")
         self.mainfile, self.sources, self.dependencies = \
             gather_sources_and_dependencies(_caller_globals, interactive)
+        if self.mainfile is None and not interactive:
+            raise RuntimeError("Defining an experiment in interactive mode! "
+                               "The sourcecode cannot be stored and the "
+                               "experiment won't be reproducible. If you still"
+                               " want to run it pass interactive=True")
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator

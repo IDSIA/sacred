@@ -9,7 +9,10 @@ import re
 import sys
 
 import pkg_resources
+from pip.commands.show import search_packages_info
+
 import sacred.optional as opt
+from sacred import SETTINGS
 from sacred.utils import is_subdir, iter_prefixes
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -118,6 +121,8 @@ class Source(object):
     def __eq__(self, other):
         if isinstance(other, Source):
             return self.filename == other.filename
+        elif isinstance(other, opt.basestring):
+            return self.filename == other
         else:
             return False
 
@@ -137,11 +142,8 @@ class PackageDependency(object):
     def fill_missing_version(self):
         if self.version is not None:
             return
-        try:
-            self.version = pkg_resources.get_distribution(self.name).version
-        except (pkg_resources.ResolutionError,
-                pkg_resources.RequirementParseError):
-            self.version = '<unknown>'
+        dist = pkg_resources.working_set.by_key.get(self.name)
+        self.version = dist.version if dist else '<unknown>'
 
     def to_json(self):
         return '{}=={}'.format(self.name, self.version)
@@ -182,24 +184,6 @@ class PackageDependency(object):
         modname = mod.__name__
         version = PackageDependency.get_version_heuristic(mod)
         return PackageDependency(modname, version)
-
-
-def create_source_or_dep(modname, mod, dependencies, sources, experiment_path):
-    if modname in MODULE_BLACKLIST or modname in dependencies:
-        return
-
-    filename = ''
-    if mod is not None and hasattr(mod, '__file__'):
-        filename = os.path.abspath(mod.__file__)
-
-    if filename and filename not in sources and \
-            is_local_source(filename, modname, experiment_path):
-        s = Source.create(filename)
-        sources.add(s)
-    elif mod is not None:
-        pdep = PackageDependency.create(mod)
-        if '.' not in pdep.name or pdep.version is not None:
-            dependencies.add(pdep)
 
 
 def splitall(path):
@@ -291,24 +275,20 @@ def is_local_source(filename, modname, experiment_path):
                                        reversed(mod_parts))])
 
 
-def gather_sources_and_dependencies(globs, interactive=False):
-    """Scan the given globals for modules and return them as dependencies."""
-    dependencies = set()
+def get_main_file(globs):
     filename = globs.get('__file__')
 
     if filename is None:
-        if not interactive:
-            raise RuntimeError("Defining an experiment in interactive mode! "
-                               "The sourcecode cannot be stored and the "
-                               "experiment won't be reproducible. If you still"
-                               " want to run it pass interactive=True")
-        sources = set()
         experiment_path = os.path.abspath(os.path.curdir)
         main = None
     else:
         main = Source.create(globs.get('__file__'))
-        sources = {main}
         experiment_path = os.path.dirname(main.filename)
+    return experiment_path, main
+
+
+def iterate_imported_modules(globs):
+    checked_modules = set(MODULE_BLACKLIST)
     for glob in globs.values():
         if isinstance(glob, module):
             mod_path = glob.__name__
@@ -321,9 +301,117 @@ def gather_sources_and_dependencies(globs, interactive=False):
             continue
 
         for modname in iter_prefixes(mod_path):
+            if modname in checked_modules:
+                continue
+            checked_modules.add(modname)
             mod = sys.modules.get(modname)
-            create_source_or_dep(modname, mod, dependencies, sources,
-                                 experiment_path)
+            if mod is not None:
+                yield modname, mod
+
+
+def iterate_all_python_files(base_path):
+    # TODO support ignored directories/files
+    for dirname, subdirlist, filelist in os.walk(base_path):
+        if '__pycache__' in dirname:
+            continue
+        for filename in filelist:
+            if filename.endswith('.py'):
+                yield os.path.join(base_path, dirname, filename)
+
+
+def iterate_sys_modules():
+    items = list(sys.modules.items())
+    for modname, mod in items:
+        if modname not in MODULE_BLACKLIST and mod is not None:
+            yield modname, mod
+
+
+def get_sources_from_modules(module_iterator, base_path):
+    sources = set()
+    for modname, mod in module_iterator:
+        if not hasattr(mod, '__file__'):
+            continue
+
+        filename = os.path.abspath(mod.__file__)
+        if filename not in sources and \
+                is_local_source(filename, modname, base_path):
+            s = Source.create(filename)
+            sources.add(s)
+    return sources
+
+
+def get_dependencies_from_modules(module_iterator, base_path):
+    dependencies = set()
+    for modname, mod in module_iterator:
+        if hasattr(mod, '__file__') and is_local_source(
+                os.path.abspath(mod.__file__), modname, base_path):
+            continue
+
+        try:
+            pdep = PackageDependency.create(mod)
+            if '.' not in pdep.name or pdep.version is not None:
+                dependencies.add(pdep)
+        except AttributeError:
+            pass
+    return dependencies
+
+
+def get_sources_from_sys_modules(globs, base_path):
+    return get_sources_from_modules(iterate_sys_modules(), base_path)
+
+
+def get_sources_from_imported_modules(globs, base_path):
+    return get_sources_from_modules(iterate_imported_modules(globs), base_path)
+
+
+def get_sources_from_local_dir(globs, base_path):
+    return {Source.create(filename)
+            for filename in iterate_all_python_files(base_path)}
+
+
+def get_dependencies_from_sys_modules(globs, base_path):
+    return get_dependencies_from_modules(iterate_sys_modules(), base_path)
+
+
+def get_dependencies_from_imported_modules(globs, base_path):
+    return get_dependencies_from_modules(iterate_imported_modules(globs),
+                                         base_path)
+
+
+def get_dependencies_from_pkg(globs, base_path):
+    dependencies = set()
+    for dist in pkg_resources.working_set:
+        dependencies.add(PackageDependency(dist.key, dist.version))
+    return dependencies
+
+
+source_discovery_strategies = {
+    'none': lambda globs, path: set(),
+    'imported': get_sources_from_imported_modules,
+    'sys': get_sources_from_sys_modules,
+    'dir': get_sources_from_local_dir
+}
+
+dependency_discovery_strategies = {
+    'none': lambda globs, path: set(),
+    'imported': get_dependencies_from_imported_modules,
+    'sys': get_dependencies_from_sys_modules,
+    'pkg': get_dependencies_from_pkg
+}
+
+
+def gather_sources_and_dependencies(globs, interactive=False):
+    """Scan the given globals for modules and return them as dependencies."""
+
+    experiment_path, main = get_main_file(globs)
+
+    gather_sources = source_discovery_strategies[SETTINGS['DISCOVER_SOURCES']]
+    sources = gather_sources(globs, experiment_path)
+    sources.add(main)
+
+    gather_dependencies = dependency_discovery_strategies[
+        SETTINGS['DISCOVER_DEPENDENCIES']]
+    dependencies = gather_dependencies(globs, experiment_path)
 
     if opt.has_numpy:
         # Add numpy as a dependency because it might be used for randomness
