@@ -307,11 +307,15 @@ class Ingredient(object):
         mainfile = (self.mainfile.to_json(self.base_dir)[0]
                     if self.mainfile else None)
 
+        def name_lower(d):
+            return d.name.lower()
+
         return dict(
             name=self.path,
             base_dir=self.base_dir,
             sources=[s.to_json(self.base_dir) for s in sorted(sources)],
-            dependencies=[d.to_json() for d in sorted(dependencies)],
+            dependencies=[d.to_json()
+                          for d in sorted(dependencies, key=name_lower)],
             repositories=collect_repositories(sources),
             mainfile=mainfile
         )

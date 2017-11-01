@@ -17,8 +17,67 @@ from sacred.utils import is_subdir, iter_prefixes, basestring
 __sacred__ = True  # marks files that should be filtered from stack traces
 
 MB = 1048576
-MODULE_BLACKLIST = {None, '__future__', '__main__', 'hashlib', 'os', 're'} | \
-    set(sys.builtin_module_names)
+MODULE_BLACKLIST = set(sys.builtin_module_names)
+# sadly many builtins are missing from the above, so we list them manually:
+MODULE_BLACKLIST |= {
+    None, '__future__', '_abcoll', '_bootlocale', '_bsddb', '_bz2',
+    '_codecs_cn', '_codecs_hk', '_codecs_iso2022', '_codecs_jp', '_codecs_kr',
+    '_codecs_tw', '_collections_abc', '_compat_pickle', '_compression',
+    '_crypt', '_csv', '_ctypes', '_ctypes_test', '_curses', '_curses_panel',
+    '_dbm', '_decimal', '_dummy_thread', '_elementtree', '_gdbm', '_hashlib',
+    '_hotshot', '_json', '_lsprof', '_LWPCookieJar', '_lzma', '_markupbase',
+    '_MozillaCookieJar', '_multibytecodec', '_multiprocessing', '_opcode',
+    '_osx_support', '_pydecimal', '_pyio', '_sitebuiltins', '_sqlite3',
+    '_ssl', '_strptime', '_sysconfigdata', '_sysconfigdata_m',
+    '_sysconfigdata_nd', '_testbuffer', '_testcapi', '_testimportmultiple',
+    '_testmultiphase', '_threading_local', '_tkinter', '_weakrefset', 'abc',
+    'aifc', 'antigravity', 'anydbm', 'argparse', 'ast', 'asynchat', 'asyncio',
+    'asyncore', 'atexit', 'audiodev', 'audioop', 'base64', 'BaseHTTPServer',
+    'Bastion', 'bdb', 'binhex', 'bisect', 'bsddb', 'bz2', 'calendar',
+    'Canvas', 'CDROM', 'cgi', 'CGIHTTPServer', 'cgitb', 'chunk', 'cmath',
+    'cmd', 'code', 'codecs', 'codeop', 'collections', 'colorsys', 'commands',
+    'compileall', 'compiler', 'concurrent', 'ConfigParser', 'configparser',
+    'contextlib', 'Cookie', 'cookielib', 'copy', 'copy_reg', 'copyreg',
+    'cProfile', 'crypt', 'csv', 'ctypes', 'curses', 'datetime', 'dbhash',
+    'dbm', 'decimal', 'Dialog', 'difflib', 'dircache', 'dis', 'distutils',
+    'DLFCN', 'doctest', 'DocXMLRPCServer', 'dumbdbm', 'dummy_thread',
+    'dummy_threading', 'easy_install', 'email', 'encodings', 'ensurepip',
+    'enum', 'filecmp', 'FileDialog', 'fileinput', 'FixTk', 'fnmatch',
+    'formatter', 'fpectl', 'fpformat', 'fractions', 'ftplib', 'functools',
+    'future_builtins', 'genericpath', 'getopt', 'getpass', 'gettext', 'glob',
+    'gzip', 'hashlib', 'heapq', 'hmac', 'hotshot', 'html', 'htmlentitydefs',
+    'htmllib', 'HTMLParser', 'http', 'httplib', 'idlelib', 'ihooks',
+    'imaplib', 'imghdr', 'imp', 'importlib', 'imputil', 'IN', 'inspect', 'io',
+    'ipaddress', 'json', 'keyword', 'lib2to3', 'linecache', 'linuxaudiodev',
+    'locale', 'logging', 'lzma', 'macpath', 'macurl2path', 'mailbox',
+    'mailcap', 'markupbase', 'md5', 'mhlib', 'mimetools', 'mimetypes',
+    'MimeWriter', 'mimify', 'mmap', 'modulefinder', 'multifile',
+    'multiprocessing', 'mutex', 'netrc', 'new', 'nis', 'nntplib', 'ntpath',
+    'nturl2path', 'numbers', 'opcode', 'operator', 'optparse', 'os',
+    'os2emxpath', 'ossaudiodev', 'parser', 'pathlib', 'pdb', 'pickle',
+    'pickletools', 'pip', 'pipes', 'pkg_resources', 'pkgutil', 'platform',
+    'plistlib', 'popen2', 'poplib', 'posixfile', 'posixpath', 'pprint',
+    'profile', 'pstats', 'pty', 'py_compile', 'pyclbr', 'pydoc', 'pydoc_data',
+    'pyexpat', 'Queue', 'queue', 'quopri', 'random', 're', 'readline', 'repr',
+    'reprlib', 'resource', 'rexec', 'rfc822', 'rlcompleter', 'robotparser',
+    'runpy', 'sched', 'ScrolledText', 'selectors', 'sets', 'setuptools',
+    'sgmllib', 'sha', 'shelve', 'shlex', 'shutil', 'signal', 'SimpleDialog',
+    'SimpleHTTPServer', 'SimpleXMLRPCServer', 'site', 'sitecustomize',
+    'smtpd', 'smtplib', 'sndhdr', 'socket', 'SocketServer', 'socketserver',
+    'sqlite3', 'sre', 'sre_compile', 'sre_constants', 'sre_parse', 'ssl',
+    'stat', 'statistics', 'statvfs', 'string', 'StringIO', 'stringold',
+    'stringprep', 'struct', 'subprocess', 'sunau', 'sunaudio', 'symbol',
+    'symtable', 'sysconfig', 'tabnanny', 'tarfile', 'telnetlib', 'tempfile',
+    'termios', 'test', 'textwrap', 'this', 'threading', 'timeit', 'Tix',
+    'tkColorChooser', 'tkCommonDialog', 'Tkconstants', 'Tkdnd',
+    'tkFileDialog', 'tkFont', 'tkinter', 'Tkinter', 'tkMessageBox',
+    'tkSimpleDialog', 'toaiff', 'token', 'tokenize', 'trace', 'traceback',
+    'tracemalloc', 'ttk', 'tty', 'turtle', 'types', 'TYPES', 'typing',
+    'unittest', 'urllib', 'urllib2', 'urlparse', 'user', 'UserDict',
+    'UserList', 'UserString', 'uu', 'uuid', 'venv', 'warnings', 'wave',
+    'weakref', 'webbrowser', 'wheel', 'whichdb', 'wsgiref', 'xdrlib', 'xml',
+    'xmllib', 'xmlrpc', 'xmlrpclib', 'xxlimited', 'zipapp', 'zipfile'}
+
 module = type(sys)
 PEP440_VERSION_PATTERN = re.compile(r"""
 ^
@@ -134,6 +193,8 @@ class Source(object):
 
 @functools.total_ordering
 class PackageDependency(object):
+    modname_to_dist = {}
+
     def __init__(self, name, version):
         self.name = name
         self.version = version
@@ -142,10 +203,10 @@ class PackageDependency(object):
         if self.version is not None:
             return
         dist = pkg_resources.working_set.by_key.get(self.name)
-        self.version = dist.version if dist else '<unknown>'
+        self.version = dist.version if dist else None
 
     def to_json(self):
-        return '{}=={}'.format(self.name, self.version)
+        return '{}=={}'.format(self.name, self.version or '<unknown>')
 
     def __hash__(self):
         return hash(self.name)
@@ -178,11 +239,25 @@ class PackageDependency(object):
 
         return None
 
-    @staticmethod
-    def create(mod):
-        modname = mod.__name__
-        version = PackageDependency.get_version_heuristic(mod)
-        return PackageDependency(modname, version)
+    @classmethod
+    def create(cls, mod):
+        if not cls.modname_to_dist:
+            # some packagenames don't match the module names (e.g. PyYAML)
+            # so we set up a dict to map from module name to package name
+            for dist in pkg_resources.working_set:
+                try:
+                    toplevel_names = dist._get_metadata('top_level.txt')
+                    for tln in toplevel_names:
+                        cls.modname_to_dist[
+                            tln] = dist.project_name, dist.version
+                except:
+                    pass
+
+        # version = PackageDependency.get_version_heuristic(mod)
+        name, version = cls.modname_to_dist.get(mod.__name__,
+                                                (mod.__name__, None))
+
+        return PackageDependency(name, version)
 
 
 def splitall(path):
@@ -345,10 +420,12 @@ def get_dependencies_from_modules(module_iterator, base_path):
         if hasattr(mod, '__file__') and is_local_source(
                 os.path.abspath(mod.__file__), modname, base_path):
             continue
+        if modname.startswith('_') or '.' in modname:
+            continue
 
         try:
             pdep = PackageDependency.create(mod)
-            if '.' not in pdep.name or pdep.version is not None:
+            if pdep.version is not None:
                 dependencies.add(pdep)
         except AttributeError:
             pass
@@ -380,7 +457,9 @@ def get_dependencies_from_imported_modules(globs, base_path):
 def get_dependencies_from_pkg(globs, base_path):
     dependencies = set()
     for dist in pkg_resources.working_set:
-        dependencies.add(PackageDependency(dist.key, dist.version))
+        if dist.version == '0.0.0':
+            continue  # ugly hack to deal with pkg-resource version bug
+        dependencies.add(PackageDependency(dist.project_name, dist.version))
     return dependencies
 
 
