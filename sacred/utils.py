@@ -259,20 +259,13 @@ def print_filtered_stacktrace():
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
     if '__sacred__' in current_tb.tb_frame.f_globals:
-        print("Exception originated from within Sacred.\n"
-              "Traceback (most recent calls):", file=sys.stderr)
-        tb.print_tb(exc_traceback)
-        tb.print_exception(exc_type, exc_value, None)
+        header = ["Exception originated from within Sacred.\n",
+                  "Traceback (most recent calls):\n"]
+        texts = tb.format_exception(exc_type, exc_value, exc_traceback)
     else:
-        print("Traceback (most recent calls WITHOUT Sacred internals):",
-              file=sys.stderr)
-        current_tb = exc_traceback
-        while current_tb is not None:
-            if '__sacred__' not in current_tb.tb_frame.f_globals:
-                tb.print_tb(current_tb, 1)
-            current_tb = current_tb.tb_next
-        print("\n".join(tb.format_exception_only(exc_type, exc_value)).strip(),
-              file=sys.stderr)
+        header = ["Traceback (most recent calls WITHOUT Sacred internals):\n"]
+        texts = tb.format_exception(exc_type, exc_value, exc_traceback)
+    print("".join(header + texts[1:]).strip(), file=sys.stderr)
 
 
 def is_subdir(path, directory):
