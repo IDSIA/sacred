@@ -103,24 +103,11 @@ def test_package_dependency_get_version_heuristic_VERSION(version, expected):
     assert PackageDependency.get_version_heuristic(mod) == expected
 
 
-def test_package_dependency_create():
-    mod = mock.Mock(spec=[], __version__='0.1.2', __name__='testmod')
-    pd = PackageDependency.create(mod)
-    assert pd.name == 'testmod'
-    assert pd.version == '0.1.2'
-
-
 def test_package_dependency_create_no_version():
     mod = mock.Mock(spec=[], __name__='testmod')
     pd = PackageDependency.create(mod)
     assert pd.name == 'testmod'
     assert pd.version is None
-
-
-def test_package_dependency_to_json():
-    mod = mock.Mock(spec=[], __version__='3.2.1', __name__='testmod')
-    pd = PackageDependency.create(mod)
-    assert pd.to_json() == 'testmod==3.2.1'
 
 
 def test_package_dependency_fill_non_missing_version():
@@ -132,7 +119,7 @@ def test_package_dependency_fill_non_missing_version():
 def test_package_dependency_fill_missing_version_unknown():
     pd = PackageDependency('mymod', None)
     pd.fill_missing_version()
-    assert pd.version == '<unknown>'
+    assert pd.version == None
 
 
 def test_package_dependency_fill_missing_version():

@@ -122,9 +122,9 @@ class TinyDbObserver(RunObserver):
             source_info.append([source_name, id_, handle])
         return source_info
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
-        raise NotImplementedError('queued_event method is not implimented for'
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
+        raise NotImplementedError('queued_event method is not implemented for'
                                   ' local TinyDbObserver.')
 
     def started_event(self, ex_info, command, host_info, start_time, config,

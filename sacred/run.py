@@ -293,6 +293,7 @@ class Run(object):
                 _id = observer.queued_event(
                     ex_info=self.experiment_info,
                     command=command,
+                    host_info=self.host_info,
                     queue_time=queue_time,
                     config=self.config,
                     meta_info=self.meta_info,

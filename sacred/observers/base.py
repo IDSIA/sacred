@@ -12,8 +12,8 @@ class RunObserver(object):
 
     priority = 0
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
         pass
 
     def started_event(self, ex_info, command, host_info, start_time, config,

@@ -52,11 +52,12 @@ class SqlObserver(RunObserver):
         self.save()
         return _id or self.run.run_id
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
 
         Base.metadata.create_all(self.engine)
         sql_exp = Experiment.get_or_create(ex_info, self.session)
+        sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
             i = self.session.query(Run).order_by(Run.id.desc()).first()
             _id = 0 if i is None else i.id + 1
@@ -67,6 +68,7 @@ class SqlObserver(RunObserver):
                        priority=meta_info.get('priority', 0),
                        comment=meta_info.get('comment', ''),
                        experiment=sql_exp,
+                       host=sql_host,
                        status='QUEUED')
         self.session.add(self.run)
         self.save()

@@ -87,13 +87,14 @@ class MongoObserver(RunObserver):
         self.run_entry = None
         self.priority = priority
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
         if self.overwrite is not None:
             raise RuntimeError("Can't overwrite with QUEUED run.")
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
+            'host': dict(host_info),
             'config': flatten(config),
             'meta': meta_info,
             'status': 'QUEUED'
