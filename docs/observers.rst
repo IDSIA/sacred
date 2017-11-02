@@ -669,9 +669,18 @@ or pickle file containing...
   * ``token``: the HTTP API token acquired while
   * ``chat_id``: the ID (not username) of the chat to write the updates to.
     This can be a user or a group chat ID
-  * optionally: a boolean for ``silent_completion``. If set to true, regular experiment completions
+
+Additionally, a handful of optional arguments can be given in the config file:
+  * ``silent_success``: bool. If set to true, regular experiment completions
     will use no or less intrusive notifications, depending on the receiving device's platform.
     Experiment starts will always be sent silently, interruptions and failures always with full notifications.
+  * ``use_reply``: bool. If True, completion, interruption and failure messages will be sent as replies to the start message.
+  * ``send_image``: bool. If True, and if ``PIL.Image`` is available, experiment results that are deemed to be images by
+    ``Image.isImageType(result)`` will be sent as images with the ``completed_text_image`` as a caption.
+  * ``completed_text``: str. Format string to use upon completion.
+  * ``completed_text_image``: str. Format string for completion when the result is an image. Markdown will *not* work here!
+  * ``interrupted_text``: str. Format string for interruption message.
+  * ``failed_text``: str. Format string for failure message.
 
 The observer is then added to the experment like this:
 
