@@ -13,7 +13,8 @@ from docopt import docopt, printable_usage
 from sacred.arg_parser import format_usage, get_config_updates, parse_args
 from sacred.commandline_options import ForceOption, gather_command_line_options
 from sacred.commands import (help_for_command, print_config,
-                             print_dependencies, save_config)
+                             print_dependencies, save_config, docker_dir,
+                             run_in_virtualenv)
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
@@ -73,10 +74,14 @@ class Experiment(Ingredient):
                                          ingredients=ingredients,
                                          interactive=interactive,
                                          _caller_globals=caller_globals)
+
         self.default_command = None
         self.command(print_config, unobserved=True)
         self.command(print_dependencies, unobserved=True)
         self.command(save_config, unobserved=True)
+        self.command(docker_dir, unobserved=True)
+        self.command(run_in_virtualenv, unobserved=True)
+
         self.observers = []
         self.current_run = None
         self.captured_out_filter = None
