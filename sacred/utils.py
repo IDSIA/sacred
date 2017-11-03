@@ -259,13 +259,39 @@ def print_filtered_stacktrace():
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
     if '__sacred__' in current_tb.tb_frame.f_globals:
-        header = ["Exception originated from within Sacred.\n",
-                  "Traceback (most recent calls):\n"]
-        texts = tb.format_exception(exc_type, exc_value, exc_traceback)
+        print("Exception originated from within Sacred.\n"
+              "Traceback (most recent calls):", file=sys.stderr)
+        tb.print_exception(exc_type, exc_value, current_tb)
     else:
-        header = ["Traceback (most recent calls WITHOUT Sacred internals):\n"]
-        texts = tb.format_exception(exc_type, exc_value, exc_traceback)
-    print("".join(header + texts[1:]).strip(), file=sys.stderr)
+        tb_exception =\
+            tb.TracebackException(exc_type, exc_value, exc_traceback,
+                                  limit=None)
+        for line in filtered_traceback_format(tb_exception):
+            print(line, file=sys.stderr, end="")
+
+
+def filtered_traceback_format(tb_exception, chain=True):
+    if chain:
+        if tb_exception.__cause__ is not None:
+            yield from filtered_traceback_format(tb_exception.__cause__,
+                                                 chain=chain)
+            yield tb._cause_message
+        elif (tb_exception.__context__ is not None and
+            not tb_exception.__suppress_context__):
+            yield from filtered_traceback_format(tb_exception.__context__,
+                                                 chain=chain)
+            yield tb._context_message
+    yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
+    current_tb = tb_exception.exc_traceback
+    while current_tb is not None:
+        if '__sacred__' not in current_tb.tb_frame.f_globals:
+            stack = tb.StackSummary.extract(tb.walk_tb(current_tb),
+                                            limit=1,
+                                            lookup_lines=True,
+                                            capture_locals=False)
+            yield from stack.format()
+        current_tb = current_tb.tb_next
+    yield from tb_exception.format_exception_only()
 
 
 def is_subdir(path, directory):
