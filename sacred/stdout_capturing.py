@@ -15,6 +15,8 @@ from sacred.utils import FileNotFoundError, StringIO
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
+__sacred__ = True  # marks files that should be filtered from stack traces
+
 
 def flush():
     """Try to flush all stdio buffers, both from python and from C."""
@@ -53,29 +55,59 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
         self._self_out.flush()
 
 
+class CapturedStdout(object):
+    def __init__(self, buffer):
+        self.buffer = buffer
+        self.read_position = 0
+        self.final = None
+
+    @property
+    def closed(self):
+        return self.buffer.closed
+
+    def flush(self):
+        return self.buffer.flush()
+
+    def get(self):
+        if self.final is None:
+            self.buffer.seek(self.read_position)
+            value = self.buffer.read()
+            self.read_position += len(value)
+            return value
+        else:
+            value = self.final
+            self.final = None
+            return value
+
+    def finalize(self):
+        self.flush()
+        self. final = self.get()
+        self.buffer.close()
+
+
 @contextmanager
 def no_tee():
-    out = StringIO()
-    final_out = [""]
+    out = CapturedStdout(StringIO())
     try:
-        yield out, final_out
+        yield out
     finally:
-        out.close()
+        out.finalize()
 
 
 @contextmanager
 def tee_output_python():
     """Duplicate sys.stdout and sys.stderr to new StringIO."""
-    out = StringIO()
-    final_out = []
-    flush()
+    buffer = StringIO()
+    out = CapturedStdout(buffer)
     orig_stdout, orig_stderr = sys.stdout, sys.stderr
-    sys.stdout = TeeingStreamProxy(sys.stdout, out)
-    sys.stderr = TeeingStreamProxy(sys.stderr, out)
+    flush()
+    sys.stdout = TeeingStreamProxy(sys.stdout, buffer)
+    sys.stderr = TeeingStreamProxy(sys.stderr, buffer)
     try:
-        yield out, final_out
+        yield out
     finally:
         flush()
+        out.finalize()
         sys.stdout, sys.stderr = orig_stdout, orig_stderr
 
 
@@ -86,17 +118,14 @@ def tee_output_python():
 @contextmanager
 def tee_output_fd():
     """Duplicate stdout and stderr to a file on the file descriptor level."""
-    with NamedTemporaryFile() as target:
+    with NamedTemporaryFile(mode='w+') as target:
         original_stdout_fd = 1
         original_stderr_fd = 2
+        target_fd = target.fileno()
 
         # Save a copy of the original stdout and stderr file descriptors
         saved_stdout_fd = os.dup(original_stdout_fd)
         saved_stderr_fd = os.dup(original_stderr_fd)
-
-        target_fd = target.fileno()
-
-        final_output = []
 
         try:
             # we call os.setsid to move process to a new process group
@@ -121,9 +150,10 @@ def tee_output_fd():
         flush()
         os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
         os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
+        out = CapturedStdout(target)
 
         try:
-            yield target, final_output  # let the caller do their printing
+            yield out  # let the caller do their printing
         finally:
             flush()
 
@@ -151,4 +181,4 @@ def tee_output_fd():
 
             os.close(saved_stdout_fd)
             os.close(saved_stderr_fd)
-            target.flush()
+            out.finalize()

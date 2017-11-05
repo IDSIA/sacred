@@ -12,7 +12,7 @@ from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
 from sacred.utils import ObserverError, SacredInterrupt, join_paths
-from sacred.stdout_capturing import get_stdcapturer, flush
+from sacred.stdout_capturing import get_stdcapturer
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -30,9 +30,6 @@ class Run(object):
 
         self.captured_out = None
         """Captured stdout and stderr"""
-
-        self.captured_out_cursor = 0
-        """Cursor on captured_out to read by chunks"""
 
         self.config = config
         """The final configuration used for this run"""
@@ -221,8 +218,8 @@ class Run(object):
             return
         try:
             try:
-                with capture_stdout() as (f, final_out):
-                    self._output_file = f
+                with capture_stdout() as out:
+                    self._output_file = out
                     self._emit_started()
                     self._start_heartbeat()
                     self._execute_pre_run_hooks()
@@ -254,14 +251,10 @@ class Run(object):
 
     def _get_captured_output(self):
         if self._output_file.closed:
-            return  # nothing we can do
-        flush()
-        self._output_file.flush()
-        self._output_file.seek(self.captured_out_cursor)
-        text = self._output_file.read()
+            return
+        text = self._output_file.get()
         if isinstance(text, bytes):
             text = text.decode('utf-8')
-        self.captured_out_cursor += len(text)
         if self.captured_out:
             text = self.captured_out + text
         if self.captured_out_filter is not None:
