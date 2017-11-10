@@ -2,17 +2,17 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-from datetime import datetime, timedelta
-
 import hashlib
 import json
 import os
+import platform
+import shutil
+import tempfile
 import time
 
-import tempfile
+from copy import copy
+from datetime import datetime, timedelta
 from pkg_resources import parse_version
-import shutil
-import platform
 
 import pymongo
 import gridfs
@@ -30,10 +30,11 @@ def cfg():
     copy_files = []
     apt_packages = []
     base_dir = '_acolyte'
-    image_tag = 'acolyte/{name}:{env_version}'
+    image_tag = 'acolyte/{name}:{_id}'
     volumes = {'/home/greff/Datasets': {'bind': '/home/greff/Datasets',
                                         'mode': 'ro'}}
     replace_requirements = {}
+    waiting_interval = 5  # in seconds
 
 
 
@@ -91,8 +92,12 @@ def db_status(run_db):
 # ############################ RUN ########################################## #
 
 @ac.capture
-def get_next_run(runs, query):
-    return runs.find_one(query)
+def get_next_run(runs, query, blacklist=(), _run=None):
+    _run.info['status'] = 'SEARCHING'
+    q = copy(query)
+    q['_id'] = {'$nin': sorted(blacklist)}
+
+    return runs.find_one(q)
 
 
 def _write_file(base_dir, filename, source, blocksize=2**20):
@@ -208,64 +213,78 @@ def prepare_requirements(run, replace_requirements):
     return requirements
 
 
+@ac.capture
+def build_image(run, fs, dclient, mongo_arg, image_tag, volumes, _log, _run):
+    _run.info['status'] = 'BUILDING'
+    re_sources = get_re_sources(run, fs)
+    py_version = _get_truncated_python_version(run)
+    requirements = prepare_requirements(run)
+    worker_dir, run_dir = make_run_dir()
+    _log.info('Creating run directory: %s', run_dir)
+    make_docker_dir(run_dir, requirements, re_sources, py_version)
+
+    tag = image_tag.format(name=run['experiment']['name'],
+                           _id=run['_id'])
+    _log.info('Building docker image %s', tag)
+    dclient.images.build(path=run_dir, tag=tag)
+    command = "python {mainfile} with {config} -m {target_db}".format(
+        mainfile=run['experiment']['mainfile'],
+        config='worker/config.json',
+        target_db=mongo_arg.format(_id=run['_id'])
+    )
+    with open(os.path.join(worker_dir, 'config.json'), 'wt') as f:
+        json.dump(run['config'], f)
+    vols = copy(volumes)
+    vols[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
+    return tag, command, vols
+
+
+@ac.capture
+def run_container(dclient, tag, command, vols, _run, _log):
+    _run.info['status'] = 'RUNNING'
+    _log.info('Executing command "%s"', command)
+    start_time = time.time()
+    try:
+        dclient.containers.run(tag, command, volumes=vols, remove=True)
+        outcome = 'SUCCESS'
+    except docker.errors.ContainerError as e:
+        print(e.args)
+        print(e.stderr.decode())
+        outcome = e.args
+    except Exception as e:
+        print(e)
+        outcome = e.args
+    elapsed_time = time.time() - start_time
+    return outcome, elapsed_time
+
+
 @ac.automain
-def run(image_tag, volumes, _log, _run):
+def run(waiting_interval, _log, _run):
     db, runs, fs, mongo_arg = run_database_setup()
+    blacklist = set()
+    dclient = docker.from_env()
+    t = time.time()
+    _run.info['history'] = []
     while True:
-        run = get_next_run(runs)
+        run = get_next_run(runs, blacklist=blacklist)
         if run is None:
-            #time.sleep(5)
-            return
+            time.sleep(waiting_interval)
+            continue
+        waited_for = time.time() - t
         _log.info('Found run (_id=%s).', run['_id'])
         _run.info['current_run'] = run['_id']
-        re_sources = get_re_sources(run, fs)
-        py_version = _get_truncated_python_version(run)
-        requirements = prepare_requirements(run)
-        worker_dir, run_dir = make_run_dir()
-        _log.info('Creating run directory: %s', run_dir)
-        make_docker_dir(run_dir, requirements, re_sources, py_version)
-        dclient = docker.from_env()
-        tag = image_tag.format(name=run['experiment']['name'],
-                               _id=run['_id'],
-                               env_version=1)
-        _log.info('Building docker image %s', tag)
-        dimg = dclient.images.build(path=run_dir, tag=tag)
-        command = "python {mainfile} with {config} -m {target_db}".format(
-            mainfile=run['experiment']['mainfile'],
-            config='worker/config.json',
-            target_db=mongo_arg.format(_id=run['_id'])
-        )
-        _log.info('Executing command "%s"', command)
-        with open(os.path.join(worker_dir,'config.json'), 'wt') as f:
-            json.dump(run['config'], f)
-        volumes[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
-        try:
-            dclient.containers.run(tag, command, volumes=volumes)
-        except docker.errors.ContainerError as e:
-            print(e.args)
-            print(e.stderr.decode())
 
-        return tag
+        tag, command, vols = build_image(run, fs, dclient, mongo_arg)
+        outcome, elapsed_time = run_container(dclient, tag, command, vols)
+        if outcome != 'SUCCESS':
+            blacklist.add(run['_id'])
+            _log.warning('Added {} to blacklist, which now contains {}'
+                         .format(run['_id'], blacklist))
 
-
-bs = """
-    if python_version.startswith('3'):
-        apt_command = '''
-            RUN apt-get update && apt-get install -y \\
-                python{pyversion}-dev \\
-                python3-pip \\
-                {apt} \\
-                && ln -s /usr/bin/python3 /usr/local/bin/python \\
-                && ln -s /usr/bin/pip3 /usr/local/bin/pip \\
-                && rm -rf /var/lib/apt/lists/*'''.format(
-            apt=' \\\n'.join(apt_packages),
-            pyversion=python_version)
-    else:
-        apt_command = '''
-            RUN apt-get update && apt-get install -y \\
-                python2.7-dev \\
-                python-pip \\
-                {apt} \\
-                && rm -rf /var/lib/apt/lists/*'''.format(
-            apt=' \\\n'.join(apt_packages))
-"""
+        _run.info['history'].append({
+            '_id': run['_id'],
+            'outcome': outcome,
+            'elapsed': elapsed_time,
+            'waited_for': waited_for
+        })
+        t = time.time()
