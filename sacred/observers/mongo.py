@@ -77,7 +77,7 @@ class MongoObserver(RunObserver):
         self.metrics = metrics_collection
         self.fs = fs
         if isinstance(overwrite, (int, str)):
-            run = self.runs.find_one({'_id': self.overwrite})
+            run = self.runs.find_one({'_id': overwrite})
             if run is None:
                 raise RuntimeError("Couldn't find run to overwrite with "
                                    "_id='{}'".format(self.overwrite))
