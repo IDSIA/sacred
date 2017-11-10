@@ -33,6 +33,8 @@ def cfg():
     image_tag = 'acolyte/{name}:{env_version}'
     volumes = {'/home/greff/Datasets': {'bind': '/home/greff/Datasets',
                                         'mode': 'ro'}}
+    replace_requirements = {}
+
 
 
 @ac.capture
@@ -150,7 +152,9 @@ def make_docker_dir(run_dir, requirements, re_sources, python_version,
 
     if isinstance(requirements, (tuple, list)):
         requirements = "\n".join(requirements)
-    _write_file(run_dir, 'requirements.txt', requirements)
+
+    _write_file(run_dir, 'requirements.txt',
+                requirements)
 
     for filename, fp in re_sources.items():
         _write_file(run_dir, filename, fp)
@@ -196,6 +200,14 @@ def make_run_dir(base_dir):
     return worker_dir, run_dir
 
 
+@ac.capture
+def prepare_requirements(run, replace_requirements):
+    req = {d.split('==', 1)[0]: d for d in run['experiment']['dependencies']}
+    req.update(replace_requirements)
+    requirements = "\n".join([r for k, r in sorted(req.items(), key=lambda x: x[0])])
+    return requirements
+
+
 @ac.automain
 def run(image_tag, volumes, _log, _run):
     db, runs, fs, mongo_arg = run_database_setup()
@@ -208,7 +220,7 @@ def run(image_tag, volumes, _log, _run):
         _run.info['current_run'] = run['_id']
         re_sources = get_re_sources(run, fs)
         py_version = _get_truncated_python_version(run)
-        requirements = run['experiment']['dependencies']
+        requirements = prepare_requirements(run)
         worker_dir, run_dir = make_run_dir()
         _log.info('Creating run directory: %s', run_dir)
         make_docker_dir(run_dir, requirements, re_sources, py_version)
@@ -227,7 +239,12 @@ def run(image_tag, volumes, _log, _run):
         with open(os.path.join(worker_dir,'config.json'), 'wt') as f:
             json.dump(run['config'], f)
         volumes[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
-        dclient.containers.run(tag, command, volumes=volumes)
+        try:
+            dclient.containers.run(tag, command, volumes=volumes)
+        except docker.errors.ContainerError as e:
+            print(e.args)
+            print(e.stderr.decode())
+
         return tag
 
 
