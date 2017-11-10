@@ -115,9 +115,10 @@ class MongoObserver(RunObserver):
         else:
             if self.run_entry is not None:
                 raise RuntimeError("Cannot overwrite more than once!")
-            # sanity checks
-            if self.overwrite['experiment']['sources'] != ex_info['sources']:
-                raise RuntimeError("Sources don't match")
+            # TODO sanity checks
+            # if self.overwrite['experiment']['sources'] != ex_info['sources']:
+            #     print(self.overwrite['experiment']['sources'], ex_info['sources'])
+            #    raise RuntimeError("Sources don't match")
             self.run_entry = self.overwrite
 
         self.run_entry.update({
