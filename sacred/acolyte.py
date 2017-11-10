@@ -2,6 +2,8 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import signal
+
 import hashlib
 import json
 import os
@@ -35,7 +37,6 @@ def cfg():
                                         'mode': 'ro'}}
     replace_requirements = {}
     waiting_interval = 5  # in seconds
-
 
 
 @ac.capture
@@ -260,12 +261,20 @@ def run_container(dclient, tag, command, vols, _run, _log):
 
 @ac.automain
 def run(waiting_interval, _log, _run):
+    keep_going = [True]
+
+    def exit_gracefully(signal, frame):
+        keep_going[0] = False
+        _log.warning('Interrupt has been registered -- '
+                     'Will stop after completing the current run.')
+
+    signal.signal(signal.SIGINT, exit_gracefully)
     db, runs, fs, mongo_arg = run_database_setup()
     blacklist = set()
     dclient = docker.from_env()
     t = time.time()
     _run.info['history'] = []
-    while True:
+    while keep_going[0]:
         run = get_next_run(runs, blacklist=blacklist)
         if run is None:
             time.sleep(waiting_interval)
