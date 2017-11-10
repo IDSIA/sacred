@@ -98,7 +98,8 @@ def get_next_run(runs, query, blacklist=(), _run=None):
     q = copy(query)
     q['_id'] = {'$nin': sorted(blacklist)}
 
-    return runs.find_one(q)
+    return runs.find_one_and_update(q, {'$set': {'status': 'ACQUIRED'}},
+                                    return_document=pymongo.ReturnDocument.AFTER)
 
 
 def _write_file(base_dir, filename, source, blocksize=2**20):
