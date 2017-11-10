@@ -1,8 +1,19 @@
 Release History
 ---------------
 
+0.7.2 (2017-11-02)
+++++++++++++++++++
+* API Change: added host_info to queued_event
+* Feature: improved and configurable dependency discovery system
+* Feature: improved and configurable source-file discovery system
+* Feature: better error messages for missing or misspelled commands
+* Feature: -m flag now supports passing an id for a run to overwrite
+* Feature: allow captured functions to be called outside of a run (thanks @berleon)
+* Bugfix: fixed issue with telegram imports (thanks @millawell)
+
+
 0.7.1 (2017-09-14)
-++++++++++
+++++++++++++++++++
 * Refactor: lazy importing of many optional dependencies
 * Feature: added metrics API for adding live monitoring information to the MongoDB
 * Feature: added integration with tensorflow for automatic capturing of LogWriter paths
