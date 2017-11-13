@@ -31,7 +31,7 @@ class Scaffold(object):
         self.config_hooks = config_hooks
         self.config_updates = {}
         self.named_configs_to_use = []
-        self.config = None
+        self.config = {}
         self.fallback = None
         self.presets = {}
         self.fixture = None  # TODO: rename

@@ -300,9 +300,9 @@ def filtered_traceback_format(tb_exception, chain=True):
                 yield line
             yield tb._cause_message
         elif (tb_exception.__context__ is not None and
-            not tb_exception.__suppress_context__):
+              not tb_exception.__suppress_context__):
             for line in filtered_traceback_format(tb_exception.__context__,
-                    chain=chain):
+                                                  chain=chain):
                 yield line
             yield tb._context_message
     yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
