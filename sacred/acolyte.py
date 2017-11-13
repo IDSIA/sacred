@@ -9,8 +9,8 @@ import json
 import os
 import platform
 import shutil
-import tempfile
 import time
+from contextlib import contextmanager
 
 from copy import copy
 from datetime import datetime, timedelta
@@ -38,6 +38,7 @@ def cfg():
     replace_requirements = {}
     waiting_interval = 5  # in seconds
 
+from traitlets import Sentinel
 
 @ac.capture
 def run_database_setup(run_db):
@@ -52,7 +53,7 @@ def run_database_setup(run_db):
     fs = gridfs.GridFS(db)
     mongo_arg = "{url}:{db}.{collection}:{overwrite}".format(
         url=url, db=db_name, collection=collection_name, overwrite='{_id}')
-    return db, runs, fs, mongo_arg
+    return runs, fs, mongo_arg
 
 
 def get_status_queries():
@@ -93,13 +94,26 @@ def db_status(run_db):
 # ############################ RUN ########################################## #
 
 @ac.capture
-def get_next_run(runs, query, blacklist=(), _run=None):
+@contextmanager
+def get_next_run(runs, blacklist=(), query=None, _run=None, _log=None):
     _run.info['status'] = 'SEARCHING'
-    q = copy(query)
+    q = copy(query or {})
     q['_id'] = {'$nin': sorted(blacklist)}
 
-    return runs.find_one_and_update(q, {'$set': {'status': 'ACQUIRED'}},
-                                    return_document=pymongo.ReturnDocument.AFTER)
+    old = runs.find_one_and_update(q, {'$set': {'status': 'ACQUIRED'}},
+                                   return_document=pymongo.ReturnDocument.BEFORE)
+    if old is not None:
+        old_status, run_id = old['status'], old['_id']
+        _log.info('Found run (_id=%s).', run_id)
+        _run.info['current_run'] = run_id
+        try:
+            yield old
+        except:
+            runs.find_one_and_update({'_id': run_id}, {'$set': {'status': old_status}})
+            raise
+    else:
+        yield None
+
 
 
 def _write_file(base_dir, filename, source, blocksize=2**20):
@@ -260,6 +274,22 @@ def run_container(dclient, tag, command, vols, _run, _log):
     return outcome, elapsed_time
 
 
+@ac.capture
+def log_outcome(run_id, outcome, elapsed_time, waited_for, blacklist, _log, _run):
+    if outcome != 'SUCCESS':
+        blacklist.add(run['_id'])
+        _log.warning('Added {} to blacklist, which now contains {}'
+                     .format(run['_id'], blacklist))
+
+    _run.info['history'].append({
+        '_id': run['_id'],
+        'outcome': outcome,
+        'elapsed': elapsed_time,
+        'waited_for': waited_for
+    })
+    return time.time()
+
+
 @ac.automain
 def run(waiting_interval, _log, _run):
     keep_going = [True]
@@ -270,31 +300,21 @@ def run(waiting_interval, _log, _run):
                      'Will stop after completing the current run.')
 
     signal.signal(signal.SIGINT, exit_gracefully)
-    db, runs, fs, mongo_arg = run_database_setup()
+    runs, fs, mongo_arg = run_database_setup()
     blacklist = set()
     dclient = docker.from_env()
     t = time.time()
     _run.info['history'] = []
     while keep_going[0]:
-        run = get_next_run(runs, blacklist=blacklist)
-        if run is None:
-            time.sleep(waiting_interval)
-            continue
-        waited_for = time.time() - t
-        _log.info('Found run (_id=%s).', run['_id'])
-        _run.info['current_run'] = run['_id']
+        with get_next_run(runs, blacklist) as run:
+            if run is None:
+                time.sleep(waiting_interval)
+                continue
+            waited_for = time.time() - t
+            tag, command, vols = build_image(run, fs, dclient, mongo_arg)
 
-        tag, command, vols = build_image(run, fs, dclient, mongo_arg)
         outcome, elapsed_time = run_container(dclient, tag, command, vols)
-        if outcome != 'SUCCESS':
-            blacklist.add(run['_id'])
-            _log.warning('Added {} to blacklist, which now contains {}'
-                         .format(run['_id'], blacklist))
 
-        _run.info['history'].append({
-            '_id': run['_id'],
-            'outcome': outcome,
-            'elapsed': elapsed_time,
-            'waited_for': waited_for
-        })
-        t = time.time()
+        t = log_outcome(run['_id'], outcome, elapsed_time, waited_for, blacklist)
+
+
