@@ -485,7 +485,8 @@ def gather_sources_and_dependencies(globs):
 
     gather_sources = source_discovery_strategies[SETTINGS['DISCOVER_SOURCES']]
     sources = gather_sources(globs, experiment_path)
-    sources.add(main)
+    if main is not None:
+        sources.add(main)
 
     gather_dependencies = dependency_discovery_strategies[
         SETTINGS['DISCOVER_DEPENDENCIES']]
