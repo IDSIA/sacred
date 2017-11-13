@@ -282,10 +282,10 @@ def log_outcome(run_id, outcome, elapsed_time, waited_for, blacklist, _log, _run
     if outcome != 'SUCCESS':
         blacklist.add(run['_id'])
         _log.warning('Added {} to blacklist, which now contains {}'
-                     .format(run['_id'], blacklist))
+                     .format(run_id, blacklist))
 
     _run.info['history'].append({
-        '_id': run['_id'],
+        '_id': run_id,
         'outcome': outcome,
         'elapsed': elapsed_time,
         'waited_for': waited_for
@@ -315,12 +315,18 @@ def prune(_log):
 
 @ac.automain
 def run(waiting_interval, quit_after_idle_for, _log, _run):
-    keep_going = [True]
+    keep_going = [True, 0]
 
     def exit_gracefully(signal, frame):
         keep_going[0] = False
-        _log.warning('Interrupt has been registered -- '
-                     'Will stop after completing the current run.')
+        keep_going[1] += 1
+        if keep_going[1] == 1:
+            _log.warning('Interrupt has been registered -- '
+                         'Will stop after completing the current run\n'
+                         '(press again to exit now)')
+        else:
+            _log.warning('Second interrupt -- exiting now.')
+            raise KeyboardInterrupt()
 
     signal.signal(signal.SIGINT, exit_gracefully)
     runs, fs, mongo_arg = run_database_setup()
