@@ -176,8 +176,6 @@ def run_in_virtualenv(_run, dir_name=None, command=''):
     return subprocess.call(['bash', os.path.join(dir_name, 'venv_run.sh')])
 
 
-
-
 def _iterate_marked(cfg, config_mods):
     for path, value in iterate_flattened_separately(cfg, ['__doc__']):
         if value is PATHCHANGE:
@@ -274,7 +272,7 @@ def _make_docker_dir(run_dir, requirements, re_sources, config, mainfile,
 
     # Set the working directory to /app
     WORKDIR /run
-    
+
     # Copy the current directory contents into the container at /app
     ADD . /run
 
