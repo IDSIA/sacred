@@ -37,8 +37,11 @@ def cfg():
                                         'mode': 'ro'}}
     replace_requirements = {}
     waiting_interval = 5  # in seconds
+    quit_after_idle_for = 3600  # 1h in seconds
+    docker_run_kws = {
+        'remove': True
+    }
 
-from traitlets import Sentinel
 
 @ac.capture
 def run_database_setup(run_db):
@@ -256,12 +259,12 @@ def build_image(run, fs, dclient, mongo_arg, image_tag, volumes, _log, _run):
 
 
 @ac.capture
-def run_container(dclient, tag, command, vols, _run, _log):
+def run_container(dclient, tag, command, vols, docker_run_kws, _run, _log):
     _run.info['status'] = 'RUNNING'
     _log.info('Executing command "%s"', command)
     start_time = time.time()
     try:
-        dclient.containers.run(tag, command, volumes=vols, remove=True)
+        dclient.containers.run(tag, command, volumes=vols, *docker_run_kws)
         outcome = 'SUCCESS'
     except docker.errors.ContainerError as e:
         print(e.args)
@@ -290,8 +293,28 @@ def log_outcome(run_id, outcome, elapsed_time, waited_for, blacklist, _log, _run
     return time.time()
 
 
+@ac.command(unobserved=True)
+def prune(_log):
+    """Delete all stopped containers"""
+    dclient = docker.from_env()
+    _log.info('Pruning stopped containers...')
+    pruned = dclient.containers.prune()
+    print(pruned)
+
+    images_to_delete = [im for im in dclient.images.list()
+                        if any([t.startswith('acolyte/') for t in im.tags])]
+    for im in images_to_delete:
+        tags = [t for t in im.tags if t.startswith('acolyte/')]
+        tag = tags[0] if tags else ''
+        _log.info('Deleting image "{}: [{}]"'.format(im.short_id, tag))
+        try:
+            dclient.images.remove(im.id, force=True)
+        except Exception as e:
+            print(e)
+
+
 @ac.automain
-def run(waiting_interval, _log, _run):
+def run(waiting_interval, quit_after_idle_for, _log, _run):
     keep_going = [True]
 
     def exit_gracefully(signal, frame):
@@ -307,14 +330,15 @@ def run(waiting_interval, _log, _run):
     _run.info['history'] = []
     while keep_going[0]:
         with get_next_run(runs, blacklist) as run:
+            waited_for = time.time() - t
             if run is None:
+                if waited_for > quit_after_idle_for:
+                    break
                 time.sleep(waiting_interval)
                 continue
-            waited_for = time.time() - t
+
             tag, command, vols = build_image(run, fs, dclient, mongo_arg)
 
         outcome, elapsed_time = run_container(dclient, tag, command, vols)
 
         t = log_outcome(run['_id'], outcome, elapsed_time, waited_for, blacklist)
-
-
