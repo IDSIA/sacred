@@ -77,10 +77,11 @@ class MongoObserver(RunObserver):
         self.metrics = metrics_collection
         self.fs = fs
         if isinstance(overwrite, (int, str)):
+            overwrite = int(overwrite)
             run = self.runs.find_one({'_id': overwrite})
             if run is None:
                 raise RuntimeError("Couldn't find run to overwrite with "
-                                   "_id='{}'".format(self.overwrite))
+                                   "_id='{}'".format(overwrite))
             else:
                 overwrite = run
         self.overwrite = overwrite
@@ -114,9 +115,7 @@ class MongoObserver(RunObserver):
         else:
             if self.run_entry is not None:
                 raise RuntimeError("Cannot overwrite more than once!")
-            # sanity checks
-            if self.overwrite['experiment']['sources'] != ex_info['sources']:
-                raise RuntimeError("Sources don't match")
+            # TODO sanity checks
             self.run_entry = self.overwrite
 
         self.run_entry.update({

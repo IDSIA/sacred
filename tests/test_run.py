@@ -159,25 +159,12 @@ def test_run_observer_failure_on_startup_not_caught(run):
 
 def test_run_observer_error_in_heartbeat_is_caught(run):
     observer = run.observers[0]
-    observer.heartbeat_event.side_effect = ObserverError
+    observer.heartbeat_event.side_effect = TypeError
     run()
     assert observer in run._failed_observers
     assert observer.started_event.called
     assert observer.heartbeat_event.called
     assert observer.completed_event.called
-
-
-def test_run_exception_in_heartbeat_is_not_caught(run):
-    observer = run.observers[0]
-    observer.heartbeat_event.side_effect = TypeError
-    with pytest.raises(TypeError):
-        run()
-    assert observer in run._failed_observers
-    assert observer.started_event.called
-    assert observer.heartbeat_event.called
-    assert not observer.completed_event.called
-    assert not observer.interrupted_event.called
-    # assert observer.failed_event.called  # TODO: make this happen
 
 
 def test_run_exception_in_completed_event_is_caught(run):
