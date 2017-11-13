@@ -215,13 +215,18 @@ def make_docker_dir(run_dir, requirements, re_sources, python_version,
 
 
 @ac.capture
+@contextmanager
 def make_run_dir(base_dir):
     worker_dir = os.path.abspath(base_dir)
-    run_dir = os.path.join(worker_dir, 'current_run')
-    if os.path.exists(run_dir):
-        shutil.rmtree(run_dir)
-    os.makedirs(run_dir, exist_ok=True)
-    return worker_dir, run_dir
+    os.makedirs(worker_dir, exist_ok=True)
+    import tempfile
+
+    run_dir = tempfile.mkdtemp(dir=worker_dir)
+    try:
+        yield worker_dir, run_dir
+    finally:
+        if os.path.exists(run_dir):
+            shutil.rmtree(run_dir)
 
 
 @ac.capture
@@ -238,23 +243,23 @@ def build_image(run, fs, dclient, mongo_arg, image_tag, volumes, _log, _run):
     re_sources = get_re_sources(run, fs)
     py_version = _get_truncated_python_version(run)
     requirements = prepare_requirements(run)
-    worker_dir, run_dir = make_run_dir()
-    _log.info('Creating run directory: %s', run_dir)
-    make_docker_dir(run_dir, requirements, re_sources, py_version)
+    with make_run_dir() as (worker_dir, run_dir):
+        _log.info('Creating run directory: %s', run_dir)
+        make_docker_dir(run_dir, requirements, re_sources, py_version)
 
-    tag = image_tag.format(name=run['experiment']['name'],
-                           _id=run['_id'])
-    _log.info('Building docker image %s', tag)
-    dclient.images.build(path=run_dir, tag=tag)
-    command = "python {mainfile} with {config} -m {target_db}".format(
-        mainfile=run['experiment']['mainfile'],
-        config='worker/config.json',
-        target_db=mongo_arg.format(_id=run['_id'])
-    )
-    with open(os.path.join(worker_dir, 'config.json'), 'wt') as f:
-        json.dump(run['config'], f)
-    vols = copy(volumes)
-    vols[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
+        tag = image_tag.format(name=run['experiment']['name'],
+                               _id=run['_id'])
+        _log.info('Building docker image %s', tag)
+        dclient.images.build(path=run_dir, tag=tag)
+        command = "python {mainfile} with {config} -m {target_db}".format(
+            mainfile=run['experiment']['mainfile'],
+            config='worker/config.json',
+            target_db=mongo_arg.format(_id=run['_id'])
+        )
+        with open(os.path.join(worker_dir, 'config.json'), 'wt') as f:
+            json.dump(run['config'], f)
+        vols = copy(volumes)
+        vols[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
     return tag, command, vols
 
 
