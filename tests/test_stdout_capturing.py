@@ -17,11 +17,10 @@ def test_python_tee_output(capsys):
     with capsys.disabled():
         print('before (stdout)')
         print('before (stderr)')
-        with capture_stdout() as (f, final_out):
+        with capture_stdout() as out:
             print("captured stdout")
             print("captured stderr")
-            f.seek(0)
-            output = f.read()
+        output = out.get()
 
         print('after (stdout)')
         print('after (stderr)')
@@ -39,17 +38,20 @@ def test_fd_tee_output(capsys):
         "and this is from echo"}
 
     capture_mode, capture_stdout = get_stdcapturer("fd")
+    output = ""
     with capsys.disabled():
         print('before (stdout)')
         print('before (stderr)')
-        with capture_stdout() as (f, final_out):
+        with capture_stdout() as out:
             print("captured stdout")
             print("captured stderr")
+            output += out.get()
             libc.puts(b'stdout from C')
             libc.fflush(None)
             os.system('echo and this is from echo')
-            f.seek(0)
-            output = f.read().decode()
+            output += out.get()
+
+        output += out.get()
 
         print('after (stdout)')
         print('after (stderr)')
