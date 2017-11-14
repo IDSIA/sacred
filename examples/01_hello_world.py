@@ -8,8 +8,7 @@ called like this::
 
   $ ./01_hello_world.py
   WARNING - 01_hello_world - No observers have been added to this run
-  INFO - 01_hello_world - Running command 'main'
-  INFO - 01_hello_world - Started
+  INFO - 01_hello_world - Started command "main"
   Hello world!
   INFO - 01_hello_world - Completed after 0:00:00
 

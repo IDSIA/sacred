@@ -302,7 +302,7 @@ class Run(object):
         self.start_time = datetime.datetime.utcnow()
         command = join_paths(self.main_function.prefix,
                              self.main_function.signature.name)
-        self.run_logger.info("Running command '%s'", command)
+
         for observer in self.observers:
             if hasattr(observer, 'started_event'):
                 _id = observer.started_event(
@@ -319,9 +319,10 @@ class Run(object):
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
         if self._id is None:
-            self.run_logger.info('Started')
+            self.run_logger.info('Started command "%s"', command)
         else:
-            self.run_logger.info('Started run with ID "{}"'.format(self._id))
+            self.run_logger.info('Started command "%s" with run ID %s',
+                                 command, self._id)
 
     def _emit_heartbeat(self):
         beat_time = datetime.datetime.utcnow()

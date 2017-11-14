@@ -8,8 +8,7 @@ You can run it like this::
 
   $ ./02_hello_config_dict.py
   WARNING - 02_hello_config_dict - No observers have been added to this run
-  INFO - 02_hello_config_dict - Running command 'main'
-  INFO - 02_hello_config_dict - Started
+  INFO - 02_hello_config_dict - Started command "main"
   Hello world!
   INFO - 02_hello_config_dict - Completed after 0:00:00
 
@@ -18,8 +17,7 @@ argument::
 
   $ ./02_hello_config_dict.py with message='Ciao world!'
   WARNING - 02_hello_config_dict - No observers have been added to this run
-  INFO - 02_hello_config_dict - Running command 'main'
-  INFO - 02_hello_config_dict - Started
+  INFO - 02_hello_config_dict - Started command "main"
   Ciao world!
   INFO - 02_hello_config_dict - Completed after 0:00:00
 """
