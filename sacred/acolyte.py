@@ -318,6 +318,22 @@ def prune(_log):
             print(e)
 
 
+@ac.command(unobserved=True)
+def mark_dead(_log, patience=120):
+    """Mark unfinished runs without a recent heartbeat as dead.
+
+    Takes a patience parameter (default=120) that determines the threshold for
+    deciding if a run counts as DEAD.
+    """
+    runs, fs, mongo_arg = run_database_setup()
+    _log.info('Marking unfinished runs without a heartbeat for >%d seconds as'
+              ' DEAD.', patience)
+    cut_time = datetime.utcnow() - timedelta(seconds=patience)
+    r = runs.update_many({'status': 'RUNNING', 'heartbeat': {'$lt': cut_time}},
+                         {'$set': {'status': 'DEAD'}})
+    _log.info('Updated %d runs', r.modified_count)
+
+
 @ac.automain
 def run(waiting_interval, quit_after_idle_for, _log, _run):
     keep_going = [True, 0]
