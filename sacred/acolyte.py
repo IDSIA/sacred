@@ -285,7 +285,7 @@ def run_container(dclient, tag, command, vols, docker_run_kws, _run, _log):
 @ac.capture
 def log_outcome(run_id, outcome, elapsed_time, waited_for, blacklist, _log, _run):
     if outcome != 'SUCCESS':
-        blacklist.add(run['_id'])
+        blacklist.add(run_id)
         _log.warning('Added {} to blacklist, which now contains {}'
                      .format(run_id, blacklist))
 
