@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from pkg_resources import parse_version
 
 import pymongo
+import pymongo.errors
 import gridfs
 import docker
 
@@ -28,6 +29,7 @@ ac = Experiment('acolyte')
 @ac.config
 def cfg():
     run_db = "localhost:27017:INPUT"
+    connection_timeout = 30 * 1000
     query = {'status': 'QUEUED'}
     copy_files = []
     apt_packages = []
@@ -44,19 +46,19 @@ def cfg():
 
 
 @ac.capture
-def run_database_setup(run_db):
+def run_database_setup(run_db, connection_timeout):
     # parse options
     db_specs = MongoDbOption.parse_mongo_db_arg(run_db)
     url = db_specs['url']
     db_name = db_specs.get('db_name', 'sacred')
     collection_name = db_specs.get('collection', 'runs')
-    client = pymongo.MongoClient(url)
+    client = pymongo.MongoClient(url, serverSelectionTimeoutMS=connection_timeout)
     db = client[db_name]
     runs = db[collection_name]
     fs = gridfs.GridFS(db)
     mongo_arg = "{url}:{db}.{collection}:{overwrite}".format(
         url=url, db=db_name, collection=collection_name, overwrite='{_id}')
-    return runs, fs, mongo_arg
+    return db, runs, fs, mongo_arg
 
 
 def get_status_queries():
@@ -78,20 +80,32 @@ def get_status_queries():
 
 @ac.command(unobserved=True)
 def db_status(run_db):
+    import pandas as pd
+
     print('Status for {}'.format(run_db))
     db, runs, fs, _ = run_database_setup()
     ignored_collections = {'fs.files', 'system.indexes', 'fs.chunks'}
-    collections = sorted([coll for coll in db.collection_names()
-                          if coll not in ignored_collections])
-    stats_queries = get_status_queries()
-    counts = [{status: db[coll].find(q).count()
-               for status, q in stats_queries.items()}
-              for coll in collections]
-    import pandas as pd
-    df = pd.DataFrame(counts, index=collections)
-    column_order = ['TOTAL', 'RUNNING', 'COMPLETED', 'INTERRUPTED', 'FAILED',
-                    'TIMEOUT', 'DIED', 'QUEUED']
-    print('\n', df[column_order], '\n')
+
+    try:
+        collections = sorted([coll for coll in db.collection_names()
+                              if coll not in ignored_collections])
+        if not collections:
+            raise IndexError
+        stats_queries = get_status_queries()
+        counts = [{status: db[coll].find(q).count()
+                   for status, q in stats_queries.items()}
+                  for coll in collections]
+        df = pd.DataFrame(counts, index=collections)
+        column_order = ['TOTAL', 'RUNNING', 'COMPLETED', 'INTERRUPTED', 'FAILED',
+                        'TIMEOUT', 'DIED', 'QUEUED']
+        print('\n', df[column_order], '\n')
+
+    except IndexError:
+        print('The experiment set in %s is empty. Try adding new '
+              'experiments first.' % run_db)
+    except pymongo.errors.ConnectionFailure as error:
+        print('connection failure: (%s, %s). Check the connection url and '
+              'mongodb configuration.' % (error.__class__.__name__, error))
 
 
 # ############################ RUN ########################################## #
@@ -334,7 +348,7 @@ def run(waiting_interval, quit_after_idle_for, _log, _run):
             raise KeyboardInterrupt()
 
     signal.signal(signal.SIGINT, exit_gracefully)
-    runs, fs, mongo_arg = run_database_setup()
+    db, runs, fs, mongo_arg = run_database_setup()
     blacklist = set()
     dclient = docker.from_env()
     t = time.time()
