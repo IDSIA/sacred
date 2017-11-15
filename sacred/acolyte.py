@@ -71,7 +71,8 @@ def get_status_queries():
         'INTERRUPTED': {'status': 'INTERRUPTED'},
         'FAILED': {'status': 'FAILED'},
         'TIMEOUT': {'status': 'TIMEOUT'},
-        'DIED': {'status': 'RUNNING', 'heartbeat': {'$lt': now - patience}},
+        'DEAD': {'status': {'$in': ['RUNNING', 'DEAD']},
+                 'heartbeat': {'$lt': now - patience}},
         'QUEUED': {'status': 'QUEUED'}}
     return stats_queries
 
@@ -97,7 +98,7 @@ def db_status(run_db):
                   for coll in collections]
         df = pd.DataFrame(counts, index=collections)
         column_order = ['TOTAL', 'RUNNING', 'COMPLETED', 'INTERRUPTED', 'FAILED',
-                        'TIMEOUT', 'DIED', 'QUEUED']
+                        'TIMEOUT', 'DEAD', 'QUEUED']
         print('\n', df[column_order], '\n')
 
     except IndexError:
