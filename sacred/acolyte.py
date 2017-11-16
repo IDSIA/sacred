@@ -10,7 +10,7 @@ import os
 import platform
 import shutil
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 from copy import copy
 from datetime import datetime, timedelta
@@ -28,7 +28,7 @@ ac = Experiment('acolyte')
 
 @ac.config
 def cfg():
-    run_db = "localhost:27017:INPUT"
+    run_db = "localhost:27017:sacred"
     connection_timeout = 30 * 1000
     query = {'status': 'QUEUED'}
     copy_files = []
@@ -43,6 +43,7 @@ def cfg():
     docker_run_kws = {
         'remove': True
     }
+    hostname = None  # automatically take from host
 
 
 @ac.capture
@@ -61,26 +62,27 @@ def run_database_setup(run_db, connection_timeout):
     return db, runs, fs, mongo_arg
 
 
-def get_status_queries():
-    now = datetime.utcnow()
-    patience = timedelta(seconds=120)
+def get_status_queries(patience=120):
+    cut_time = datetime.utcnow() - timedelta(seconds=patience)
     stats_queries = {
         'TOTAL': {},
-        'RUNNING': {'status': 'RUNNING', 'heartbeat': {'$gt': now - patience}},
+        'RUNNING': {'status': 'RUNNING', 'heartbeat': {'$gt': cut_time}},
         'COMPLETED': {'status': 'COMPLETED'},
         'INTERRUPTED': {'status': 'INTERRUPTED'},
         'FAILED': {'status': 'FAILED'},
         'TIMEOUT': {'status': 'TIMEOUT'},
+        'QUEUED': {'status': 'QUEUED'},
         'DEAD': {'status': {'$in': ['RUNNING', 'DEAD']},
-                 'heartbeat': {'$lt': now - patience}},
-        'QUEUED': {'status': 'QUEUED'}}
+                 '$or': [{'heartbeat': {'$lt': cut_time}},
+                         {'heartbeat': None, 'start_time': {'$lt': cut_time}}]}
+    }
     return stats_queries
 
 
 # ###################### DB STATUS ########################################## #
 
 @ac.command(unobserved=True)
-def db_status(run_db):
+def db_status(run_db, patience=120):
     import pandas as pd
 
     print('Status for {}'.format(run_db))
@@ -92,7 +94,7 @@ def db_status(run_db):
                               if coll not in ignored_collections])
         if not collections:
             raise IndexError
-        stats_queries = get_status_queries()
+        stats_queries = get_status_queries(patience)
         counts = [{status: db[coll].find(q).count()
                    for status, q in stats_queries.items()}
                   for coll in collections]
@@ -131,7 +133,6 @@ def get_next_run(runs, blacklist=(), query=None, _run=None, _log=None):
             raise
     else:
         yield None
-
 
 
 def _write_file(base_dir, filename, source, blocksize=2**20):
@@ -266,25 +267,33 @@ def build_image(run, fs, dclient, mongo_arg, image_tag, volumes, _log, _run):
                                _id=run['_id'])
         _log.info('Building docker image %s', tag)
         dclient.images.build(path=run_dir, tag=tag)
+        config_name = os.path.join(worker_dir,
+                                   'config_{}.json'.format(run['_id']))
         command = "python {mainfile} with {config} -m {target_db}".format(
             mainfile=run['experiment']['mainfile'],
-            config='worker/config.json',
+            config=config_name,
             target_db=mongo_arg.format(_id=run['_id'])
         )
-        with open(os.path.join(worker_dir, 'config.json'), 'wt') as f:
+        with open(config_name, 'wt') as f:
             json.dump(run['config'], f)
         vols = copy(volumes)
         vols[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
-    return tag, command, vols
+    return tag, command, vols, config_name
 
 
 @ac.capture
-def run_container(dclient, tag, command, vols, docker_run_kws, _run, _log):
+def run_container(dclient, tag, command, vols, docker_run_kws, hostname, _run,
+                  _log):
     _run.info['status'] = 'RUNNING'
     _log.info('Executing command "%s"', command)
     start_time = time.time()
+    if hostname is None:
+        hostname = _run.host_info['hostname']
+
     try:
-        dclient.containers.run(tag, command, volumes=vols, *docker_run_kws)
+        dclient.containers.run(tag, command, volumes=vols,
+                               hostname=hostname,
+                               *docker_run_kws)
         outcome = 'SUCCESS'
     except docker.errors.ContainerError as e:
         print(e.args)
@@ -340,13 +349,30 @@ def mark_dead(_log, patience=120):
     Takes a patience parameter (default=120) that determines the threshold for
     deciding if a run counts as DEAD.
     """
-    runs, fs, mongo_arg = run_database_setup()
+    db, runs, fs, mongo_arg = run_database_setup()
     _log.info('Marking unfinished runs without a heartbeat for >%d seconds as'
               ' DEAD.', patience)
     cut_time = datetime.utcnow() - timedelta(seconds=patience)
-    r = runs.update_many({'status': 'RUNNING', 'heartbeat': {'$lt': cut_time}},
+
+    r = runs.update_many({'status': 'RUNNING',
+                          '$or': [{'heartbeat': {'$lt': cut_time}},
+                                  {'heartbeat': None,
+                                   'start_time': {'$lt': cut_time}}]},
                          {'$set': {'status': 'DEAD'}})
     _log.info('Updated %d runs', r.modified_count)
+
+
+@ac.command(unobserved=True)
+def reschedule(_log, reschedule_query=None):
+    if reschedule_query is None:
+        reschedule_query = {'status': {'$in': ['DEAD', 'INTERRUPTED',
+                                               'ACQUIRED']}}
+    db, runs, fs, mongo_arg = run_database_setup()
+    mark_dead()
+    _log.info('Marking runs that match %s as QUEUED.', reschedule_query)
+    r = runs.update_many(reschedule_query,
+                         {'$set': {'status': 'QUEUED'}})
+    _log.info('Rescheduled %d runs', r.modified_count)
 
 
 @ac.automain
@@ -379,8 +405,12 @@ def run(waiting_interval, quit_after_idle_for, _log, _run):
                 time.sleep(waiting_interval)
                 continue
 
-            tag, command, vols = build_image(run, fs, dclient, mongo_arg)
+            tag, command, vols, config_name = build_image(run, fs, dclient,
+                                                          mongo_arg)
 
         outcome, elapsed_time = run_container(dclient, tag, command, vols)
+        with suppress(FileNotFoundError):
+            os.remove(config_name)
 
         t = log_outcome(run['_id'], outcome, elapsed_time, waited_for, blacklist)
+
