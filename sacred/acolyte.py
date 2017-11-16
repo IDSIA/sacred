@@ -267,18 +267,18 @@ def build_image(run, fs, dclient, mongo_arg, image_tag, volumes, _log, _run):
                                _id=run['_id'])
         _log.info('Building docker image %s', tag)
         dclient.images.build(path=run_dir, tag=tag)
-        config_name = os.path.join(worker_dir,
-                                   'config_{}.json'.format(run['_id']))
+        config_name = 'config_{}.json'.format(run['_id'])
         command = "python {mainfile} with {config} -m {target_db}".format(
             mainfile=run['experiment']['mainfile'],
-            config=config_name,
+            config=os.path.join('/sacred/worker', config_name),
             target_db=mongo_arg.format(_id=run['_id'])
         )
-        with open(config_name, 'wt') as f:
+        config_path = os.path.join(worker_dir, config_name)
+        with open(config_path, 'wt') as f:
             json.dump(run['config'], f)
         vols = copy(volumes)
         vols[worker_dir] = {'bind': '/sacred/worker', 'mode': 'ro'}
-    return tag, command, vols, config_name
+    return tag, command, vols, config_path
 
 
 @ac.capture
