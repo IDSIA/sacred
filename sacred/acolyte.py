@@ -293,7 +293,7 @@ def run_container(dclient, tag, command, vols, docker_run_kws, hostname, _run,
     try:
         dclient.containers.run(tag, command, volumes=vols,
                                hostname=hostname,
-                               *docker_run_kws)
+                               **docker_run_kws)
         outcome = 'SUCCESS'
     except docker.errors.ContainerError as e:
         print(e.args)
