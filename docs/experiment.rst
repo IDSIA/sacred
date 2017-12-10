@@ -51,7 +51,7 @@ execute the experiments python file and use the powerful :doc:`command_line`.
 You can also run your experiment directly from python. This is especially useful
 if you want to run it multiple times with different configurations. So lets say
 your experiment is in a file called ``my_experiment.py``. Then you can import
-it from there an run it like this:
+it from there and run it like this:
 
 .. code-block:: python
 
