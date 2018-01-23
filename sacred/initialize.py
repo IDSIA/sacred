@@ -240,7 +240,7 @@ def create_scaffolding(experiment, sorted_ingredients):
         named_configs=experiment.named_configs,
         config_hooks=experiment.config_hooks,
         generate_seed=True)
-    
+
     scaffolding_ret = OrderedDict([
         (sc.path, sc)
         for sc in scaffolding.values()
@@ -252,6 +252,7 @@ def create_scaffolding(experiment, sorted_ingredients):
         )
 
     return scaffolding_ret
+
 
 def gather_ingredients_topological(ingredient):
     sub_ingredients = defaultdict(int)
