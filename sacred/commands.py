@@ -169,4 +169,3 @@ def _write_file(base_dir, filename, content, mode='t'):
 def _get_truncated_python_version(host_info):
     version = parse_version(host_info['python_version'])
     return '{}.{}'.format(*version._version.release[:2])
-
