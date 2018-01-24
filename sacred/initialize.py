@@ -240,7 +240,18 @@ def create_scaffolding(experiment, sorted_ingredients):
         named_configs=experiment.named_configs,
         config_hooks=experiment.config_hooks,
         generate_seed=True)
-    return OrderedDict([(sc.path, sc) for sc in scaffolding.values()])
+
+    scaffolding_ret = OrderedDict([
+        (sc.path, sc)
+        for sc in scaffolding.values()
+    ])
+    if len(scaffolding_ret) != len(scaffolding):
+        raise ValueError(
+            'The pathes of the ingredients are not unique. '
+            '{}'.format([s.path for s in scaffolding])
+        )
+
+    return scaffolding_ret
 
 
 def gather_ingredients_topological(ingredient):
