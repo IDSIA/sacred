@@ -258,7 +258,7 @@ class Run(object):
         self._output_file.seek(self.captured_out_cursor)
         text = self._output_file.read()
         if isinstance(text, bytes):
-            text = text.decode('utf-8')
+            text = text.decode('utf-8', 'replace')
         self.captured_out_cursor += len(text)
         if self.captured_out:
             text = self.captured_out + text
