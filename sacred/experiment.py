@@ -35,7 +35,8 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name=None, ingredients=(), interactive=False):
+    def __init__(self, name=None, ingredients=(), interactive=False,
+                 base_dir=None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -53,6 +54,10 @@ class Experiment(Ingredient):
             mode (e.g. IPython or Jupyter notebooks).
             However, this mode is discouraged since it won't allow storing the
             source-code or reliable reproduction of the runs.
+
+        base_dir : str, optional
+            Optional full path to the base directory of this experiment. This
+            will set the scope for automatic source file discovery.
 
         """
         caller_globals = inspect.stack()[1][0].f_globals
@@ -72,6 +77,7 @@ class Experiment(Ingredient):
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
                                          interactive=interactive,
+                                         base_dir=base_dir,
                                          _caller_globals=caller_globals)
         self.default_command = None
         self.command(print_config, unobserved=True)

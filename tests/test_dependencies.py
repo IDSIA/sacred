@@ -159,6 +159,24 @@ def test_gather_sources_and_dependencies():
         assert len(deps) == 2
 
 
+def test_custom_base_dir():
+    from tests.basedir.my_experiment import some_func
+    base_dir = os.path.abspath('tests')
+    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__, base_dir)
+    assert isinstance(main, Source)
+    assert isinstance(sources, set)
+    assert isinstance(deps, set)
+    assert main == Source.create('tests/basedir/my_experiment.py')
+    expected_sources = {
+        Source.create('tests/__init__.py'),
+        Source.create('tests/basedir/__init__.py'),
+        Source.create('tests/basedir/my_experiment.py'),
+        Source.create('tests/foo/__init__.py'),
+        Source.create('tests/foo/bar.py')
+    }
+    assert sources == expected_sources
+
+
 @pytest.mark.parametrize('f_name, mod_name, ex_path, is_local', [
     ('./foo.py', 'bar', '.', False),
     ('./foo.pyc', 'bar', '.', False),

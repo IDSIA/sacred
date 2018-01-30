@@ -478,19 +478,21 @@ dependency_discovery_strategies = {
 }
 
 
-def gather_sources_and_dependencies(globs):
+def gather_sources_and_dependencies(globs, base_dir=None):
     """Scan the given globals for modules and return them as dependencies."""
 
     experiment_path, main = get_main_file(globs)
 
+    base_dir = base_dir or experiment_path
+
     gather_sources = source_discovery_strategies[SETTINGS['DISCOVER_SOURCES']]
-    sources = gather_sources(globs, experiment_path)
+    sources = gather_sources(globs, base_dir)
     if main is not None:
         sources.add(main)
 
     gather_dependencies = dependency_discovery_strategies[
         SETTINGS['DISCOVER_DEPENDENCIES']]
-    dependencies = gather_dependencies(globs, experiment_path)
+    dependencies = gather_dependencies(globs, base_dir)
 
     if opt.has_numpy:
         # Add numpy as a dependency because it might be used for randomness

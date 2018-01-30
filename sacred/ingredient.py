@@ -36,7 +36,7 @@ class Ingredient(object):
     """
 
     def __init__(self, path, ingredients=(), interactive=False,
-                 _caller_globals=None):
+                 _caller_globals=None, base_dir=None):
         self.path = path
         self.config_hooks = []
         self.configurations = []
@@ -50,11 +50,11 @@ class Ingredient(object):
         self.commands = OrderedDict()
         # capture some context information
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
-        mainfile_name = _caller_globals.get('__file__', '.')
-        self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
+        mainfile_dir = os.path.dirname(_caller_globals.get('__file__', '.'))
+        self.base_dir = os.path.abspath(base_dir or mainfile_dir)
         self.doc = _caller_globals.get('__doc__', "")
         self.mainfile, self.sources, self.dependencies = \
-            gather_sources_and_dependencies(_caller_globals)
+            gather_sources_and_dependencies(_caller_globals, self.base_dir)
         if self.mainfile is None and not interactive:
             raise RuntimeError("Defining an experiment in interactive mode! "
                                "The sourcecode cannot be stored and the "
