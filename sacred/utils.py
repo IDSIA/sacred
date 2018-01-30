@@ -8,7 +8,9 @@ import logging
 import os.path
 import pkgutil
 import re
+import shlex
 import sys
+import threading
 import traceback as tb
 from functools import partial
 
@@ -28,8 +30,11 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "optional_kwargs_decorator", "get_inheritors",
            "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError"]
 
-# A PY2 compatible FileNotFoundError
+# A PY2 compatible basestring, int_types and FileNotFoundError
 if sys.version_info[0] == 2:
+    basestring = basestring
+    int_types = (int, long)
+
     import errno
 
     class FileNotFoundError(IOError):
@@ -37,9 +42,13 @@ if sys.version_info[0] == 2:
             super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
     from StringIO import StringIO
 else:
+    basestring = str
+    int_types = (int,)
+
     # Reassign so that we can import it from here
     FileNotFoundError = FileNotFoundError
     from io import StringIO
+
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -161,7 +170,8 @@ def set_by_dotted_path(d, path, value):
 
     Will create dictionaries as needed.
 
-    Examples:
+    Examples
+    --------
     >>> d = {'foo': {'bar': 7}}
     >>> set_by_dotted_path(d, 'foo.bar', 10)
     >>> d
@@ -169,6 +179,7 @@ def set_by_dotted_path(d, path, value):
     >>> set_by_dotted_path(d, 'foo.d.baz', 3)
     >>> d
     {'foo': {'bar': 10, 'd': {'baz': 3}}}
+
     """
     split_path = path.split('.')
     current_option = d
@@ -257,20 +268,56 @@ def print_filtered_stacktrace():
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
     if '__sacred__' in current_tb.tb_frame.f_globals:
-        print("Exception originated from within Sacred.\n"
-              "Traceback (most recent calls):", file=sys.stderr)
-        tb.print_tb(exc_traceback)
-        tb.print_exception(exc_type, exc_value, None)
+        header = ["Exception originated from within Sacred.\n"
+                  "Traceback (most recent calls):\n"]
+        texts = tb.format_exception(exc_type, exc_value, current_tb)
+        print(''.join(header + texts[1:]).strip(), file=sys.stderr)
     else:
-        print("Traceback (most recent calls WITHOUT Sacred internals):",
-              file=sys.stderr)
-        current_tb = exc_traceback
-        while current_tb is not None:
-            if '__sacred__' not in current_tb.tb_frame.f_globals:
-                tb.print_tb(current_tb, 1)
-            current_tb = current_tb.tb_next
-        print("\n".join(tb.format_exception_only(exc_type, exc_value)).strip(),
-              file=sys.stderr)
+        if sys.version_info >= (3, 3):
+            tb_exception =\
+                tb.TracebackException(exc_type, exc_value, exc_traceback,
+                                      limit=None)
+            for line in filtered_traceback_format(tb_exception):
+                print(line, file=sys.stderr, end="")
+        else:
+            print("Traceback (most recent calls WITHOUT Sacred internals):",
+                  file=sys.stderr)
+            current_tb = exc_traceback
+            while current_tb is not None:
+                if '__sacred__' not in current_tb.tb_frame.f_globals:
+                    tb.print_tb(current_tb, 1)
+                current_tb = current_tb.tb_next
+            print("\n".join(tb.format_exception_only(exc_type,
+                                                     exc_value)).strip(),
+                  file=sys.stderr)
+
+
+def filtered_traceback_format(tb_exception, chain=True):
+    if chain:
+        if tb_exception.__cause__ is not None:
+            for line in filtered_traceback_format(tb_exception.__cause__,
+                                                  chain=chain):
+                yield line
+            yield tb._cause_message
+        elif (tb_exception.__context__ is not None and
+            not tb_exception.__suppress_context__):
+            for line in filtered_traceback_format(tb_exception.__context__,
+                    chain=chain):
+                yield line
+            yield tb._context_message
+    yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
+    current_tb = tb_exception.exc_traceback
+    while current_tb is not None:
+        if '__sacred__' not in current_tb.tb_frame.f_globals:
+            stack = tb.StackSummary.extract(tb.walk_tb(current_tb),
+                                            limit=1,
+                                            lookup_lines=True,
+                                            capture_locals=False)
+            for line in stack.format():
+                yield line
+        current_tb = current_tb.tb_next
+    for line in tb_exception.format_exception_only():
+        yield line
 
 
 def is_subdir(path, directory):
@@ -375,3 +422,38 @@ def module_is_imported(modname, scope=None):
             return True
 
     return False
+
+
+def ensure_wellformed_argv(argv):
+    if argv is None:
+        argv = sys.argv
+    elif isinstance(argv, basestring):
+        argv = shlex.split(argv)
+    else:
+        if not isinstance(argv, (list, tuple)):
+            raise ValueError("argv must be str or list, but was {}"
+                             .format(type(argv)))
+        if not all([isinstance(a, basestring) for a in argv]):
+            problems = [a for a in argv if not isinstance(a, basestring)]
+            raise ValueError("argv must be list of str but contained the "
+                             "following elements: {}".format(problems))
+    return argv
+
+
+class IntervalTimer(threading.Thread):
+    @classmethod
+    def create(cls, func, interval=10):
+        stop_event = threading.Event()
+        timer_thread = cls(stop_event, func, interval)
+        return stop_event, timer_thread
+
+    def __init__(self, event, func, interval=10.):
+        threading.Thread.__init__(self)
+        self.stopped = event
+        self.func = func
+        self.interval = interval
+
+    def run(self):
+        while not self.stopped.wait(self.interval):
+            self.func()
+        self.func()

@@ -1,12 +1,36 @@
 Release History
 ---------------
 
-0.7.1 (??)
-++++++++++
+0.7.2 (2017-11-02)
+++++++++++++++++++
+* API Change: added host_info to queued_event
+* Feature: improved and configurable dependency discovery system
+* Feature: improved and configurable source-file discovery system
+* Feature: better error messages for missing or misspelled commands
+* Feature: -m flag now supports passing an id for a run to overwrite
+* Feature: allow captured functions to be called outside of a run (thanks @berleon)
+* Bugfix: fixed issue with telegram imports (thanks @millawell)
+
+
+0.7.1 (2017-09-14)
+++++++++++++++++++
 * Refactor: lazy importing of many optional dependencies
+* Feature: added metrics API for adding live monitoring information to the MongoDB
+* Feature: added integration with tensorflow for automatic capturing of LogWriter paths
 * Feature: set seed of tensorflow if it is imported
+* Feature: named_configs can now affect the config of ingredients
 * Bugfix: failed runs now return with exit code 1 by default
 * Bugfix: fixed a problem with UTF-8 symbols in stdout
+* Bugfix: fixed a threading issue with the SQLObserver
+* Bugfix: fixed a problem with consecutive ids in the SQLObserver
+* Bugfix: heartbeat events now also serialize the intermediate results
+* Bugfix: reapeatedly calling run from python with an option for adding an
+          observer, no longer duplicates observers
+* Bugfix: fixed a problem where **kwargs of captured functions might be modified
+* Bugfix: fixed an encoding problem with the FileStorageObserver
+* Bugfix: fixed an issue where determining the version of some packages would crash
+* Bugfix: fixed handling of relative filepaths in the SQLObserver and the TinyDBObserver
+
 
 0.7.0 (2017-05-07)
 ++++++++++++++++++

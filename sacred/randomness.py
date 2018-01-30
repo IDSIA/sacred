@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import random
 
 import sacred.optional as opt
-from sacred.utils import module_is_in_cache
+from sacred.utils import module_is_in_cache, int_types
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
@@ -19,7 +19,7 @@ def get_seed(rnd=None):
 
 
 def create_rnd(seed):
-    assert isinstance(seed, opt.int_types), \
+    assert isinstance(seed, int_types), \
         "Seed has to be integer but was {} {}".format(repr(seed), type(seed))
     if opt.has_numpy:
         return opt.np.random.RandomState(seed)

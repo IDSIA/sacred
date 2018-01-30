@@ -157,3 +157,15 @@ def _format_config(cfg, config_mods):
         indent = 2 + 2 * path.count('.')
         lines.append(_format_entry(indent, entry))
     return "\n".join(lines)
+
+
+def _write_file(base_dir, filename, content, mode='t'):
+    full_name = os.path.join(base_dir, filename)
+    os.makedirs(os.path.dirname(full_name), exist_ok=True)
+    with open(full_name, 'w' + mode) as f:
+        f.write(content)
+
+
+def _get_truncated_python_version(host_info):
+    version = parse_version(host_info['python_version'])
+    return '{}.{}'.format(*version._version.release[:2])

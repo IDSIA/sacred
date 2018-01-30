@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 import hashlib
 import json
 import os
+from threading import Lock
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -27,6 +28,7 @@ class SqlObserver(RunObserver):
         self.session = session
         self.priority = priority
         self.run = None
+        self.lock = Lock()
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -34,10 +36,10 @@ class SqlObserver(RunObserver):
         sql_exp = Experiment.get_or_create(ex_info, self.session)
         sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
-            _id = '0' if i is None else str(int(i.run_id) + 1)
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            _id = 0 if i is None else i.id + 1
 
-        self.run = Run(run_id=_id,
+        self.run = Run(run_id=str(_id),
                        start_time=start_time,
                        config=json.dumps(flatten(config)),
                        command=command,
@@ -47,27 +49,29 @@ class SqlObserver(RunObserver):
                        host=sql_host,
                        status='RUNNING')
         self.session.add(self.run)
-        self.session.commit()
+        self.save()
         return _id or self.run.run_id
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
 
         Base.metadata.create_all(self.engine)
         sql_exp = Experiment.get_or_create(ex_info, self.session)
+        sql_host = Host.get_or_create(host_info, self.session)
         if _id is None:
-            i = self.session.query(Run).order_by(Run.run_id.desc()).first()
-            _id = '0' if i is None else str(int(i.id) + 1)
+            i = self.session.query(Run).order_by(Run.id.desc()).first()
+            _id = 0 if i is None else i.id + 1
 
-        self.run = Run(run_id=_id,
+        self.run = Run(run_id=str(_id),
                        config=json.dumps(flatten(config)),
                        command=command,
                        priority=meta_info.get('priority', 0),
                        comment=meta_info.get('comment', ''),
                        experiment=sql_exp,
+                       host=sql_host,
                        status='QUEUED')
         self.session.add(self.run)
-        self.session.commit()
+        self.save()
         return _id or self.run.run_id
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
@@ -75,34 +79,38 @@ class SqlObserver(RunObserver):
         self.run.captured_out = captured_out
         self.run.heartbeat = beat_time
         self.run.result = result
-        self.session.commit()
+        self.save()
 
     def completed_event(self, stop_time, result):
         self.run.stop_time = stop_time
         self.run.result = result
         self.run.status = 'COMPLETED'
-        self.session.commit()
+        self.save()
 
     def interrupted_event(self, interrupt_time, status):
         self.run.stop_time = interrupt_time
         self.run.status = status
-        self.session.commit()
+        self.save()
 
     def failed_event(self, fail_time, fail_trace):
         self.run.stop_time = fail_time
         self.run.fail_trace = '\n'.join(fail_trace)
         self.run.status = 'FAILED'
-        self.session.commit()
+        self.save()
 
     def resource_event(self, filename):
         res = Resource.get_or_create(filename, self.session)
         self.run.resources.append(res)
-        self.session.commit()
+        self.save()
 
     def artifact_event(self, name, filename):
         a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
-        self.session.commit()
+        self.save()
+
+    def save(self):
+        with self.lock:
+            self.session.commit()
 
     def query(self, _id):
         run = self.session.query(Run).filter_by(id=_id).first()
@@ -321,8 +329,9 @@ if opt.has_sqlalchemy:  # noqa
 
     class Run(Base):
         __tablename__ = 'run'
+        id = sa.Column(sa.Integer, primary_key=True)
 
-        run_id = sa.Column(sa.String(24), primary_key=True)
+        run_id = sa.Column(sa.String(24))
 
         command = sa.Column(sa.String(64))
 

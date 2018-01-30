@@ -87,7 +87,7 @@ class TelegramObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
-        import telegram.ParseMode
+        import telegram
         self.run = {
             '_id': _id,
             'config': config,

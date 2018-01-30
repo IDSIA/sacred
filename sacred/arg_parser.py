@@ -66,9 +66,10 @@ def parse_args(argv, description="", commands=None, print_help=True):
         dict[str, (str | bool | None)]
             parsed values for all command-line options.
             See ``docopt`` for more details.
+
     """
     options = gather_command_line_options()
-    usage = _format_usage(argv[0], description, commands, options)
+    usage = format_usage(argv[0], description, commands, options)
     args = docopt(usage, [str(a) for a in argv[1:]], help=print_help)
     if not args['help'] or not print_help:
         return args
@@ -94,6 +95,7 @@ def get_config_updates(updates):
     -------
         (dict, list):
             Config updates and named configs to use
+
     """
     config_updates = {}
     named_configs = []
@@ -125,6 +127,7 @@ def _format_options_usage(options):
     -------
         str
             Text formatted as a description for the commandline options
+
     """
     options_usage = ""
     for op in options:
@@ -159,6 +162,7 @@ def _format_arguments_usage(options):
         str
             Text formatted as a description of the arguments supported by the
             commandline options.
+
     """
     argument_usage = ""
     for op in options:
@@ -179,14 +183,15 @@ def _format_command_usage(commands):
 
     Parameters
     ----------
-        commands : list[str, str]
-            List of supported commands.
-            Each entry should be a tuple of (name, description).
+        commands : dict[str, func]
+            dictionary of supported commands.
+            Each entry should be a tuple of (name, function).
 
     Returns
     -------
         str
             Text formatted as a description of the commands.
+
     """
     if not commands:
         return ""
@@ -200,7 +205,7 @@ def _format_command_usage(commands):
     return command_usage
 
 
-def _format_usage(program_name, description, commands=None, options=()):
+def format_usage(program_name, description, commands=None, options=()):
     """
     Construct the usage text.
 
@@ -210,9 +215,9 @@ def _format_usage(program_name, description, commands=None, options=()):
             Usually the name of the python file that contains the experiment.
         description : str
             description of this experiment (usually the docstring).
-        commands : list[str, str]
-            List of supported commands.
-            Each entry should be a tuple of (name, description).
+        commands : dict[str, func]
+            Dictionary of supported commands.
+            Each entry should be a tuple of (name, function).
         options : list[sacred.commandline_options.CommandLineOption]
             A list of all supported commandline options.
 
@@ -221,6 +226,7 @@ def _format_usage(program_name, description, commands=None, options=()):
         str
             The complete formatted usage text for this experiment.
             It adheres to the structure required by ``docopt``.
+
     """
     usage = USAGE_TEMPLATE.format(
         program_name=program_name,

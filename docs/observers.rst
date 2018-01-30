@@ -625,7 +625,7 @@ But it can optionally also customize the other attributes::
         "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
         "icon": ":imp:",
         "bot_name": "my-sacred-bot",
-        "completed_text": "YAY! {ex_info[name] completed with result=`{result}`"
+        "completed_text": "YAY! {ex_info[name] completed with result=`{result}`",
         "interrupted_text": null,
         "failed_text": "Oh noes! {ex_info[name] failed saying `{error}`"
     }

@@ -5,14 +5,14 @@ from __future__ import division, print_function, unicode_literals
 import datetime
 import os.path
 import sys
-import threading
 import traceback as tb
 
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
-from sacred.utils import ObserverError, SacredInterrupt, join_paths
-from sacred.stdout_capturing import get_stdcapturer, flush
+from sacred.utils import SacredInterrupt, join_paths, \
+    IntervalTimer
+from sacred.stdout_capturing import get_stdcapturer
 
 
 __sacred__ = True  # marks files that should be filtered from stack traces
@@ -30,9 +30,6 @@ class Run(object):
 
         self.captured_out = None
         """Captured stdout and stderr"""
-
-        self.captured_out_cursor = 0
-        """Cursor on captured_out to read by chunks"""
 
         self.config = config
         """The final configuration used for this run"""
@@ -139,6 +136,7 @@ class Run(object):
         -------
         file
             the opened file-object
+
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
@@ -194,6 +192,7 @@ class Run(object):
         Returns
         -------
             the return value of the main function
+
         """
         if self.start_time is not None:
             raise RuntimeError('A run can only be started once. '
@@ -218,20 +217,16 @@ class Run(object):
             self._emit_queued()
             return
         try:
-            try:
-                with capture_stdout() as (f, final_out):
-                    self._output_file = f
-                    self._emit_started()
-                    self._start_heartbeat()
-                    self._execute_pre_run_hooks()
-                    self.result = self.main_function(*args)
-                    self._execute_post_run_hooks()
-                    if self.result is not None:
-                        self.run_logger.info('Result: {}'.format(self.result))
-                    elapsed_time = self._stop_time()
-                    self.run_logger.info('Completed after %s', elapsed_time)
-                    self._get_captured_output()
-            finally:
+            with capture_stdout() as self._output_file:
+                self._emit_started()
+                self._start_heartbeat()
+                self._execute_pre_run_hooks()
+                self.result = self.main_function(*args)
+                self._execute_post_run_hooks()
+                if self.result is not None:
+                    self.run_logger.info('Result: {}'.format(self.result))
+                elapsed_time = self._stop_time()
+                self.run_logger.info('Completed after %s', elapsed_time)
                 self._get_captured_output()
             self._stop_heartbeat()
             self._emit_completed(self.result)
@@ -240,7 +235,7 @@ class Run(object):
             status = getattr(e, 'STATUS', 'INTERRUPTED')
             self._emit_interrupted(status)
             raise
-        except:
+        except Exception:
             exc_type, exc_value, trace = sys.exc_info()
             self._stop_heartbeat()
             self._emit_failed(exc_type, exc_value, trace.tb_next)
@@ -252,11 +247,8 @@ class Run(object):
 
     def _get_captured_output(self):
         if self._output_file.closed:
-            return  # nothing we can do
-        flush()
-        self._output_file.flush()
-        self._output_file.seek(self.captured_out_cursor)
-        text = self._output_file.read()
+            return
+        text = self._output_file.get()
         if isinstance(text, bytes):
             text = text.decode('utf-8', 'replace')
         self.captured_out_cursor += len(text)
@@ -267,17 +259,16 @@ class Run(object):
         self.captured_out = text
 
     def _start_heartbeat(self):
-        self._emit_heartbeat()
         if self.beat_interval > 0:
-            self._heartbeat = threading.Timer(self.beat_interval,
-                                              self._start_heartbeat)
+            self._stop_heartbeat_event, self._heartbeat = IntervalTimer.create(
+                self._emit_heartbeat, self.beat_interval)
             self._heartbeat.start()
 
     def _stop_heartbeat(self):
+        # only stop if heartbeat was started
         if self._heartbeat is not None:
-            self._heartbeat.cancel()
-        self._heartbeat = None
-        self._emit_heartbeat()  # one final beat to flush pending changes
+            self._stop_heartbeat_event.set()
+            self._heartbeat.join(2)
 
     def _emit_queued(self):
         self.status = 'QUEUED'
@@ -291,6 +282,7 @@ class Run(object):
                 _id = observer.queued_event(
                     ex_info=self.experiment_info,
                     command=command,
+                    host_info=self.host_info,
                     queue_time=queue_time,
                     config=self.config,
                     meta_info=self.meta_info,
@@ -394,13 +386,10 @@ class Run(object):
         if obs not in self._failed_observers and hasattr(obs, method):
             try:
                 getattr(obs, method)(**kwargs)
-            except ObserverError as e:
+            except Exception as e:
                 self._failed_observers.append(obs)
                 self.run_logger.warning("An error ocurred in the '{}' "
                                         "observer: {}".format(obs, e))
-            except:
-                self._failed_observers.append(obs)
-                raise
 
     def _final_call(self, observer, method, **kwargs):
         if hasattr(observer, method):

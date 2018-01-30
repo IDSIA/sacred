@@ -149,11 +149,10 @@ def test_tinydb_observer_started_event_generates_different_run_ids(tinydb_obs,
     assert _id != _id2
 
 
-def test_tinydb_observer_queued_event_is_not_implimented(tinydb_obs,
+def test_tinydb_observer_queued_event_is_not_implemented(tinydb_obs,
                                                          sample_run):
 
     sample_queued_run = sample_run.copy()
-    del sample_queued_run['host_info']
     del sample_queued_run['start_time']
     sample_queued_run['queue_time'] = T1
 

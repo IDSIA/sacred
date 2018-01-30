@@ -61,8 +61,8 @@ class FileStorageObserver(RunObserver):
         self.info = None
         self.cout = ""
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
         if _id is None:
             self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
         else:
@@ -72,6 +72,7 @@ class FileStorageObserver(RunObserver):
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
+            'host': dict(host_info),
             'meta': meta_info,
             'status': 'QUEUED',
         }

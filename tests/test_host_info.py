@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 from sacred.host_info import (get_host_info, host_info_getter,
                               host_info_gatherers)
-from sacred.optional import basestring
+from sacred.utils import basestring
 
 
 def test_get_host_info():

@@ -41,6 +41,15 @@ def cfg2():
 # add the Ingredient while creating the experiment
 ex = Experiment('my_experiment', ingredients=[data_ingredient])
 
+@ex.config
+def cfg3():
+    a = 12
+    b = 42
+
+@ex.named_config
+def fbb():
+    a = 22
+    dataset = {"filename": "AwwwJiss.py"}
 
 @ex.automain
 def run():

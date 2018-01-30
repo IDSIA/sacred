@@ -31,6 +31,7 @@ def get_host_info():
     dict
         A dictionary with information about the CPU, the OS and the
         Python version of this machine.
+
     """
     host_info = {}
     for k, v in host_info_gatherers.items():
@@ -63,6 +64,7 @@ def host_info_getter(func, name=None):
     Returns
     -------
     The function itself.
+
     """
     name = name or func.__name__
     host_info_gatherers[name] = func
