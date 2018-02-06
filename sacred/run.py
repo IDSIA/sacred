@@ -250,7 +250,7 @@ class Run(object):
             return
         text = self._output_file.get()
         if isinstance(text, bytes):
-            text = text.decode('utf-8')
+            text = text.decode('utf-8', 'replace')
         if self.captured_out:
             text = self.captured_out + text
         if self.captured_out_filter is not None:
