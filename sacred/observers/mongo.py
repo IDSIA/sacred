@@ -228,13 +228,13 @@ class MongoObserver(RunObserver):
                 self.run_entry['_id'] = c.next()['_id'] + 1 if c.count() else 1
             try:
                 self.runs.insert_one(self.run_entry)
+                return
             except pymongo.errors.InvalidDocument as e:
                 raise ObserverError('Run contained an unserializable entry.'
                                     '(most likely in the info)\n{}'.format(e))
             except pymongo.errors.DuplicateKeyError:
                 if not autoinc_key:
                     raise
-            return
 
     def save(self):
         import pymongo.errors
