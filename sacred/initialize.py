@@ -137,7 +137,7 @@ class Scaffold(object):
 
         self.fixture = copy(self.config)
         get_fixture_recursive(self)
-        
+
         return self.fixture
 
     def finalize_initialization(self, run):
