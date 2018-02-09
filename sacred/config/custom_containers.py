@@ -147,7 +147,7 @@ class DogmaticDict(dict):
 
     def get(self, k, d=None):
         if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)()
+            return dict.__getitem__(self, k)
         else:
             return self.fallback.get(k, d)
 
