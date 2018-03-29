@@ -143,7 +143,7 @@ def get_commit_if_possible(filename):
             is_dirty = repo.is_dirty()
             commit = repo.head.commit.hexsha
             return path, commit, is_dirty
-        except InvalidGitRepositoryError:
+        except (InvalidGitRepositoryError, ValueError) as e:
             pass
     return None, None, None
 
