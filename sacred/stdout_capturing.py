@@ -15,8 +15,6 @@ from sacred.utils import FileNotFoundError, StringIO
 
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 
 def flush():
     """Try to flush all stdio buffers, both from python and from C."""
@@ -81,7 +79,7 @@ class CapturedStdout(object):
 
     def finalize(self):
         self.flush()
-        self. final = self.get()
+        self.final = self.get()
         self.buffer.close()
 
 

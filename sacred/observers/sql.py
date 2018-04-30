@@ -21,7 +21,9 @@ class SqlObserver(RunObserver):
     @classmethod
     def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         engine = sa.create_engine(url, echo=echo)
-        return cls(engine, sessionmaker(bind=engine)(), priority)
+        session_factory = sessionmaker(bind=engine)
+        Session = scoped_session(session_factory)  # make session thread-local to avoid problems with sqlite (see #275)
+        return cls(engine, Session, priority)
 
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
@@ -146,7 +148,7 @@ class SqlOption(CommandLineOption):
 if opt.has_sqlalchemy:  # noqa
     import sqlalchemy as sa
     from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, scoped_session
 
     Base = declarative_base()
 
