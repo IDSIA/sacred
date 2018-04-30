@@ -28,7 +28,7 @@ class Run(object):
         self._id = None
         """The ID of this run as assigned by the first observer"""
 
-        self.captured_out = None
+        self.captured_out = ''
         """Captured stdout and stderr"""
 
         self.config = config
