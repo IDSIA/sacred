@@ -45,6 +45,7 @@ class Scaffold(object):
         self.captured_args = {join_paths(cf.prefix, n)
                               for cf in self._captured_functions
                               for n in cf.signature.arguments}
+        self.captured_args.add('__doc__')  # allow setting the config docstring
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
