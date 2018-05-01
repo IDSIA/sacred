@@ -217,7 +217,8 @@ class Run(object):
             self._emit_queued()
             return
         try:
-            with capture_stdout() as self._output_file:
+            with capture_stdout() as output_file:
+                self._output_file = output_file
                 self._emit_started()
                 self._start_heartbeat()
                 self._execute_pre_run_hooks()

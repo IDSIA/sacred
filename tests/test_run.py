@@ -38,7 +38,7 @@ def test_run_attributes(run):
 def test_run_state_attributes(run):
     assert run.start_time is None
     assert run.stop_time is None
-    assert run.captured_out is None
+    assert run.captured_out == ''
     assert run.result is None
 
 
