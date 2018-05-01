@@ -89,7 +89,7 @@ class Scaffold(object):
         else:
             nc = self.named_configs[config_name]
 
-        cfg = nc(fixed=self.config_updates,
+        cfg = nc(fixed=self.get_config_updates_recursive(),
                  preset=self.presets,
                  fallback=self.fallback)
 
@@ -119,6 +119,12 @@ class Scaffold(object):
                    for key, value in iterate_flattened(self.config_updates)})
         for cfg_summary in self.summaries:
             self.config_mods.update_from(cfg_summary)
+
+    def get_config_updates_recursive(self):
+        config_updates = self.config_updates.copy()
+        for sr_path, subrunner in self.subrunners.items():
+            config_updates[sr_path] = subrunner.get_config_updates_recursive()
+        return config_updates
 
     def get_fixture(self):
         if self.fixture is not None:
