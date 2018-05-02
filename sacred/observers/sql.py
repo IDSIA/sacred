@@ -22,8 +22,9 @@ class SqlObserver(RunObserver):
     def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         engine = sa.create_engine(url, echo=echo)
         session_factory = sessionmaker(bind=engine)
-        Session = scoped_session(session_factory)  # make session thread-local to avoid problems with sqlite (see #275)
-        return cls(engine, Session, priority)
+        # make session thread-local to avoid problems with sqlite (see #275)
+        session = scoped_session(session_factory)
+        return cls(engine, session, priority)
 
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
