@@ -70,7 +70,7 @@ class CapturedStdout(object):
         if self.final is None:
             self.buffer.seek(self.read_position)
             value = self.buffer.read()
-            self.read_position += len(value)
+            self.read_position = self.buffer.tell()
             return value
         else:
             value = self.final
