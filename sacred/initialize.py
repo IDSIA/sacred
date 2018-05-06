@@ -31,7 +31,7 @@ class Scaffold(object):
         self.config_hooks = config_hooks
         self.config_updates = {}
         self.named_configs_to_use = []
-        self.config = None
+        self.config = {}
         self.fallback = None
         self.presets = {}
         self.fixture = None  # TODO: rename
@@ -45,6 +45,7 @@ class Scaffold(object):
         self.captured_args = {join_paths(cf.prefix, n)
                               for cf in self._captured_functions
                               for n in cf.signature.arguments}
+        self.captured_args.add('__doc__')  # allow setting the config docstring
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -123,14 +124,21 @@ class Scaffold(object):
         if self.fixture is not None:
             return self.fixture
 
+        def get_fixture_recursive(runner):
+            for sr_path, subrunner in runner.subrunners.items():
+                # I am not sure if it is necessary to trigger all
+                subrunner.get_fixture()
+                get_fixture_recursive(subrunner)
+                sub_fix = copy(subrunner.config)
+                sub_path = sr_path
+                if is_prefix(self.path, sub_path):
+                    sub_path = sr_path[len(self.path):].strip('.')
+                # Note: This might fail if we allow non-dict fixtures
+                set_by_dotted_path(self.fixture, sub_path, sub_fix)
+
         self.fixture = copy(self.config)
-        for sr_path, subrunner in self.subrunners.items():
-            sub_fix = subrunner.get_fixture()
-            sub_path = sr_path
-            if is_prefix(self.path, sub_path):
-                sub_path = sr_path[len(self.path):].strip('.')
-            # Note: This might fail if we allow non-dict fixtures
-            set_by_dotted_path(self.fixture, sub_path, sub_fix)
+        get_fixture_recursive(self)
+
         return self.fixture
 
     def finalize_initialization(self, run):

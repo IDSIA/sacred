@@ -171,3 +171,61 @@ def test_experiment_double_named_config():
     assert ex.run(named_configs=['B', 'A']).result == (2, 2, 2)
 
 
+def test_double_nested_config():
+    sub_sub_ing = Ingredient('sub_sub_ing')
+    sub_ing = Ingredient('sub_ing', [sub_sub_ing])
+    ing = Ingredient('ing', [sub_ing])
+    ex = Experiment('ex', [ing])
+
+    @ex.config
+    def config():
+        a = 1
+
+    @ing.config
+    def config():
+        b = 1
+
+    @sub_ing.config
+    def config():
+        c = 2
+
+    @sub_sub_ing.config
+    def config():
+        d = 3
+
+    @sub_sub_ing.capture
+    def sub_sub_ing_main(_config):
+        assert _config == {
+            'd': 3
+        }, _config
+
+    @sub_ing.capture
+    def sub_ing_main(_config):
+        assert _config == {
+            'c': 2,
+            'sub_sub_ing': {'d': 3}
+        }, _config
+
+    @ing.capture
+    def ing_main(_config):
+        assert _config == {
+            'b': 1,
+            'sub_sub_ing': {'d': 3},
+            'sub_ing': {'c': 2}
+        }, _config
+
+    @ex.main
+    def main(_config):
+        _config.pop('seed')
+        assert _config == {
+            'a': 1,
+            'sub_sub_ing': {'d': 3},
+            'sub_ing': {'c': 2},
+            'ing': {'b': 1}
+        }, _config
+
+        ing_main()
+        sub_ing_main()
+        sub_sub_ing_main()
+
+    ex.run()

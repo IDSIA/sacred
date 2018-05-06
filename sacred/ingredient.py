@@ -198,7 +198,8 @@ class Ingredient(object):
 
     def _add_named_config(self, name, conf):
         if name in self.named_configs:
-            raise KeyError('Configuration name "{}" already in use!')
+            raise KeyError('Configuration name "{}" already in use!'
+                           .format(name))
         self.named_configs[name] = conf
 
     @staticmethod

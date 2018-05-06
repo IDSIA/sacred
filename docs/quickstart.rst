@@ -34,11 +34,11 @@ We did three things here:
 
 This experiment can be run from the command-line, and this is what we get::
 
-    > python hello_world.py
-    INFO - hello_world - Running command 'my_main'
-    INFO - hello_world - Started
+    > python h01_hello_world.py
+    INFO - 01_hello_world - Running command 'my_main'
+    INFO - 01_hello_world - Started
     Hello world!
-    INFO - hello_world - Completed after 0:00:00
+    INFO - 01_hello_world - Completed after 0:00:00
 
 
 This experiment already has a full command-line interface, that we could use
