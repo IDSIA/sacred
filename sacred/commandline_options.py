@@ -202,6 +202,8 @@ class LoglevelOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         """Adjust the loglevel of the root-logger of this run."""
+        # TODO: sacred.initialize.create_run already takes care of this
+
         try:
             lvl = int(args)
         except ValueError:

@@ -11,7 +11,8 @@ from collections import OrderedDict
 from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
-from sacred.commandline_options import ForceOption, gather_command_line_options
+from sacred.commandline_options import (
+    ForceOption, gather_command_line_options, LoglevelOption)
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config)
 from sacred.config.signature import Signature
@@ -427,7 +428,9 @@ class Experiment(Ingredient):
 
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
-                         force=options.get(ForceOption.get_flag(), False))
+                         force=options.get(ForceOption.get_flag(), False),
+                         log_level=options.get(LoglevelOption.get_flag(),
+                                               None))
         run.meta_info['command'] = command_name
         run.meta_info['options'] = options
 
