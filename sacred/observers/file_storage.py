@@ -100,13 +100,22 @@ class FileStorageObserver(RunObserver):
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
         if _id is None:
-            dir_nrs = [int(d) for d in os.listdir(self.basedir)
-                       if os.path.isdir(os.path.join(self.basedir, d)) and
-                       d.isdigit()]
-            _id = max(dir_nrs + [0]) + 1
-
-        self.dir = os.path.join(self.basedir, str(_id))
-        os.mkdir(self.dir)
+            for i in range(200):
+                dir_nrs = [int(d) for d in os.listdir(self.basedir)
+                           if os.path.isdir(os.path.join(self.basedir, d)) and
+                           d.isdigit()]
+                _id = max(dir_nrs + [0]) + 1
+                self.dir = os.path.join(self.basedir, str(_id))
+                try:
+                    os.mkdir(self.dir)
+                except FileExistsError:  # Catch race conditions
+                    if i > 100:
+                        # After some tries,
+                        # expect that something other went wrong
+                        raise
+        else:
+            self.dir = os.path.join(self.basedir, str(_id))
+            os.mkdir(self.dir)
 
         ex_info['sources'] = self.save_sources(ex_info)
 
