@@ -43,9 +43,10 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 # A ConfigScope is a function like this decorated with @ex.config
 # All local variables of this function will be put into the configuration
 @ex.config
-def cfg():
+def cfg(_log):
     # The recipient of the greeting
     recipient = "world"
+    _log.info('TEST')
 
     # The message used for greeting
     message = "Hello {}!".format(recipient)

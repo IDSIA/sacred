@@ -69,7 +69,7 @@ class Scaffold(object):
                 subrunner.set_up_seed(self.rnd)
 
     def gather_fallbacks(self):
-        fallback = {}
+        fallback = {'_log': self.logger}
         for sr_path, subrunner in self.subrunners.items():
             if self.path and is_prefix(self.path, sr_path):
                 path = sr_path[len(self.path):].strip('.')
