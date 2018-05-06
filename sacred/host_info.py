@@ -5,9 +5,12 @@ from __future__ import division, print_function, unicode_literals
 
 import os
 import platform
+import re
 import subprocess
 import xml.etree.ElementTree as ET
+
 import cpuinfo
+
 from sacred.utils import optional_kwargs_decorator, FileNotFoundError
 from sacred.settings import SETTINGS
 
@@ -90,7 +93,16 @@ def _python_version():
 
 @host_info_getter(name='cpu')
 def _cpu():
-    return cpuinfo.get_cpu_info()['brand']
+    if platform.system() == "Windows":
+        return _get_cpu_by_pycpuinfo()
+    try:
+        if platform.system() == "Darwin":
+            return _get_cpu_by_sysctl()
+        elif platform.system() == "Linux":
+            return _get_cpu_by_proc_cpuinfo()
+    except Exception:
+        # Use pycpuinfo only if other ways fail, since it takes about 1 sec
+        return _get_cpu_by_pycpuinfo()
 
 
 @host_info_getter(name='gpus')
@@ -125,3 +137,25 @@ def _gpus():
 def _environment():
     keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
+
+
+# ################### Get CPU Information ###############################
+
+
+def _get_cpu_by_sysctl():
+    os.environ['PATH'] += ':/usr/sbin'
+    command = ["sysctl", "-n", "machdep.cpu.brand_string"]
+    return subprocess.check_output(command).decode().strip()
+
+
+def _get_cpu_by_proc_cpuinfo():
+    command = ["cat", "/proc/cpuinfo"]
+    all_info = subprocess.check_output(command).decode()
+    model_pattern = re.compile("^\s*model name\s*:")
+    for line in all_info.split("\n"):
+        if model_pattern.match(line):
+            return model_pattern.sub("", line, 1).strip()
+
+
+def _get_cpu_by_pycpuinfo():
+    return cpuinfo.get_cpu_info()['brand']
