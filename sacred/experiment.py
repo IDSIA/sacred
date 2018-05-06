@@ -10,7 +10,7 @@ import os.path
 from collections import OrderedDict
 from docopt import docopt, printable_usage
 
-from sacred.arg_parser import format_usage, get_config_updates, parse_args
+from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import ForceOption, gather_command_line_options
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config)
@@ -165,12 +165,17 @@ class Experiment(Ingredient):
 
     def get_usage(self, program_name=None):
         """Get the commandline usage string for this experiment."""
-        program_name = program_name or sys.argv[0]
+        program_name = os.path.relpath(program_name or sys.argv[0],
+                                       self.base_dir)
         commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
         long_usage = format_usage(program_name, self.doc, commands, options)
+        # internal usage is a workaround because docopt cannot handle spaces
+        # in program names. So for parsing we use 'dummy' as the program name.
+        # for printing help etc. we want to use the actual program name.
+        internal_usage = format_usage('dummy', self.doc, commands, options)
         short_usage = printable_usage(long_usage)
-        return short_usage, long_usage
+        return short_usage, long_usage, internal_usage
 
     def run(self, command_name=None, config_updates=None, named_configs=(),
             meta_info=None, options=None):
@@ -237,8 +242,8 @@ class Experiment(Ingredient):
 
         """
         argv = ensure_wellformed_argv(argv)
-        short_usage, usage = self.get_usage()
-        args = docopt(usage, [str(a) for a in argv[1:]], help=False)
+        short_usage, usage, internal_usage = self.get_usage()
+        args = docopt(internal_usage, [str(a) for a in argv[1:]], help=False)
 
         cmd_name = args.get('COMMAND') or self.default_command
         config_updates, named_configs = get_config_updates(args['UPDATE'])
@@ -400,10 +405,8 @@ class Experiment(Ingredient):
             its default value.
 
         """
-        all_commands = self.gather_commands()
-        args = parse_args(["dummy"],
-                          description=self.doc,
-                          commands=OrderedDict(all_commands))
+        _, _, internal_usage = self.get_usage()
+        args = docopt(internal_usage, [])
         return {k: v for k, v in args.items() if k.startswith('--')}
 
     # =========================== Internal Interface ==========================

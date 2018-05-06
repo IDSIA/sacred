@@ -11,19 +11,21 @@ from __future__ import division, print_function, unicode_literals
 import ast
 from collections import OrderedDict
 import textwrap
-import sys
 import inspect
-from docopt import docopt
 
-from sacred.commandline_options import gather_command_line_options
-from sacred.commands import help_for_command
 from sacred.serializer import restore
 from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
 
+try:
+    from shlex import quote as cmd_quote
+except ImportError:
+    from pipes import quote as cmd_quote
+
+
 __sacred__ = True  # marks files that should be filtered from stack traces
 
-__all__ = ('parse_args', 'get_config_updates')
+__all__ = ('get_config_updates', 'format_usage')
 
 
 USAGE_TEMPLATE = """Usage:
@@ -42,44 +44,6 @@ Arguments:
   UPDATE    Configuration assignments of the form foo.bar=17
 {arguments}
 {commands}"""
-
-
-def parse_args(argv, description="", commands=None, print_help=True):
-    """
-    Parse the given commandline-arguments.
-
-    Parameters
-    ----------
-        argv: list[str]
-            list of command-line arguments as in ``sys.argv``
-        description: str:
-            description of the experiment (docstring) to be used in the help
-            text.
-        commands: Optional[dict[str, func]]
-            list of commands that are supported by this experiment
-        print_help: bool
-            if True (default) this function will print the help-text and exit
-            if that is required by the parsed arguments.
-
-    Returns
-    -------
-        dict[str, (str | bool | None)]
-            parsed values for all command-line options.
-            See ``docopt`` for more details.
-
-    """
-    options = gather_command_line_options()
-    usage = format_usage(argv[0], description, commands, options)
-    args = docopt(usage, [str(a) for a in argv[1:]], help=print_help)
-    if not args['help'] or not print_help:
-        return args
-
-    if args['COMMAND'] is None:
-        print(usage)
-        sys.exit()
-    else:
-        print(help_for_command(commands[args['COMMAND']]))
-        sys.exit()
 
 
 def get_config_updates(updates):
@@ -229,7 +193,7 @@ def format_usage(program_name, description, commands=None, options=()):
 
     """
     usage = USAGE_TEMPLATE.format(
-        program_name=program_name,
+        program_name=cmd_quote(program_name),
         description=description.strip() if description else '',
         options=_format_options_usage(options),
         arguments=_format_arguments_usage(options),

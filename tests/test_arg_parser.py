@@ -5,7 +5,10 @@ from __future__ import division, print_function, unicode_literals
 
 import pytest
 import shlex
-from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
+from docopt import docopt
+
+from sacred.arg_parser import (_convert_value, get_config_updates, format_usage)
+from sacred.commandline_options import gather_command_line_options
 
 
 @pytest.mark.parametrize("argv,expected", [
@@ -22,35 +25,23 @@ from sacred.arg_parser import (_convert_value, get_config_updates, parse_args)
     ('-l 10',            {'--loglevel': '10'}),
     ('--loglevel=30',    {'--loglevel': '30'}),
     ('--force', {'--force': True}),
+    ('run with a=17 b=1 -m localhost:22222', {'COMMAND': 'run',
+                                              'with': True,
+                                              'UPDATE': ['a=17', 'b=1'],
+                                              '--mongo_db': 'localhost:22222'}),
+    ('evaluate with a=18 b=2 -l30', {'COMMAND': 'evaluate',
+                                     'with': True,
+                                     'UPDATE': ['a=18', 'b=2'],
+                                     '--loglevel': '30'}),
 ])
 def test_parse_individual_arguments(argv, expected):
-    args = parse_args(['test_prog.py'] + shlex.split(argv), print_help=False)
-    plain = parse_args(['test_prog.py'], print_help=False)
+    options = gather_command_line_options()
+    usage = format_usage("test.py", "", {}, options)
+    argv = shlex.split(argv)
+    plain = docopt(usage, [], help=False)
+    args = docopt(usage, argv, help=False)
     plain.update(expected)
-
     assert args == plain
-
-
-def test_parse_compound_arglist1():
-    argv = "run with a=17 b=1 -m localhost:22222".split()
-    args = parse_args(['test_prog.py'] + argv)
-    expected = parse_args(['test_prog.py'], print_help=False)
-    expected['COMMAND'] = 'run'
-    expected['with'] = True
-    expected['UPDATE'] = ['a=17', 'b=1']
-    expected['--mongo_db'] = 'localhost:22222'
-    assert args == expected
-
-
-def test_parse_compound_arglist2():
-    argv = "evaluate with a=18 b=2 -l30".split()
-    args = parse_args(['test_prog.py'] + argv)
-    expected = parse_args(['test_prog.py'], print_help=False)
-    expected['COMMAND'] = 'evaluate'
-    expected['with'] = True
-    expected['UPDATE'] = ['a=18', 'b=2']
-    expected['--loglevel'] = '30'
-    assert args == expected
 
 
 @pytest.mark.parametrize("update,expected", [
