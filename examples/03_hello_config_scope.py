@@ -46,7 +46,6 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 def cfg(_log):
     # The recipient of the greeting
     recipient = "world"
-    _log.info('TEST')
 
     # The message used for greeting
     message = "Hello {}!".format(recipient)
