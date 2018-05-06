@@ -53,14 +53,15 @@ class MongoObserver(RunObserver):
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
-    def create(url='localhost', db_name='sacred', collection='runs',
+    def create(url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
-               client=None,**kwargs):
+               client=None, **kwargs):
         import pymongo
         import gridfs
 
         if client is not None:
             assert isinstance(client, pymongo.MongoClient)
+            assert url is None, 'Cannot pass both a client and an url.'
         else:
             client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
