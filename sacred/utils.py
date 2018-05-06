@@ -157,7 +157,7 @@ def iterate_flattened(d):
     """
     for key in sorted(d.keys()):
         value = d[key]
-        if isinstance(value, dict):
+        if isinstance(value, dict) and value:
             for k, v in iterate_flattened(d[key]):
                 yield join_paths(key, k), v
         else:

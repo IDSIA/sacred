@@ -176,6 +176,20 @@ def test_using_a_named_config(ex):
     assert ex.run(named_configs=['ncfg']).result == 10
 
 
+def test_empty_dict_named_config(ex):
+    @ex.named_config
+    def ncfg():
+        empty_dict = {}
+        nested_empty_dict = {'k1': {'k2': {}}}
+
+    @ex.automain
+    def main(empty_dict=1, nested_empty_dict=2):
+        return empty_dict, nested_empty_dict
+
+    assert ex.run().result == (1, 2)
+    assert ex.run(named_configs=['ncfg']).result == ({}, {'k1': {'k2': {}}})
+
+
 def test_captured_out_filter(ex, capsys):
     @ex.main
     def run_print_mock_progress():
