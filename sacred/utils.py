@@ -17,8 +17,6 @@ from functools import partial
 import wrapt
 
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "ObserverError", "SacredInterrupt", "TimeoutInterrupt",
            "create_basic_stream_logger", "recursive_update",
@@ -261,13 +259,17 @@ def convert_to_nested_dict(dotted_dict):
     return nested_dict
 
 
+def _is_sacred_frame(frame):
+    return frame.f_globals["__name__"].split('.')[0] == 'sacred'
+
+
 def print_filtered_stacktrace():
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
-    if '__sacred__' in current_tb.tb_frame.f_globals:
+    if _is_sacred_frame(current_tb.tb_frame):
         header = ["Exception originated from within Sacred.\n"
                   "Traceback (most recent calls):\n"]
         texts = tb.format_exception(exc_type, exc_value, current_tb)
@@ -284,7 +286,7 @@ def print_filtered_stacktrace():
                   file=sys.stderr)
             current_tb = exc_traceback
             while current_tb is not None:
-                if '__sacred__' not in current_tb.tb_frame.f_globals:
+                if not _is_sacred_frame(current_tb.tb_frame):
                     tb.print_tb(current_tb, 1)
                 current_tb = current_tb.tb_next
             print("\n".join(tb.format_exception_only(exc_type,
@@ -308,7 +310,7 @@ def filtered_traceback_format(tb_exception, chain=True):
     yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
     current_tb = tb_exception.exc_traceback
     while current_tb is not None:
-        if '__sacred__' not in current_tb.tb_frame.f_globals:
+        if not _is_sacred_frame(current_tb.tb_frame):
             stack = tb.StackSummary.extract(tb.walk_tb(current_tb),
                                             limit=1,
                                             lookup_lines=True,

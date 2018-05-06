@@ -22,9 +22,6 @@ try:
 except ImportError:
     from pipes import quote as cmd_quote
 
-
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('get_config_updates', 'format_usage')
 
 

@@ -14,8 +14,6 @@ from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
 from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
                           basestring)
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('Ingredient',)
 
 

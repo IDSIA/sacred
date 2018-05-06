@@ -15,8 +15,6 @@ from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
 
-__sacred__ = True
-
 
 class ConfigScope(object):
     def __init__(self, func):

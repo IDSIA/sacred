@@ -17,8 +17,6 @@ from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
 import sacred.optional as opt
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 # Set data type values for abstract properties in Serializers
 series_type = opt.pandas.Series if opt.has_pandas else None
 dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None

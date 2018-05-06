@@ -7,8 +7,6 @@ import random
 import sacred.optional as opt
 from sacred.utils import module_is_in_cache, int_types
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 SEEDRANGE = (1, int(1e9))
 
 

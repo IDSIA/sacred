@@ -15,9 +15,6 @@ from sacred.utils import SacredInterrupt, join_paths, \
 from sacred.stdout_capturing import get_stdcapturer
 
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
-
 class Run(object):
     """Represent and manage a single run of an experiment."""
 

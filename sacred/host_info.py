@@ -14,8 +14,6 @@ import cpuinfo
 from sacred.utils import optional_kwargs_decorator, FileNotFoundError
 from sacred.settings import SETTINGS
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
 
 host_info_gatherers = {}

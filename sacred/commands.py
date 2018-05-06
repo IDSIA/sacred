@@ -12,8 +12,6 @@ from sacred.config import save_config_file
 from sacred.serializer import flatten
 from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('print_config', 'print_dependencies', 'save_config',
            'help_for_command')
 

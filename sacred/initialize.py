@@ -17,8 +17,6 @@ from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes, join_paths)
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,

@@ -19,8 +19,6 @@ from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('Experiment',)
 
 

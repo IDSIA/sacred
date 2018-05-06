@@ -6,8 +6,6 @@ import inspect
 from collections import OrderedDict
 import sys
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 
 if sys.version_info[0] < 3:  # python2
     def get_argspec(f):
