@@ -12,6 +12,7 @@ numpy==1.11.3
 pandas==0.19.2
 pbr==1.10.0
 py==1.4.32
+py-cpuinfo==4.0
 pymongo==3.4.0
 pytest==3.0.5
 python-dateutil==2.6.0
