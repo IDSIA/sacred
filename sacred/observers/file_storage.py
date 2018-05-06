@@ -108,6 +108,7 @@ class FileStorageObserver(RunObserver):
                 self.dir = os.path.join(self.basedir, str(_id))
                 try:
                     os.mkdir(self.dir)
+                    break
                 except FileExistsError:  # Catch race conditions
                     if i > 100:
                         # After some tries,
