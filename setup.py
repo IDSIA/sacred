@@ -43,7 +43,7 @@ setup(
         'jsonpickle>=0.7.2, <1.0',
         'munch>=2.0.2, <3.0',
         'wrapt>=1.0, <2.0',
-        'cpuinfo>=4.0'
+        'py-cpuinfo>=4.0'
     ],
     tests_require=[
         'mock>=0.8, <3.0',
