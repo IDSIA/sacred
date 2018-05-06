@@ -1,6 +1,33 @@
 Release History
 ---------------
 
+0.7.3 (2018-05-06)
+++++++++++++++++++
+* Feature: support custom experiment base directory (thanks @anibali)
+* Feature: added option to pass existing MongoClient to MongoObserver (thanks @rueberger)
+* Feature: allow setting the config docstring from named configs
+* Feature: added py-cpuinfo as fallback for gathering CPU information (thanks @serv-inc)
+* Feature: added support for _log argument in config function
+* Bugfix: stacktrace filtering now correctly handles chained exceptions (thanks @kamo-naoyuki)
+* Bugfix: resolved issue with stdout capturing sometimes loosing the last few lines
+* Bugfix: fixed the overwrite option of MongoObserver
+* Bugfix: fixed a problem with the heartbeat sometimes not ending
+* Bugfix: fixed an error with running in interactive mode
+* Bugfix: added a check for non-unique ingredient paths (thanks @boeddeker)
+* Bugfix: fixed several problems with utf-8 decoding (thanks @LukasDrude, @wjp)
+* Bugfix: fixed nesting structure of _config (thanks  @boeddeker)
+* Bugfix: fixed crash when using git integration with empty repository (thanks @ramon-oliveira)
+* Bugfix: fixed a crash with first run using sqlite backend
+* Bugfix: fixed several problem with the tests (thanks @thomasjpfan)
+* Bugfix: fixed racing condition in FileStorageObserver (thanks @boeddeker)
+* Bugfix: fixed problem with overwriting named configs of ingredients (thanks @pimdh)
+* Bugfix: removed deprecated call to inspect.getargspec()
+* Bugfix: fixed problem with empty dictionaries disappearing from config updates and named configs (thanks @TomVeniat)
+* Bugfix: fixed problem with commandline parsing when program name contained spaces
+* Bugfix: loglevl option is now taken into account for config related warnings
+* Bugfix: properly handle numpy types in metrics logging
+
+
 0.7.2 (2017-11-02)
 ++++++++++++++++++
 * API Change: added host_info to queued_event
