@@ -31,10 +31,12 @@ def engine(request):
 
 @pytest.fixture
 def session(engine):
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, scoped_session
     connection = engine.connect()
     trans = connection.begin()
-    session = sessionmaker()(bind=connection)
+    session_factory = sessionmaker(bind=engine)
+    # make session thread-local to avoid problems with sqlite (see #275)
+    session = scoped_session(session_factory)
     yield session
     session.close()
     trans.rollback()

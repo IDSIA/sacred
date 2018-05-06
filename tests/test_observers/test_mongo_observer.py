@@ -13,8 +13,8 @@ mongomock = pytest.importorskip("mongomock")
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
+T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
 
 
 @pytest.fixture
@@ -167,7 +167,7 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.fs.exists.assert_any_call(filename=filename)
 
     db_run = mongo_obs.runs.find_one()
-    assert db_run['resources'] == [(filename, md5)]
+    assert db_run['resources'] == [[filename, md5]]
 
 
 def test_force_bson_encodable_doesnt_change_valid_document():
