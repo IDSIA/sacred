@@ -334,7 +334,7 @@ if opt.has_sqlalchemy:  # noqa
         __tablename__ = 'run'
         id = sa.Column(sa.Integer, primary_key=True)
 
-        run_id = sa.Column(sa.String(24))
+        run_id = sa.Column(sa.String(24), unique=True)
 
         command = sa.Column(sa.String(64))
 
@@ -360,7 +360,7 @@ if opt.has_sqlalchemy:  # noqa
         info = sa.Column(sa.Text)
 
         status = sa.Column(sa.Enum("RUNNING", "COMPLETED", "INTERRUPTED",
-                                   "TIMEOUT", "FAILED"))
+                                   "TIMEOUT", "FAILED", name="status_enum"))
 
         host_id = sa.Column(sa.Integer, sa.ForeignKey('host.host_id'))
         host = sa.orm.relationship("Host", backref=sa.orm.backref('runs'))
