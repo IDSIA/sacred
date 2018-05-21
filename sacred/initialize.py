@@ -121,7 +121,9 @@ class Scaffold(object):
     def get_config_updates_recursive(self):
         config_updates = self.config_updates.copy()
         for sr_path, subrunner in self.subrunners.items():
-            config_updates[sr_path] = subrunner.get_config_updates_recursive()
+            update = subrunner.get_config_updates_recursive()
+            if update:
+                config_updates[sr_path] = update
         return config_updates
 
     def get_fixture(self):

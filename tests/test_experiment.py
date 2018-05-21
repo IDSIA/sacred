@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+from sacred import Ingredient
+
 """Global Docstring"""
 
 from mock import patch
@@ -188,6 +191,32 @@ def test_empty_dict_named_config(ex):
 
     assert ex.run().result == (1, 2)
     assert ex.run(named_configs=['ncfg']).result == ({}, {'k1': {'k2': {}}})
+
+
+def test_named_config_and_ingredient():
+    ing = Ingredient('foo')
+
+    @ing.config
+    def cfg():
+        a = 10
+
+    ex = Experiment(ingredients=[ing])
+
+    @ex.config
+    def default():
+        b = 20
+
+    @ex.named_config
+    def named():
+        b = 30
+
+    @ex.main
+    def main():
+        pass
+
+    r = ex.run(named_configs=['named'])
+    assert r.config['b'] == 30
+    assert r.config['foo'] == {'a': 10}
 
 
 def test_captured_out_filter(ex, capsys):
