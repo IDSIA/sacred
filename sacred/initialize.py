@@ -13,7 +13,7 @@ from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
-                          get_by_dotted_path, is_prefix,
+                          get_by_dotted_path, is_prefix, rel_path,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes, join_paths)
 
@@ -121,9 +121,11 @@ class Scaffold(object):
     def get_config_updates_recursive(self):
         config_updates = self.config_updates.copy()
         for sr_path, subrunner in self.subrunners.items():
+            if not is_prefix(self.path, sr_path):
+                continue
             update = subrunner.get_config_updates_recursive()
             if update:
-                config_updates[sr_path] = update
+                config_updates[rel_path(self.path, sr_path)] = update
         return config_updates
 
     def get_fixture(self):
@@ -245,7 +247,7 @@ def create_scaffolding(experiment, sorted_ingredients):
             config_scopes=ingredient.configurations,
             subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                     for m in ingredient.ingredients]),
-            path=ingredient.path if ingredient != experiment else '',
+            path=ingredient.path,
             captured_functions=ingredient.captured_functions,
             commands=ingredient.commands,
             named_configs=ingredient.named_configs,
@@ -256,7 +258,7 @@ def create_scaffolding(experiment, sorted_ingredients):
         experiment.configurations,
         subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                 for m in experiment.ingredients]),
-        path=experiment.path if experiment != experiment else '',
+        path='',
         captured_functions=experiment.captured_functions,
         commands=experiment.commands,
         named_configs=experiment.named_configs,

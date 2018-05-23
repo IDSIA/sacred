@@ -26,7 +26,8 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
            "print_filtered_stacktrace", "is_subdir",
            "optional_kwargs_decorator", "get_inheritors",
-           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError"]
+           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError",
+           "rel_path"]
 
 # A PY2 compatible basestring, int_types and FileNotFoundError
 if sys.version_info[0] == 2:
@@ -249,6 +250,14 @@ def is_prefix(pre_path, path):
     pre_path = pre_path.strip('.')
     path = path.strip('.')
     return not pre_path or path.startswith(pre_path + '.')
+
+
+def rel_path(base, path):
+    """Return path relative to base."""
+    if base == path:
+        return ''
+    assert is_prefix(base, path), "{} not a prefix of {}".format(base, path)
+    return path[len(base):].strip('.')
 
 
 def convert_to_nested_dict(dotted_dict):

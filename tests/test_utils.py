@@ -11,7 +11,7 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           recursive_update, set_by_dotted_path, get_inheritors,
                           convert_camel_case_to_snake_case,
                           apply_backspaces_and_linefeeds, module_exists,
-                          module_is_imported, module_is_in_cache)
+                          module_is_imported, module_is_in_cache, rel_path)
 
 
 def test_recursive_update():
@@ -200,3 +200,10 @@ def test_module_is_imported_uses_caller_globals_by_default():
     assert not module_is_imported('pkgutil')
     assert not module_is_imported('does_not_even_exist')
 
+
+def test_rel_path():
+    assert rel_path('', 'foo.bar.baz') == 'foo.bar.baz'
+    assert rel_path('foo', 'foo.bar.baz') == 'bar.baz'
+    assert rel_path('foo.bar', 'foo.bar.baz') == 'baz'
+    assert rel_path('foo.bar.baz', 'foo.bar.baz') == ''
+    assert rel_path('', '') == ''
