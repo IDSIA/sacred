@@ -6,7 +6,6 @@ import os
 import os.path
 import tempfile
 
-from datetime import datetime
 from shutil import copyfile
 
 from sacred.commandline_options import CommandLineOption
@@ -18,14 +17,6 @@ from sacred.serializer import flatten
 
 
 DEFAULT_FILE_STORAGE_PRIORITY = 20
-
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code."""
-    if isinstance(obj, datetime):
-        serial = obj.isoformat()
-        return serial
-    raise TypeError("Type not serializable")
 
 
 class FileStorageObserver(RunObserver):
@@ -217,6 +208,34 @@ class FileStorageObserver(RunObserver):
         self.save_file(filename, name)
         self.run_entry['artifacts'].append(name)
         self.save_json(self.run_entry, 'run.json')
+
+    def log_metrics(self, metrics_by_name, info):
+        """Store new measurements into metrics.json.
+        """
+        try:
+            metrics_path = os.path.join(self.dir, "metrics.json")
+            saved_metrics = json.load(open(metrics_path, 'r'))
+        except IOError as e:
+            # We haven't recorded anything yet. Start Collecting.
+            saved_metrics = {}
+
+        for metric_name, metric_ptr in metrics_by_name.items():
+
+            if metric_name not in saved_metrics:
+                saved_metrics[metric_name] = {"values": [],
+                                              "steps": [],
+                                              "timestamps": []}
+
+            saved_metrics[metric_name]["values"] += metric_ptr["values"]
+            saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
+
+            # Manually convert them to avoid passing a datetime dtype handler
+            # when we're trying to convert into json.
+            timestamps_norm = [ts.isoformat()
+                               for ts in metric_ptr["timestamps"]]
+            saved_metrics[metric_name]["timestamps"] += timestamps_norm
+
+        self.save_json(saved_metrics, 'metrics.json')
 
     def __eq__(self, other):
         if isinstance(other, FileStorageObserver):
