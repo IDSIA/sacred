@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import atexit
 import datetime
 import os.path
 import sys
@@ -232,7 +233,7 @@ class Run(object):
             status = getattr(e, 'STATUS', 'INTERRUPTED')
             self._emit_interrupted(status)
             raise
-        except Exception:
+        except BaseException:
             exc_type, exc_value, trace = sys.exc_info()
             self._stop_heartbeat()
             self._emit_failed(exc_type, exc_value, trace.tb_next)
@@ -255,12 +256,14 @@ class Run(object):
         self.captured_out = text
 
     def _start_heartbeat(self):
+        self.run_logger.debug('Starting Heartbeat')
         if self.beat_interval > 0:
             self._stop_heartbeat_event, self._heartbeat = IntervalTimer.create(
                 self._emit_heartbeat, self.beat_interval)
             self._heartbeat.start()
 
     def _stop_heartbeat(self):
+        self.run_logger.debug('Stopping Heartbeat')
         # only stop if heartbeat was started
         if self._heartbeat is not None:
             self._stop_heartbeat_event.set()
