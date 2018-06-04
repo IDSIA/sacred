@@ -44,6 +44,8 @@ class MetricsLogger(object):
             np = opt.np
             if isinstance(value, np.generic):
                 value = np.asscalar(value)
+            if isinstance(step, np.generic):
+                step = np.asscalar(step)
         if step is None:
             step = self._metric_step_counter.get(metric_name, -1) + 1
         self._logged_metrics.put(
