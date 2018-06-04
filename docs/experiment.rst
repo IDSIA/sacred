@@ -51,7 +51,7 @@ execute the experiments python file and use the powerful :doc:`command_line`.
 You can also run your experiment directly from python. This is especially useful
 if you want to run it multiple times with different configurations. So lets say
 your experiment is in a file called ``my_experiment.py``. Then you can import
-it from there an run it like this:
+it from there and run it like this:
 
 .. code-block:: python
 
@@ -193,13 +193,31 @@ collection called ``experiments``. You can also add this observer from the
 
 For more information see :doc:`observers`
 
+.. _capturing:
+
 Capturing stdout / stderr
 -------------------------
-By default sacred captures everything that is written to ``sys.stdout`` and
-``sys.stderr`` and transmits that information to the observers.
-Sometimes this is unwanted, for example when the output contains lots of
-live-updated progressbars and such.
-To prevent the captured out from recording each and every update that is
+Sacred tries to capture all outputs and transmits that information to the
+observers. This behaviour is configurable and can happen in three different
+modes: ``no``, ``sys`` and ``fd``. This mode can be
+:ref:`set from the commandline <cmdline_capture>` or in the :ref:`settings`.
+
+In the ``no`` mode none of the outputs are captured. This is the default
+behaviour if no observers are added to the experiment.
+
+If the capture mode is set to ``sys`` then sacred captures all outputs written
+to ``sys.stdout`` and ``sys.stderr`` such as ``print`` statements, stacktraces
+and logging. In this mode outputs by system-calls, C-extensions or subprocesses
+are likely *not captured*. This behaviour is default for windows.
+
+Finally, the ``fd`` mode captures outputs on the file descriptor level, and
+should include all outputs made by the program or any child-processes.
+This is the default behaviour for Linux and OSX.
+
+The captured output contains all printed characters and behaves like a file
+and not like a terminal. Sometimes this is unwanted, for example when the
+output contains lots of live-updates like progressbars.
+To prevent the captured out from retaining each and every update that is
 written to the console one can add a *captured out filter* to the experiment
 like this:
 

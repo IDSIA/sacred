@@ -5,8 +5,6 @@ from __future__ import division, print_function, unicode_literals
 import sacred.optional as opt
 from sacred.utils import join_paths
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 
 class FallbackDict(dict):
     """Dictionary that defaults to a fallback dict for missing keys."""
@@ -147,7 +145,7 @@ class DogmaticDict(dict):
 
     def get(self, k, d=None):
         if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)()
+            return dict.__getitem__(self, k)
         else:
             return self.fallback.get(k, d)
 

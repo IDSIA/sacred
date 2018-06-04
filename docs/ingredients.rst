@@ -174,4 +174,20 @@ Pre- and Post-Run Hooks
 
 Configuration Hooks
 -------------------
+Configuration hooks are executed during initialization and can be used to update the experiment's configuration before executing any command.
 
+.. code-block:: python
+
+    ex = Experiment()
+
+    @ex.config_hook
+    def hook(config, command_name, logger):
+        config.update({'hook': True})
+        return config
+
+    @ex.automain
+    def main(hook, other_config):
+        do_stuff()
+
+The config_hook function always has to take the 3 arguments `config` of the current configuration, `command_name`, which is the command that will be executed, and `logger`.
+Config hooks are run after the configuration of the linked Ingredient (in the example above Experiment `ex`), but before any further ingredient-configurations are run. The dictionary returned by a config hook is used to update the config updates. Note that config hooks are not restricted to the local namespace of the ingredient.

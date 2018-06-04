@@ -10,7 +10,7 @@ experiments. It is designed to introduce only minimal overhead, while
 encouraging modularity and configurability of experiments.
 
 The ability to conveniently make experiments configurable is at the heart of
-Sacred. If the parameters of an experiment are exposed in a this way, it
+Sacred. If the parameters of an experiment are exposed in this way, it
 will help you to:
 
     - keep track of all the parameters of your experiment
@@ -52,6 +52,7 @@ Contents
    logging
    ingredients
    optional
+   settings
    examples
    tensorflow
    apidoc

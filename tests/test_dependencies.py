@@ -103,24 +103,11 @@ def test_package_dependency_get_version_heuristic_VERSION(version, expected):
     assert PackageDependency.get_version_heuristic(mod) == expected
 
 
-def test_package_dependency_create():
-    mod = mock.Mock(spec=[], __version__='0.1.2', __name__='testmod')
-    pd = PackageDependency.create(mod)
-    assert pd.name == 'testmod'
-    assert pd.version == '0.1.2'
-
-
 def test_package_dependency_create_no_version():
     mod = mock.Mock(spec=[], __name__='testmod')
     pd = PackageDependency.create(mod)
     assert pd.name == 'testmod'
     assert pd.version is None
-
-
-def test_package_dependency_to_json():
-    mod = mock.Mock(spec=[], __version__='3.2.1', __name__='testmod')
-    pd = PackageDependency.create(mod)
-    assert pd.to_json() == 'testmod==3.2.1'
 
 
 def test_package_dependency_fill_non_missing_version():
@@ -132,7 +119,7 @@ def test_package_dependency_fill_non_missing_version():
 def test_package_dependency_fill_missing_version_unknown():
     pd = PackageDependency('mymod', None)
     pd.fill_missing_version()
-    assert pd.version == '<unknown>'
+    assert pd.version == None
 
 
 def test_package_dependency_fill_missing_version():
@@ -148,9 +135,11 @@ def test_package_dependency_repr():
 
 def test_gather_sources_and_dependencies():
     from tests.dependency_example import some_func
-    sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
+    assert main == Source.create('tests/dependency_example.py')
     expected_sources = {
         Source.create('tests/__init__.py'),
         Source.create('tests/dependency_example.py'),
@@ -168,6 +157,24 @@ def test_gather_sources_and_dependencies():
         assert len(deps) == 3
     else:
         assert len(deps) == 2
+
+
+def test_custom_base_dir():
+    from tests.basedir.my_experiment import some_func
+    base_dir = os.path.abspath('tests')
+    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__, base_dir)
+    assert isinstance(main, Source)
+    assert isinstance(sources, set)
+    assert isinstance(deps, set)
+    assert main == Source.create('tests/basedir/my_experiment.py')
+    expected_sources = {
+        Source.create('tests/__init__.py'),
+        Source.create('tests/basedir/__init__.py'),
+        Source.create('tests/basedir/my_experiment.py'),
+        Source.create('tests/foo/__init__.py'),
+        Source.create('tests/foo/bar.py')
+    }
+    assert sources == expected_sources
 
 
 @pytest.mark.parametrize('f_name, mod_name, ex_path, is_local', [

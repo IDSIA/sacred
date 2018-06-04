@@ -12,6 +12,7 @@ numpy==1.11.3
 pandas==0.19.2
 pbr==1.10.0
 py==1.4.32
+py-cpuinfo==4.0
 pymongo==3.4.0
 pytest==3.0.5
 python-dateutil==2.6.0
@@ -19,7 +20,6 @@ pytz==2016.10
 PyYAML==3.12
 scandir==1.4
 sentinels==1.0.0
-six==1.10.0
 smmap2==2.0.1
 SQLAlchemy==1.1.4
 tinydb==3.2.1

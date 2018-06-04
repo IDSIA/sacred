@@ -37,7 +37,9 @@ class ConfigSummary(dict):
         self.modified |= {join_paths(path, u) for u in updated}
         self.typechanged.update({join_paths(path, k): v
                                  for k, v in typechanged.items()})
-        self.docs.update(config_mod.docs)
+        self.docs.update({join_paths(path, k): v
+                          for k, v in config_mod.docs.items()
+                          if path == '' or k != 'seed'})
         self.ensure_coherence()
 
     def ensure_coherence(self):

@@ -1,18 +1,76 @@
 Release History
 ---------------
 
-0.7.0 (2017-01-??)
+0.7.3 (2018-05-06)
+++++++++++++++++++
+* Feature: support custom experiment base directory (thanks @anibali)
+* Feature: added option to pass existing MongoClient to MongoObserver (thanks @rueberger)
+* Feature: allow setting the config docstring from named configs
+* Feature: added py-cpuinfo as fallback for gathering CPU information (thanks @serv-inc)
+* Feature: added support for _log argument in config function
+* Bugfix: stacktrace filtering now correctly handles chained exceptions (thanks @kamo-naoyuki)
+* Bugfix: resolved issue with stdout capturing sometimes loosing the last few lines
+* Bugfix: fixed the overwrite option of MongoObserver
+* Bugfix: fixed a problem with the heartbeat sometimes not ending
+* Bugfix: fixed an error with running in interactive mode
+* Bugfix: added a check for non-unique ingredient paths (thanks @boeddeker)
+* Bugfix: fixed several problems with utf-8 decoding (thanks @LukasDrude, @wjp)
+* Bugfix: fixed nesting structure of _config (thanks  @boeddeker)
+* Bugfix: fixed crash when using git integration with empty repository (thanks @ramon-oliveira)
+* Bugfix: fixed a crash with first run using sqlite backend
+* Bugfix: fixed several problem with the tests (thanks @thomasjpfan)
+* Bugfix: fixed racing condition in FileStorageObserver (thanks @boeddeker)
+* Bugfix: fixed problem with overwriting named configs of ingredients (thanks @pimdh)
+* Bugfix: removed deprecated call to inspect.getargspec()
+* Bugfix: fixed problem with empty dictionaries disappearing from config updates and named configs (thanks @TomVeniat)
+* Bugfix: fixed problem with commandline parsing when program name contained spaces
+* Bugfix: loglevl option is now taken into account for config related warnings
+* Bugfix: properly handle numpy types in metrics logging
+
+
+0.7.2 (2017-11-02)
+++++++++++++++++++
+* API Change: added host_info to queued_event
+* Feature: improved and configurable dependency discovery system
+* Feature: improved and configurable source-file discovery system
+* Feature: better error messages for missing or misspelled commands
+* Feature: -m flag now supports passing an id for a run to overwrite
+* Feature: allow captured functions to be called outside of a run (thanks @berleon)
+* Bugfix: fixed issue with telegram imports (thanks @millawell)
+
+
+0.7.1 (2017-09-14)
+++++++++++++++++++
+* Refactor: lazy importing of many optional dependencies
+* Feature: added metrics API for adding live monitoring information to the MongoDB
+* Feature: added integration with tensorflow for automatic capturing of LogWriter paths
+* Feature: set seed of tensorflow if it is imported
+* Feature: named_configs can now affect the config of ingredients
+* Bugfix: failed runs now return with exit code 1 by default
+* Bugfix: fixed a problem with UTF-8 symbols in stdout
+* Bugfix: fixed a threading issue with the SQLObserver
+* Bugfix: fixed a problem with consecutive ids in the SQLObserver
+* Bugfix: heartbeat events now also serialize the intermediate results
+* Bugfix: reapeatedly calling run from python with an option for adding an
+          observer, no longer duplicates observers
+* Bugfix: fixed a problem where **kwargs of captured functions might be modified
+* Bugfix: fixed an encoding problem with the FileStorageObserver
+* Bugfix: fixed an issue where determining the version of some packages would crash
+* Bugfix: fixed handling of relative filepaths in the SQLObserver and the TinyDBObserver
+
+
+0.7.0 (2017-05-07)
 ++++++++++++++++++
 * Feature: host info now contains information about NVIDIA GPUs (if available)
 * Feature: git integration: sacred now collects info about the git repository
            of the experiment (if available and if gitpython is installed)
 * Feature: new ``--enforce-clean`` flag that cancels a run if the
            git repository is dirty
-* Feature: config now supports arbitrary python types by using jsonpickle
-* Feature: added new TinyDbObserver and TinyDbReader
+* Feature: added new TinyDbObserver and TinyDbReader (thanks to @MrKriss)
 * Feature: added new SqlObserver
 * Feature: added new FileStorageObserver
 * Feature: added new SlackObserver
+* Feature: added new TelegramObserver (thanks to @black-puppydog)
 * Feature: added save_config command
 * Feature: added queue flag to just queue a run instead of executing it
 * Feature: added TimeoutInterrupt to signal that a run timed out
@@ -27,6 +85,12 @@ Release History
 * Feature: added sacred.SETTINGS as a place to configure some of the behaviour
 * Feature: ConfigScopes now extract docstrings and line comments and display
            them when calling ``print_config``
+* Feature: observers are now run in order of priority (settable)
+* Feature: new ``--name=NAME`` option to set the name of experiment for this run
+* Feature: the heartbeat event now stores an intermediate result (if set).
+* Feature: ENVIRONMENT variables can be captured as part of host info.
+* Feature: sped up the applying_lines_and_backfeeds stdout filter. (thanks to @remss)
+* Feature: adding resources by name (thanks to @d4nst)
 * API Change: all times are now in UTC
 * API Change: significantly changed the mongoDB layout
 * API Change: MongoObserver and FileStorageObserver now use consecutive
@@ -50,6 +114,8 @@ Release History
           certain attributes of ``sys.stdout`` or ``sys.stderr``.
 * Bugfix: @main, @automain, @command and @capture now support functions with
            Python3 style annotations.
+* Bugfix: fixed a problem with config-docs from ingredients not being propagated
+* Bugfix: fixed setting seed to 0 being ignored
 
 0.6.10 (2016-08-08)
 +++++++++++++++++++

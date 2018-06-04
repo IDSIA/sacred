@@ -4,8 +4,10 @@ from __future__ import division, print_function, unicode_literals
 
 from sacred.observers.base import RunObserver
 from sacred.config.config_files import load_config_file
-from sacred.optional import requests
 import json
+
+
+DEFAULT_SLACK_PRIORITY = 10
 
 
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
@@ -62,7 +64,8 @@ class SlackObserver(RunObserver):
                 setattr(obs, k, d[k])
         return obs
 
-    def __init__(self, webhook_url, bot_name="sacred-bot", icon=":angel:"):
+    def __init__(self, webhook_url, bot_name="sacred-bot", icon=":angel:",
+                 priority=DEFAULT_SLACK_PRIORITY):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
@@ -73,6 +76,7 @@ class SlackObserver(RunObserver):
         self.failed_text = ":x: *{experiment[name]}* failed after " \
                            "_{elapsed_time}_ with `{error}`"
         self.run = None
+        self.priority = priority
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
@@ -95,6 +99,7 @@ class SlackObserver(RunObserver):
         return self.failed_text.format(**self.run)
 
     def completed_event(self, stop_time, result):
+        import requests
         if self.completed_text is None:
             return
 
@@ -112,6 +117,7 @@ class SlackObserver(RunObserver):
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def interrupted_event(self, interrupt_time, status):
+        import requests
         if self.interrupted_text is None:
             return
 
@@ -129,6 +135,7 @@ class SlackObserver(RunObserver):
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def failed_event(self, fail_time, fail_trace):
+        import requests
         if self.failed_text is None:
             return
 

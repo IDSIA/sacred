@@ -14,8 +14,9 @@ def ex():
 # so tensorflow is not required during the tests
 @pytest.fixture()
 def tf():
-    from sacred.optional import has_tensorflow, tensorflow
+    from sacred.optional import has_tensorflow
     if has_tensorflow:
+        import tensorflow
         return tensorflow
     else:
         # Let's define a mocked tensorflow

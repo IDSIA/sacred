@@ -11,10 +11,8 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
-from sacred.optional import basestring
-from sacred.utils import CircularDependencyError, optional_kwargs_decorator
-
-__sacred__ = True  # marks files that should be filtered from stack traces
+from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
+                          basestring)
 
 __all__ = ('Ingredient',)
 
@@ -36,7 +34,7 @@ class Ingredient(object):
     """
 
     def __init__(self, path, ingredients=(), interactive=False,
-                 _caller_globals=None):
+                 _caller_globals=None, base_dir=None):
         self.path = path
         self.config_hooks = []
         self.configurations = []
@@ -50,11 +48,16 @@ class Ingredient(object):
         self.commands = OrderedDict()
         # capture some context information
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
-        mainfile_name = _caller_globals.get('__file__', '.')
-        self.base_dir = os.path.dirname(os.path.abspath(mainfile_name))
+        mainfile_dir = os.path.dirname(_caller_globals.get('__file__', '.'))
+        self.base_dir = os.path.abspath(base_dir or mainfile_dir)
         self.doc = _caller_globals.get('__doc__', "")
-        self.sources, self.dependencies = \
-            gather_sources_and_dependencies(_caller_globals, interactive)
+        self.mainfile, self.sources, self.dependencies = \
+            gather_sources_and_dependencies(_caller_globals, self.base_dir)
+        if self.mainfile is None and not interactive:
+            raise RuntimeError("Defining an experiment in interactive mode! "
+                               "The sourcecode cannot be stored and the "
+                               "experiment won't be reproducible. If you still"
+                               " want to run it pass interactive=True")
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
@@ -193,7 +196,8 @@ class Ingredient(object):
 
     def _add_named_config(self, name, conf):
         if name in self.named_configs:
-            raise KeyError('Configuration name "{}" already in use!')
+            raise KeyError('Configuration name "{}" already in use!'
+                           .format(name))
         self.named_configs[name] = conf
 
     @staticmethod
@@ -263,6 +267,15 @@ class Ingredient(object):
         self.dependencies.add(PackageDependency(package_name, version))
 
     def gather_commands(self):
+        """Collect all commands from this ingredient and its sub-ingredients.
+
+        Yields
+        ------
+        cmd_name: str
+            The full (dotted) name of the command.
+        cmd: function
+            The corresponding captured function.
+        """
         for cmd_name, cmd in self.commands.items():
             yield self.path + '.' + cmd_name, cmd
 
@@ -290,15 +303,36 @@ class Ingredient(object):
         for dep in dependencies:
             dep.fill_missing_version()
 
+        mainfile = (self.mainfile.to_json(self.base_dir)[0]
+                    if self.mainfile else None)
+
+        def name_lower(d):
+            return d.name.lower()
+
         return dict(
             name=self.path,
             base_dir=self.base_dir,
             sources=[s.to_json(self.base_dir) for s in sorted(sources)],
-            dependencies=[d.to_json() for d in sorted(dependencies)],
-            repositories=collect_repositories(sources)
+            dependencies=[d.to_json()
+                          for d in sorted(dependencies, key=name_lower)],
+            repositories=collect_repositories(sources),
+            mainfile=mainfile
         )
 
     def traverse_ingredients(self):
+        """Recursively traverse this ingredient and its sub-ingredients.
+        Yields
+        ------
+        ingredient: sacred.Ingredient
+            The ingredient as traversed in preorder.
+        depth: int
+            The depth of the ingredient starting from 0.
+
+        Raises
+        ------
+        CircularDependencyError:
+            If a circular structure among ingredients was detected.
+        """
         if self._is_traversing:
             raise CircularDependencyError()
         else:

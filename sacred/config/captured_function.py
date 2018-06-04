@@ -10,8 +10,6 @@ from sacred.config.custom_containers import FallbackDict
 from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
 
-__sacred__ = True
-
 
 def create_captured_function(function, prefix=None):
     sig = Signature(function)
@@ -41,13 +39,15 @@ def captured_function(wrapped, instance, args, kwargs):
     bound = (instance is not None)
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options,
                                                          bound)
-    wrapped.logger.debug("Started")
-    start_time = time.time()
+    if wrapped.logger is not None:
+        wrapped.logger.debug("Started")
+        start_time = time.time()
     # =================== run actual function =================================
     result = wrapped(*args, **kwargs)
     # =========================================================================
-    stop_time = time.time()
-    elapsed_time = timedelta(seconds=round(stop_time - start_time))
-    wrapped.logger.debug("Finished after %s.", elapsed_time)
+    if wrapped.logger is not None:
+        stop_time = time.time()
+        elapsed_time = timedelta(seconds=round(stop_time - start_time))
+        wrapped.logger.debug("Finished after %s.", elapsed_time)
 
     return result

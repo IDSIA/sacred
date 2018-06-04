@@ -17,6 +17,9 @@ from sacred import optional as opt
 from sacred.serializer import flatten
 
 
+DEFAULT_FILE_STORAGE_PRIORITY = 20
+
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code."""
     if isinstance(obj, datetime):
@@ -30,7 +33,7 @@ class FileStorageObserver(RunObserver):
 
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
-               template=None):
+               template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
@@ -43,21 +46,23 @@ class FileStorageObserver(RunObserver):
             template = os.path.join(basedir, 'template.html')
             if not os.path.exists(template):
                 template = None
-        return cls(basedir, resource_dir, source_dir, template)
+        return cls(basedir, resource_dir, source_dir, template, priority)
 
-    def __init__(self, basedir, resource_dir, source_dir, template):
+    def __init__(self, basedir, resource_dir, source_dir, template,
+                 priority=DEFAULT_FILE_STORAGE_PRIORITY):
         self.basedir = basedir
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.template = template
+        self.priority = priority
         self.dir = None
         self.run_entry = None
         self.config = None
         self.info = None
         self.cout = ""
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
         if _id is None:
             self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
         else:
@@ -67,6 +72,7 @@ class FileStorageObserver(RunObserver):
         self.run_entry = {
             'experiment': dict(ex_info),
             'command': command,
+            'host': dict(host_info),
             'meta': meta_info,
             'status': 'QUEUED',
         }
@@ -94,13 +100,23 @@ class FileStorageObserver(RunObserver):
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
         if _id is None:
-            dir_nrs = [int(d) for d in os.listdir(self.basedir)
-                       if os.path.isdir(os.path.join(self.basedir, d)) and
-                       d.isdigit()]
-            _id = max(dir_nrs + [0]) + 1
-
-        self.dir = os.path.join(self.basedir, str(_id))
-        os.mkdir(self.dir)
+            for i in range(200):
+                dir_nrs = [int(d) for d in os.listdir(self.basedir)
+                           if os.path.isdir(os.path.join(self.basedir, d)) and
+                           d.isdigit()]
+                _id = max(dir_nrs + [0]) + 1
+                self.dir = os.path.join(self.basedir, str(_id))
+                try:
+                    os.mkdir(self.dir)
+                    break
+                except FileExistsError:  # Catch race conditions
+                    if i > 100:
+                        # After some tries,
+                        # expect that something other went wrong
+                        raise
+        else:
+            self.dir = os.path.join(self.basedir, str(_id))
+            os.mkdir(self.dir)
 
         ex_info['sources'] = self.save_sources(ex_info)
 
@@ -145,8 +161,8 @@ class FileStorageObserver(RunObserver):
         copyfile(filename, os.path.join(self.dir, target_name))
 
     def save_cout(self):
-        with open(os.path.join(self.dir, 'cout.txt'), 'w') as f:
-            f.write(self.cout)
+        with open(os.path.join(self.dir, 'cout.txt'), 'wb') as f:
+            f.write(self.cout.encode('utf-8'))
 
     def render_template(self):
         if opt.has_mako and self.template:
@@ -161,9 +177,10 @@ class FileStorageObserver(RunObserver):
             with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
                 f.write(report)
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
         self.run_entry['heartbeat'] = beat_time.isoformat()
+        self.run_entry['result'] = result
         self.cout = captured_out
         self.save_cout()
         self.save_json(self.run_entry, 'run.json')

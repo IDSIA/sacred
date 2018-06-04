@@ -9,6 +9,7 @@ where they can be accessed by various :doc:`observers <observers>`.
 
 Storing Tensorflow Logs (FileWriter)
 ------------------------------------
+
 To store the location of summaries produced by Tensorflow
 (created by ``tensorflow.summary.FileWriter``) into the experiment record
 specified by the ``ex`` argument, use the ``sacred.stflow.LogFileWriter(ex)``

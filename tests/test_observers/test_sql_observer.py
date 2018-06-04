@@ -31,10 +31,12 @@ def engine(request):
 
 @pytest.fixture
 def session(engine):
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, scoped_session
     connection = engine.connect()
     trans = connection.begin()
-    session = sessionmaker()(bind=connection)
+    session_factory = sessionmaker(bind=engine)
+    # make session thread-local to avoid problems with sqlite (see #275)
+    session = scoped_session(session_factory)
     yield session
     session.close()
     trans.rollback()
@@ -146,11 +148,13 @@ def test_sql_observer_heartbeat_event_updates_run(sql_obs, sample_run, session):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    sql_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    sql_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                            result=23.5)
 
     assert session.query(Run).count() == 1
     db_run = session.query(Run).first()
     assert db_run.heartbeat == T2
+    assert db_run.result == 23.5
     assert json.decode(db_run.info) == info
     assert db_run.captured_out == outp
 

@@ -22,7 +22,7 @@ def run():
     signature.name = 'main_func'
     main_func = mock.Mock(return_value=123, prefix='', signature=signature)
     logger = mock.Mock()
-    observer = [mock.Mock()]
+    observer = [mock.Mock(priority=10)]
     return Run(config, config_mod, main_func, observer, logger, logger, {},
                {}, [], [])
 
@@ -38,7 +38,7 @@ def test_run_attributes(run):
 def test_run_state_attributes(run):
     assert run.start_time is None
     assert run.stop_time is None
-    assert run.captured_out is None
+    assert run.captured_out == ''
     assert run.result is None
 
 
@@ -159,7 +159,7 @@ def test_run_observer_failure_on_startup_not_caught(run):
 
 def test_run_observer_error_in_heartbeat_is_caught(run):
     observer = run.observers[0]
-    observer.heartbeat_event.side_effect = ObserverError
+    observer.heartbeat_event.side_effect = TypeError
     run()
     assert observer in run._failed_observers
     assert observer.started_event.called
@@ -167,22 +167,9 @@ def test_run_observer_error_in_heartbeat_is_caught(run):
     assert observer.completed_event.called
 
 
-def test_run_exception_in_heartbeat_is_not_caught(run):
-    observer = run.observers[0]
-    observer.heartbeat_event.side_effect = TypeError
-    with pytest.raises(TypeError):
-        run()
-    assert observer in run._failed_observers
-    assert observer.started_event.called
-    assert observer.heartbeat_event.called
-    assert not observer.completed_event.called
-    assert not observer.interrupted_event.called
-    # assert observer.failed_event.called  # TODO: make this happen
-
-
 def test_run_exception_in_completed_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.completed_event.side_effect = TypeError
     run()
@@ -192,7 +179,7 @@ def test_run_exception_in_completed_event_is_caught(run):
 
 def test_run_exception_in_interrupted_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.interrupted_event.side_effect = TypeError
     run.main_function.side_effect = KeyboardInterrupt
@@ -204,7 +191,7 @@ def test_run_exception_in_interrupted_event_is_caught(run):
 
 def test_run_exception_in_failed_event_is_caught(run):
     observer = run.observers[0]
-    observer2 = mock.Mock()
+    observer2 = mock.Mock(priority=20)
     run.observers.append(observer2)
     observer.failed_event.side_effect = TypeError
     run.main_function.side_effect = AttributeError
@@ -225,6 +212,47 @@ def test_unobserved_run_doesnt_emit(run):
     assert not observer.failed_event.called
 
 
+def test_stdout_capturing_no(run, capsys):
+    def print_mock_progress():
+        for i in range(10):
+            print(i, end="")
+        sys.stdout.flush()
+
+    run.main_function.side_effect = print_mock_progress
+    run.capture_mode = "no"
+    with capsys.disabled():
+        run()
+    assert run.captured_out == ''
+
+
+def test_stdout_capturing_sys(run, capsys):
+    def print_mock_progress():
+        for i in range(10):
+            print(i, end="")
+        sys.stdout.flush()
+
+    run.main_function.side_effect = print_mock_progress
+    run.capture_mode = "sys"
+    with capsys.disabled():
+        run()
+    assert run.captured_out == '0123456789'
+
+
+@pytest.mark.skipif(sys.platform.startswith('win'),
+                    reason="does not work on windows")
+def test_stdout_capturing_fd(run, capsys):
+    def print_mock_progress():
+        for i in range(10):
+            print(i, end="")
+        sys.stdout.flush()
+
+    run.main_function.side_effect = print_mock_progress
+    run.capture_mode = "fd"
+    with capsys.disabled():
+        run()
+    assert run.captured_out == '0123456789'
+
+
 def test_captured_out_filter(run, capsys):
     def print_mock_progress():
         sys.stdout.write('progress 0')
@@ -238,4 +266,4 @@ def test_captured_out_filter(run, capsys):
     run.main_function.side_effect = print_mock_progress
     with capsys.disabled():
         run()
-        assert run.captured_out == 'progress 9'
+    assert run.captured_out == 'progress 9'

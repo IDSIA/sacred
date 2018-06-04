@@ -8,10 +8,11 @@ import platform
 import re
 import subprocess
 import xml.etree.ElementTree as ET
+
+import cpuinfo
+
 from sacred.utils import optional_kwargs_decorator, FileNotFoundError
 from sacred.settings import SETTINGS
-
-__sacred__ = True  # marks files that should be filtered from stack traces
 
 __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
 
@@ -31,6 +32,7 @@ def get_host_info():
     dict
         A dictionary with information about the CPU, the OS and the
         Python version of this machine.
+
     """
     host_info = {}
     for k, v in host_info_gatherers.items():
@@ -63,6 +65,7 @@ def host_info_getter(func, name=None):
     Returns
     -------
     The function itself.
+
     """
     name = name or func.__name__
     host_info_gatherers[name] = func
@@ -89,41 +92,68 @@ def _python_version():
 @host_info_getter(name='cpu')
 def _cpu():
     if platform.system() == "Windows":
-        return platform.processor().strip()
-    elif platform.system() == "Darwin":
-        os.environ['PATH'] += ':/usr/sbin'
-        command = ["sysctl", "-n", "machdep.cpu.brand_string"]
-        return subprocess.check_output(command).decode().strip()
-    elif platform.system() == "Linux":
-        command = ["cat", "/proc/cpuinfo"]
-        all_info = subprocess.check_output(command).decode()
-        model_pattern = re.compile("^\s*model name\s*:")
-        for line in all_info.split("\n"):
-            if model_pattern.match(line):
-                return model_pattern.sub("", line, 1).strip()
+        return _get_cpu_by_pycpuinfo()
+    try:
+        if platform.system() == "Darwin":
+            return _get_cpu_by_sysctl()
+        elif platform.system() == "Linux":
+            return _get_cpu_by_proc_cpuinfo()
+    except Exception:
+        # Use pycpuinfo only if other ways fail, since it takes about 1 sec
+        return _get_cpu_by_pycpuinfo()
 
 
-if SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
-    @host_info_getter(name='gpus')
-    def _gpus():
-        try:
-            xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
-        except (FileNotFoundError, OSError, subprocess.CalledProcessError):
-            raise IgnoreHostInfo()
+@host_info_getter(name='gpus')
+def _gpus():
+    if not SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
+        return
 
-        gpu_info = {'gpus': []}
-        for child in ET.fromstring(xml):
-            if child.tag == 'driver_version':
-                gpu_info['driver_version'] = child.text
-            if child.tag != 'gpu':
-                continue
-            gpu = {
-                'model': child.find('product_name').text,
-                'total_memory': int(child.find('fb_memory_usage').find('total')
-                                    .text.split()[0]),
-                'persistence_mode': (child.find('persistence_mode').text ==
-                                     'Enabled')
-            }
-            gpu_info['gpus'].append(gpu)
+    try:
+        xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError):
+        raise IgnoreHostInfo()
 
-        return gpu_info
+    gpu_info = {'gpus': []}
+    for child in ET.fromstring(xml):
+        if child.tag == 'driver_version':
+            gpu_info['driver_version'] = child.text
+        if child.tag != 'gpu':
+            continue
+        gpu = {
+            'model': child.find('product_name').text,
+            'total_memory': int(child.find('fb_memory_usage').find('total')
+                                .text.split()[0]),
+            'persistence_mode': (child.find('persistence_mode').text ==
+                                 'Enabled')
+        }
+        gpu_info['gpus'].append(gpu)
+
+    return gpu_info
+
+
+@host_info_getter(name='ENV')
+def _environment():
+    keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
+    return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
+
+
+# ################### Get CPU Information ###############################
+
+
+def _get_cpu_by_sysctl():
+    os.environ['PATH'] += ':/usr/sbin'
+    command = ["sysctl", "-n", "machdep.cpu.brand_string"]
+    return subprocess.check_output(command).decode().strip()
+
+
+def _get_cpu_by_proc_cpuinfo():
+    command = ["cat", "/proc/cpuinfo"]
+    all_info = subprocess.check_output(command).decode()
+    model_pattern = re.compile("^\s*model name\s*:")
+    for line in all_info.split("\n"):
+        if model_pattern.match(line):
+            return model_pattern.sub("", line, 1).strip()
+
+
+def _get_cpu_by_pycpuinfo():
+    return cpuinfo.get_cpu_info()['brand']

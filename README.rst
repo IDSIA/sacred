@@ -6,9 +6,12 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
-|pypi| |py_versions| |license| |doi|
+|pypi| |py_versions| |license| |rtfd| |doi|
 
 |unix_build| |windows_build| |coverage| |code_quality| |codacy|
+
+
+
 
 Sacred is a tool to help you configure, organize, log and reproduce experiments.
 It is designed to do all the tedious overhead work that you need to do around

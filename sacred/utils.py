@@ -3,20 +3,51 @@
 from __future__ import division, print_function, unicode_literals
 
 import collections
+import inspect
 import logging
 import os.path
+import pkgutil
 import re
-import subprocess
+import shlex
 import sys
+import threading
 import traceback as tb
 from functools import partial
-from contextlib import contextmanager
 
 import wrapt
 
-from sacred.optional import libc
 
-__sacred__ = True  # marks files that should be filtered from stack traces
+__all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
+           "ObserverError", "SacredInterrupt", "TimeoutInterrupt",
+           "create_basic_stream_logger", "recursive_update",
+           "iterate_flattened", "iterate_flattened_separately",
+           "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
+           "iter_prefixes", "join_paths", "is_prefix",
+           "convert_to_nested_dict", "convert_camel_case_to_snake_case",
+           "print_filtered_stacktrace", "is_subdir",
+           "optional_kwargs_decorator", "get_inheritors",
+           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError",
+           "rel_path"]
+
+# A PY2 compatible basestring, int_types and FileNotFoundError
+if sys.version_info[0] == 2:
+    basestring = basestring
+    int_types = (int, long)
+
+    import errno
+
+    class FileNotFoundError(IOError):
+        def __init__(self, msg):
+            super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+    from StringIO import StringIO
+else:
+    basestring = str
+    int_types = (int,)
+
+    # Reassign so that we can import it from here
+    FileNotFoundError = FileNotFoundError
+    from io import StringIO
+
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -24,30 +55,6 @@ NO_LOGGER.disabled = 1
 PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
-
-# A PY2 compatible FileNotFoundError
-if sys.version_info[0] == 2:
-    import errno
-
-    class FileNotFoundError(IOError):
-        def __init__(self, msg):
-            super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
-else:
-    # Reassign so that we can import it from here
-    FileNotFoundError = FileNotFoundError
-
-
-def flush():
-    """Try to flush all stdio buffers, both from python and from C."""
-    try:
-        sys.stdout.flush()
-        sys.stderr.flush()
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
-    try:
-        libc.fflush(None)
-    except (AttributeError, ValueError, IOError):
-        pass  # unsupported
 
 
 class CircularDependencyError(Exception):
@@ -109,64 +116,6 @@ def recursive_update(d, u):
     return d
 
 
-# Duplicate stdout and stderr to a file. Inspired by:
-# http://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/
-# http://stackoverflow.com/a/651718/1388435
-# http://stackoverflow.com/a/22434262/1388435
-@contextmanager
-def tee_output(target):
-    original_stdout_fd = 1
-    original_stderr_fd = 2
-
-    # Save a copy of the original stdout and stderr file descriptors
-    saved_stdout_fd = os.dup(original_stdout_fd)
-    saved_stderr_fd = os.dup(original_stderr_fd)
-
-    target_fd = target.fileno()
-
-    final_output = []
-
-    try:
-        try:
-            tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
-            tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'],
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-        except (FileNotFoundError, OSError):
-            tee_stdout = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stderr=target_fd)
-            tee_stderr = subprocess.Popen(
-                [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stdout=target_fd)
-
-        flush()
-        os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
-        os.dup2(tee_stderr.stdin.fileno(), original_stderr_fd)
-
-        yield final_output  # let the caller do their printing
-        flush()
-
-        # then redirect stdout back to the saved fd
-        tee_stdout.stdin.close()
-        tee_stderr.stdin.close()
-
-        # restore original fds
-        os.dup2(saved_stdout_fd, original_stdout_fd)
-        os.dup2(saved_stderr_fd, original_stderr_fd)
-
-        tee_stdout.wait()
-        tee_stderr.wait()
-    finally:
-        os.close(saved_stdout_fd)
-        os.close(saved_stderr_fd)
-        target.flush()
-        target.seek(0)
-        final_output.append(target.read().decode())
-
-
 def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     """
     Recursively iterate over the items of a dictionary in a special order.
@@ -207,7 +156,7 @@ def iterate_flattened(d):
     """
     for key in sorted(d.keys()):
         value = d[key]
-        if isinstance(value, dict):
+        if isinstance(value, dict) and value:
             for k, v in iterate_flattened(d[key]):
                 yield join_paths(key, k), v
         else:
@@ -220,7 +169,8 @@ def set_by_dotted_path(d, path, value):
 
     Will create dictionaries as needed.
 
-    Examples:
+    Examples
+    --------
     >>> d = {'foo': {'bar': 7}}
     >>> set_by_dotted_path(d, 'foo.bar', 10)
     >>> d
@@ -228,6 +178,7 @@ def set_by_dotted_path(d, path, value):
     >>> set_by_dotted_path(d, 'foo.d.baz', 3)
     >>> d
     {'foo': {'bar': 10, 'd': {'baz': 3}}}
+
     """
     split_path = path.split('.')
     current_option = d
@@ -238,7 +189,7 @@ def set_by_dotted_path(d, path, value):
     current_option[split_path[-1]] = value
 
 
-def get_by_dotted_path(d, path):
+def get_by_dotted_path(d, path, default=None):
     """
     Get an entry from nested dictionaries using a dotted path.
 
@@ -252,7 +203,7 @@ def get_by_dotted_path(d, path):
     current_option = d
     for p in split_path:
         if p not in current_option:
-            return None
+            return default
         current_option = current_option[p]
     return current_option
 
@@ -301,6 +252,14 @@ def is_prefix(pre_path, path):
     return not pre_path or path.startswith(pre_path + '.')
 
 
+def rel_path(base, path):
+    """Return path relative to base."""
+    if base == path:
+        return ''
+    assert is_prefix(base, path), "{} not a prefix of {}".format(base, path)
+    return path[len(base):].strip('.')
+
+
 def convert_to_nested_dict(dotted_dict):
     """Convert a dict with dotted path keys to corresponding nested dict."""
     nested_dict = {}
@@ -309,27 +268,67 @@ def convert_to_nested_dict(dotted_dict):
     return nested_dict
 
 
+def _is_sacred_frame(frame):
+    return frame.f_globals["__name__"].split('.')[0] == 'sacred'
+
+
 def print_filtered_stacktrace():
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
-    if '__sacred__' in current_tb.tb_frame.f_globals:
-        print("Exception originated from within Sacred.\n"
-              "Traceback (most recent calls):", file=sys.stderr)
-        tb.print_tb(exc_traceback)
-        tb.print_exception(exc_type, exc_value, None)
+    if _is_sacred_frame(current_tb.tb_frame):
+        header = ["Exception originated from within Sacred.\n"
+                  "Traceback (most recent calls):\n"]
+        texts = tb.format_exception(exc_type, exc_value, current_tb)
+        print(''.join(header + texts[1:]).strip(), file=sys.stderr)
     else:
-        print("Traceback (most recent calls WITHOUT Sacred internals):",
-              file=sys.stderr)
-        current_tb = exc_traceback
-        while current_tb is not None:
-            if '__sacred__' not in current_tb.tb_frame.f_globals:
-                tb.print_tb(current_tb, 1)
-            current_tb = current_tb.tb_next
-        print("\n".join(tb.format_exception_only(exc_type, exc_value)).strip(),
-              file=sys.stderr)
+        if sys.version_info >= (3, 3):
+            tb_exception =\
+                tb.TracebackException(exc_type, exc_value, exc_traceback,
+                                      limit=None)
+            for line in filtered_traceback_format(tb_exception):
+                print(line, file=sys.stderr, end="")
+        else:
+            print("Traceback (most recent calls WITHOUT Sacred internals):",
+                  file=sys.stderr)
+            current_tb = exc_traceback
+            while current_tb is not None:
+                if not _is_sacred_frame(current_tb.tb_frame):
+                    tb.print_tb(current_tb, 1)
+                current_tb = current_tb.tb_next
+            print("\n".join(tb.format_exception_only(exc_type,
+                                                     exc_value)).strip(),
+                  file=sys.stderr)
+
+
+def filtered_traceback_format(tb_exception, chain=True):
+    if chain:
+        if tb_exception.__cause__ is not None:
+            for line in filtered_traceback_format(tb_exception.__cause__,
+                                                  chain=chain):
+                yield line
+            yield tb._cause_message
+        elif (tb_exception.__context__ is not None and
+              not tb_exception.__suppress_context__):
+            for line in filtered_traceback_format(tb_exception.__context__,
+                                                  chain=chain):
+                yield line
+            yield tb._context_message
+    yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
+    current_tb = tb_exception.exc_traceback
+    while current_tb is not None:
+        if not _is_sacred_frame(current_tb.tb_frame):
+            stack = tb.StackSummary.extract(tb.walk_tb(current_tb),
+                                            limit=1,
+                                            lookup_lines=True,
+                                            capture_locals=False)
+            for line in stack.format():
+                yield line
+        current_tb = current_tb.tb_next
+    for line in tb_exception.format_exception_only():
+        yield line
 
 
 def is_subdir(path, directory):
@@ -376,31 +375,96 @@ def apply_backspaces_and_linefeeds(text):
 
     Interpret text like a terminal by removing backspace and linefeed
     characters and applying them line by line.
+
+    If final line ends with a carriage it keeps it to be concatenable with next
+    output chunk.
     """
-    lines = []
-    for line in text.split('\n'):
+    orig_lines = text.split('\n')
+    orig_lines_len = len(orig_lines)
+    new_lines = []
+    for orig_line_idx, orig_line in enumerate(orig_lines):
         chars, cursor = [], 0
-        for ch in line:
-            if ch == '\b':
-                cursor = max(0, cursor - 1)
-            elif ch == '\r':
+        orig_line_len = len(orig_line)
+        for orig_char_idx, orig_char in enumerate(orig_line):
+            if orig_char == '\r' and (orig_char_idx != orig_line_len - 1 or
+                                      orig_line_idx != orig_lines_len - 1):
                 cursor = 0
+            elif orig_char == '\b':
+                cursor = max(0, cursor - 1)
             else:
-                # normal character
+                if (orig_char == '\r' and
+                        orig_char_idx == orig_line_len - 1 and
+                        orig_line_idx == orig_lines_len - 1):
+                    cursor = len(chars)
                 if cursor == len(chars):
-                    chars.append(ch)
+                    chars.append(orig_char)
                 else:
-                    chars[cursor] = ch
+                    chars[cursor] = orig_char
                 cursor += 1
-        lines.append(''.join(chars))
-    return '\n'.join(lines)
+        new_lines.append(''.join(chars))
+    return '\n'.join(new_lines)
 
 
-# Code adapted from here:
-# https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
-def natural_sort(l):
-    def alphanum_key(key):
-        return [int(c) if c.isdigit() else c.lower()
-                for c in re.split('([0-9]+)', key)]
+def module_exists(modname):
+    """Checks if a module exists without actually importing it."""
+    return pkgutil.find_loader(modname) is not None
 
-    return sorted(l, key=alphanum_key)
+
+def modules_exist(*modnames):
+    return all(module_exists(m) for m in modnames)
+
+
+def module_is_in_cache(modname):
+    """Checks if a module was imported before (is in the import cache)."""
+    return modname in sys.modules
+
+
+def module_is_imported(modname, scope=None):
+    """Checks if a module is imported within the current namespace."""
+    # return early if modname is not even cached
+    if not module_is_in_cache(modname):
+        return False
+
+    if scope is None:  # use globals() of the caller by default
+        scope = inspect.stack()[1][0].f_globals
+
+    for m in scope.values():
+        if isinstance(m, type(sys)) and m.__name__ == modname:
+            return True
+
+    return False
+
+
+def ensure_wellformed_argv(argv):
+    if argv is None:
+        argv = sys.argv
+    elif isinstance(argv, basestring):
+        argv = shlex.split(argv)
+    else:
+        if not isinstance(argv, (list, tuple)):
+            raise ValueError("argv must be str or list, but was {}"
+                             .format(type(argv)))
+        if not all([isinstance(a, basestring) for a in argv]):
+            problems = [a for a in argv if not isinstance(a, basestring)]
+            raise ValueError("argv must be list of str but contained the "
+                             "following elements: {}".format(problems))
+    return argv
+
+
+class IntervalTimer(threading.Thread):
+    @classmethod
+    def create(cls, func, interval=10):
+        stop_event = threading.Event()
+        timer_thread = cls(stop_event, func, interval)
+        return stop_event, timer_thread
+
+    def __init__(self, event, func, interval=10.):
+        threading.Thread.__init__(self)
+        self.stopped = event
+        self.func = func
+        self.interval = interval
+
+    def run(self):
+        while not self.stopped.wait(self.interval):
+            self.func()
+        self.func()

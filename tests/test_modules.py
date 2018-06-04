@@ -98,3 +98,158 @@ def test_experiment_run_subingredient_function():
         return get_answer()
 
     assert ex.run().result == 'foo'
+
+
+def test_experiment_named_config_subingredient():
+    somemod = Ingredient("somemod")
+
+    @somemod.config
+    def sub_cfg():
+        a = 15
+
+    @somemod.capture
+    def get_answer(a):
+        return a
+
+    @somemod.named_config
+    def nsubcfg():
+        a = 16
+
+    ex = Experiment("some_experiment", ingredients=[somemod])
+
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.named_config
+    def ncfg():
+        a = 2
+        somemod = {'a': 25}
+
+    @ex.main
+    def main(a):
+        return a, get_answer()
+
+    assert ex.run().result == (1, 15)
+    assert ex.run(named_configs=['somemod.nsubcfg']).result == (1, 16)
+    assert ex.run(named_configs=['ncfg']).result == (2, 25)
+    assert ex.run(named_configs=['ncfg', 'somemod.nsubcfg']).result == (2, 16)
+    assert ex.run(named_configs=['somemod.nsubcfg', 'ncfg']).result == (2, 25)
+
+
+def test_experiment_named_config_subingredient_overwrite():
+    somemod = Ingredient("somemod")
+
+    @somemod.capture
+    def get_answer(a):
+        return a
+
+    ex = Experiment("some_experiment", ingredients=[somemod])
+
+    @ex.named_config
+    def ncfg():
+        somemod = {'a': 1}
+
+    @ex.main
+    def main():
+        return get_answer()
+
+    assert ex.run(named_configs=['ncfg']).result == 1
+    assert ex.run(config_updates={'somemod': {'a': 2}}).result == 2
+    assert ex.run(named_configs=['ncfg'],
+                  config_updates={'somemod': {'a': 2}}
+                  ).result == 2
+
+
+def test_experiment_double_named_config():
+    ex = Experiment()
+
+    @ex.config
+    def config():
+        a = 0
+        d = {
+            'e': 0,
+            'f': 0
+        }
+
+    @ex.named_config
+    def A():
+        a = 2
+        d = {
+            'e': 2,
+            'f': 2
+        }
+
+    @ex.named_config
+    def B():
+        d = {'f': -1}
+
+    @ex.main
+    def run(a, d):
+        return a, d['e'], d['f']
+
+    assert ex.run().result == (0, 0, 0)
+    assert ex.run(named_configs=['A']).result == (2, 2, 2)
+    assert ex.run(named_configs=['B']).result == (0, 0, -1)
+    assert ex.run(named_configs=['A', 'B']).result == (2, 2, -1)
+    assert ex.run(named_configs=['B', 'A']).result == (2, 2, 2)
+
+
+def test_double_nested_config():
+    sub_sub_ing = Ingredient('sub_sub_ing')
+    sub_ing = Ingredient('sub_ing', [sub_sub_ing])
+    ing = Ingredient('ing', [sub_ing])
+    ex = Experiment('ex', [ing])
+
+    @ex.config
+    def config():
+        a = 1
+
+    @ing.config
+    def config():
+        b = 1
+
+    @sub_ing.config
+    def config():
+        c = 2
+
+    @sub_sub_ing.config
+    def config():
+        d = 3
+
+    @sub_sub_ing.capture
+    def sub_sub_ing_main(_config):
+        assert _config == {
+            'd': 3
+        }, _config
+
+    @sub_ing.capture
+    def sub_ing_main(_config):
+        assert _config == {
+            'c': 2,
+            'sub_sub_ing': {'d': 3}
+        }, _config
+
+    @ing.capture
+    def ing_main(_config):
+        assert _config == {
+            'b': 1,
+            'sub_sub_ing': {'d': 3},
+            'sub_ing': {'c': 2}
+        }, _config
+
+    @ex.main
+    def main(_config):
+        _config.pop('seed')
+        assert _config == {
+            'a': 1,
+            'sub_sub_ing': {'d': 3},
+            'sub_ing': {'c': 2},
+            'ing': {'b': 1}
+        }, _config
+
+        ing_main()
+        sub_ing_main()
+        sub_sub_ing_main()
+
+    ex.run()

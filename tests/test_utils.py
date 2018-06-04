@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
-import os
-import sys
-import tempfile
 
 import pytest
 
@@ -12,8 +9,9 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
-                          convert_camel_case_to_snake_case, tee_output,
-                          apply_backspaces_and_linefeeds)
+                          convert_camel_case_to_snake_case,
+                          apply_backspaces_and_linefeeds, module_exists,
+                          module_is_imported, module_is_in_cache, rel_path)
 
 
 def test_recursive_update():
@@ -157,50 +155,55 @@ def test_convert_camel_case_to_snake_case(name, expected):
 @pytest.mark.parametrize('text,expected', [
     ('', ''),
     ('\b', ''),
-    ('\r', ''),
+    ('\r', '\r'),
+    ('\r\n', '\n'),
     ('ab\bc', 'ac'),
     ('\ba', 'a'),
     ('ab\nc\b\bd', 'ab\nd'),
     ('abc\rdef', 'def'),
-    ('abc\r', 'abc'),
+    ('abc\r', 'abc\r'),
     ('abc\rd', 'dbc'),
     ('abc\r\nd', 'abc\nd'),
     ('abc\ndef\rg', 'abc\ngef'),
-    ('abc\ndef\r\rg', 'abc\ngef')
+    ('abc\ndef\r\rg', 'abc\ngef'),
+    ('abcd\refg\r', 'efgd\r'),
+    ('abcd\refg\r\n', 'efgd\n')
 ])
 def test_apply_backspaces_and_linefeeds(text, expected):
     assert apply_backspaces_and_linefeeds(text) == expected
 
 
-def test_tee_output(capsys):
-    from sacred.optional import libc
+def test_module_exists_base_level_modules():
+    assert module_exists('pytest')
+    assert not module_exists('clearly_non_existing_module_name')
 
-    expected_lines = {
-        "captured stdout\n",
-        "captured stderr\n",
-        "and this is from echo\n"}
-    if not sys.platform.startswith('win'):
-        # FIXME: this line randomly doesn't show on windows (skip for now)
-        expected_lines.add("stdout from C\n")
 
-    with capsys.disabled():
-        try:
-            print('before (stdout)')
-            print('before (stderr)')
-            with tempfile.NamedTemporaryFile(delete=False) as f, tee_output(f):
-                print("captured stdout")
-                print("captured stderr")
-                if not sys.platform.startswith('win'):
-                    libc.puts(b'stdout from C')
-                    libc.fflush(None)
-                os.system('echo and this is from echo')
+def test_module_exists_does_not_import_module():
+    assert module_exists('tests.donotimport')
 
-            print('after (stdout)')
-            print('after (stderr)')
 
-            with open(f.name, 'r') as f:
-                lines = set(f.readlines())
-                assert lines == expected_lines
-        finally:
-            print('deleting', f.name)
-            os.remove(f.name)
+def test_module_is_in_cache():
+    assert module_is_in_cache('pytest')
+    assert module_is_in_cache('pkgutil')
+    assert not module_is_in_cache('does_not_even_exist')
+
+
+def test_module_is_imported():
+    globs = globals()
+    assert module_is_imported('pytest', scope=globs)
+    assert not module_is_imported('pkgutil', scope=globs)
+    assert not module_is_imported('does_not_even_exist', scope=globs)
+
+
+def test_module_is_imported_uses_caller_globals_by_default():
+    assert module_is_imported('pytest')
+    assert not module_is_imported('pkgutil')
+    assert not module_is_imported('does_not_even_exist')
+
+
+def test_rel_path():
+    assert rel_path('', 'foo.bar.baz') == 'foo.bar.baz'
+    assert rel_path('foo', 'foo.bar.baz') == 'bar.baz'
+    assert rel_path('foo.bar', 'foo.bar.baz') == 'baz'
+    assert rel_path('foo.bar.baz', 'foo.bar.baz') == ''
+    assert rel_path('', '') == ''

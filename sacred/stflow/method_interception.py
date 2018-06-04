@@ -1,6 +1,10 @@
 from .contextlibbackport import ContextDecorator
 from .internal import ContextMethodDecorator
-from ..optional import tensorflow
+import sacred.optional as opt
+if opt.has_tensorflow:
+    import tensorflow
+else:
+    tensorflow = None
 
 
 class LogFileWriter(ContextDecorator, ContextMethodDecorator):

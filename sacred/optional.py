@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import importlib
-import sys
+from sacred.utils import modules_exist
 
 
 class MissingDependencyMock(object):
@@ -47,23 +47,14 @@ else:
         has_libc, libc = True, ctypes.cdll.LoadLibrary(find_library('c'))
 
 
-has_pymongo, pymongo = optional_import('pymongo')
 has_numpy, np = optional_import('numpy')
 has_yaml, yaml = optional_import('yaml')
 has_pandas, pandas = optional_import('pandas')
-has_sqlalchemy, sqlalchemy = optional_import('sqlalchemy')
-has_mako, mako = optional_import('mako')
-has_gitpython, git = optional_import('git')
-has_tinydb, tinydb = optional_import('tinydb', 'tinydb_serialization',
-                                     'hashfs')
-has_requests, requests = optional_import('requests')
-has_tensorflow, tensorflow = optional_import("tensorflow")
 
-
-# Python 2 and 3 compatible basestring
-if sys.version_info[0] == 3:
-    basestring = str
-    int_types = (int, )
-else:
-    basestring = basestring
-    int_types = (int, long)
+has_sqlalchemy = modules_exist('sqlalchemy')
+has_mako = modules_exist('mako')
+has_gitpython = modules_exist('git')
+has_tinydb = modules_exist('tinydb', 'tinydb_serialization', 'hashfs')
+has_requests = modules_exist('requests')
+has_tensorflow = modules_exist("tensorflow")
+has_telegram = modules_exist('telegram')

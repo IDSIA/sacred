@@ -10,14 +10,14 @@ def test_missing_dependency_mock_raises_on_access():
     MongoObserver = MissingDependencyMock('pymongo')
     with pytest.raises(ImportError) as e:
         MongoObserver.create(db_name='db_name', url='url')
-    assert e.value.args[0].find('pymongo') > -1
+    assert 'pymongo' in e.value.args[0]
 
 
 def test_missing_dependency_mock_raises_on_call():
     MongoObserver = MissingDependencyMock('pymongo')
     with pytest.raises(ImportError) as e:
         MongoObserver('some', params='passed')
-    assert e.value.args[0].find('pymongo') > -1
+    assert 'pymongo' in e.value.args[0]
 
 
 def test_optional_import():

@@ -4,21 +4,21 @@
 from __future__ import division, print_function, unicode_literals
 
 import inspect
-import os.path
-import shlex
 import sys
-from collections import OrderedDict
 
-from sacred.arg_parser import get_config_updates, parse_args
-from sacred.commandline_options import gather_command_line_options, ForceOption
-from sacred.commands import print_config, print_dependencies, save_config
+import os.path
+from collections import OrderedDict
+from docopt import docopt, printable_usage
+
+from sacred.arg_parser import format_usage, get_config_updates
+from sacred.commandline_options import (
+    ForceOption, gather_command_line_options, LoglevelOption)
+from sacred.commands import (help_for_command, print_config,
+                             print_dependencies, save_config)
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
-from sacred.optional import basestring
-from sacred.utils import print_filtered_stacktrace
-
-__sacred__ = True  # marks files that should be filtered from stack traces
+from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv
 
 __all__ = ('Experiment',)
 
@@ -34,7 +34,8 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name=None, ingredients=(), interactive=False):
+    def __init__(self, name=None, ingredients=(), interactive=False,
+                 base_dir=None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -52,6 +53,11 @@ class Experiment(Ingredient):
             mode (e.g. IPython or Jupyter notebooks).
             However, this mode is discouraged since it won't allow storing the
             source-code or reliable reproduction of the runs.
+
+        base_dir : str, optional
+            Optional full path to the base directory of this experiment. This
+            will set the scope for automatic source file discovery.
+
         """
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
@@ -70,8 +76,9 @@ class Experiment(Ingredient):
         super(Experiment, self).__init__(path=name,
                                          ingredients=ingredients,
                                          interactive=interactive,
+                                         base_dir=base_dir,
                                          _caller_globals=caller_globals)
-        self.default_command = ""
+        self.default_command = None
         self.command(print_config, unobserved=True)
         self.command(print_dependencies, unobserved=True)
         self.command(save_config, unobserved=True)
@@ -155,6 +162,20 @@ class Experiment(Ingredient):
 
     # =========================== Public Interface ============================
 
+    def get_usage(self, program_name=None):
+        """Get the commandline usage string for this experiment."""
+        program_name = os.path.relpath(program_name or sys.argv[0],
+                                       self.base_dir)
+        commands = OrderedDict(self.gather_commands())
+        options = gather_command_line_options()
+        long_usage = format_usage(program_name, self.doc, commands, options)
+        # internal usage is a workaround because docopt cannot handle spaces
+        # in program names. So for parsing we use 'dummy' as the program name.
+        # for printing help etc. we want to use the actual program name.
+        internal_usage = format_usage('dummy', self.doc, commands, options)
+        short_usage = printable_usage(long_usage)
+        return short_usage, long_usage, internal_usage
+
     def run(self, command_name=None, config_updates=None, named_configs=(),
             meta_info=None, options=None):
         """
@@ -181,6 +202,7 @@ class Experiment(Ingredient):
         -------
         sacred.run.Run
             the Run object corresponding to the finished run
+
         """
         run = self._create_run(command_name, config_updates, named_configs,
                                meta_info, options)
@@ -216,27 +238,23 @@ class Experiment(Ingredient):
         -------
         sacred.run.Run
             The Run object corresponding to the finished run.
+
         """
-        if argv is None:
-            argv = sys.argv
-        elif isinstance(argv, basestring):
-            argv = shlex.split(argv)
-        else:
-            if not isinstance(argv, (list, tuple)):
-                raise ValueError("argv must be str or list, but was {}"
-                                 .format(type(argv)))
-            if not all([isinstance(a, basestring) for a in argv]):
-                problems = [a for a in argv if not isinstance(a, basestring)]
-                raise ValueError("argv must be list of str but contained the "
-                                 "following elements: {}".format(problems))
+        argv = ensure_wellformed_argv(argv)
+        short_usage, usage, internal_usage = self.get_usage()
+        args = docopt(internal_usage, [str(a) for a in argv[1:]], help=False)
 
-        all_commands = self.gather_commands()
-
-        args = parse_args(argv,
-                          description=self.doc,
-                          commands=OrderedDict(all_commands))
-        config_updates, named_configs = get_config_updates(args['UPDATE'])
         cmd_name = args.get('COMMAND') or self.default_command
+        config_updates, named_configs = get_config_updates(args['UPDATE'])
+
+        err = self._check_command(cmd_name)
+        if not args['help'] and err:
+            print(short_usage)
+            print(err)
+            exit(1)
+
+        if self._handle_help(args, usage):
+            exit()
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
@@ -250,8 +268,9 @@ class Experiment(Ingredient):
                 pdb.post_mortem()
             else:
                 print_filtered_stacktrace()
+                exit(1)
 
-    def open_resource(self, filename):
+    def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -269,14 +288,36 @@ class Experiment(Ingredient):
         ----------
         filename: str
             name of the file that should be opened
+        mode : str
+            mode that file will be open
 
         Returns
         -------
         file
             the opened file-object
+
         """
         assert self.current_run is not None, "Can only be called during a run."
-        return self.current_run.open_resource(filename)
+        return self.current_run.open_resource(filename, mode)
+
+    def add_resource(self, filename):
+        """Add a file as a resource.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        This function can only be called during a run, and just calls the
+        :py:meth:`sacred.run.Run.add_resource` method.
+
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as a resource
+        """
+        assert self.current_run is not None, "Can only be called during a run."
+        self.current_run.add_resource(filename)
 
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
@@ -295,6 +336,7 @@ class Experiment(Ingredient):
         name : str, optional
             optionally set the name of the artifact.
             Defaults to the relative file-path.
+
         """
         assert self.current_run is not None, "Can only be called during a run."
         self.current_run.add_artifact(filename, name)
@@ -342,6 +384,7 @@ class Experiment(Ingredient):
         (str, function)
             A tuple consisting of the (dotted) command-name and the
             corresponding captured function.
+
         """
         for cmd_name, cmd in self.commands.items():
             yield cmd_name, cmd
@@ -359,11 +402,10 @@ class Experiment(Ingredient):
             A dictionary containing option keys of the form '--beat_interval'.
             Their values are boolean if the option is a flag, otherwise None or
             its default value.
+
         """
-        all_commands = self.gather_commands()
-        args = parse_args(["dummy"],
-                          description=self.doc,
-                          commands=OrderedDict(all_commands))
+        _, _, internal_usage = self.get_usage()
+        args = docopt(internal_usage, [])
         return {k: v for k, v in args.items() if k.startswith('--')}
 
     # =========================== Internal Interface ==========================
@@ -386,7 +428,9 @@ class Experiment(Ingredient):
 
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
-                         force=options.get(ForceOption.get_flag(), False))
+                         force=options.get(ForceOption.get_flag(), False),
+                         log_level=options.get(LoglevelOption.get_flag(),
+                                               None))
         run.meta_info['command'] = command_name
         run.meta_info['options'] = options
 
@@ -400,3 +444,25 @@ class Experiment(Ingredient):
 
         self.current_run = run
         return run
+
+    def _check_command(self, cmd_name):
+        commands = dict(self.gather_commands())
+        if cmd_name is not None and cmd_name not in commands:
+            return 'Error: Command "{}" not found. Available commands are: '\
+                   '{}'.format(cmd_name, ", ".join(commands.keys()))
+
+        if cmd_name is None:
+            return 'Error: No command found to be run. Specify a command'\
+                   ' or define main function. Available commands'\
+                   ' are: {}'.format(", ".join(commands.keys()))
+
+    def _handle_help(self, args, usage):
+        if args['help'] or args['--help']:
+            if args['COMMAND'] is None:
+                print(usage)
+                return True
+            else:
+                commands = dict(self.gather_commands())
+                print(help_for_command(commands[args['COMMAND']]))
+                return True
+        return False

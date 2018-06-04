@@ -2,22 +2,18 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import atexit
 import datetime
 import os.path
 import sys
-import threading
 import traceback as tb
-
-from tempfile import NamedTemporaryFile
 
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
-from sacred.utils import (tee_output, ObserverError, SacredInterrupt,
-                          join_paths, flush)
-
-
-__sacred__ = True  # marks files that should be filtered from stack traces
+from sacred.utils import SacredInterrupt, join_paths, \
+    IntervalTimer
+from sacred.stdout_capturing import get_stdcapturer
 
 
 class Run(object):
@@ -30,7 +26,7 @@ class Run(object):
         self._id = None
         """The ID of this run as assigned by the first observer"""
 
-        self.captured_out = None
+        self.captured_out = ''
         """Captured stdout and stderr"""
 
         self.config = config
@@ -105,13 +101,16 @@ class Run(object):
         self.fail_trace = None
         """A stacktrace, in case the run failed"""
 
+        self.capture_mode = None
+        """Determines the way the stdout/stderr are captured"""
+
         self._heartbeat = None
         self._failed_observers = []
         self._output_file = None
 
         self._metrics = metrics_logger.MetricsLogger()
 
-    def open_resource(self, filename):
+    def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -128,15 +127,36 @@ class Run(object):
         ----------
         filename : str
             name of the file that should be opened
+        mode : str
+            mode that file will be open
 
         Returns
         -------
         file
             the opened file-object
+
         """
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)  # TODO: maybe non-blocking?
-        return open(filename, 'r')  # TODO: How to deal with binary mode?
+        return open(filename, mode)
+
+    def add_resource(self, filename):
+        """Add a file as a resource.
+
+        In Sacred terminology a resource is a file that the experiment needed
+        to access during a run. In case of a MongoObserver that means making
+        sure the file is stored in the database (but avoiding duplicates) along
+        its path and md5 sum.
+
+        See also :py:meth:`sacred.Experiment.add_resource`.
+
+        Parameters
+        ----------
+        filename : str
+            name of the file to be stored as a resource
+        """
+        filename = os.path.abspath(filename)
+        self._emit_resource_added(filename)
 
     def add_artifact(self, filename, name=None):
         """Add a file as an artifact.
@@ -153,10 +173,10 @@ class Run(object):
             name of the file to be stored as artifact
         name : str, optional
             optionally set the name of the artifact.
-            Defaults to the relative file-path.
+            Defaults to the filename.
         """
         filename = os.path.abspath(filename)
-        name = os.path.relpath(filename) if name is None else name
+        name = os.path.basename(filename) if name is None else name
         self._emit_artifact_added(name, filename)
 
     def __call__(self, *args):
@@ -170,6 +190,7 @@ class Run(object):
         Returns
         -------
             the return value of the main function
+
         """
         if self.start_time is not None:
             raise RuntimeError('A run can only be started once. '
@@ -177,31 +198,34 @@ class Run(object):
 
         if self.unobserved:
             self.observers = []
+        else:
+            self.observers = sorted(self.observers, key=lambda x: -x.priority)
 
         self.warn_if_unobserved()
         set_global_seed(self.config['seed'])
+
+        if self.capture_mode is None and not self.observers:
+            capture_mode = "no"
+        else:
+            capture_mode = self.capture_mode
+        capture_mode, capture_stdout = get_stdcapturer(capture_mode)
+        self.run_logger.debug('Using capture mode "%s"', capture_mode)
 
         if self.queue_only:
             self._emit_queued()
             return
         try:
-            try:
-                with NamedTemporaryFile() as f, tee_output(f) as final_out:
-                    self._output_file = f
-                    self._emit_started()
-                    self._start_heartbeat()
-                    self._execute_pre_run_hooks()
-                    self.result = self.main_function(*args)
-                    self._execute_post_run_hooks()
-                    if self.result is not None:
-                        self.run_logger.info('Result: {}'.format(self.result))
-                    elapsed_time = self._stop_time()
-                    self.run_logger.info('Completed after %s', elapsed_time)
-            finally:
-                self.captured_out = final_out[0]
-                if self.captured_out_filter is not None:
-                    self.captured_out = self.captured_out_filter(
-                        self.captured_out)
+            with capture_stdout() as self._output_file:
+                self._emit_started()
+                self._start_heartbeat()
+                self._execute_pre_run_hooks()
+                self.result = self.main_function(*args)
+                self._execute_post_run_hooks()
+                if self.result is not None:
+                    self.run_logger.info('Result: {}'.format(self.result))
+                elapsed_time = self._stop_time()
+                self.run_logger.info('Completed after %s', elapsed_time)
+                self._get_captured_output()
             self._stop_heartbeat()
             self._emit_completed(self.result)
         except (SacredInterrupt, KeyboardInterrupt) as e:
@@ -209,7 +233,7 @@ class Run(object):
             status = getattr(e, 'STATUS', 'INTERRUPTED')
             self._emit_interrupted(status)
             raise
-        except:
+        except BaseException:
             exc_type, exc_value, trace = sys.exc_info()
             self._stop_heartbeat()
             self._emit_failed(exc_type, exc_value, trace.tb_next)
@@ -221,27 +245,29 @@ class Run(object):
 
     def _get_captured_output(self):
         if self._output_file.closed:
-            return  # nothing we can do
-        flush()
-        self._output_file.flush()
-        self._output_file.seek(0)
-        text = self._output_file.read().decode()
+            return
+        text = self._output_file.get()
+        if isinstance(text, bytes):
+            text = text.decode('utf-8', 'replace')
+        if self.captured_out:
+            text = self.captured_out + text
         if self.captured_out_filter is not None:
             text = self.captured_out_filter(text)
         self.captured_out = text
 
     def _start_heartbeat(self):
-        self._emit_heartbeat()
+        self.run_logger.debug('Starting Heartbeat')
         if self.beat_interval > 0:
-            self._heartbeat = threading.Timer(self.beat_interval,
-                                              self._start_heartbeat)
+            self._stop_heartbeat_event, self._heartbeat = IntervalTimer.create(
+                self._emit_heartbeat, self.beat_interval)
             self._heartbeat.start()
 
     def _stop_heartbeat(self):
+        self.run_logger.debug('Stopping Heartbeat')
+        # only stop if heartbeat was started
         if self._heartbeat is not None:
-            self._heartbeat.cancel()
-        self._heartbeat = None
-        self._emit_heartbeat()  # one final beat to flush pending changes
+            self._stop_heartbeat_event.set()
+            self._heartbeat.join(2)
 
     def _emit_queued(self):
         self.status = 'QUEUED'
@@ -255,6 +281,7 @@ class Run(object):
                 _id = observer.queued_event(
                     ex_info=self.experiment_info,
                     command=command,
+                    host_info=self.host_info,
                     queue_time=queue_time,
                     config=self.config,
                     meta_info=self.meta_info,
@@ -309,7 +336,8 @@ class Run(object):
             self._safe_call(observer, 'heartbeat_event',
                             info=self.info,
                             captured_out=self.captured_out,
-                            beat_time=beat_time)
+                            beat_time=beat_time,
+                            result=self.result)
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()
@@ -357,13 +385,10 @@ class Run(object):
         if obs not in self._failed_observers and hasattr(obs, method):
             try:
                 getattr(obs, method)(**kwargs)
-            except ObserverError as e:
+            except Exception as e:
                 self._failed_observers.append(obs)
                 self.run_logger.warning("An error ocurred in the '{}' "
                                         "observer: {}".format(obs, e))
-            except:
-                self._failed_observers.append(obs)
-                raise
 
     def _final_call(self, observer, method, **kwargs):
         if hasattr(observer, method):

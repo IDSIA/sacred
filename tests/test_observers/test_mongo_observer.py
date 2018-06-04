@@ -13,8 +13,8 @@ mongomock = pytest.importorskip("mongomock")
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
+T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
 
 
 @pytest.fixture
@@ -92,11 +92,13 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=1337)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run['heartbeat'] == T2
+    assert db_run['result'] == 1337
     assert db_run['info'] == info
     assert db_run['captured_out'] == outp
 
@@ -165,7 +167,8 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.fs.exists.assert_any_call(filename=filename)
 
     db_run = mongo_obs.runs.find_one()
-    assert db_run['resources'] == [(filename, md5)]
+    # for some reason py27 returns this as tuples and py36 as lists
+    assert [tuple(r) for r in db_run['resources']] == [(filename, md5)]
 
 
 def test_force_bson_encodable_doesnt_change_valid_document():
@@ -252,7 +255,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # and reference the newly created records in the 'info' dictionary.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
     # Call standard heartbeat event (store the info dictionary to the database)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
 
     # There should be only one run stored
     assert mongo_obs.runs.count() == 1
@@ -282,7 +286,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=0)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -310,7 +315,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Start the experiment
     mongo_obs.started_event(**sample_run)
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
-    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
     # A new run has been created
     assert mongo_obs.runs.count() == 2
     # Another 2 metrics have been created

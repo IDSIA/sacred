@@ -94,10 +94,14 @@ also collected. The default host info includes:
     os               Info about the operating system
     python_version   Version of python
     gpu              Information about NVidia GPUs (if any)
+    ENV              captured ENVIRONMENT variables (if set)
     ===============  ==========================================
 
 Host information is available from the :ref:api_run through ``run.host_info``.
 It is sent to the observers by the :ref:`started_event <event_started>`.
+
+The list of captured ENVIRONMENT variables (empty by default) can be extended
+by appending the relevant keys to ``sacred.SETTINGS.HOST_INFO.CAPTURED_ENV``.
 
 It is possible to extend the host information with custom functions decorated
 by :py:meth:`~sacred.host_info.host_info_getter` like this:
@@ -124,11 +128,21 @@ While an experiment is running, sacred collects some live information and
 reports them in regular intervals (default 10sec) to the observers via the
 :ref:`heartbeat_event <heartbeat>`. This includes the captured ``stdout`` and
 ``stderr`` and the contents of the :ref:`info_dict` which can be used to store
-custom information like training curves.
+custom information like training curves. It also includes the current
+intermediate result if set. It can be set using the ``_run`` object:
 
-Output capturing in sacred is done on the file descriptor level, which means
-that it should even capture outputs made from called c-functions or
-subprocesses.
+.. code-block:: python
+
+    @ex.capture
+    def some_function(_run):
+        ...
+        _run.result = 42
+        ...
+
+Output capturing in sacred can be done in different modes. On linux the default
+is to capture on the file descriptor level, which means that it should even
+capture outputs made from called c-functions or subprocesses. On Windows the
+default mode is ``sys`` which only captures outputs made from within python.
 
 Note that, the captured output behaves differently from a console in that
 it doesn't by default interpret control characters like backspace
@@ -238,9 +252,9 @@ defaults to the filename.
 
 
 
-Bookeeping
+Bookkeeping
 ==========
-Finally, Sacred stores some additional bookeeping information, and some custom
+Finally, Sacred stores some additional bookkeeping information, and some custom
 meta information about the runs.
 This information is reported to the observers as soon as it is available, and
 can also be accessed through the :ref:`Run object <api_run>` using the
@@ -272,7 +286,7 @@ following values:
     ``QUEUED``       The run was just :ref:`queued <queuing>` and not run yet
     ``RUNNING``      Currently running (but see below)
     ``COMPLETED``    Completed successfully
-    ``FAILED``       The run failde due to an exception
+    ``FAILED``       The run failed due to an exception
     ``INTERRUPTED``  The run was cancelled with a :py:class:`KeyboardInterrupt`
     ``TIMED_OUT``    The run was aborted using a :py:class:`~sacred.utils.TimeoutInterrupt`
     *[custom]*       A custom py:class:`~sacred.utils.SacredInterrupt` occurred

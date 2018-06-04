@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+from sacred import Ingredient
+
 """Global Docstring"""
 
 from mock import patch
@@ -125,7 +128,7 @@ def test_considers_captured_functions_for_fail_on_unused_config(ex):
         ex.run(config_updates={'c': 3})
 
 
-def test_used_prefix_for_fail_on_unused_config(ex):
+def test_considers_prefix_for_fail_on_unused_config(ex):
     @ex.config
     def cfg():
         a = {'b': 1}
@@ -147,6 +150,18 @@ def test_used_prefix_for_fail_on_unused_config(ex):
         ex.run(config_updates={'a': {'c': 5}})
 
 
+def test_non_existing_prefix_is_treatet_as_empty_dict(ex):
+    @ex.capture(prefix='nonexisting')
+    def transmogrify(b=10):
+        return b
+
+    @ex.main
+    def foo():
+        return transmogrify()
+
+    assert ex.run().result == 10
+
+
 def test_using_a_named_config(ex):
     @ex.config
     def cfg():
@@ -164,6 +179,46 @@ def test_using_a_named_config(ex):
     assert ex.run(named_configs=['ncfg']).result == 10
 
 
+def test_empty_dict_named_config(ex):
+    @ex.named_config
+    def ncfg():
+        empty_dict = {}
+        nested_empty_dict = {'k1': {'k2': {}}}
+
+    @ex.automain
+    def main(empty_dict=1, nested_empty_dict=2):
+        return empty_dict, nested_empty_dict
+
+    assert ex.run().result == (1, 2)
+    assert ex.run(named_configs=['ncfg']).result == ({}, {'k1': {'k2': {}}})
+
+
+def test_named_config_and_ingredient():
+    ing = Ingredient('foo')
+
+    @ing.config
+    def cfg():
+        a = 10
+
+    ex = Experiment(ingredients=[ing])
+
+    @ex.config
+    def default():
+        b = 20
+
+    @ex.named_config
+    def named():
+        b = 30
+
+    @ex.main
+    def main():
+        pass
+
+    r = ex.run(named_configs=['named'])
+    assert r.config['b'] == 30
+    assert r.config['foo'] == {'a': 10}
+
+
 def test_captured_out_filter(ex, capsys):
     @ex.main
     def run_print_mock_progress():
@@ -171,11 +226,12 @@ def test_captured_out_filter(ex, capsys):
         sys.stdout.flush()
         for i in range(10):
             sys.stdout.write('\b')
-            sys.stdout.write(str(i))
+            sys.stdout.write("{}".format(i))
             sys.stdout.flush()
 
     ex.captured_out_filter = apply_backspaces_and_linefeeds
-    options = {'--loglevel': 'CRITICAL'}  # to disable logging
+    # disable logging and set capture mode to python
+    options = {'--loglevel': 'CRITICAL', '--capture': 'sys'}
     with capsys.disabled():
         assert ex.run(options=options).captured_out == 'progress 9'
 

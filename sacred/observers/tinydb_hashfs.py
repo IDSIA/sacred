@@ -17,13 +17,6 @@ from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
 import sacred.optional as opt
 
-from tinydb import TinyDB, Query
-from tinydb.queries import QueryImpl
-from hashfs import HashFS
-from tinydb_serialization import Serializer, SerializationMiddleware
-
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 # Set data type values for abstract properties in Serializers
 series_type = opt.pandas.Series if opt.has_pandas else None
 dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
@@ -53,64 +46,6 @@ class BufferedReaderWrapper(BufferedReader):
     def __deepcopy__(self, memo):
         f = open(self.name, self.mode)
         return BufferedReaderWrapper(f)
-
-
-class DateTimeSerializer(Serializer):
-    OBJ_CLASS = dt.datetime  # The class this serializer handles
-
-    def encode(self, obj):
-        return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
-
-    def decode(self, s):
-        return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
-
-
-class NdArraySerializer(Serializer):
-    OBJ_CLASS = ndarray_type
-
-    def encode(self, obj):
-        return json.dumps(obj.tolist(), check_circular=True)
-
-    def decode(self, s):
-        return opt.np.array(json.loads(s))
-
-
-class DataFrameSerializer(Serializer):
-    OBJ_CLASS = dataframe_type
-
-    def encode(self, obj):
-        return obj.to_json()
-
-    def decode(self, s):
-        return opt.pandas.read_json(s)
-
-
-class SeriesSerializer(Serializer):
-    OBJ_CLASS = series_type
-
-    def encode(self, obj):
-        return obj.to_json()
-
-    def decode(self, s):
-        return opt.pandas.read_json(s, typ='series')
-
-
-class FileSerializer(Serializer):
-    OBJ_CLASS = BufferedReaderWrapper
-
-    def __init__(self, fs):
-        self.fs = fs
-
-    def encode(self, obj):
-        address = self.fs.put(obj)
-        return json.dumps(address.id)
-
-    def decode(self, s):
-        id_ = json.loads(s)
-        file_reader = self.fs.open(id_)
-        file_reader = BufferedReaderWrapper(file_reader)
-        file_reader.hash = id_
-        return file_reader
 
 
 class TinyDbObserver(RunObserver):
@@ -171,8 +106,9 @@ class TinyDbObserver(RunObserver):
         for source_name, md5 in ex_info['sources']:
 
             # Substitute any HOME or Environment Vars to get absolute path
-            abs_path = os.path.expanduser(source_name)
-            abs_path = os.path.expandvars(source_name)
+            abs_path = os.path.join(ex_info['base_dir'], source_name)
+            abs_path = os.path.expanduser(abs_path)
+            abs_path = os.path.expandvars(abs_path)
             handle = BufferedReaderWrapper(open(abs_path, 'rb'))
 
             file = self.fs.get(md5)
@@ -184,9 +120,9 @@ class TinyDbObserver(RunObserver):
             source_info.append([source_name, id_, handle])
         return source_info
 
-    def queued_event(self, ex_info, command, queue_time, config, meta_info,
-                     _id):
-        raise NotImplementedError('queued_event method is not implimented for'
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
+        raise NotImplementedError('queued_event method is not implemented for'
                                   ' local TinyDbObserver.')
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -219,10 +155,11 @@ class TinyDbObserver(RunObserver):
         self.save()
         return self.run_entry['_id']
 
-    def heartbeat_event(self, info, captured_out, beat_time):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         self.run_entry['info'] = info
         self.run_entry['captured_out'] = captured_out
         self.run_entry['heartbeat'] = beat_time
+        self.run_entry['result'] = result
         self.save()
 
     def completed_event(self, stop_time, result):
@@ -273,6 +210,9 @@ class TinyDbObserver(RunObserver):
 
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
+
+    __depends_on__ = ['tinydb', 'hashfs',
+                      'tinydb_serialization#tinydb-serialization']
 
     arg = 'BASEDIR'
 
@@ -500,3 +440,63 @@ Outputs:
         formatted_text = '\n'.join(formatted_lines)
 
         return formatted_text
+
+
+if opt.has_tinydb:  # noqa
+    from tinydb import TinyDB, Query
+    from tinydb.queries import QueryImpl
+    from hashfs import HashFS
+    from tinydb_serialization import Serializer, SerializationMiddleware
+
+    class DateTimeSerializer(Serializer):
+        OBJ_CLASS = dt.datetime  # The class this serializer handles
+
+        def encode(self, obj):
+            return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
+
+        def decode(self, s):
+            return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
+
+    class NdArraySerializer(Serializer):
+        OBJ_CLASS = ndarray_type
+
+        def encode(self, obj):
+            return json.dumps(obj.tolist(), check_circular=True)
+
+        def decode(self, s):
+            return opt.np.array(json.loads(s))
+
+    class DataFrameSerializer(Serializer):
+        OBJ_CLASS = dataframe_type
+
+        def encode(self, obj):
+            return obj.to_json()
+
+        def decode(self, s):
+            return opt.pandas.read_json(s)
+
+    class SeriesSerializer(Serializer):
+        OBJ_CLASS = series_type
+
+        def encode(self, obj):
+            return obj.to_json()
+
+        def decode(self, s):
+            return opt.pandas.read_json(s, typ='series')
+
+    class FileSerializer(Serializer):
+        OBJ_CLASS = BufferedReaderWrapper
+
+        def __init__(self, fs):
+            self.fs = fs
+
+        def encode(self, obj):
+            address = self.fs.put(obj)
+            return json.dumps(address.id)
+
+        def decode(self, s):
+            id_ = json.loads(s)
+            file_reader = self.fs.open(id_)
+            file_reader = BufferedReaderWrapper(file_reader)
+            file_reader.hash = id_
+            return file_reader
