@@ -11,6 +11,8 @@ import json
 
 from sacred.observers.file_storage import FileStorageObserver
 from sacred.serializer import restore
+from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -231,3 +233,101 @@ def test_fs_observer_equality(dir_obs):
 
     assert not obs == 'foo'
     assert obs != 'foo'
+
+@pytest.fixture
+def logged_metrics():
+    return [
+        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
+        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
+        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
+
+        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
+        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+
+        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
+        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
+        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
+    ]
+
+
+def test_log_metrics(dir_obs, sample_run, logged_metrics):
+    """Test storing of scalar measurements.
+
+    Test whether measurements logged using _run.metrics.log_scalar_metric
+    are being stored in the metrics.json file.
+
+    Metrics are stored as a json with each metric indexed by a name 
+    (e.g.: 'training.loss'). Each metric for the given name is then
+    stored as three lists: iteration step(steps), the values logged(values)
+    and the timestamp at which the measurement was taken(timestamps)
+    """
+
+    # Start the experiment 
+    basedir, obs = dir_obs
+    sample_run['_id'] = None
+    _id = obs.started_event(**sample_run)    
+    run_dir = basedir.join(str(_id))
+
+    # Initialize the info dictionary and standard output with arbitrary values
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+
+    obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
+
+
+    assert run_dir.join('metrics.json').exists()
+    metrics = json.loads(run_dir.join('metrics.json').read())
+
+
+    # Confirm that we have only two metric names registered.
+    # and they have all the information we need.
+    assert len(metrics) == 2
+    assert "training.loss" in metrics
+    assert "training.accuracy" in metrics
+    for v in ["steps","values","timestamps"]:
+        assert v in metrics["training.loss"] 
+        assert v in metrics["training.accuracy"]
+
+
+    # Verify they have all the information 
+    # we logged in the right order.
+    loss = metrics["training.loss"]
+    assert loss["steps"] == [10, 20, 30]
+    assert loss["values"] == [1, 2, 3]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+    accuracy = metrics["training.accuracy"]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]
+
+
+    # Now, process the remaining events
+    # The metrics shouldn't be overwritten, but appended instead.
+    obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=0)
+
+    # Reload the new metrics
+    metrics = json.loads(run_dir.join('metrics.json').read())
+
+    # The newly added metrics belong to the same run and have the same names,
+    # so the total number of metrics should not change.
+    assert len(metrics) == 2
+
+    assert "training.loss" in metrics
+    loss = metrics["training.loss"]
+    assert loss["steps"] == [10, 20, 30, 40, 50, 60]
+    assert loss["values"] == [1, 2, 3, 10, 20, 30]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+
+    # Read the training.accuracy metric and verify it's unchanged
+    assert "training.accuracy" in metrics
+    accuracy = metrics["training.accuracy"]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]
