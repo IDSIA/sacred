@@ -27,7 +27,7 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "print_filtered_stacktrace", "is_subdir",
            "optional_kwargs_decorator", "get_inheritors",
            "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError",
-           "rel_path"]
+           "rel_path", "IntervalTimer"]
 
 # A PY2 compatible basestring, int_types and FileNotFoundError
 if sys.version_info[0] == 2:

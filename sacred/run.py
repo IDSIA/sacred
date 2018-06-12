@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-import atexit
 import datetime
 import os.path
 import sys
@@ -11,8 +10,8 @@ import traceback as tb
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
-from sacred.utils import SacredInterrupt, join_paths, \
-    IntervalTimer
+from sacred.utils import (SacredInterrupt, join_paths,
+                          IntervalTimer)
 from sacred.stdout_capturing import get_stdcapturer
 
 

@@ -1,6 +1,13 @@
 Release History
 ---------------
 
+0.7.4 (2018-06-12)
+++++++++++++++++++
+* Bugfix: fixed problem with postgres backend of SQLObserver (thanks @bensternlieb)
+* Bugfix: fixed a problem with the interaction of ingredients and named configs
+* Feature: added metrics logging to the FileStorageObserver (thanks @ummavi)
+
+
 0.7.3 (2018-05-06)
 ++++++++++++++++++
 * Feature: support custom experiment base directory (thanks @anibali)
