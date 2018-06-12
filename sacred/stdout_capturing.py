@@ -127,11 +127,11 @@ def tee_output_fd():
             # this is done to avoid receiving KeyboardInterrupts (see #149)
             # in Python 3 we could just pass start_new_session=True
             tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
+                ['tee', '-a', target.name], preexec_fn=os.setsid,
+                stdin=subprocess.PIPE, stdout=1)
             tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
+                ['tee', '-a', target.name], preexec_fn=os.setsid,
+                stdin=subprocess.PIPE, stdout=2)
         except (FileNotFoundError, (OSError, AttributeError)):
             # No tee found in this operating system. Trying to use a python
             # implementation of tee. However this is slow and error-prone.
