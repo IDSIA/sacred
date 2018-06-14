@@ -182,8 +182,8 @@ This project is released under the terms of the `MIT license <http://opensource.
 Citing Sacred
 -------------
 `K. Greff, A. Klein, M. Chovanec, F. Hutter, and J. Schmidhuber, ‘The Sacred Infrastructure for Computational Research’, 
-in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Texas, 2017, pp. 49–56. 
-<http://conference.scipy.org/proceedings/scipy2017/klaus_greff.html>`
+in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Texas, 2017, pp. 49–56 
+<http://conference.scipy.org/proceedings/scipy2017/klaus_greff.html>`_.
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/sacred.svg
