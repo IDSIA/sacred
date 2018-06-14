@@ -3,8 +3,8 @@
 Settings
 ********
 
-Some of Sacreds general behaviour is configurable via ``sacred.SETTINGS``.
-It's entries can be set simply by importing and modifying it using dict or attribute notation:
+Some of Sacred's general behaviour is configurable via ``sacred.SETTINGS``.
+Its entries can be set simply by importing and modifying it using dict or attribute notation:
 
 .. code-block:: python
 
@@ -14,7 +14,7 @@ It's entries can be set simply by importing and modifying it using dict or attri
 
 Settings
 ========
-Here a brief list of all currently available options.
+Here is a brief list of all currently available options.
 
 
 * ``CAPTURE_MODE`` *(default: 'fd' (linux/osx) or 'sys' (windows))*
@@ -36,13 +36,13 @@ Here a brief list of all currently available options.
     make sure no config key contains an equals sign
   * ``IGNORED_COMMENTS`` *(default: ['^pylint:', '^noinspection'])*
     list of regex patterns to filter out certain IDE or linter directives
-    from inline comments in the documentation
+    from in-line comments in the documentation.
 
 * ``HOST_INFO``
 
   * ``INCLUDE_GPU_INFO`` *(default: True)*
-    Try to collect information about GPUs using the nvidia-smi tool
-    Deactivating this can cut the start-up time of a sacred run by about 1 sec.
+    Try to collect information about GPUs using the nvidia-smi tool.
+    Deactivating this can cut the start-up time of a Sacred run by about 1 sec.
   * ``CAPTURED_ENV`` *(default: [])*
     List of ENVIRONMENT variable names to store in the host-info.
 
@@ -50,7 +50,7 @@ Here a brief list of all currently available options.
 * ``COMMAND_LINE``
 
   * ``STRICT_PARSING`` *(default: False)*
-    disallow string fallback, if parsing a value from command-line failed
+    disallow string fallback, if parsing a value from command-line failed.
     This enforces the usage of quotes in the command-line. Note that this can
     be very tedious since bash removes one set of quotes, such that double
     quotes will be needed.
