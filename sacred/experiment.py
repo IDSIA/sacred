@@ -14,7 +14,8 @@ from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
     ForceOption, gather_command_line_options, LoglevelOption)
 from sacred.commands import (help_for_command, print_config,
-                             print_dependencies, save_config)
+                             print_dependencies, save_config,
+                             print_named_configs)
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
@@ -82,6 +83,7 @@ class Experiment(Ingredient):
         self.command(print_config, unobserved=True)
         self.command(print_dependencies, unobserved=True)
         self.command(save_config, unobserved=True)
+        self.command(print_named_configs(self), unobserved=True)
         self.observers = []
         self.current_run = None
         self.captured_out_filter = None

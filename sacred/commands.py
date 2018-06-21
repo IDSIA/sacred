@@ -6,14 +6,14 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 import re
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 from sacred.config import save_config_file
 from sacred.serializer import flatten
 from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
 __all__ = ('print_config', 'print_dependencies', 'save_config',
-           'help_for_command')
+           'help_for_command', 'print_named_configs')
 
 BLUE = '\033[94m'
 GREEN = '\033[92m'
@@ -60,6 +60,49 @@ def print_config(_run):
     final_config = _run.config
     config_mods = _run.config_modifications
     print(_format_config(final_config, config_mods))
+
+
+def _format_named_config(indent, path, named_config):
+    indent = ' ' * indent
+    assign = path
+    if hasattr(named_config, '__doc__') and named_config.__doc__ is not None:
+        doc_string = named_config.__doc__
+        if doc_string.strip().count('\n') == 0:
+            assign += GREY + '   # {}'.format(doc_string.strip()) + ENDC
+        else:
+            doc_string = doc_string.replace('\n', '\n' + indent)
+            assign += GREY + '\n{}"""{}"""'.format(indent + '  ',
+                                                   doc_string) + ENDC
+    return indent + assign
+
+
+def _format_named_configs(named_configs, indent=2, hide_path=None):
+    lines = ['Named Configurations (' + GREY + 'doc' + ENDC + '):']
+    for path, named_config in named_configs.items():
+        if hide_path is not None and path.startswith(hide_path + '.'):
+            path = path[len(hide_path) + 1:]
+        lines.append(_format_named_config(indent, path, named_config))
+    if len(lines) < 2:
+        lines.append(' ' * indent + 'No named configs')
+    return '\n'.join(lines)
+
+
+def print_named_configs(ingredient):
+    """
+    Returns a command function that prints the available named configs for the
+     ingredient and all sub-ingredients and exits.
+
+     The output is highlighted:
+       white: config names
+       grey:  doc
+     """
+
+    def print_named_configs():
+        """Print the available named configs and exit."""
+        named_configs = OrderedDict(ingredient.gather_named_configs())
+        print(_format_named_configs(named_configs, 2, ingredient.path))
+
+    return print_named_configs
 
 
 def help_for_command(command):
