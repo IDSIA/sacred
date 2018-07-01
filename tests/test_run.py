@@ -266,4 +266,5 @@ def test_captured_out_filter(run, capsys):
     run.main_function.side_effect = print_mock_progress
     with capsys.disabled():
         run()
+        sys.stdout.flush()
     assert run.captured_out == 'progress 9'
