@@ -127,6 +127,7 @@ class TinyDbObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
+        self.db_run_id = None
 
         self.run_entry = {
             'experiment': dict(ex_info),
