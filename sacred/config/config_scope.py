@@ -30,6 +30,7 @@ class ConfigScope(object):
         self._func = func
         self._body_code = get_function_body_code(func)
         self._var_docs = get_config_comments(func)
+        self.__doc__ = self._func.__doc__
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """

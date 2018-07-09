@@ -283,6 +283,23 @@ class Ingredient(object):
             for cmd_name, cmd in ingred.gather_commands():
                 yield cmd_name, cmd
 
+    def gather_named_configs(self):
+        """Collect all named configs from this ingredient and its sub-ingredients.
+
+        Yields
+        ------
+        config_name: str
+            The full (dotted) name of the named config.
+        config: ConfigScope or ConfigDict or basestring
+            The corresponding named config.
+        """
+        for config_name, config in self.named_configs.items():
+            yield self.path + '.' + config_name, config
+
+        for ingred in self.ingredients:
+            for config_name, config in ingred.gather_named_configs():
+                yield config_name, config
+
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
 

@@ -256,6 +256,23 @@ def test_gather_commands(ing):
     assert ('tickle.foo', foo) in commands
 
 
+def test_gather_named_configs(ing):
+    ing2 = Ingredient('ing2', ingredients=[ing])
+
+    @ing.named_config
+    def named_config1():
+        pass
+
+    @ing2.named_config
+    def named_config2():
+        """named config with doc"""
+        pass
+
+    named_configs = list(ing2.gather_named_configs())
+    assert ('ing2.named_config2', named_config2) in named_configs
+    assert ('tickle.named_config1', named_config1) in named_configs
+
+
 def test_config_docs_are_preserved(ing):
     @ing.config
     def ing_cfg():

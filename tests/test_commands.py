@@ -4,11 +4,15 @@
 from __future__ import division, print_function, unicode_literals
 
 import pprint
+from collections import OrderedDict
 
 import pytest
+from sacred import Ingredient, Experiment
 from sacred.commands import (BLUE, ENDC, GREY, GREEN, RED, ConfigEntry,
                              PathEntry, _format_config, _format_entry,
-                             help_for_command, _iterate_marked, _non_unicode_repr)
+                             help_for_command, _iterate_marked, _non_unicode_repr,
+                             _format_named_configs, _format_named_config)
+from sacred.config import ConfigScope
 from sacred.config.config_summary import ConfigSummary
 
 
@@ -161,3 +165,54 @@ def test_help_for_command():
     help_text = help_for_command(my_command)
     assert "my_command" in help_text
     assert "This is my docstring" in help_text
+
+
+def _config_scope_with_single_line_doc():
+    """doc"""
+    pass
+
+
+def _config_scope_with_multiline_doc():
+    """Multiline
+    docstring!
+    """
+    pass
+
+
+@pytest.mark.parametrize('indent, path, named_config, expected', [
+    (0, 'a', None, 'a'),
+    (1, 'b', None, ' b'),
+    (4, 'a.b.c', None, '    a.b.c'),
+    (0, 'c', ConfigScope(_config_scope_with_single_line_doc), 'c' + GREY
+     + '   # doc' + ENDC),
+    (0, 'd', ConfigScope(_config_scope_with_multiline_doc),
+     'd' + GREY + '\n  """Multiline\n    docstring!\n    """' + ENDC)
+])
+def test_format_named_config(indent, path, named_config, expected):
+    assert _format_named_config(indent, path, named_config) == expected
+
+
+def test_format_named_configs():
+    ingred = Ingredient('ingred')
+    ex = Experiment(name='experiment', ingredients=[ingred])
+
+    @ingred.named_config
+    def named_config1():
+        pass
+
+    @ex.named_config
+    def named_config2():
+        """named config with doc"""
+        pass
+
+    dict_config = dict(v=42)
+    ingred.add_named_config('dict_config', dict_config)
+
+    named_configs_text = _format_named_configs(OrderedDict(
+        ex.gather_named_configs()), hide_path=ex.path)
+    assert named_configs_text.startswith('Named Configurations (' +
+                                            GREY + 'doc' + ENDC + '):')
+    assert 'named_config2' in named_configs_text
+    assert '# named config with doc' in named_configs_text
+    assert 'ingred.named_config1' in named_configs_text
+    assert 'ingred.dict_config' in named_configs_text
