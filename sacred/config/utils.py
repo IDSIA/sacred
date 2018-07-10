@@ -90,7 +90,7 @@ def recursive_fill_in(config, preset):
     for key in preset:
         if key not in config:
             config[key] = preset[key]
-        elif isinstance(config[key], dict):
+        elif isinstance(config[key], dict) and isinstance(preset[key], dict):
             recursive_fill_in(config[key], preset[key])
 
 
