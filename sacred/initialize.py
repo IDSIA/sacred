@@ -102,13 +102,13 @@ class Scaffold(object):
 
         self.get_config_modifications()
 
-    def run_config_hooks(self, config, config_updates, command_name, logger):
+    def run_config_hooks(self, config, command_name, logger):
         final_cfg_updates = {}
         for ch in self.config_hooks:
             cfg_upup = ch(deepcopy(config), command_name, logger)
             if cfg_upup:
                 recursive_update(final_cfg_updates, cfg_upup)
-        recursive_update(final_cfg_updates, config_updates)
+        recursive_update(final_cfg_updates, self.config_updates)
         return final_cfg_updates
 
     def get_config_modifications(self):
@@ -382,8 +382,9 @@ def create_run(experiment, command_name, config_updates=None,
         # update global config
         config = get_configuration(scaffolding)
         # run config hooks
-        config_updates = scaffold.run_config_hooks(config, config_updates,
-                                                   command_name, run_logger)
+        config_hook_updates = scaffold.run_config_hooks(
+            config, command_name, run_logger)
+        recursive_update(scaffold.config, config_hook_updates)
 
     # Phase 4: finalize seeding
     for scaffold in reversed(list(scaffolding.values())):
