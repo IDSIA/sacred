@@ -25,8 +25,6 @@ class FileStorageObserver(RunObserver):
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
                template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
-        if not os.path.exists(basedir):
-            os.makedirs(basedir)
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
         source_dir = source_dir or os.path.join(basedir, '_sources')
         if template is not None:
@@ -54,6 +52,8 @@ class FileStorageObserver(RunObserver):
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
+        if not os.path.exists(self.basedir):
+            os.makedirs(self.basedir)
         if _id is None:
             self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
         else:
@@ -90,6 +90,8 @@ class FileStorageObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
+        if not os.path.exists(self.basedir):
+            os.makedirs(self.basedir)
         if _id is None:
             for i in range(200):
                 dir_nrs = [int(d) for d in os.listdir(self.basedir)
