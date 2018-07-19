@@ -38,7 +38,8 @@ def sample_run():
 
 @pytest.fixture()
 def dir_obs(tmpdir):
-    return tmpdir, FileStorageObserver.create(tmpdir.strpath)
+    basedir = tmpdir.join('file_storage')
+    return basedir, FileStorageObserver.create(basedir.strpath)
 
 
 @pytest.fixture
@@ -60,6 +61,34 @@ def tmpfile():
     yield f
 
     os.remove(f.name)
+
+
+def test_fs_observer_create_does_not_create_basedir(dir_obs):
+    basedir, obs = dir_obs
+    assert not basedir.exists()
+
+
+def test_fs_observer_queued_event_creates_rundir(dir_obs, sample_run):
+    basedir, obs = dir_obs
+    _id = obs.queued_event(
+        sample_run['ex_info'], sample_run['command'], sample_run['host_info'],
+        datetime.datetime.utcnow(), sample_run['config'],
+        sample_run['meta_info'], sample_run['_id'])
+
+    assert _id is not None
+    run_dir = basedir.join(str(_id))
+    assert run_dir.exists()
+    config = json.loads(run_dir.join('config.json').read())
+    assert config == sample_run['config']
+
+    run = json.loads(run_dir.join('run.json').read())
+    assert run == {
+        'experiment': sample_run['ex_info'],
+        'command': sample_run['command'],
+        'host': sample_run['host_info'],
+        'meta': sample_run['meta_info'],
+        'status': 'QUEUED'
+    }
 
 
 def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
