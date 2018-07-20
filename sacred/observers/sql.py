@@ -106,7 +106,7 @@ class SqlObserver(RunObserver):
         self.run.resources.append(res)
         self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None):
         a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
         self.save()
