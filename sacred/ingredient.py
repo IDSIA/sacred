@@ -276,12 +276,15 @@ class Ingredient(object):
         cmd: function
             The corresponding captured function.
         """
-        for cmd_name, cmd in self.commands.items():
-            yield self.path + '.' + cmd_name, cmd
+        return self._gather(
+            lambda ingredient: ((ingredient.path + '.' + command_name, command)
+                                for command_name, command in
+                                ingredient.commands.items()))
 
-        for ingred in self.ingredients:
-            for cmd_name, cmd in ingred.gather_commands():
-                yield cmd_name, cmd
+    def _gather(self, func):
+        for ingredient, _ in self.traverse_ingredients():
+            for item in func(ingredient):
+                yield item
 
     def gather_named_configs(self):
         """Collect all named configs from this ingredient and its sub-ingredients.
@@ -293,12 +296,10 @@ class Ingredient(object):
         config: ConfigScope or ConfigDict or basestring
             The corresponding named config.
         """
-        for config_name, config in self.named_configs.items():
-            yield self.path + '.' + config_name, config
-
-        for ingred in self.ingredients:
-            for config_name, config in ingred.gather_named_configs():
-                yield config_name, config
+        return self._gather(
+            lambda ingredient: ((ingredient.path + '.' + config_name, config)
+                                for config_name, config in
+                                ingredient.commands.items()))
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
