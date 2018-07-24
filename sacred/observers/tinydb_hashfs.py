@@ -189,7 +189,7 @@ class TinyDbObserver(RunObserver):
             self.run_entry['resources'].append(resource)
             self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None):
 
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, 'rb'))

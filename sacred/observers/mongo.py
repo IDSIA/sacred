@@ -184,12 +184,12 @@ class MongoObserver(RunObserver):
         self.run_entry['resources'].append((filename, md5hash))
         self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None):
         with open(filename, 'rb') as f:
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(self.runs.name, run_id,
                                                        name)
-            file_id = self.fs.put(f, filename=db_filename)
+            file_id = self.fs.put(f, filename=db_filename, metadata=metadata)
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
         self.save()
