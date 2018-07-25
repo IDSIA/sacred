@@ -11,7 +11,7 @@ from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
 
 
-def create_captured_function(function, prefix=None):
+def create_captured_function(function, prefix=None, ignore=None):
     sig = Signature(function)
     function.signature = sig
     function.uses_randomness = ("_seed" in sig.arguments or
@@ -21,6 +21,7 @@ def create_captured_function(function, prefix=None):
     function.rnd = None
     function.run = None
     function.prefix = prefix
+    function.ignore = ignore
     return captured_function(function)
 
 
@@ -38,7 +39,7 @@ def captured_function(wrapped, instance, args, kwargs):
 
     bound = (instance is not None)
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options,
-                                                         bound)
+                                                         wrapped.ignore, bound)
     if wrapped.logger is not None:
         wrapped.logger.debug("Started")
         start_time = time.time()

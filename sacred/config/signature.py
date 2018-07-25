@@ -79,7 +79,8 @@ class Signature(object):
         expected_args = self._get_expected_args(bound)
         return [a for a in expected_args[len(args):] if a not in kwargs]
 
-    def construct_arguments(self, args, kwargs, options, bound=False):
+    def construct_arguments(self, args, kwargs, options, ignore=None,
+                            bound=False):
         """
         Construct args list and kwargs dictionary for this signature.
 
@@ -97,7 +98,8 @@ class Signature(object):
         self._assert_no_unexpected_kwargs(expected_args, kwargs)
         self._assert_no_duplicate_args(expected_args, args, kwargs)
 
-        args, kwargs = self._fill_in_options(args, kwargs, options, bound)
+        args, kwargs = self._fill_in_options(args, kwargs, options, ignore,
+                                             bound)
 
         self._assert_no_missing_args(args, kwargs, bound)
         return args, kwargs
@@ -144,11 +146,11 @@ class Signature(object):
             raise TypeError("{} got multiple values for argument(s) {}".format(
                 self.name, duplicate_arguments))
 
-    def _fill_in_options(self, args, kwargs, options, bound):
+    def _fill_in_options(self, args, kwargs, options, ignore, bound):
         free_params = self.get_free_parameters(args, kwargs, bound)
         new_kwargs = dict(kwargs) if free_params else kwargs
         for param in free_params:
-            if param in options:
+            if param in options and param not in ignore:
                 new_kwargs[param] = options[param]
         return args, new_kwargs
 

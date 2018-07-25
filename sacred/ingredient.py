@@ -61,7 +61,7 @@ class Ingredient(object):
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
-    def capture(self, function=None, prefix=None):
+    def capture(self, function=None, prefix=None, ignore=None):
         """
         Decorator to turn a function into a captured function.
 
@@ -74,7 +74,7 @@ class Ingredient(object):
         """
         if function in self.captured_functions:
             return function
-        captured_function = create_captured_function(function, prefix=prefix)
+        captured_function = create_captured_function(function, prefix=prefix, ignore=ignore)
         self.captured_functions.append(captured_function)
         return captured_function
 
