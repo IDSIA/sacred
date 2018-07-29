@@ -28,7 +28,7 @@ class ConfigScope(object):
             "default values are not allowed for ConfigScope functions"
 
         self._func = func
-        self._body_code = get_function_body_code(func)
+        self._body_code, self._file_name, self._line_offset = get_function_body_code(func)
         self._var_docs = get_config_comments(func)
         self.__doc__ = self._func.__doc__
 
@@ -161,7 +161,7 @@ def get_function_body_code(func):
                                   statement.strip(), filename, lineno))
         else:
             raise
-    return body_code
+    return body_code, filename, line_offset
 
 
 def is_ignored(line):

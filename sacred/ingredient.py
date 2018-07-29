@@ -74,7 +74,8 @@ class Ingredient(object):
         """
         if function in self.captured_functions:
             return function
-        captured_function = create_captured_function(function, prefix=prefix)
+        captured_function = create_captured_function(function, prefix=prefix,
+                                                     ingredient=self)
         self.captured_functions.append(captured_function)
         return captured_function
 

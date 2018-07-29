@@ -8,6 +8,7 @@ from copy import copy, deepcopy
 
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
                            load_config_file, undogmatize)
+from sacred.config.config_sources import CommandLineConfigSource
 from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
@@ -44,6 +45,7 @@ class Scaffold(object):
                               for cf in self._captured_functions
                               for n in cf.signature.arguments}
         self.captured_args.add('__doc__')  # allow setting the config docstring
+        self.sources = {}
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -84,21 +86,33 @@ class Scaffold(object):
     def run_named_config(self, config_name):
         if os.path.exists(config_name):
             nc = ConfigDict(load_config_file(config_name))
+            source = FileConfigSource(os.path.abspath(config_name))
         else:
+            if config_name not in self.named_configs:
+                raise NamedConfigNotFoundError(
+                    'Named config "{}" was not found.'.format(config_name),
+                    named_config=config_name)
             nc = self.named_configs[config_name]
+            source = NamedConfigScopeConfigSource(config_name, nc)
 
         cfg = nc(fixed=self.get_config_updates_recursive(),
                  preset=self.presets,
                  fallback=self.fallback)
 
-        return undogmatize(cfg)
+        cfg = undogmatize(cfg)
+
+        flattened_source_keys = [k[0] for k in iterate_flattened(self.sources)]
+        sources = convert_to_nested_dict({k: source for k, v in iterate_flattened(cfg) if k not in flattened_source_keys})
+
+        return cfg, sources
 
     def set_up_config(self):
-        self.config, self.summaries = chain_evaluate_config_scopes(
+        self.config, self.summaries, _sources = chain_evaluate_config_scopes(
             self.config_scopes,
             fixed=self.config_updates,
             preset=self.config,
             fallback=self.fallback)
+        recursive_update(self.sources, _sources)
 
         self.get_config_modifications()
 
@@ -114,7 +128,9 @@ class Scaffold(object):
     def get_config_modifications(self):
         self.config_mods = ConfigSummary(
             added={key
-                   for key, value in iterate_flattened(self.config_updates)})
+                   for key, value in iterate_flattened(self.config_updates)},
+            sources=self.sources
+        )
         for cfg_summary in self.summaries:
             self.config_mods.update_from(cfg_summary)
 
@@ -163,6 +179,7 @@ class Scaffold(object):
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run
+            cfunc.sources = self.sources
 
         if not run.force:
             self._warn_about_suspicious_changes()
@@ -329,6 +346,11 @@ def distribute_config_updates(prefixes, scaffolding, config_updates):
         scaff = scaffolding[scaffold_name]
         set_by_dotted_path(scaff.config_updates, suffix, value)
 
+def distribute_config_sources(prefixes, scaffolding, config_updates):
+    for path, value in iterate_flattened(config_updates):
+        scaffold_name, suffix = find_best_match(path, prefixes)
+        scaff = scaffolding[scaffold_name]
+        set_by_dotted_path(scaff.sources, suffix, value)
 
 def get_scaffolding_and_config_name(named_config, scaffolding):
     if os.path.exists(named_config):
@@ -354,25 +376,38 @@ def create_run(experiment, command_name, config_updates=None,
 
     # --------- configuration process -------------------
 
+
+
+
     # Phase 1: Config updates
     config_updates = config_updates or {}
+    source = CommandLineConfigSource(config_updates)
+    config_sources = {k: source for k, v in iterate_flattened(config_updates)}
     config_updates = convert_to_nested_dict(config_updates)
+    config_sources = convert_to_nested_dict(config_sources)
+
     root_logger, run_logger = initialize_logging(experiment, scaffolding,
                                                  log_level)
     distribute_config_updates(prefixes, scaffolding, config_updates)
+    distribute_config_sources(prefixes, scaffolding, config_sources)
 
     # Phase 2: Named Configs
     for ncfg in named_configs:
         scaff, cfg_name = get_scaffolding_and_config_name(ncfg, scaffolding)
         scaff.gather_fallbacks()
-        ncfg_updates = scaff.run_named_config(cfg_name)
+        ncfg_updates, ncfg_sources = scaff.run_named_config(cfg_name)
         distribute_presets(prefixes, scaffolding, ncfg_updates)
         for ncfg_key, value in iterate_flattened(ncfg_updates):
+            set_by_dotted_path(config_sources,
+                               join_paths(scaff.path, ncfg_key),
+                               ncfg_sources[ncfg_key])
             set_by_dotted_path(config_updates,
                                join_paths(scaff.path, ncfg_key),
                                value)
 
     distribute_config_updates(prefixes, scaffolding, config_updates)
+
+    distribute_config_sources(prefixes, scaffolding, config_sources)
 
     # Phase 3: Normal config scopes
     for scaffold in scaffolding.values():

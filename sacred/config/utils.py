@@ -6,8 +6,11 @@ import jsonpickle.tags
 
 from sacred import SETTINGS
 import sacred.optional as opt
+from sacred.config.config_sources import ConfigScopeConfigSource, \
+    ConfigDictConfigSource
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
-from sacred.utils import PYTHON_IDENTIFIER, basestring
+from sacred.utils import PYTHON_IDENTIFIER, basestring, recursive_update, \
+    convert_to_nested_dict, iterate_flattened, get_by_dotted_path
 
 
 def assert_is_valid_key(key):
@@ -100,17 +103,30 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
     fallback = fallback or {}
     final_config = dict(preset or {})
     config_summaries = []
+    config_sources = {}
+
+    fixed_keys = [k for k, _ in iterate_flattened(fixed)]
     for config in config_scopes:
+        flattened_preset = dict(iterate_flattened(preset))
         cfg = config(fixed=fixed,
                      preset=final_config,
                      fallback=fallback)
         config_summaries.append(cfg)
-        final_config.update(cfg)
+        if hasattr(config, '_file_name'):
+            source = ConfigScopeConfigSource(config)
+        else:
+            source = ConfigDictConfigSource(config)
 
+        recursive_update(
+            config_sources,
+            {k: source for k, _ in iterate_flattened(cfg) if k not in fixed_keys and (k, get_by_dotted_path(cfg, k)) not in flattened_preset}
+        )
+        final_config.update(cfg)
+    config_sources = convert_to_nested_dict(config_sources)
     if not config_scopes:
         final_config.update(fixed)
 
-    return undogmatize(final_config), config_summaries
+    return undogmatize(final_config), config_summaries, config_sources
 
 
 def dogmatize(obj):
