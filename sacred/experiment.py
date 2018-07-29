@@ -19,7 +19,8 @@ from sacred.commands import (help_for_command, print_config,
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
-from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv
+from sacred.utils import (print_filtered_stacktrace, ensure_wellformed_argv,
+                          SacredError, ConfigError)
 
 __all__ = ('Experiment',)
 
@@ -260,17 +261,27 @@ class Experiment(Ingredient):
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
-        except Exception:
-            if not self.current_run or self.current_run.debug:
-                raise
+        except Exception as e:
+            if not self.current_run or not self.current_run.debug \
+                    or not self.current_run.pdb:
+                if isinstance(e, SacredError):
+                    if e.print_usage:
+                        print(short_usage)
+                    if e.print_traceback:
+                        print_filtered_stacktrace(e.filter_traceback)
+                    else:
+                        import traceback as tb
+                        tb.print_exc(limit=0)
+                else:
+                    print_filtered_stacktrace()
+                exit(1)
             elif self.current_run.pdb:
                 import traceback
                 import pdb
                 traceback.print_exception(*sys.exc_info())
                 pdb.post_mortem()
-            else:
-                print_filtered_stacktrace()
-                exit(1)
+            else:  # this means that debug is True
+                raise
 
     def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
@@ -438,12 +449,12 @@ class Experiment(Ingredient):
     def _check_command(self, cmd_name):
         commands = dict(self.gather_commands())
         if cmd_name is not None and cmd_name not in commands:
-            return 'Error: Command "{}" not found. Available commands are: '\
+            return 'Error: Command "{}" not found. Available commands are: ' \
                    '{}'.format(cmd_name, ", ".join(commands.keys()))
 
         if cmd_name is None:
-            return 'Error: No command found to be run. Specify a command'\
-                   ' or define main function. Available commands'\
+            return 'Error: No command found to be run. Specify a command' \
+                   ' or define main function. Available commands' \
                    ' are: {}'.format(", ".join(commands.keys()))
 
     def _handle_help(self, args, usage):

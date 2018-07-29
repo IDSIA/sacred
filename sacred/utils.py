@@ -12,22 +12,23 @@ import shlex
 import sys
 import threading
 import traceback as tb
+from collections import defaultdict
 from functools import partial
 
 import wrapt
 
-
-__all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
-           "ObserverError", "SacredInterrupt", "TimeoutInterrupt",
-           "create_basic_stream_logger", "recursive_update",
+__all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "create_basic_stream_logger",
+           "recursive_update",
            "iterate_flattened", "iterate_flattened_separately",
            "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
            "iter_prefixes", "join_paths", "is_prefix",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
            "print_filtered_stacktrace", "is_subdir",
            "optional_kwargs_decorator", "get_inheritors",
-           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError",
-           "rel_path", "IntervalTimer"]
+           "apply_backspaces_and_linefeeds", "StringIO", "rel_path",
+           "IntervalTimer", "ConfigError", "InvalidConfigError",
+           "MissingConfigError", "NamedConfigNotFoundError",
+           "ConfigAddedError"]
 
 # A PY2 compatible basestring, int_types and FileNotFoundError
 if sys.version_info[0] == 2:
@@ -36,9 +37,12 @@ if sys.version_info[0] == 2:
 
     import errno
 
+
     class FileNotFoundError(IOError):
         def __init__(self, msg):
             super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
+
+
     from StringIO import StringIO
 else:
     basestring = str
@@ -48,7 +52,6 @@ else:
     FileNotFoundError = FileNotFoundError
     from io import StringIO
 
-
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
 
@@ -56,7 +59,17 @@ PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
-class CircularDependencyError:
+
+class SacredError(Exception):
+    def __init__(self, *args: object, print_traceback=True,
+                 filter_traceback=None, print_usage=False):
+        super().__init__(*args)
+        self.print_traceback = print_traceback
+        self.filter_traceback = filter_traceback
+        self.print_usage = print_usage
+
+
+class CircularDependencyError(SacredError):
     """The ingredients of the current experiment form a circular dependency."""
 
     def __init__(self, *args, ingredients=None):
@@ -68,6 +81,7 @@ class CircularDependencyError:
 
     def __str__(self):
         return '->'.join([i.path for i in reversed(self.__ingredients__)])
+
 
 class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
@@ -93,6 +107,153 @@ class TimeoutInterrupt(SacredInterrupt):
     """
 
     STATUS = "TIMEOUT"
+
+
+class ConfigError(SacredError):
+    def __init__(self, *args, conflicting_configs=(), print_traceback=True,
+                 filter_traceback=True,
+                 print_config_sources=True,
+                 print_usage=False) -> None:
+        super().__init__(*args, print_traceback=print_traceback,
+                         filter_traceback=filter_traceback,
+                         print_usage=print_usage)
+        self.print_config_sources = print_config_sources
+
+        if isinstance(conflicting_configs, str):
+            conflicting_configs = (conflicting_configs,)
+
+        self.conflicting_configs = conflicting_configs
+        self.__prefix_handled__ = False
+        self.__config_sources__ = ()
+        self.__config__ = {}
+
+    def __str__(self):
+        s = super().__str__()
+        if self.print_config_sources:
+            s += '\nConflicting configuration values:'
+            for conflicting_config in self.conflicting_configs:
+                s += '\n  {}={}'.format(conflicting_config,
+                                        get_by_dotted_path(self.__config__,
+                                                           conflicting_config),
+                                        )
+                source = get_by_dotted_path(self.__config_sources__,
+                                            conflicting_config)
+                # import at top causes Import error
+                from sacred.config.config_sources import ConfigSource
+                if isinstance(source, dict):
+                    sources = defaultdict(list)
+
+                    for k, v in source.items():
+                        sources[v].append(join_paths(conflicting_config, k))
+                    sources_str = []
+                    for k, v in sources.items():
+                        sources_str.append(
+                            '{} {}'.format(k.get_source_string_for_config(),
+                                           tuple(v)))
+
+                elif isinstance(source, ConfigSource):
+                    sources_str = [source.get_source_string_for_config(
+                        conflicting_config)]
+                else:
+                    sources_str = []
+
+                if len(sources_str) == 1:
+                    s += '\n    defined in {}'.format(sources_str[0])
+                else:
+                    s += '\n    defined in {}'.format(sources_str[0])
+                    for s_ in sources_str[1:]:
+                        s += '\n        and in {}'.format(s_)
+        return s
+
+
+class InvalidConfigError(ConfigError):
+    pass
+
+
+class MissingConfigError(SacredError):
+    def __init__(self, *args, missing_configs=(), function=None,
+                 print_traceback=True, filter_traceback=True,
+                 print_usage=True):
+        self.func = function
+        self.missing_configs = missing_configs
+        super().__init__(
+            *args,
+            print_traceback=print_traceback,
+            filter_traceback=filter_traceback,
+            print_usage=print_usage
+        )
+
+    def __str__(self):
+        s = super().__str__()
+        if self.func.ingredient is not None:
+            func_file = inspect.getfile(self.func)
+            _, offset = inspect.getsourcelines(self.func)
+
+            captured_func_source = '"{}:{}"'.format(func_file, offset)
+
+            # we can't import Experiment here for `isinstance`, but check
+            # for attribute 'run' should do
+            if hasattr(self.func.ingredient, 'run'):
+                s += '\nFunction that caused the exception: {} captured by ' \
+                     'the experiment "{}" at {}'.format(
+                    self.func,
+                    self.func.ingredient.path,
+                    captured_func_source,
+                )
+            else:
+                s += '\nFunction that caused the exception: {} captured by ' \
+                     'the ingredient "{}" at {}'.format(
+                    self.func,
+                    self.func.ingredient.path,
+                    captured_func_source)
+        else:
+            s += '\nFunction that caused the exception: {}'.format(self.func)
+        return s
+
+
+class NamedConfigNotFoundError(SacredError):
+    def __init__(self, *args, named_config, print_traceback=False,
+                 filter_traceback=None, print_usage=False):
+        super().__init__(
+            *args,
+            print_traceback=print_traceback,
+            filter_traceback=filter_traceback,
+            print_usage=print_usage
+        )
+        self.named_config = named_config
+
+
+class ConfigAddedError(ConfigError):
+    SPECIAL_ARGS = {'_log', '_config', '_seed', '__doc__', 'config_filename',
+                    '_run'}
+
+    def __init__(self, *args, conflicting_configs=(), print_traceback=False,
+                 filter_traceback=True, print_config_sources=True,
+                 print_usage=False, print_suggestions=True,
+                 captured_args=()) -> None:
+        args = (
+            'Added new config entry "{}" that is not used anywhere'.format(
+                conflicting_configs[0]),)
+        super().__init__(*args, conflicting_configs=conflicting_configs,
+                         print_traceback=print_traceback,
+                         filter_traceback=filter_traceback,
+                         print_config_sources=print_config_sources,
+                         print_usage=print_usage,
+                         )
+        self.print_suggestions = print_suggestions
+        self.captured_args = captured_args
+
+    def __str__(self):
+        s = super().__str__()
+        if self.print_suggestions:
+            possible_keys = self.captured_args - self.SPECIAL_ARGS
+
+            for c in self.conflicting_configs:
+                suggestion = possible_keys.pop()
+                # TODO: get suggestion
+                s += '\nDid you mean "{}" instead of "{}"?'.format(suggestion,
+                                                                   c)
+        return s
 
 
 def create_basic_stream_logger():
@@ -280,20 +441,22 @@ def _is_sacred_frame(frame):
     return frame.f_globals["__name__"].split('.')[0] == 'sacred'
 
 
-def print_filtered_stacktrace():
+def print_filtered_stacktrace(filter_traceback=None):
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
-    if _is_sacred_frame(current_tb.tb_frame):
+    if filter_traceback is None:
+        filter_traceback = not _is_sacred_frame(current_tb.tb_frame)
+    if not filter_traceback:
         header = ["Exception originated from within Sacred.\n"
                   "Traceback (most recent calls):\n"]
         texts = tb.format_exception(exc_type, exc_value, current_tb)
         print(''.join(header + texts[1:]).strip(), file=sys.stderr)
     else:
         if sys.version_info >= (3, 3):
-            tb_exception =\
+            tb_exception = \
                 tb.TracebackException(exc_type, exc_value, exc_traceback,
                                       limit=None)
             for line in filtered_traceback_format(tb_exception):

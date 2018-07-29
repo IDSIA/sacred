@@ -8,7 +8,8 @@ from copy import copy, deepcopy
 
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
                            load_config_file, undogmatize)
-from sacred.config.config_sources import CommandLineConfigSource
+from sacred.config.config_sources import CommandLineConfigSource, \
+    NamedConfigScopeConfigSource, FileConfigSource
 from sacred.config.config_summary import ConfigSummary
 from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
@@ -16,7 +17,8 @@ from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           get_by_dotted_path, is_prefix, rel_path,
                           iterate_flattened, set_by_dotted_path,
-                          recursive_update, iter_prefixes, join_paths)
+                          recursive_update, iter_prefixes, join_paths,
+                          NamedConfigNotFoundError, ConfigAddedError)
 
 
 class Scaffold(object):
@@ -187,8 +189,20 @@ class Scaffold(object):
     def _warn_about_suspicious_changes(self):
         for add in sorted(self.config_mods.added):
             if not set(iter_prefixes(add)).intersection(self.captured_args):
-                raise KeyError('Added a new config entry "{}" that is not used'
-                               ' anywhere'.format(add))
+                if self.path:
+                    e = ConfigAddedError('Added a new config entry "{}" that is not used'
+                                   ' anywhere'.format(self.path + '.' + add),
+                                           conflicting_configs=(add,),
+                                         captured_args=self.captured_args)
+                else:
+                    e = ConfigAddedError(
+                        'Added a new config entry "{}" that is not used'
+                        ' anywhere'.format(add),
+                    conflicting_configs=(add,),
+                    captured_args=self.captured_args)
+                e.__config__ = self.config
+                e.__config_sources__ = self.sources
+                raise e
             else:
                 self.logger.warning('Added new config entry: "%s"' % add)
 

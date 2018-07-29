@@ -7,13 +7,14 @@ from sacred.utils import iter_prefixes, join_paths
 
 class ConfigSummary(dict):
     def __init__(self, added=(), modified=(), typechanged=(),
-                 ignored_fallbacks=(), docs=()):
+                 ignored_fallbacks=(), docs=(), sources=()):
         super(ConfigSummary, self).__init__()
         self.added = set(added)
         self.modified = set(modified)  # TODO: test for this member
         self.typechanged = dict(typechanged)
         self.ignored_fallbacks = set(ignored_fallbacks)  # TODO: test
         self.docs = dict(docs)
+        self.sources = dict(sources)
         self.ensure_coherence()
 
     def update_from(self, config_mod, path=''):
@@ -40,6 +41,9 @@ class ConfigSummary(dict):
         self.docs.update({join_paths(path, k): v
                           for k, v in config_mod.docs.items()
                           if path == '' or k != 'seed'})
+        self.sources.update({join_paths(path, k): v
+                             for k, v in config_mod.sources.items()
+                             if path == '' or k != 'seed'})
         self.ensure_coherence()
 
     def ensure_coherence(self):

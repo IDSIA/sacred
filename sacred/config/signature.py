@@ -6,6 +6,7 @@ import inspect
 from collections import OrderedDict
 import sys
 
+from sacred.utils import MissingConfigError
 
 if sys.version_info[0] < 3:  # python2
     def get_argspec(f):
@@ -156,5 +157,5 @@ class Signature(object):
         free_params = self.get_free_parameters(args, kwargs, bound)
         missing_args = [m for m in free_params if m not in self.kwargs]
         if missing_args:
-            raise TypeError("{} is missing value(s) for {}".format(
-                self.name, missing_args))
+            raise MissingConfigError("{} is missing value(s) for {}".format(
+                self.name, missing_args), missing_configs=missing_args)

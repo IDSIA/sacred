@@ -1,14 +1,11 @@
 import inspect
 import sys
+from collections import defaultdict
 
-colored_exception_output = True
+from sacred.config.config_sources import ConfigSource
 
 if colored_exception_output:
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    GREY = '\033[90m'
-    ENDC = '\033[0m'
+    pass
 else:
     BLUE = ''
     GREEN = ''
@@ -18,8 +15,8 @@ else:
 
 CONFLICTING = RED
 
-
-from sacred.utils import get_by_dotted_path, iterate_flattened
+from sacred.utils import get_by_dotted_path, iterate_flattened, join_paths, \
+    colored_exception_output
 
 if sys.version_info[0] == 2:
     import errno
@@ -61,7 +58,7 @@ class TimeoutInterrupt(SacredInterrupt):
 
 class SacredError(Exception):
     def __init__(self, *args: object, print_traceback=True,
-                 filter_traceback=None, print_usage=False) -> None:
+                 filter_traceback=None, print_usage=False):
         super().__init__(*args)
         self.print_traceback = print_traceback
         self.filter_traceback = filter_traceback
@@ -106,16 +103,32 @@ class ConfigError(SacredError):
             s += '\nConflicting configuration values:'
             for conflicting_config in self.conflicting_configs:
                 s += '\n  {}{}={}{}'.format(RED, conflicting_config,
-                                       self.__config__[
-                                           conflicting_config], ENDC)
-                s += '\n    defined in {}'.format(
-                        get_by_dotted_path(
-                            self.__config_sources__,
-                            conflicting_config
-                        ).get_source_string_for_config(
-                            conflicting_config
-                        )
-                    )
+                                            get_by_dotted_path(self.__config__,
+                                                               conflicting_config),
+                                            ENDC)
+                source = get_by_dotted_path(self.__config_sources__,
+                                            conflicting_config)
+                if isinstance(source, dict):
+                    sources = defaultdict(list)
+
+                    for k, v in source.items():
+                        sources[v].append(join_paths(conflicting_config, k))
+                    sources_str = []
+                    for k, v in sources.items():
+                        sources_str.append('{} {}'.format(k.get_source_string_for_config(), tuple(v)))
+
+                elif isinstance(source, ConfigSource):
+                    sources_str = [source.get_source_string_for_config(
+                        conflicting_config)]
+                else:
+                    sources_str = []
+
+                if len(sources_str) == 1:
+                    s += '\n    defined in {}'.format(sources_str[0])
+                else:
+                    s += '\n    defined in {}'.format(sources_str[0])
+                    for s_ in sources_str[1:]:
+                        s += '\n        and in {}'.format(s_)
         return s
 
 
@@ -178,13 +191,16 @@ class NamedConfigNotFoundError(SacredError):
 
 
 class ConfigAddedError(ConfigError):
-    SPECIAL_ARGS = {'_log', '_config', '_seed', '__doc__', 'config_filename', '_run'}
+    SPECIAL_ARGS = {'_log', '_config', '_seed', '__doc__', 'config_filename',
+                    '_run'}
 
     def __init__(self, *args, conflicting_configs=(), print_traceback=False,
                  filter_traceback=True, print_config_sources=True,
                  print_usage=False, print_suggestions=True,
                  captured_args=()) -> None:
-        args = ('Added new config entry "{}{}{}" that is not used anywhere'.format(CONFLICTING, conflicting_configs[0], ENDC),)
+        args = (
+            'Added new config entry "{}{}{}" that is not used anywhere'.format(
+                CONFLICTING, conflicting_configs[0], ENDC),)
         super().__init__(*args, conflicting_configs=conflicting_configs,
                          print_traceback=print_traceback,
                          filter_traceback=filter_traceback,
@@ -202,9 +218,6 @@ class ConfigAddedError(ConfigError):
             for c in self.conflicting_configs:
                 # TODO: get suggestion
                 suggestion = possible_keys.pop()
-                s += '\nDid you mean "{}" instead of "{}"?'.format(suggestion, c)
+                s += '\nDid you mean "{}" instead of "{}"?'.format(suggestion,
+                                                                   c)
         return s
-
-
-
-
