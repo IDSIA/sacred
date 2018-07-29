@@ -353,11 +353,18 @@ class Ingredient(object):
             If a circular structure among ingredients was detected.
         """
         if self._is_traversing:
-            raise CircularDependencyError()
+            raise CircularDependencyError(ingredients=[self])
         else:
             self._is_traversing = True
         yield self, 0
-        for ingredient in self.ingredients:
-            for ingred, depth in ingredient.traverse_ingredients():
-                yield ingred, depth + 1
+        try:
+            for ingredient in self.ingredients:
+                for ingred, depth in ingredient.traverse_ingredients():
+                    yield ingred, depth + 1
+        except CircularDependencyError as e:
+            if not e.__circular_depencency_handled__:
+                if self in e.__ingredients__:
+                    e.__circular_depencency_handled__ = True
+                e.__ingredients__.append(self)
+            raise e
         self._is_traversing = False

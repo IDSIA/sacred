@@ -56,10 +56,18 @@ PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
-
-class CircularDependencyError(Exception):
+class CircularDependencyError:
     """The ingredients of the current experiment form a circular dependency."""
 
+    def __init__(self, *args, ingredients=None):
+        super().__init__(*args)
+        if ingredients is None:
+            ingredients = []
+        self.__ingredients__ = ingredients
+        self.__circular_depencency_handled__ = False
+
+    def __str__(self):
+        return '->'.join([i.path for i in reversed(self.__ingredients__)])
 
 class ObserverError(Exception):
     """Error that an observer raises but that should not make the run fail."""
