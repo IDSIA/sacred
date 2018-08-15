@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+import os
+
+import setuptools
 from setuptools import setup
 
 classifiers = """
@@ -27,6 +30,8 @@ except ImportError:
     exec(open("sacred/__about__.py").read(), about)
 
 
+def find_scripts():
+    return [s for s in setuptools.findall('scripts/') if os.path.splitext(s)[1] != '.pyc']
 setup(
     name='sacred',
     version=about['__version__'],
@@ -37,7 +42,7 @@ setup(
     url=about['__url__'],
 
     packages=['sacred', 'sacred.observers', 'sacred.config', 'sacred.stflow'],
-    scripts=[],
+    scripts=find_scripts(),
     install_requires=[
         'docopt>=0.3, <1.0',
         'jsonpickle>=0.7.2, <1.0',

@@ -109,7 +109,8 @@ class FileStorageObserver(RunObserver):
                         raise
         else:
             self.dir = os.path.join(self.basedir, str(_id))
-            os.mkdir(self.dir)
+            if not os.path.exists(self.dir):
+                os.mkdir(self.dir)
 
         ex_info['sources'] = self.save_sources(ex_info)
 

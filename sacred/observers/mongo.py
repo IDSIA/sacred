@@ -8,13 +8,14 @@ import os.path
 import sys
 import time
 
+import pymongo
+
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
-
 
 DEFAULT_MONGO_PRIORITY = 30
 
@@ -93,6 +94,19 @@ class MongoObserver(RunObserver):
         self.overwrite = overwrite
         self.run_entry = None
         self.priority = priority
+
+    def find_queued(self, query):
+        query.update({'status': 'QUEUED'})
+        run = self.runs.find_one_and_update(query, {'$set': {'status': 'ACQUIRED'}},
+                                            return_document=pymongo.ReturnDocument.AFTER,
+                                            sort=[('meta.queue_time', 1)])  # TODO: check sort key
+        if run is not None:
+            self.overwrite = run
+
+        return run
+
+    def requeue(self, run):
+        return self.runs.find_one_and_update({'_id': run['_id']}, {'$set': {'status': 'QUEUED'}})
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):

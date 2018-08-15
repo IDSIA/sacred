@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+import sys
+import sacred.exp_runner
+sys.exit(sacred.exp_runner.main_worker())
