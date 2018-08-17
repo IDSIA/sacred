@@ -17,16 +17,16 @@ import time
 from contextlib import contextmanager
 
 import numpy
+import urllib
 from future import standard_library
 
 from sacred.observers import MongoObserver
 
-__authors__ = ["Bas Veeling","James Bergstra", "Dan Yamins"]
-__license__ = "3-clause BSD License" # TODO: figure out
+__authors__ = ["Bas Veeling", "James Bergstra", "Dan Yamins"]
+__license__ = "3-clause BSD License"  # TODO: figure out
 
 standard_library.install_aliases()
 logger = logging.getLogger(__name__)
-
 
 
 class Shutdown(Exception):
@@ -89,18 +89,18 @@ class SacredWorker(object):
         start_time = time.time()
         observer = self.observer
         while run is None:
-                if (reserve_timeout and
-                        (time.time() - start_time) > reserve_timeout):
-                    raise ReserveTimeout()
+            if (reserve_timeout and
+                    (time.time() - start_time) > reserve_timeout):
+                raise ReserveTimeout()
 
-                run = observer.find_queued(q)
+            run = observer.find_queued(q)
 
-                if not run:
-                    interval = (1 +
-                                numpy.random.rand() *
-                                (float(self.poll_interval) - 1.0))
-                    logger.info('no job found, sleeping for %.1fs' % interval)
-                    time.sleep(interval)
+            if not run:
+                interval = (1 +
+                            numpy.random.rand() *
+                            (float(self.poll_interval) - 1.0))
+                logger.info('no job found, sleeping for %.1fs' % interval)
+                time.sleep(interval)
         try:
             old_status, run_id = run['status'], run['_id']
             logger.debug('run found: %s' % str(run_id))
@@ -121,14 +121,17 @@ class SacredWorker(object):
             observer.requeue(run)
             raise e
         else:
-            result = ex.run_command(run['command'],run['config'])
+            result = ex.run_command(run['command'], run['config'])
             logger.info('job finished: %s' % str(run['_id']))
+
+
 @contextmanager
 def working_dir(dir):
     cwd = os.getcwd()
     os.chdir(dir)
     yield
     os.chdir(cwd)
+
 
 def exec_import(cmd_module, cmd):
     worker_fn = None
@@ -186,6 +189,8 @@ def main_worker_helper(options, args):
                             '--reserve-timeout=%s' % options.reserve_timeout]
                 if options.workdir is not None:
                     sub_argv.append('--workdir=%s' % options.workdir)
+                if options.ssh is not None:
+                    sub_argv.append('--ssh=%s' % options.ssh)
                 if options.exp_key is not None:
                     sub_argv.append('--exp-key=%s' % options.exp_key)
                 proc = subprocess.Popen(sub_argv)
@@ -218,11 +223,49 @@ def main_worker_helper(options, args):
         logger.info("exiting with N=%i after %i consecutive exceptions" % (
             N, cons_errs))
     elif N == 1:
-        # XXX: the name of the jobs collection is a parameter elsewhere,
-        #      so '/jobs' should not be hard-coded here
-        observer = MongoObserver.create(as_mongo_str(options.mongo), db_name=options.db_name)
-        # mj = MongoJobs.new_from_connection_str(
-        #     as_mongo_str(options.mongo) + '/jobs')
+        mongo_port = 27017
+        mongo_host =options.mongo
+        if options.ssh:
+            from sshtunnel import SSHTunnelForwarder, create_logger
+            url = options.ssh
+            ftp_url = 'ftp' + url[url.find(':'):]
+
+            # -- parse the string as if it were an ftp address
+            tmp = urllib.parse.urlparse(ftp_url)
+            query_params = urllib.parse.parse_qs(tmp.query)
+
+            print('USERNAME %s' % tmp.username)
+            print('HOSTNAME %s' % tmp.hostname)
+            print('PORT %s' % tmp.port)
+            print('PATH %s' % tmp.path)
+
+            authdbname = None
+            if 'authSource' in query_params and len(query_params['authSource']):
+                authdbname = query_params['authSource'][-1]
+
+            print('AUTH DB %s' % authdbname)
+
+            if tmp.password is None:
+                password = None
+            else:
+                password = tmp.password
+            if password is not None:
+                print('PASS ***')
+            port = int(float(tmp.port))  # port has to be casted explicitly here.
+
+            server = SSHTunnelForwarder(
+                tmp.hostname,
+                ssh_username=tmp.username,
+                ssh_password=password,
+                ssh_pkey=os.path.expanduser("~/.ssh/id_rsa"),  # TODO: parametrize
+                ssh_port=port,
+                remote_bind_address=(mongo_host, mongo_port),
+                # logger=create_logger(loglevel=1)
+            )
+            server.start()
+            mongo_port = server.local_bind_port
+            mongo_host = 'localhost'
+        observer = MongoObserver.create(as_mongo_str(mongo_host) + ':%d' % mongo_port, db_name=options.db_name)
 
         mworker = SacredWorker(observer,
                                float(options.poll_interval),
@@ -255,10 +298,14 @@ def main_worker():
                       dest='max_jobs',
                       default=sys.maxsize,
                       help="stop after running this many jobs (default: inf)")
+    parser.add_option("--ssh",
+                      dest='ssh',
+                      default=None,
+                      help="ssh-tunnel for mongo db ssh://user@host:port")
     parser.add_option("--mongo",
                       dest='mongo',
                       default='localhost',
-                      help="<host>[:port]/<db> for IPC and job storage")
+                      help="mongodb://<host>[:port] (local host/port when using ssh tunnel)")
     parser.add_option("--db_name",
                       dest='db_name',
                       default='sacred',
@@ -286,5 +333,3 @@ def main_worker():
         return -1
 
     return main_worker_helper(options, args)
-
-
