@@ -321,3 +321,54 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.runs.count() == 2
     # Another 2 metrics have been created
     assert mongo_obs.metrics.count() == 4
+
+
+def test_mongo_observer_artifact_event_content_type_detected(mongo_obs, sample_run):
+    """Test that the content-type is detected for artifacts."""
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename)
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['metadata']['content-type'] == 'text/x-python'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']
+
+
+def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):
+    """Test that the detected content-type is added to other metadata."""
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename, metadata={'comment': 'the setup file'})
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['metadata']['content-type'] == 'text/x-python'
+    assert mongo_obs.fs.put.call_args[1]['metadata']['comment'] == 'the setup file'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']
+
+
+def test_mongo_observer_artifact_event_content_type_not_overwritten(mongo_obs, sample_run):
+    """Test that manually set content-type
+    metadata is not overwritten by automatic detection.
+    """
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename, metadata={'content-type': 'application/json'})
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['metadata']['content-type'] == 'application/json'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']

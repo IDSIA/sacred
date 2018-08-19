@@ -7,6 +7,7 @@ import re
 import os.path
 import sys
 import time
+import mimetypes
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -14,7 +15,6 @@ from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
-
 
 DEFAULT_MONGO_PRIORITY = 30
 
@@ -189,10 +189,29 @@ class MongoObserver(RunObserver):
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(self.runs.name, run_id,
                                                        name)
+            if not self._content_type_manually_set(metadata):
+                metadata = self._try_to_detect_content_type(metadata, filename)
+
             file_id = self.fs.put(f, filename=db_filename, metadata=metadata)
+
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
         self.save()
+
+    def _content_type_manually_set(self, metadata):
+        return metadata is not None and 'content-type' in metadata
+
+    def _try_to_detect_content_type(self, metadata, filename):
+        mime_type, _ = mimetypes.guess_type(filename)
+        if mime_type is not None:
+            if metadata is None:
+                metadata = {}
+            content_type_metadata = {'content-type': mime_type}
+            metadata.update(content_type_metadata)
+            print('Added {} to metadata of artifact {}.'.format(content_type_metadata, filename))
+        else:
+            print('Failed to detect content-type automatically for artifact {}.'.format(filename))
+        return metadata
 
     def log_metrics(self, metrics_by_name, info):
         """Store new measurements to the database.
