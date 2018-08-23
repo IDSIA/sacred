@@ -112,10 +112,7 @@ def chain_evaluate_config_scopes(config_scopes, fixed=None, preset=None,
                      preset=final_config,
                      fallback=fallback)
         config_summaries.append(cfg)
-        if hasattr(config, '_file_name'):
-            source = ConfigScopeConfigSource(config)
-        else:
-            source = ConfigDictConfigSource(config)
+        source = config.config_source
 
         recursive_update(
             config_sources,

@@ -20,6 +20,17 @@ class ConfigSource:
 
 
 class FileConfigSource(ConfigSource):
+    @classmethod
+    def from_filename_and_lineno(cls, filename, lineno=None, **kwargs):
+        return cls(filename, lineno, **kwargs)
+
+    @classmethod
+    def from_stack(cls, offset, **kwargs):
+        import inspect
+        stack = inspect.stack()
+        frame = stack[offset + 1]
+        return cls(frame.filename, frame.lineno, **kwargs)
+
     def __init__(self, file, line=None) -> None:
         super().__init__()
         self.file = file
@@ -32,19 +43,20 @@ class FileConfigSource(ConfigSource):
             return '"{}:{}"'.format(self.file, self.line)
 
 
-class ConfigScopeConfigSource(ConfigSource):
-    def __init__(self, config_scope) -> None:
-        super().__init__()
-        self.config_scope = config_scope
+class ConfigScopeConfigSource(FileConfigSource):
 
     def get_source_string_for_config(self, config=None):
-        return '"{}:{}"'.format(self.config_scope._file_name,
-                              self.config_scope._line_offset)
+        return 'ConfigScope at' + super().get_source_string_for_config(config)
 
 
 class NamedConfigScopeConfigSource(ConfigScopeConfigSource):
-    def __init__(self, config_name, config_scope):
-        super().__init__(config_scope)
+    @classmethod
+    def from_file_config_source(cls, file_config_source, config_name):
+        return cls(file_config_source.file, file_config_source.line,
+                   config_name)
+
+    def __init__(self, file, line=None, config_name=None) -> None:
+        super().__init__(file, line)
         self.config_name = config_name
 
     def get_source_string_for_config(self, config=None):
@@ -68,11 +80,9 @@ class CommandLineConfigSource(ConfigSource):
                 '{}={}'.format(k, v) for k, v in self.config_updates.items()))
 
 
-class ConfigDictConfigSource(ConfigSource):
-    def __init__(self, config_dict) -> None:
-        self.config_dict = config_dict
-
+class ConfigDictConfigSource(FileConfigSource):
     def get_source_string_for_config(self, config=None):
-        return 'Set in config dict (unknown source)'
+        return f'{self.__class__.__name__} in ' + \
+               super().get_source_string_for_config(config)
 
 

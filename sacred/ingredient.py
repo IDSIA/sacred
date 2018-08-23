@@ -9,6 +9,7 @@ from collections import OrderedDict
 
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
+from sacred.config.config_sources import ConfigDictConfigSource
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
 from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
@@ -203,20 +204,21 @@ class Ingredient(object):
 
     @staticmethod
     def _create_config_dict(cfg_or_file, kw_conf):
+        source = ConfigDictConfigSource.from_stack(2)
         if cfg_or_file is not None and kw_conf:
             raise ValueError("cannot combine keyword config with "
                              "positional argument")
         if cfg_or_file is None:
             if not kw_conf:
                 raise ValueError("attempted to add empty config")
-            return ConfigDict(kw_conf)
+            return ConfigDict(kw_conf, source)
         elif isinstance(cfg_or_file, dict):
-            return ConfigDict(cfg_or_file)
+            return ConfigDict(cfg_or_file, source)
         elif isinstance(cfg_or_file, basestring):
             if not os.path.exists(cfg_or_file):
                 raise IOError('File not found {}'.format(cfg_or_file))
             abspath = os.path.abspath(cfg_or_file)
-            return ConfigDict(load_config_file(abspath))
+            return ConfigDict(load_config_file(abspath), source)
         else:
             raise TypeError("Invalid argument type {}"
                             .format(type(cfg_or_file)))

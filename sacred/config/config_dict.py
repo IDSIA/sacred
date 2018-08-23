@@ -7,9 +7,10 @@ from sacred.config.utils import dogmatize, normalize_or_die, undogmatize
 
 
 class ConfigDict(object):
-    def __init__(self, d):
+    def __init__(self, d, source=None):
         super(ConfigDict, self).__init__()
         self._conf = normalize_or_die(d)
+        self.config_source = source
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         result = dogmatize(fixed or {})

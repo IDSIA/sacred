@@ -87,15 +87,17 @@ class Scaffold(object):
 
     def run_named_config(self, config_name):
         if os.path.exists(config_name):
-            nc = ConfigDict(load_config_file(config_name))
-            source = FileConfigSource(os.path.abspath(config_name))
+            nc = ConfigDict(load_config_file(config_name),
+                            FileConfigSource.from_filename_and_lineno(
+                                os.path.abspath(config_name)))
         else:
             if config_name not in self.named_configs:
                 raise NamedConfigNotFoundError(
                     'Named config "{}" was not found.'.format(config_name),
                     named_config=config_name)
             nc = self.named_configs[config_name]
-            source = NamedConfigScopeConfigSource(config_name, nc)
+            nc.config_source = NamedConfigScopeConfigSource.from_file_config_source(
+                nc.config_source, config_name)
 
         cfg = nc(fixed=self.get_config_updates_recursive(),
                  preset=self.presets,
@@ -104,7 +106,7 @@ class Scaffold(object):
         cfg = undogmatize(cfg)
 
         flattened_source_keys = [k[0] for k in iterate_flattened(self.sources)]
-        sources = convert_to_nested_dict({k: source for k, v in iterate_flattened(cfg) if k not in flattened_source_keys})
+        sources = convert_to_nested_dict({k: nc.config_source for k, v in iterate_flattened(cfg) if k not in flattened_source_keys})
 
         return cfg, sources
 

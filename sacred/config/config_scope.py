@@ -11,6 +11,7 @@ from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 from copy import copy
 
 from sacred import SETTINGS
+from sacred.config.config_sources import ConfigScopeConfigSource
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
@@ -28,7 +29,8 @@ class ConfigScope(object):
             "default values are not allowed for ConfigScope functions"
 
         self._func = func
-        self._body_code, self._file_name, self._line_offset = get_function_body_code(func)
+        self._body_code, file_name, line_offset = get_function_body_code(func)
+        self.config_source = ConfigScopeConfigSource.from_filename_and_lineno(file_name, line_offset)
         self._var_docs = get_config_comments(func)
         self.__doc__ = self._func.__doc__
 
