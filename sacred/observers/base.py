@@ -33,5 +33,5 @@ class RunObserver(object):
     def resource_event(self, filename):
         pass
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None):
         pass

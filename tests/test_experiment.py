@@ -193,6 +193,23 @@ def test_empty_dict_named_config(ex):
     assert ex.run(named_configs=['ncfg']).result == ({}, {'k1': {'k2': {}}})
 
 
+def test_empty_dict_config_updates(ex):
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.config
+    def default():
+        a = {'b': 1}
+
+    @ex.main
+    def main():
+        pass
+
+    r = ex.run()
+    assert r.config['a']['b'] == 1
+
+
 def test_named_config_and_ingredient():
     ing = Ingredient('foo')
 
@@ -254,3 +271,22 @@ def test_option_hooks_without_options_arg_raises(ex):
         @ex.option_hook
         def invalid_hook(wrong_arg_name):
             pass
+
+
+def test_config_hook_updates_config(ex):
+
+    @ex.config
+    def cfg():
+        a = 'hello'
+
+    @ex.config_hook
+    def hook(config, command_name, logger):
+        config.update({'a': 'me'})
+        return config
+
+    @ex.main
+    def foo():
+        pass
+
+    r = ex.run()
+    assert r.config['a'] == 'me'
