@@ -166,7 +166,7 @@ class Experiment(Ingredient):
 
     def get_usage(self, program_name=None):
         """Get the commandline usage string for this experiment."""
-        program_name = os.path.relpath(program_name or sys.argv[0],
+        program_name = os.path.relpath(program_name or sys.argv[0] or 'Dummy',
                                        self.base_dir)
         commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
@@ -368,7 +368,7 @@ class Experiment(Ingredient):
         during a heartbeat event.
         Other observers are not yet supported.
 
-        :param metric_name: The name of the metric, e.g. training.loss
+        :param name: The name of the metric, e.g. training.loss
         :param value: The measured value
         :param step: The step number (integer), e.g. the iteration number
                     If not specified, an internal counter for each metric
