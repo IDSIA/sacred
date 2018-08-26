@@ -105,7 +105,7 @@ class DogmaticDict(dict):
         if type_changed(value, fixed_value):
             self.typechanges[key] = (type(value), type(fixed_value))
 
-        if value != fixed_value:
+        if is_different(value, fixed_value):
             self.modified.add(key)
 
         # if both are dicts recursively collect modified and typechanges
@@ -268,3 +268,11 @@ def type_changed(old_value, new_value):
     sot = SIMPLIFY_TYPE.get(type(old_value), type(old_value))
     snt = SIMPLIFY_TYPE.get(type(new_value), type(new_value))
     return sot != snt and old_value is not None  # ignore typechanges from None
+
+
+def is_different(old_value, new_value):
+    """Numpy aware comparison between two values."""
+    if opt.has_numpy:
+        return not opt.np.array_equal(old_value, new_value)
+    else:
+        return old_value != new_value

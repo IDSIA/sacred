@@ -208,9 +208,11 @@ class MongoObserver(RunObserver):
                 metadata = {}
             content_type_metadata = {'content-type': mime_type}
             metadata.update(content_type_metadata)
-            print('Added {} to metadata of artifact {}.'.format(content_type_metadata, filename))
+            print('Added {} to metadata of artifact {}.'.format(
+                content_type_metadata, filename))
         else:
-            print('Failed to detect content-type automatically for artifact {}.'.format(filename))
+            print('Failed to detect content-type automatically for '
+                  'artifact {}.'.format(filename))
         return metadata
 
     def log_metrics(self, metrics_by_name, info):
