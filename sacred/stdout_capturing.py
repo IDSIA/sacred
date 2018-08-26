@@ -28,10 +28,14 @@ def flush():
 
 def get_stdcapturer(mode=None):
     mode = mode if mode is not None else SETTINGS.CAPTURE_MODE
-    return mode, {
+    capture_options = {
         "no": no_tee,
         "fd": tee_output_fd,
-        "sys": tee_output_python}[mode]
+        "sys": tee_output_python}
+    if mode not in capture_options:
+        raise KeyError("Unknown capture mode '{}'. Available options are {}"
+                       .format(mode, sorted(capture_options.keys())))
+    return mode, capture_options[mode]
 
 
 class TeeingStreamProxy(wrapt.ObjectProxy):
