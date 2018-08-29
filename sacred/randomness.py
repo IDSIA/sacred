@@ -32,3 +32,8 @@ def set_global_seed(seed):
     if module_is_in_cache('tensorflow'):
         import tensorflow as tf
         tf.set_random_seed(seed)
+    if module_is_in_cache('torch'):
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
