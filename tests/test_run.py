@@ -239,8 +239,9 @@ def test_stdout_capturing_sys(run, capsys):
     assert run.captured_out == '0123456789'
 
 
-@pytest.mark.skipif(sys.platform.startswith('win'),
-                    reason="does not work on windows")
+# @pytest.mark.skipif(sys.platform.startswith('win'),
+#                     reason="does not work on windows")
+@pytest.mark.skip('Breaks randomly on test server')
 def test_stdout_capturing_fd(run, capsys):
     def print_mock_progress():
         for i in range(10):
@@ -265,6 +266,7 @@ def test_captured_out_filter(run, capsys):
 
     run.captured_out_filter = apply_backspaces_and_linefeeds
     run.main_function.side_effect = print_mock_progress
+    run.capture_mode = "sys"
     with capsys.disabled():
         run()
         sys.stdout.flush()

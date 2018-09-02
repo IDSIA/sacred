@@ -44,7 +44,7 @@ def test_fd_tee_output(capsys):
         print('before (stderr)')
         with capture_stdout() as out:
             print("captured stdout")
-            print("captured stderr")
+            print("captured stderr", file=sys.stderr)
             output += out.get()
             libc.puts(b'stdout from C')
             libc.fflush(None)
