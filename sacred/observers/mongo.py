@@ -8,6 +8,7 @@ import os.path
 import sys
 import time
 import mimetypes
+mimetypes.init(files=[])  # This ensures consistent mimetype detection across platforms.
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
