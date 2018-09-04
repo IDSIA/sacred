@@ -18,6 +18,9 @@ from sacred.utils import ObserverError
 
 DEFAULT_MONGO_PRIORITY = 30
 
+# This ensures consistent mimetype detection across platforms.
+mimetypes.init(files=[])
+
 
 def force_valid_bson_key(key):
     key = str(key)
