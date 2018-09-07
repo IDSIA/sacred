@@ -216,7 +216,8 @@ class FileStorageObserver(RunObserver):
         """
         try:
             metrics_path = os.path.join(self.dir, "metrics.json")
-            saved_metrics = json.load(open(metrics_path, 'r'))
+            with open(metrics_path, 'r') as f:
+                saved_metrics = json.load(f)
         except IOError:
             # We haven't recorded anything yet. Start Collecting.
             saved_metrics = {}
