@@ -65,7 +65,7 @@ This config scope would return the following configuration, and in fact, if you
 want to play around with this you can just execute ``my_config``::
 
     >>> my_config()
-    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 11.5}
+    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 5}
 
 Or use the ``print_config`` command from the :doc:`command_line`::
 
@@ -201,12 +201,12 @@ dictionary:
 
     >>> r = ex.run(config_updates={'a': 23})
     >>> r.config
-    {'foo': {'bar': 'my_string23', 'a_squared': 529}, 'a': 23, 'e': 5}
+    {'foo': {'bar': 'my_string23', 'a_squared': 529}, 'a': 23, 'e': 11.5}
 
 
 Using the :doc:`command_line` we can achieve the same thing::
 
-    $ config_demo.py print_config with a=6
+    $ python config_demo.py print_config with a=6
     INFO - config_demo - Running command 'print_config'
     INFO - config_demo - Started
     Configuration (modified, added, typechanged, doc):
