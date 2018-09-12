@@ -103,8 +103,17 @@ can automatically run the tests for various python versions like this:
 
 Frontends
 ---------
-At this point there are two frontends to the database entries created by sacred (that I'm aware of).
+At this point there are three frontends to the database entries created by sacred (that I'm aware of).
 They are developed externally as separate projects.
+
+`Omniboard <https://github.com/vivekratnavel/omniboard>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/omniboard-table.png
+.. image:: docs/images/omniboard-metric-graphs.png
+
+Omniboard is a web dashboard that helps in visualizing the experiments and metrics / logs collected by sacred.
+Omniboard is written with React, Node.js, Express and Bootstrap.
+
 
 `Sacredboard <https://github.com/chovanecm/sacredboard>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
