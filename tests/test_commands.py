@@ -209,7 +209,7 @@ def test_format_named_configs():
     ingred.add_named_config('dict_config', dict_config)
 
     named_configs_text = _format_named_configs(OrderedDict(
-        ex.gather_named_configs()), hide_path=ex.path)
+        ex.gather_named_configs()))
     assert named_configs_text.startswith('Named Configurations (' +
                                             GREY + 'doc' + ENDC + '):')
     assert 'named_config2' in named_configs_text
