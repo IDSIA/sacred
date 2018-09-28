@@ -92,6 +92,8 @@ def get_py_file_if_possible(pyc_name):
     """Try to retrieve a X.py file for a given X.py[c] file."""
     if pyc_name.endswith('.py'):
         return pyc_name
+    if pyc_name.endswith('.so'):
+        return pyc_name
     assert pyc_name.endswith('.pyc')
     non_compiled_file = pyc_name[:-1]
     if os.path.exists(non_compiled_file):
