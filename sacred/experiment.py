@@ -8,6 +8,7 @@ import sys
 
 import os.path
 from collections import OrderedDict
+
 from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
@@ -378,24 +379,17 @@ class Experiment(Ingredient):
         # The same as Run.log_scalar
         return self.current_run.log_scalar(name, value, step)
 
-    def gather_commands(self):
-        """Iterator over all commands of this experiment.
-
-        Also recursively collects all commands from ingredients.
-
-        Yields
-        ------
-        (str, function)
-            A tuple consisting of the (dotted) command-name and the
-            corresponding captured function.
-
+    def _gather(self, func):
         """
-        for cmd_name, cmd in self.commands.items():
-            yield cmd_name, cmd
-
-        for ingred in self.ingredients:
-            for cmd_name, cmd in ingred.gather_commands():
-                yield cmd_name, cmd
+        Removes the experiment's path (prefix) from the names of the gathered
+        items. This means that, for example, 'experiment.print_config' becomes
+        'print_config'.
+        """
+        for ingredient, _ in self.traverse_ingredients():
+            for name, item in func(ingredient):
+                if ingredient == self:
+                    name = name[len(self.path) + 1:]
+                yield name, item
 
     def get_default_options(self):
         """Get a dictionary of default options as used with run.

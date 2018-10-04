@@ -76,11 +76,9 @@ def _format_named_config(indent, path, named_config):
     return indent + assign
 
 
-def _format_named_configs(named_configs, indent=2, hide_path=None):
+def _format_named_configs(named_configs, indent=2):
     lines = ['Named Configurations (' + GREY + 'doc' + ENDC + '):']
     for path, named_config in named_configs.items():
-        if hide_path is not None and path.startswith(hide_path + '.'):
-            path = path[len(hide_path) + 1:]
         lines.append(_format_named_config(indent, path, named_config))
     if len(lines) < 2:
         lines.append(' ' * indent + 'No named configs')
@@ -100,7 +98,7 @@ def print_named_configs(ingredient):
     def print_named_configs():
         """Print the available named configs and exit."""
         named_configs = OrderedDict(ingredient.gather_named_configs())
-        print(_format_named_configs(named_configs, 2, ingredient.path))
+        print(_format_named_configs(named_configs, 2))
 
     return print_named_configs
 
