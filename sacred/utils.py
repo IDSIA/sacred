@@ -75,7 +75,7 @@ class SacredInterrupt(Exception):
 
 
 class TimeoutInterrupt(SacredInterrupt):
-    """Signal a that the experiment timed out.
+    """Signal that the experiment timed out.
 
     This exception can be used in client code to indicate that the run
     exceeded its time limit and has been interrupted because of that.
