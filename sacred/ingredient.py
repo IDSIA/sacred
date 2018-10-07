@@ -363,6 +363,7 @@ class Ingredient(object):
 
     def traverse_ingredients(self):
         """Recursively traverse this ingredient and its sub-ingredients.
+
         Yields
         ------
         ingredient: sacred.Ingredient
