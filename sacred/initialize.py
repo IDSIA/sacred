@@ -15,7 +15,8 @@ from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           get_by_dotted_path, is_prefix, rel_path,
                           iterate_flattened, set_by_dotted_path,
-                          recursive_update, iter_prefixes, join_paths)
+                          recursive_update, iter_prefixes, join_paths,
+                          NamedConfigNotFoundError, ConfigAddedError)
 
 
 class Scaffold(object):
@@ -85,6 +86,10 @@ class Scaffold(object):
         if os.path.exists(config_name):
             nc = ConfigDict(load_config_file(config_name))
         else:
+            if config_name not in self.named_configs:
+                raise NamedConfigNotFoundError(
+                    named_config=config_name,
+                    available_named_configs=tuple(self.named_configs.keys()))
             nc = self.named_configs[config_name]
 
         cfg = nc(fixed=self.get_config_updates_recursive(),
@@ -170,8 +175,9 @@ class Scaffold(object):
     def _warn_about_suspicious_changes(self):
         for add in sorted(self.config_mods.added):
             if not set(iter_prefixes(add)).intersection(self.captured_args):
-                raise KeyError('Added a new config entry "{}" that is not used'
-                               ' anywhere'.format(add))
+                if self.path:
+                    add = join_paths(self.path, add)
+                raise ConfigAddedError(add, config=self.config)
             else:
                 self.logger.warning('Added new config entry: "%s"' % add)
 

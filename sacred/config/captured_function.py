@@ -9,6 +9,7 @@ import wrapt
 from sacred.config.custom_containers import FallbackDict
 from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
+from sacred.utils import ConfigError
 
 
 def create_captured_function(function, prefix=None):
@@ -43,7 +44,8 @@ def captured_function(wrapped, instance, args, kwargs):
         wrapped.logger.debug("Started")
         start_time = time.time()
     # =================== run actual function =================================
-    result = wrapped(*args, **kwargs)
+    with ConfigError.track(wrapped):
+        result = wrapped(*args, **kwargs)
     # =========================================================================
     if wrapped.logger is not None:
         stop_time = time.time()

@@ -4,9 +4,8 @@
 from __future__ import division, print_function, unicode_literals
 
 import inspect
-import sys
-
 import os.path
+import sys
 from collections import OrderedDict
 
 from docopt import docopt, printable_usage
@@ -20,7 +19,8 @@ from sacred.commands import (help_for_command, print_config,
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
-from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv
+from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
+    SacredError
 
 __all__ = ('Experiment',)
 
@@ -261,16 +261,40 @@ class Experiment(Ingredient):
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
-        except Exception:
-            if not self.current_run or self.current_run.debug:
+        except Exception as e:
+            if self.current_run:
+                debug = self.current_run.debug
+            else:
+                # The usual command line options are applied after the run
+                # object is built completely. Some exceptions (e.g.
+                # ConfigAddedError) are raised before this. In these cases,
+                # the debug flag must be checked manually.
+                debug = args.get('--debug', False)
+
+            if debug:
+                # Debug: Don't change behaviour, just re-raise exception
                 raise
-            elif self.current_run.pdb:
+            elif self.current_run and self.current_run.pdb:
+                # Print exception and attach pdb debugger
                 import traceback
                 import pdb
                 traceback.print_exception(*sys.exc_info())
                 pdb.post_mortem()
             else:
-                print_filtered_stacktrace()
+                # Handle pretty printing of exceptions. This includes
+                # filtering the stacktrace and printing the usage, as
+                # specified by the exceptions attributes
+                if isinstance(e, SacredError):
+                    if e.print_usage:
+                        print(short_usage)
+                    if e.print_traceback:
+                        print_filtered_stacktrace(e.filter_traceback)
+                    else:
+                        import traceback as tb
+                        print('\n'.join(tb.format_exception_only(type(e), e)),
+                              file=sys.stderr)
+                else:
+                    print_filtered_stacktrace()
                 exit(1)
 
     def open_resource(self, filename, mode='r'):
@@ -446,12 +470,12 @@ class Experiment(Ingredient):
     def _check_command(self, cmd_name):
         commands = dict(self.gather_commands())
         if cmd_name is not None and cmd_name not in commands:
-            return 'Error: Command "{}" not found. Available commands are: '\
+            return 'Error: Command "{}" not found. Available commands are: ' \
                    '{}'.format(cmd_name, ", ".join(commands.keys()))
 
         if cmd_name is None:
-            return 'Error: No command found to be run. Specify a command'\
-                   ' or define main function. Available commands'\
+            return 'Error: No command found to be run. Specify a command' \
+                   ' or define main function. Available commands' \
                    ' are: {}'.format(", ".join(commands.keys()))
 
     def _handle_help(self, args, usage):
