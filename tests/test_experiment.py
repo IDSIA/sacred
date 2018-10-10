@@ -11,7 +11,7 @@ import pytest
 import sys
 
 from sacred.experiment import Experiment
-from sacred.utils import apply_backspaces_and_linefeeds
+from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ def test_fails_on_unused_config_updates(ex):
     assert ex.run(config_updates={'c': 9}).result == 3
 
     # unused config updates raise
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'d': 3})
 
 
@@ -104,7 +104,7 @@ def test_fails_on_nested_unused_config_updates(ex):
     assert ex.run(config_updates={'d': {'e': 7}}).result == 1
 
     # unused nested config updates raise
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'d': {'f': 3}})
 
 
@@ -124,7 +124,7 @@ def test_considers_captured_functions_for_fail_on_unused_config(ex):
     assert ex.run(config_updates={'a': 7}).result == 7
     assert ex.run(config_updates={'b': 3}).result == 4
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'c': 3})
 
 
@@ -143,10 +143,10 @@ def test_considers_prefix_for_fail_on_unused_config(ex):
 
     assert ex.run(config_updates={'a': {'b': 3}}).result == 3
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'b': 5})
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'a': {'c': 5}})
 
 
