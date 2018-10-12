@@ -83,9 +83,9 @@ class TimeoutInterrupt(SacredInterrupt):
 
 
 class SacredError(Exception):
-    def __init__(self, *args, print_traceback=True, filter_traceback=True,
+    def __init__(self, message, print_traceback=True, filter_traceback=True,
                  print_usage=False):
-        super(SacredError, self).__init__(*args)
+        super(SacredError, self).__init__(message)
         self.print_traceback = print_traceback
         self.filter_traceback = filter_traceback
         self.print_usage = print_usage
@@ -106,10 +106,11 @@ class CircularDependencyError(SacredError):
                 e.__ingredients__.append(ingredient)
             raise e
 
-    def __init__(self, *args, ingredients=None, print_traceback=True,
+    def __init__(self, message='Circular dependency detected:',
+                 ingredients=None, print_traceback=True,
                  filter_traceback=True, print_usage=False):
         super(CircularDependencyError, self).__init__(
-            *args,
+            message,
             print_traceback=print_traceback,
             filter_traceback=filter_traceback,
             print_usage=print_usage
@@ -129,12 +130,12 @@ class ConfigError(SacredError):
     """There was an error in the configuration. Pretty prints the conflicting
     configuration values."""
 
-    def __init__(self, *args, conflicting_configs=(),
+    def __init__(self, message, conflicting_configs=(),
                  print_conflicting_configs=True,
                  print_traceback=True,
                  filter_traceback=True, print_usage=False,
                  config=None):
-        super(ConfigError, self).__init__(*args,
+        super(ConfigError, self).__init__(message,
                                           print_traceback=print_traceback,
                                           filter_traceback=filter_traceback,
                                           print_usage=print_usage)
@@ -203,12 +204,13 @@ class MissingConfigError(SacredError):
     """A config value that is needed by a captured function is not present in
     the provided config."""
 
-    def __init__(self, *args, missing_configs=(),
+    def __init__(self, message='Configuration values are missing:',
+                 missing_configs=(),
                  print_traceback=False, filter_traceback=True,
                  print_usage=True):
-        args = args + (missing_configs,)  # Python 2.7
+        message = '{}: {}'.format(message, missing_configs)
         super(MissingConfigError, self).__init__(
-            *args, print_traceback=print_traceback,
+            message, print_traceback=print_traceback,
             filter_traceback=filter_traceback, print_usage=print_usage
         )
 
@@ -216,12 +218,14 @@ class MissingConfigError(SacredError):
 class NamedConfigNotFoundError(SacredError):
     """A named config is not found."""
 
-    def __init__(self, named_config, *args, available_named_configs=(),
+    def __init__(self, named_config, message='Named config not found:',
+                 available_named_configs=(),
                  print_traceback=False,
                  filter_traceback=True, print_usage=False):
+        message = '{} "{}". Available config values are: {}'.format(
+            message, named_config, available_named_configs)
         super(NamedConfigNotFoundError, self).__init__(
-            'Named config not found: "{}". Available are: {}'.format(
-                named_config, available_named_configs), *args,
+            message,
             print_traceback=print_traceback,
             filter_traceback=filter_traceback,
             print_usage=print_usage)
@@ -233,14 +237,15 @@ class ConfigAddedError(ConfigError):
     """Special args that show up in the captured args but can never be set
     by the user"""
 
-    def __init__(self, conflicting_configs, *args,
+    def __init__(self, conflicting_configs,
+                 message='Added new config entry that is not used anywhere',
                  captured_args=(),
                  print_conflicting_configs=True, print_traceback=False,
                  filter_traceback=True, print_usage=False,
                  print_suggestions=True,
                  config=None):
         super(ConfigAddedError, self).__init__(
-            'Added new config entry that is not used anywhere', *args,
+            message,
             conflicting_configs=conflicting_configs,
             print_conflicting_configs=print_conflicting_configs,
             print_traceback=print_traceback,

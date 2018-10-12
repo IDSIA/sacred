@@ -47,5 +47,5 @@ def test_named_config_not_found_raises():
     ex.main(lambda: None)
     with pytest.raises(NamedConfigNotFoundError,
                        match='Named config not found: "not_there". '
-                             'Available are:'):
+                             'Available config values are:'):
         ex.run(named_configs=('not_there',))
