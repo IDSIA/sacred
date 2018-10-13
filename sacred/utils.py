@@ -122,8 +122,8 @@ class CircularDependencyError(SacredError):
         self.__circular_dependency_handled__ = False
 
     def __str__(self):
-        return super(CircularDependencyError, self).__str__() + \
-               '->'.join([i.path for i in reversed(self.__ingredients__)])
+        return (super(CircularDependencyError, self).__str__() + '->'.join(
+            [i.path for i in reversed(self.__ingredients__)]))
 
 
 class ConfigError(SacredError):
@@ -451,6 +451,10 @@ def _is_sacred_frame(frame):
 
 
 def print_filtered_stacktrace(filter_traceback=True):
+    print(format_filtered_stacktrace(filter_traceback), file=sys.stderr)
+
+
+def format_filtered_stacktrace(filter_traceback=True):
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
@@ -462,29 +466,38 @@ def print_filtered_stacktrace(filter_traceback=True):
             header = ["Exception originated from within Sacred.\n"
                       "Traceback (most recent calls):\n"]
             texts = tb.format_exception(exc_type, exc_value, current_tb)
-            print(''.join(header + texts[1:]).strip(), file=sys.stderr)
+            return ''.join(header + texts[1:]).strip()
         else:
-            if sys.version_info >= (3, 3):
+            if sys.version_info >= (3, 5):
                 tb_exception = \
                     tb.TracebackException(exc_type, exc_value, exc_traceback,
                                           limit=None)
-                for line in filtered_traceback_format(tb_exception):
-                    print(line, file=sys.stderr, end="")
+                return ''.join(filtered_traceback_format(tb_exception))
             else:
-                print(
-                    "Traceback (most recent calls WITHOUT Sacred internals):",
-                    file=sys.stderr)
+                s = "Traceback (most recent calls WITHOUT Sacred internals):"
                 current_tb = exc_traceback
                 while current_tb is not None:
                     if not _is_sacred_frame(current_tb.tb_frame):
                         tb.print_tb(current_tb, 1)
                     current_tb = current_tb.tb_next
-                print("\n".join(tb.format_exception_only(exc_type,
-                                                         exc_value)).strip(),
-                      file=sys.stderr)
+                s += "\n".join(tb.format_exception_only(exc_type,
+                                                        exc_value)).strip()
+                return s
     else:
-        print('\n'.join(
-            tb.format_exception(exc_type, exc_value, exc_traceback)))
+        return '\n'.join(
+            tb.format_exception(exc_type, exc_value, exc_traceback))
+
+
+def format_sacred_error(e, short_usage):
+    lines = []
+    if e.print_usage:
+        lines.append(short_usage)
+    if e.print_traceback:
+        lines.append(format_filtered_stacktrace(e.filter_traceback))
+    else:
+        import traceback as tb
+        lines.append('\n'.join(tb.format_exception_only(type(e), e)))
+    return '\n'.join(lines)
 
 
 def filtered_traceback_format(tb_exception, chain=True):

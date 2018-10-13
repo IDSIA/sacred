@@ -20,7 +20,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
-    SacredError
+    SacredError, format_sacred_error
 
 __all__ = ('Experiment',)
 
@@ -285,14 +285,7 @@ class Experiment(Ingredient):
                 # filtering the stacktrace and printing the usage, as
                 # specified by the exceptions attributes
                 if isinstance(e, SacredError):
-                    if e.print_usage:
-                        print(short_usage)
-                    if e.print_traceback:
-                        print_filtered_stacktrace(e.filter_traceback)
-                    else:
-                        import traceback as tb
-                        print('\n'.join(tb.format_exception_only(type(e), e)),
-                              file=sys.stderr)
+                    print(format_sacred_error(e, short_usage), file=sys.stderr)
                 else:
                     print_filtered_stacktrace()
                 exit(1)
