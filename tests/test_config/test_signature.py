@@ -5,10 +5,12 @@ from __future__ import division, print_function
 import re
 
 import pytest
+
 from sacred.config.signature import Signature
-
-
 # #############  function definitions to test on ##############################
+from sacred.utils import MissingConfigError
+
+
 def foo():
     return
 
@@ -279,16 +281,16 @@ def test_construct_arguments_overwrites_defaults():
 def test_construct_arguments_raises_if_args_unfilled():
     s = Signature(bariza)
     missing = re.compile(".*missing.*")
-    with pytest.raises(TypeError) as excinfo:
+    with pytest.raises(MissingConfigError) as excinfo:
         s.construct_arguments([], {}, {})
     assert missing.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
+    with pytest.raises(MissingConfigError) as excinfo:
         s.construct_arguments([1, 2], {}, {})
     assert missing.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
+    with pytest.raises(MissingConfigError) as excinfo:
         s.construct_arguments([1], {'b': 3}, {})
     assert missing.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
+    with pytest.raises(MissingConfigError) as excinfo:
         s.construct_arguments([1], {'c': 5}, {})
     assert missing.match(excinfo.value.args[0])
 
