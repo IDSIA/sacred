@@ -7,6 +7,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
+from threading import Lock
 
 from docopt import docopt, printable_usage
 
@@ -90,6 +91,7 @@ class Experiment(Ingredient):
         self.captured_out_filter = None
         """Filter function to be applied to captured output of a run"""
         self.option_hooks = []
+        self.mutex = Lock()
 
     # =========================== Decorators ==================================
 
@@ -207,8 +209,12 @@ class Experiment(Ingredient):
             the Run object corresponding to the finished run
 
         """
-        run = self._create_run(command_name, config_updates, named_configs,
-                               meta_info, options)
+        self.mutex.acquire()
+        try:
+            run = self._create_run(command_name, config_updates, named_configs,
+                                   meta_info, options)
+        finally:
+            self.mutex.release()
         run()
         return run
 
