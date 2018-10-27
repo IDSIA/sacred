@@ -9,6 +9,7 @@ from copy import copy, deepcopy
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
                            load_config_file, undogmatize)
 from sacred.config.config_summary import ConfigSummary
+from sacred.config.configuration import Configuration
 from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
@@ -17,7 +18,7 @@ from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes, join_paths,
                           NamedConfigNotFoundError, ConfigAddedError)
-
+from sacred.settings import SETTINGS
 
 class Scaffold(object):
     def __init__(self, config_scopes, subrunners, path, captured_functions,
@@ -353,61 +354,60 @@ def create_run(experiment, command_name, config_updates=None,
                named_configs=(), force=False, log_level=None):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
-    scaffolding = create_scaffolding(experiment, sorted_ingredients)
-    # get all split non-empty prefixes sorted from deepest to shallowest
-    prefixes = sorted([s.split('.') for s in scaffolding if s != ''],
-                      reverse=True, key=lambda p: len(p))
 
-    # --------- configuration process -------------------
-
-    # Phase 1: Config updates
-    config_updates = config_updates or {}
-    config_updates = convert_to_nested_dict(config_updates)
-    root_logger, run_logger = initialize_logging(experiment, scaffolding,
-                                                 log_level)
-    distribute_config_updates(prefixes, scaffolding, config_updates)
-
-    # Phase 2: Named Configs
-    for ncfg in named_configs:
-        scaff, cfg_name = get_scaffolding_and_config_name(ncfg, scaffolding)
-        scaff.gather_fallbacks()
-        ncfg_updates = scaff.run_named_config(cfg_name)
-        distribute_presets(prefixes, scaffolding, ncfg_updates)
-        for ncfg_key, value in iterate_flattened(ncfg_updates):
-            set_by_dotted_path(config_updates,
-                               join_paths(scaff.path, ncfg_key),
-                               value)
-
-    distribute_config_updates(prefixes, scaffolding, config_updates)
-
-    # Phase 3: Normal config scopes
-    for scaffold in scaffolding.values():
-        scaffold.gather_fallbacks()
-        scaffold.set_up_config()
-
-        # update global config
-        config = get_configuration(scaffolding)
-        # run config hooks
-        config_hook_updates = scaffold.run_config_hooks(
-            config, command_name, run_logger)
-        recursive_update(scaffold.config, config_hook_updates)
-
-    # Phase 4: finalize seeding
-    for scaffold in reversed(list(scaffolding.values())):
-        scaffold.set_up_seed()  # partially recursive
-
-    config = get_configuration(scaffolding)
-    config_modifications = get_config_modifications(scaffolding)
-
-    # ----------------------------------------------------
-
+    root_logger, run_logger = initialize_logging(experiment, log_level)  # FIXME: takes scaffolding
     experiment_info = experiment.get_experiment_info()
     host_info = get_host_info()
-    main_function = get_command(scaffolding, command_name)
+    main_function = get_command(sorted_ingredients, command_name)
     pre_runs = [pr for ing in sorted_ingredients for pr in ing.pre_run_hooks]
     post_runs = [pr for ing in sorted_ingredients for pr in ing.post_run_hooks]
 
-    run = Run(config, config_modifications, main_function,
+    context = {'root_logger': root_logger,
+               'run_logger': run_logger,
+               'experiment_info': experiment_info,
+               'host_info': host_info,
+               'command_name': command_name}
+
+    # --------- configuration process -------------------
+    config = Configuration(settings=SETTINGS.CONFIG, logger=run_logger)
+
+    # Stage 0: initialize configuration
+    with config.stage('initialize', fixate=False, mark_as_default=True):
+        for ing in sorted_ingredients:
+            config.set(ing.path, {})
+        config.set('seed', 1337)
+        # todo: ingredient seeds?
+
+    # Stage 1: Config updates
+    #   assume config updates of the form [(path, value), ...]
+    #   {'a': 1, 'b.c': 2, 'd': {'e': 7}
+    #   key is a path
+    #   value is fixed
+    config_updates = config_updates or []  # todo convert dict to list here?
+    with config.stage('config_updates', fixate=True):
+        for path, value in config_updates:
+            config.set(path, value)
+
+    # Stage 2: Named Configs
+    with config.stage('named_configs', fixate=True):
+        for name in named_configs:
+            prefix, ncfg = get_named_config(name)
+            ncfg_updates = ncfg(config, context=context)
+            config.update(ncfg_updates, prefix=prefix)  # fixed, preset, fallback?
+
+    with config.stage('regular_config', fixate=True, mark_as_default=True):
+        for ing in sorted_ingredients:
+            for cfg in ing.configurations:
+                cfg_updates = cfg(config, context=context)
+                config.update(cfg_updates, prefix=ing.path)  # How to do this?
+
+    # TODO: Config hooks
+    # TODO: finalize seeding
+    summary = config.finalize()
+
+    # ----------------------------------------------------
+
+    run = Run(config, summary, main_function,
               copy(experiment.observers), root_logger, run_logger,
               experiment_info, host_info, pre_runs, post_runs,
               experiment.captured_out_filter)
@@ -417,7 +417,7 @@ def create_run(experiment, command_name, config_updates=None,
 
     run.force = force
 
-    for scaffold in scaffolding.values():
-        scaffold.finalize_initialization(run=run)
+    for ing in sorted_ingredients:
+        finalize_initialization(ing, run=run)
 
     return run

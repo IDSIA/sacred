@@ -94,6 +94,22 @@ class Path(Sequence):
         r = r[1:] if r and r[0] == '.' else r
         return r
 
+    def __enter__(self):
+        """Allow entering a path for convenience and better error reporting.
+        Example:
+            with path as (first, rest):
+              cfg = cfg[first]
+        """
+        return self.pop()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # TODO: integrate with SacredErrors
+        if exc_type in (AttributeError, IndexError, KeyError, TypeError):
+            if not exc_val.args or not isinstance(exc_val.args[-1], Path):
+                exc_val.args += (self[:1],)
+            else:
+                exc_val.args = exc_val.args[:-1] + (self[:1] + exc_val.args[-1],)
+
     def __getstate__(self):
         return str(self)
 
