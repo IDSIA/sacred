@@ -133,7 +133,7 @@ def dedent_function_body(body):
         if is_empty_or_comment(line):
             continue
         else:
-            indent = re.match('^\s*', line).group()
+            indent = re.match(r'^\s*', line).group()
             break
 
     out_lines = [dedent_line(line, indent) for line in lines]

@@ -248,7 +248,7 @@ class PackageDependency(object):
                     for tln in toplevel_names:
                         cls.modname_to_dist[
                             tln] = dist.project_name, dist.version
-                except:
+                except Exception:
                     pass
 
         # version = PackageDependency.get_version_heuristic(mod)

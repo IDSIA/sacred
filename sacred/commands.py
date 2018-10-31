@@ -6,7 +6,9 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 import re
+import os
 from collections import namedtuple, OrderedDict
+from pkg_resources import parse_version
 
 from colorama import Fore, Style
 
@@ -76,7 +78,7 @@ def _format_named_config(indent, path, named_config):
         else:
             doc_string = doc_string.replace('\n', '\n' + indent)
             assign += COLOR_DOC + '\n{}"""{}"""'.format(indent + '  ',
-                                                   doc_string) + ENDC
+                                                        doc_string) + ENDC
     return indent + assign
 
 
@@ -129,7 +131,7 @@ def print_dependencies(_run):
         repos = _run.experiment_info['repositories']
         print('\nVersion Control:')
         for repo in repos:
-            mod = RED + 'M' if repo['dirty'] else ' '
+            mod = COLOR_DIRTY + 'M' if repo['dirty'] else ' '
             print('{} {:<43}  {}'.format(mod, repo['url'], repo['commit']) +
                   ENDC)
     print('')
