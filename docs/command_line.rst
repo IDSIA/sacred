@@ -574,11 +574,11 @@ some distributed workers fetch and start the queued up runs.
 Priority
 --------
 
-+---------------+-----------------------------------------+
-| ``-p``        |  Only queue this run, do not start it.  |
-+---------------+                                         |
-| ``--queue``   |                                         |
-+---------------+-----------------------------------------+
++--------------------------+----------------------------------------+
+| ``-P PRIORITY``          |  The (numeric) priority for this run.  |
++--------------------------+                                        |
+| ``--priority=PRIORITY``  |                                        |
++--------------------------+----------------------------------------+
 
 
 
@@ -605,11 +605,11 @@ repository, i.e. with no uncommitted changes.
 
 Print Config
 ------------
-+-------------------------+---------------------------------------------------+
-| ``-P PRIORITY``         |  Always print the config first.                   |
-+-------------------------+                                                   |
-| ``--priority=PRIORITY`` |                                                   |
-+-------------------------+---------------------------------------------------+
++------------------------+------------------------------------------+
+| ``-p``                 |  Always print the config first.          |
++------------------------+                                          |
+| ``--print_config``     |                                          |
++------------------------+------------------------------------------+
 
 If this flag is set, sacred will always print the current configuration
 including modifications (like the :ref:`print_config` command) before running
