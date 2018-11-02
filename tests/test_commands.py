@@ -8,7 +8,8 @@ from collections import OrderedDict
 
 import pytest
 from sacred import Ingredient, Experiment
-from sacred.commands import (BLUE, ENDC, GREY, GREEN, RED, ConfigEntry,
+from sacred.commands import (COLOR_MODIFIED, ENDC, COLOR_DOC, COLOR_ADDED,
+                             COLOR_TYPECHANGED, ConfigEntry,
                              PathEntry, _format_config, _format_entry,
                              help_for_command, _iterate_marked, _non_unicode_repr,
                              _format_named_configs, _format_named_config)
@@ -113,28 +114,28 @@ def test_iterate_marked_typechanged(cfg):
     (PathEntry('f', False, False, None, None), "f:"),
     # Docstring entry
     (ConfigEntry('__doc__', 'multiline\ndocstring', False, False, None, None),
-     GREY + '"""multiline\ndocstring"""' + ENDC),
+     COLOR_DOC + '"""multiline\ndocstring"""' + ENDC),
 ])
 def test_format_entry(entry, expected):
     assert _format_entry(0, entry) == expected
 
 
 @pytest.mark.parametrize("entry,color", [
-    (ConfigEntry('a', 1, True, False, None, None),         GREEN),
-    (ConfigEntry('b', 2, False, True, None, None),         BLUE),
-    (ConfigEntry('c', 3, False, False, (bool, int), None), RED),
-    (ConfigEntry('d', 4, True, True, None, None),          GREEN),
-    (ConfigEntry('e', 5, True, False, (bool, int), None),  RED),
-    (ConfigEntry('f', 6, False, True, (bool, int), None),  RED),
-    (ConfigEntry('g', 7, True, True, (bool, int), None),   RED),
+    (ConfigEntry('a', 1, True, False, None, None),         COLOR_ADDED),
+    (ConfigEntry('b', 2, False, True, None, None),         COLOR_MODIFIED),
+    (ConfigEntry('c', 3, False, False, (bool, int), None), COLOR_TYPECHANGED),
+    (ConfigEntry('d', 4, True, True, None, None),          COLOR_ADDED),
+    (ConfigEntry('e', 5, True, False, (bool, int), None),  COLOR_TYPECHANGED),
+    (ConfigEntry('f', 6, False, True, (bool, int), None),  COLOR_TYPECHANGED),
+    (ConfigEntry('g', 7, True, True, (bool, int), None),   COLOR_TYPECHANGED),
     # Path entries
-    (PathEntry('a', True, False, None, None),         GREEN),
-    (PathEntry('b', False, True, None, None),         BLUE),
-    (PathEntry('c', False, False, (bool, int), None), RED),
-    (PathEntry('d', True, True, None, None),          GREEN),
-    (PathEntry('e', True, False, (bool, int), None),  RED),
-    (PathEntry('f', False, True, (bool, int), None),  RED),
-    (PathEntry('g', True, True, (bool, int), None),   RED),
+    (PathEntry('a', True, False, None, None),         COLOR_ADDED),
+    (PathEntry('b', False, True, None, None),         COLOR_MODIFIED),
+    (PathEntry('c', False, False, (bool, int), None), COLOR_TYPECHANGED),
+    (PathEntry('d', True, True, None, None),          COLOR_ADDED),
+    (PathEntry('e', True, False, (bool, int), None),  COLOR_TYPECHANGED),
+    (PathEntry('f', False, True, (bool, int), None),  COLOR_TYPECHANGED),
+    (PathEntry('g', True, True, (bool, int), None),   COLOR_TYPECHANGED),
 ])
 def test_format_entry_colors(entry, color):
     s = _format_entry(0, entry)
@@ -183,10 +184,10 @@ def _config_scope_with_multiline_doc():
     (0, 'a', None, 'a'),
     (1, 'b', None, ' b'),
     (4, 'a.b.c', None, '    a.b.c'),
-    (0, 'c', ConfigScope(_config_scope_with_single_line_doc), 'c' + GREY
+    (0, 'c', ConfigScope(_config_scope_with_single_line_doc), 'c' + COLOR_DOC
      + '   # doc' + ENDC),
     (0, 'd', ConfigScope(_config_scope_with_multiline_doc),
-     'd' + GREY + '\n  """Multiline\n    docstring!\n    """' + ENDC)
+     'd' + COLOR_DOC + '\n  """Multiline\n    docstring!\n    """' + ENDC)
 ])
 def test_format_named_config(indent, path, named_config, expected):
     assert _format_named_config(indent, path, named_config) == expected
@@ -211,7 +212,7 @@ def test_format_named_configs():
     named_configs_text = _format_named_configs(OrderedDict(
         ex.gather_named_configs()))
     assert named_configs_text.startswith('Named Configurations (' +
-                                            GREY + 'doc' + ENDC + '):')
+                                            COLOR_DOC + 'doc' + ENDC + '):')
     assert 'named_config2' in named_configs_text
     assert '# named config with doc' in named_configs_text
     assert 'ingred.named_config1' in named_configs_text

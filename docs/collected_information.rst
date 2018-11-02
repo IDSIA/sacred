@@ -97,7 +97,7 @@ also collected. The default host info includes:
     ENV              captured ENVIRONMENT variables (if set)
     ===============  ==========================================
 
-Host information is available from the :ref:api_run through ``run.host_info``.
+Host information is available from the :ref:`api_run` through ``run.host_info``.
 It is sent to the observers by the :ref:`started_event <event_started>`.
 
 The list of captured ENVIRONMENT variables (empty by default) can be extended

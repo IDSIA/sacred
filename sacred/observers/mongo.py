@@ -339,7 +339,7 @@ class MongoDbOption(CommandLineOption):
     RUN_ID_PATTERN = r"(?P<overwrite>\d{1,12})"
     PORT1_PATTERN = r"(?P<port1>\d{1,5})"
     PORT2_PATTERN = r"(?P<port2>\d{1,5})"
-    PRIORITY_PATTERN = "(?P<priority>-?\d+)?"
+    PRIORITY_PATTERN = r"(?P<priority>-?\d+)?"
     DB_NAME_PATTERN = r"(?P<db_name>[_A-Za-z]" \
                       r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
     COLL_NAME_PATTERN = r"(?P<collection>[_A-Za-z]" \
