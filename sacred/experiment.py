@@ -404,7 +404,7 @@ class Experiment(Ingredient):
         """
         for ingredient, _ in self.traverse_ingredients():
             for name, item in func(ingredient):
-                if ingredient == self:
+                if ingredient == self and len(self.path) != 0:
                     name = name[len(self.path) + 1:]
                 yield name, item
 
