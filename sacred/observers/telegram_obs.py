@@ -59,11 +59,11 @@ class TelegramObserver(RunObserver):
             from telegram.utils.request import Request
 
             if d['proxy_url'].startswith('socks5'):
-                urllib3_proxy_kwargs = dict()
-                for key in ['username', 'password']:
-                    if key in d:
-                        urllib3_proxy_kwargs[key] = d[key]
-                request = Request(proxy_url=d['proxy_url'], urllib3_proxy_kwargs=urllib3_proxy_kwargs)
+                urllib3_proxy_kwargs = {
+                    key: d[key] for key in ['username', 'password'] if key in d
+                }
+                request = Request(proxy_url=d['proxy_url'],
+                                  urllib3_proxy_kwargs=urllib3_proxy_kwargs)
             elif d['proxy_url'].startswith('http'):
                 cred_string = ''
                 if 'username' in d:
@@ -78,8 +78,9 @@ class TelegramObserver(RunObserver):
                 else:
                     request = Request(proxy_url=d['proxy_url'])
             else:
-                raise Exception("Proxy URL should be in format PROTOCOL://PROXY_HOST[:PROXY_PORT].\n"
-                                "HTTP and Socks5 are supported.")
+                raise Exception(
+                    "Proxy URL should be PROTOCOL://PROXY_HOST[:PROXY_PORT].\n"
+                    "HTTP and Socks5 are supported.")
         else:
             request = None
 
