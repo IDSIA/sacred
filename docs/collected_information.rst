@@ -198,8 +198,7 @@ In any case, the numbers should form an increasing sequence.
             ex.log_scalar("training.diff", value * 2)
 
 
-Currently, the information is collected only by the :ref:`mongo_observer`. Metrics are stored in the ``metrics`` collection
-of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to.
+Currently, the information is collected only by two observers: the :ref:`mongo_observer` and the :ref:`file_observer`. For the Mongo Observer, metrics are stored in the ``metrics`` collection of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to. For the :ref:`file_observer`, metrics are stored in the file ``metrics.json`` in the run id's directory and are organized by metric name (e.g. "training.loss").
 
 
 Metrics Records
