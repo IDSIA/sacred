@@ -93,6 +93,7 @@ class SacredError(Exception):
                  print_usage=False):
         super(SacredError, self).__init__(message)
         self.print_traceback = print_traceback
+        assert filter_traceback in [True, False, 'always', 'default', 'never']
         self.filter_traceback = filter_traceback
         self.print_usage = print_usage
 
@@ -269,6 +270,18 @@ class ConfigAddedError(ConfigError):
             if possible_keys:
                 s += '\nPossible config keys are: {}'.format(possible_keys)
         return s
+
+
+class SignatureError(SacredError, TypeError):
+    """
+    Error that is raised when the passed arguments do not match the functions
+    signature
+    """
+    def __init__(self, message, print_traceback=True,
+                 filter_traceback='always',
+                 print_usage=False):
+        super(SignatureError, self).__init__(
+            message, print_traceback, filter_traceback, print_usage)
 
 
 def create_basic_stream_logger():
@@ -461,35 +474,50 @@ def print_filtered_stacktrace(filter_traceback=True):
 
 
 def format_filtered_stacktrace(filter_traceback=True):
+    """
+    Returns the traceback as `string`.
+
+    `filter_traceback` can be one of:
+        - 'always': always filter out sacred internals
+        - `True` or 'default': Default behaviour: filter out sacred internals
+                if the exception did not originate from within sacred, and
+                print just the internal stack trace otherwise
+        - `False` or 'never': don't filter, always print full traceback
+        - All other values will fall back to 'never'.
+    """
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
 
-    if filter_traceback:
-        if _is_sacred_frame(current_tb.tb_frame):
-            header = ["Exception originated from within Sacred.\n"
-                      "Traceback (most recent calls):\n"]
-            texts = tb.format_exception(exc_type, exc_value, current_tb)
-            return ''.join(header + texts[1:]).strip()
+    if filter_traceback in [True, 'default'] \
+            and _is_sacred_frame(current_tb.tb_frame):
+        # just print sacred internal trace
+        header = ["Exception originated from within Sacred.\n"
+                  "Traceback (most recent calls):\n"]
+        texts = tb.format_exception(exc_type, exc_value, current_tb)
+        return ''.join(header + texts[1:]).strip()
+    elif filter_traceback in [True, 'default', 'always']:
+        # print filtered stacktrace
+        if sys.version_info >= (3, 5):
+            tb_exception = \
+                tb.TracebackException(exc_type, exc_value, exc_traceback,
+                                      limit=None)
+            return ''.join(filtered_traceback_format(tb_exception))
         else:
-            if sys.version_info >= (3, 5):
-                tb_exception = \
-                    tb.TracebackException(exc_type, exc_value, exc_traceback,
-                                          limit=None)
-                return ''.join(filtered_traceback_format(tb_exception))
-            else:
-                s = "Traceback (most recent calls WITHOUT Sacred internals):"
-                current_tb = exc_traceback
-                while current_tb is not None:
-                    if not _is_sacred_frame(current_tb.tb_frame):
-                        tb.print_tb(current_tb, 1)
-                    current_tb = current_tb.tb_next
-                s += "\n".join(tb.format_exception_only(exc_type,
-                                                        exc_value)).strip()
-                return s
+            s = "Traceback (most recent calls WITHOUT Sacred internals):"
+            current_tb = exc_traceback
+            while current_tb is not None:
+                if not _is_sacred_frame(current_tb.tb_frame):
+                    tb.print_tb(current_tb, 1)
+                current_tb = current_tb.tb_next
+            s += "\n".join(tb.format_exception_only(exc_type,
+                                                    exc_value)).strip()
+            return s
     else:
+        # print full stacktrace. This is the default case, so if wrong
+        # parameters are passed in, it will print this
         return '\n'.join(
             tb.format_exception(exc_type, exc_value, exc_traceback))
 
