@@ -290,11 +290,27 @@ def recursive_update(d, u):
     d = {'a': {'b' : 1}}
     u = {'c': 2, 'a': {'d': 3}}
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
+    u has priority over d
     """
+    import ipdb
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = recursive_update(d.get(k, {}), v)
             d[k] = r
+        elif isinstance(v, list):
+            #ipdb.set_trace()
+            old_list = d.get(k, [])
+            if len(old_list) == 0 or len(old_list) != len(v):
+                d[k] = u[k]
+                continue
+
+            l = []
+            for new, old in zip(v, old_list):
+                if isinstance(new, collections.Mapping):
+                    l.append(recursive_update(old, new))
+                else:
+                    l.append(new)
+            d[k] = l
         else:
             d[k] = u[k]
     return d
