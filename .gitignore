@@ -93,3 +93,8 @@ com_crashlytics_export_strings.xml
 # GEdit temporary files
 *~
 
+# vim temporary files
+*.swp
+
+# Tags folder
+sacred/tags
