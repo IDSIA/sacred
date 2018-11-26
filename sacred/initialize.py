@@ -106,13 +106,13 @@ class Scaffold(object):
             fallback=self.fallback)
 
         self.get_config_modifications()
-
     def run_config_hooks(self, config, command_name, logger):
         final_cfg_updates = {}
         for ch in self.config_hooks:
             cfg_upup = ch(deepcopy(config), command_name, logger)
             if cfg_upup:
                 recursive_update(final_cfg_updates, cfg_upup)
+        # final update fills in config_update, if list is already set, config updates is used
         recursive_update(final_cfg_updates, self.config_updates)
         return final_cfg_updates
 
@@ -171,13 +171,14 @@ class Scaffold(object):
 
         if not run.force:
             self._warn_about_suspicious_changes()
-
     def _warn_about_suspicious_changes(self):
+
         for add in sorted(self.config_mods.added):
             if not set(iter_prefixes(add)).intersection(self.captured_args):
                 if self.path:
                     add = join_paths(self.path, add)
-                raise ConfigAddedError(add, config=self.config)
+                #raise ConfigAddedError(add, config=self.config)
+                self.logger.warning('Added new config entry which appears not to be used: "%s"' % add)
             else:
                 self.logger.warning('Added new config entry: "%s"' % add)
 
