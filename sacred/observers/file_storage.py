@@ -206,7 +206,7 @@ class FileStorageObserver(RunObserver):
         self.run_entry['resources'].append([filename, store_path])
         self.save_json(self.run_entry, 'run.json')
 
-    def artifact_event(self, name, filename, metadata=None):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
         self.save_file(filename, name)
         self.run_entry['artifacts'].append(name)
         self.save_json(self.run_entry, 'run.json')

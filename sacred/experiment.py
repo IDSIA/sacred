@@ -339,7 +339,7 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         self.current_run.add_resource(filename)
 
-    def add_artifact(self, filename, name=None, metadata=None):
+    def add_artifact(self, filename, name=None, metadata=None, content_type=None):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
@@ -359,9 +359,12 @@ class Experiment(Ingredient):
         metadata: dict, optional
             optionally attach metadata to the artifact.
             This only has an effect when using the MongoObserver.
+        content_type: str, optional
+            optionally attach a content-type to the artifact.
+            This only has an effect when using the MongoObserver.
         """
         assert self.current_run is not None, "Can only be called during a run."
-        self.current_run.add_artifact(filename, name, metadata)
+        self.current_run.add_artifact(filename, name, metadata, content_type)
 
     @property
     def info(self):

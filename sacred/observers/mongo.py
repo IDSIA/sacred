@@ -187,36 +187,30 @@ class MongoObserver(RunObserver):
         self.run_entry['resources'].append((filename, md5hash))
         self.save()
 
-    def artifact_event(self, name, filename, metadata=None):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
         with open(filename, 'rb') as f:
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(self.runs.name, run_id,
                                                        name)
-            if not self._content_type_manually_set(metadata):
-                metadata = self._try_to_detect_content_type(metadata, filename)
+            if content_type is None:
+                content_type = self._try_to_detect_content_type(filename)
 
-            file_id = self.fs.put(f, filename=db_filename, metadata=metadata)
+            file_id = self.fs.put(f, filename=db_filename, metadata=metadata, content_type=content_type)
 
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
         self.save()
 
-    def _content_type_manually_set(self, metadata):
-        return metadata is not None and 'content-type' in metadata
-
-    def _try_to_detect_content_type(self, metadata, filename):
+    @staticmethod
+    def _try_to_detect_content_type(filename):
         mime_type, _ = mimetypes.guess_type(filename)
         if mime_type is not None:
-            if metadata is None:
-                metadata = {}
-            content_type_metadata = {'content-type': mime_type}
-            metadata.update(content_type_metadata)
-            print('Added {} to metadata of artifact {}.'.format(
-                content_type_metadata, filename))
+            print('Added {} as content-type of artifact {}.'.format(
+                mime_type, filename))
         else:
             print('Failed to detect content-type automatically for '
                   'artifact {}.'.format(filename))
-        return metadata
+        return mime_type
 
     def log_metrics(self, metrics_by_name, info):
         """Store new measurements to the database.
