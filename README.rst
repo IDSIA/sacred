@@ -115,6 +115,14 @@ Omniboard is a web dashboard that helps in visualizing the experiments and metri
 Omniboard is written with React, Node.js, Express and Bootstrap.
 
 
+`Incense <https://github.com/JarnoRFB/incense>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/incense-artifact.png
+.. image:: docs/images/incense-metric.png
+
+Incense is a Python library to retrieve runs stored in a MongoDB and interactively display metrics and artifacts
+in Jupyter notebooks.
+
 `Sacredboard <https://github.com/chovanecm/sacredboard>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .. image:: docs/images/sacredboard.png
