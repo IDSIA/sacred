@@ -101,6 +101,15 @@ can automatically run the tests for various python versions like this:
 
     tox
 
+Contributing
+------------
+If you find a bug, have a feature request or want to discuss something general you are welcome to open an
+`issue <https://github.com/IDSIA/sacred/issues>`_. If you have a specific question related
+to the usage of sacred, please ask a question on StackOverflow under the
+`python-sacred tag <https://stackoverflow.com/questions/tagged/python-sacred>`_.
+Pull requests are highly welcome!
+
+
 Frontends
 ---------
 At this point there are three frontends to the database entries created by sacred (that I'm aware of).
