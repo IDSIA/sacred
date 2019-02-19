@@ -39,6 +39,35 @@ def td_format(td_object):
 
 class TelegramObserver(RunObserver):
     """Sends a message to Telegram upon completion/failing of an experiment."""
+    @staticmethod
+    def get_proxy_request(telegram_config):
+        from telegram.utils.request import Request
+
+        if telegram_config['proxy_url'].startswith('socks5'):
+            urllib3_proxy_kwargs = dict()
+            for key in ['username', 'password']:
+                if key in telegram_config:
+                    urllib3_proxy_kwargs[key] = telegram_config[key]
+            return Request(proxy_url=telegram_config['proxy_url'],
+                           urllib3_proxy_kwargs=urllib3_proxy_kwargs)
+        elif telegram_config['proxy_url'].startswith('http'):
+            cred_string = ''
+            if 'username' in telegram_config:
+                cred_string += telegram_config['username']
+            if 'password' in telegram_config:
+                cred_string += ':' + telegram_config['password']
+            if len(cred_string) > 0:
+                domain = (telegram_config['proxy_url']
+                          .split('/')[-1].split('@')[-1])
+                cred_string += '@'
+                proxy_url = 'http://{}{}'.format(cred_string, domain)
+                return Request(proxy_url=proxy_url)
+            else:
+                return Request(proxy_url=telegram_config['proxy_url'])
+        else:
+            raise Exception("Proxy URL should be in format "
+                            "PROTOCOL://PROXY_HOST[:PROXY_PORT].\n"
+                            "HTTP and Socks5 are supported.")
 
     @classmethod
     def from_config(cls, filename):
@@ -53,35 +82,7 @@ class TelegramObserver(RunObserver):
         """
         import telegram
         d = load_config_file(filename)
-        obs = None
-
-        if 'proxy_url' in d:
-            from telegram.utils.request import Request
-
-            if d['proxy_url'].startswith('socks5'):
-                urllib3_proxy_kwargs = dict()
-                for key in ['username', 'password']:
-                    if key in d:
-                        urllib3_proxy_kwargs[key] = d[key]
-                request = Request(proxy_url=d['proxy_url'], urllib3_proxy_kwargs=urllib3_proxy_kwargs)
-            elif d['proxy_url'].startswith('http'):
-                cred_string = ''
-                if 'username' in d:
-                    cred_string += d['username']
-                if 'password' in d:
-                    cred_string += ':' + d['password']
-                if len(cred_string) > 0:
-                    domain = d['proxy_url'].split('/')[-1].split('@')[-1]
-                    cred_string += '@'
-                    proxy_url = 'http://{}{}'.format(cred_string, domain)
-                    request = Request(proxy_url=proxy_url)
-                else:
-                    request = Request(proxy_url=d['proxy_url'])
-            else:
-                raise Exception("Proxy URL should be in format PROTOCOL://PROXY_HOST[:PROXY_PORT].\n"
-                                "HTTP and Socks5 are supported.")
-        else:
-            request = None
+        request = cls.get_proxy_request(d) if 'proxy_url' in d else None
 
         if 'token' in d and 'chat_id' in d:
             bot = telegram.Bot(d['token'], request=request)

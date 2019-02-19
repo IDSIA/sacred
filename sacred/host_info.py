@@ -7,7 +7,7 @@ import os
 import platform
 import re
 import subprocess
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 
 import cpuinfo
 
@@ -114,7 +114,7 @@ def _gpus():
         raise IgnoreHostInfo()
 
     gpu_info = {'gpus': []}
-    for child in ET.fromstring(xml):
+    for child in ElementTree.fromstring(xml):
         if child.tag == 'driver_version':
             gpu_info['driver_version'] = child.text
         if child.tag != 'gpu':
