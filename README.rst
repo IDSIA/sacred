@@ -101,6 +101,15 @@ can automatically run the tests for various python versions like this:
 
     tox
 
+Contributing
+------------
+If you find a bug, have a feature request or want to discuss something general you are welcome to open an
+`issue <https://github.com/IDSIA/sacred/issues>`_. If you have a specific question related
+to the usage of sacred, please ask a question on StackOverflow under the
+`python-sacred tag <https://stackoverflow.com/questions/tagged/python-sacred>`_.
+Pull requests are highly welcome!
+
+
 Frontends
 ---------
 At this point there are three frontends to the database entries created by sacred (that I'm aware of).
@@ -114,6 +123,14 @@ They are developed externally as separate projects.
 Omniboard is a web dashboard that helps in visualizing the experiments and metrics / logs collected by sacred.
 Omniboard is written with React, Node.js, Express and Bootstrap.
 
+
+`Incense <https://github.com/JarnoRFB/incense>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/incense-artifact.png
+.. image:: docs/images/incense-metric.png
+
+Incense is a Python library to retrieve runs stored in a MongoDB and interactively display metrics and artifacts
+in Jupyter notebooks.
 
 `Sacredboard <https://github.com/chovanecm/sacredboard>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++

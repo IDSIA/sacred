@@ -17,7 +17,7 @@ pymongo==3.4.0
 pytest==3.0.5
 python-dateutil==2.6.0
 pytz==2016.10
-PyYAML==3.12
+PyYAML>=4.2b1
 scandir==1.4
 sentinels==1.0.0
 smmap2==2.0.1

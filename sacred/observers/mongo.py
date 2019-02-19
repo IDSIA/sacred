@@ -270,8 +270,8 @@ class MongoObserver(RunObserver):
         import pymongo.errors
 
         try:
-            self.runs.replace_one({'_id': self.run_entry['_id']},
-                                  self.run_entry)
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry})
         except pymongo.errors.AutoReconnect:
             pass  # just wait for the next save
         except pymongo.errors.InvalidDocument:
@@ -283,7 +283,8 @@ class MongoObserver(RunObserver):
 
         for i in range(attempts):
             try:
-                self.runs.save(self.run_entry)
+                self.runs.update_one({'_id': self.run_entry['_id']},
+                                     {'$set': self.run_entry}, upsert=True)
                 return
             except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:

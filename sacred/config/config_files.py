@@ -30,6 +30,7 @@ HANDLER_BY_EXT = {
 
 if opt.has_yaml:
     HANDLER_BY_EXT['.yaml'] = Handler(opt.yaml.load, opt.yaml.dump, '')
+    HANDLER_BY_EXT['.yml'] = Handler(opt.yaml.load, opt.yaml.dump, '')
 
 
 def get_handler(filename):
