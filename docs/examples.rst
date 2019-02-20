@@ -45,3 +45,32 @@ Randomness
 `examples/06_randomness.py <https://github.com/IDSIA/sacred/tree/master/examples/06_randomness.py>`_
 
 .. automodule:: examples.06_randomness
+
+
+Less magic
+==========
+If you are new to Sacred, you might be surprised by the amount of new idioms it
+introduces compared to standard Python. But don't worry, you don't have to use any of the
+magic if you don't want to and still benefit from the excellent tracking capabilities.
+
+`examples/07_magic.py <https://github.com/IDSIA/sacred/tree/master/examples/07_magic.py>`_
+shows a standard machine learning task, that uses a lot of possible Sacred idioms:
+
+* configuration definition through local variables
+* parameter injection through captured functions
+* command line interface integration through the ``ex.automain`` decorator
+
+`examples/08_less_magic.py <https://github.com/IDSIA/sacred/tree/master/examples/08_less_magic.py>`_
+shows the same task without any of those idioms. The recipe for replacing Sacred magic with
+standard Python is simple.
+
+* define your configuration in an external ``JSON`` or ``YAML`` file
+* avoid the ``ex.capture`` decorator. Instead only pass ``_config`` to the main function
+  and access all parameters explicitly through the configuration dictionary
+* just use ``ex.main`` instead of ``ex.automain`` and call ``ex.run()``
+  explicitly. This avoids the parsing of command line parameters you did not define yourself.
+
+While we believe that using sacred idioms makes things easier by hard-wiring parameters
+and giving you a flexible command line interface, we do not enforce its usage
+if you feel more comfortable with classical Python. At its core Sacred is about
+tracking computatonal experiments, not about any particular coding style.
