@@ -128,6 +128,7 @@ class FileStorageObserver(RunObserver):
         self.config = config
         self.info = {}
         self.cout = ""
+        self.cout_write_cursor = 0
 
         self.save_json(self.run_entry, 'run.json')
         self.save_json(self.config, 'config.json')
