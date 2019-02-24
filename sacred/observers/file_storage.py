@@ -49,6 +49,7 @@ class FileStorageObserver(RunObserver):
         self.config = None
         self.info = None
         self.cout = ""
+        self.cout_write_cursor = 0
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
@@ -127,6 +128,7 @@ class FileStorageObserver(RunObserver):
         self.config = config
         self.info = {}
         self.cout = ""
+        self.cout_write_cursor = 0
 
         self.save_json(self.run_entry, 'run.json')
         self.save_json(self.config, 'config.json')
@@ -154,8 +156,9 @@ class FileStorageObserver(RunObserver):
         copyfile(filename, os.path.join(self.dir, target_name))
 
     def save_cout(self):
-        with open(os.path.join(self.dir, 'cout.txt'), 'wb') as f:
-            f.write(self.cout.encode('utf-8'))
+        with open(os.path.join(self.dir, 'cout.txt'), 'a', encoding="utf-8") as f:
+            f.write(self.cout[self.cout_write_cursor:])
+            self.cout_write_cursor = len(self.cout)
 
     def render_template(self):
         if opt.has_mako and self.template:
