@@ -165,14 +165,14 @@ def test_fs_observer_heartbeat_event_multiple_updates_run(dir_obs, sample_run):
     run_dir = basedir.join(_id)
     info = {'my_info': [1, 2, 3], 'nr': 7}
 
-    captured_outs = [ ("some output %d\n" % i) for i in range(10)]
+    captured_outs = [("some output %d\n" % i) for i in range(10)]
     beat_times = [(T2 + datetime.timedelta(seconds=i*10)) for i in range(10)]
 
     for idx in range(len(beat_times)):
-        expected_captured_output = "\n".join([x.strip() for x in captured_outs[:(idx+1)]]) + "\n"
+        expected_captured_output = "\n".join(
+            [x.strip() for x in captured_outs[:(idx+1)]]) + "\n"
         obs.heartbeat_event(info=info, captured_out=expected_captured_output,
-                                                              beat_time=beat_times[idx],
-                                                              result=17)
+                            beat_time=beat_times[idx], result=17)
 
         assert run_dir.join('cout.txt').read() == expected_captured_output
         run = json.loads(run_dir.join('run.json').read())
