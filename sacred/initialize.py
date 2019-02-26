@@ -83,7 +83,7 @@ class Scaffold(object):
         self.fallback.revelation()
 
     def run_named_config(self, config_name):
-        if os.path.exists(config_name):
+        if os.path.isfile(config_name):
             nc = ConfigDict(load_config_file(config_name))
         else:
             if config_name not in self.named_configs:
