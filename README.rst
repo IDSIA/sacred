@@ -106,9 +106,11 @@ Contributing
 If you find a bug, have a feature request or want to discuss something general you are welcome to open an
 `issue <https://github.com/IDSIA/sacred/issues>`_. If you have a specific question related
 to the usage of sacred, please ask a question on StackOverflow under the
-`python-sacred tag <https://stackoverflow.com/questions/tagged/python-sacred>`_.
+`python-sacred tag <https://stackoverflow.com/questions/tagged/python-sacred>`_. We value documentation
+a lot. If you find something that should be included in the documentation please
+document it or let us know whats missing. If you are using Sacred in one of your projects and want to share
+your code with others, put your repo in the `Projects using Sacred <docs/projects_using_sacred.rst`>_ list.
 Pull requests are highly welcome!
-
 
 Frontends
 ---------
