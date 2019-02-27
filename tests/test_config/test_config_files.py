@@ -41,9 +41,6 @@ def test_load_config_file(ext, handler):
 def test_load_config_file_exception_msg_invalid_ext():
     handle, f_name = tempfile.mkstemp(suffix='.invalid')
     try:
-        f = os.fdopen(handle, "w")
-        f.close()
-
         exception_msg = re.compile(
             'Configuration file ".*.invalid" has invalid or '
             'unsupported extension ".invalid".'
