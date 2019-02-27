@@ -39,7 +39,8 @@ def get_handler(filename):
         return HANDLER_BY_EXT[extension]
     except KeyError:
         raise ValueError(
-            'Configuration file "{}" has invalid or unsupported extension "{}".'.format(filename, extension)
+            'Configuration file "{}" has invalid or unsupported extension '
+            '"{}".'.format(filename, extension)
         )
 
 
