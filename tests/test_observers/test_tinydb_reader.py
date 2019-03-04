@@ -20,7 +20,6 @@ from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbReader
 
 
 # Utilities and fixtures
-@pytest.fixture
 def sample_run():
 
     T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -138,8 +137,8 @@ def test_tinydb_reader_raises_exceptions(tmpdir):
         TinyDbReader('foo')
 
 
-def test_fetch_metadata_function_with_indices(tmpdir, sample_run):
-
+def test_fetch_metadata_function_with_indices(tmpdir):
+    sample_run_ = sample_run()
     # Setup and run three experiments
     root = tmpdir.strpath
     tinydb_obs = run_test_experiment(exp_name='experiment 1 alpha',
@@ -170,26 +169,26 @@ def test_fetch_metadata_function_with_indices(tmpdir, sample_run):
     # Test returned values
     exp1 = strip_file_handles(exp1_res)[0]
 
-    sample_run['ex_info']['name'] = 'experiment 1 alpha'
-    sample_run['ex_info']['sources'] = [
+    sample_run_['ex_info']['name'] = 'experiment 1 alpha'
+    sample_run_['ex_info']['sources'] = [
         ['setup.py', get_digest('setup.py')]
     ]
 
     assert exp1 == {
         '_id': '1234',
-        'experiment': sample_run['ex_info'],
+        'experiment': sample_run_['ex_info'],
         'format': tinydb_obs.VERSION,
-        'command': sample_run['command'],
-        'host': sample_run['host_info'],
-        'start_time': sample_run['start_time'],
+        'command': sample_run_['command'],
+        'host': sample_run_['host_info'],
+        'start_time': sample_run_['start_time'],
         'heartbeat': datetime.datetime(1999, 5, 5, 5, 5, 5, 5),
         'info': {'my_info': [1, 2, 3], 'nr': 7},
         'captured_out': 'some output',
         'artifacts': [
             ['about', 'sacred/__about__.py', get_digest('sacred/__about__.py')]
         ],
-        'config': sample_run['config'],
-        'meta': sample_run['meta_info'],
+        'config': sample_run_['config'],
+        'meta': sample_run_['meta_info'],
         'status': 'COMPLETED',
         'resources': [
             ['sacred/__init__.py', get_digest('sacred/__init__.py')]
