@@ -339,7 +339,13 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         self.current_run.add_resource(filename)
 
-    def add_artifact(self, filename, name=None, metadata=None, content_type=None):
+    def add_artifact(
+            self,
+            filename,
+            name=None,
+            metadata=None,
+            content_type=None,
+    ):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment

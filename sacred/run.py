@@ -157,7 +157,13 @@ class Run(object):
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)
 
-    def add_artifact(self, filename, name=None, metadata=None, content_type=None):
+    def add_artifact(
+            self,
+            filename,
+            name=None,
+            metadata=None,
+            content_type=None,
+    ):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
