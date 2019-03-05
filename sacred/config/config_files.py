@@ -35,7 +35,13 @@ if opt.has_yaml:
 
 def get_handler(filename):
     _, extension = os.path.splitext(filename)
-    return HANDLER_BY_EXT[extension]
+    try:
+        return HANDLER_BY_EXT[extension]
+    except KeyError:
+        raise ValueError(
+            'Configuration file "{}" has invalid or unsupported extension '
+            '"{}".'.format(filename, extension)
+        )
 
 
 def load_config_file(filename):
