@@ -272,14 +272,17 @@ class ConfigAddedError(ConfigError):
 
 
 def create_basic_stream_logger():
-    logger = logging.getLogger('')
-    logger.setLevel(logging.INFO)
-    logger.handlers = []
-    ch = logging.StreamHandler()
-    formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
+    """
+    Sets up a basic stream logger. Configures the root logger to use a
+    `logging.StreamHandler` and sets the logging level to `logging.INFO`.
+
+    Note:
+        This does not change the logger configuration if the root logger
+        already is configured (i.e. `len(getLogger().handlers) > 0`)
+    """
+    logging.basicConfig(
+        level=logging.INFO, format='%(levelname)s - %(name)s - %(message)s')
+    return logging.getLogger('')
 
 
 def recursive_update(d, u):
