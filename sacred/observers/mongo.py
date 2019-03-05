@@ -195,7 +195,8 @@ class MongoObserver(RunObserver):
             if content_type is None:
                 content_type = self._try_to_detect_content_type(filename)
 
-            file_id = self.fs.put(f, filename=db_filename, metadata=metadata, content_type=content_type)
+            file_id = self.fs.put(f, filename=db_filename,
+                                  metadata=metadata, content_type=content_type)
 
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
