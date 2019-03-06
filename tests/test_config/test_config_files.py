@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import os
+import re
 import tempfile
 import pytest
 
@@ -35,3 +36,19 @@ def test_load_config_file(ext, handler):
     d = load_config_file(f_name)
     assert d == data
     os.remove(f_name)
+
+
+def test_load_config_file_exception_msg_invalid_ext():
+    handle, f_name = tempfile.mkstemp(suffix='.invalid')
+    f = os.fdopen(handle, "w")  # necessary for windows
+    f.close()
+    try:
+        exception_msg = re.compile(
+            'Configuration file ".*.invalid" has invalid or '
+            'unsupported extension ".invalid".'
+        )
+        with pytest.raises(ValueError) as excinfo:
+            load_config_file(f_name)
+        assert exception_msg.match(excinfo.value.args[0])
+    finally:
+        os.remove(f_name)

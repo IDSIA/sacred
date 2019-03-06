@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+import logging
 
 
 # example_test will be parametrized by the test generation hook in conftest.py
 def test_example(capsys, example_test):
+    # pytest adds a `LogCaptureHandler` to the root logger. This conflicts
+    # with the sacred logger setup, so remove it
+    logging.root.handlers = []
     ex, call, out = example_test
     ex.run_commandline(call)
     captured_out, captured_err = capsys.readouterr()

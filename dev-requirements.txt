@@ -11,10 +11,9 @@ munch==2.0.4
 numpy==1.11.3
 pandas==0.19.2
 pbr==1.10.0
-py==1.4.32
 py-cpuinfo==4.0
 pymongo==3.4.0
-pytest==3.0.5
+pytest==4.3.0
 python-dateutil==2.6.0
 pytz==2016.10
 PyYAML>=4.2b1
@@ -25,3 +24,4 @@ SQLAlchemy==1.1.4
 tinydb==3.2.1
 tinydb-serialization==1.0.3
 wrapt==1.10.8
+scikit-learn==0.20.3

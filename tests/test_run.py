@@ -129,9 +129,12 @@ def test_run_heartbeat_event(run):
 def test_run_artifact_event(run):
     observer = run.observers[0]
     handle, f_name = tempfile.mkstemp()
+    name = 'foobar'
     metadata = {'testkey': 42}
-    run.add_artifact(f_name, name='foobar', metadata=metadata)
-    observer.artifact_event.assert_called_with(filename=f_name, name='foobar', metadata=metadata)
+    content_type = 'text/plain'
+    run.add_artifact(f_name, name=name, metadata=metadata, content_type=content_type)
+    observer.artifact_event.assert_called_with(filename=f_name, name=name,
+                                               metadata=metadata, content_type=content_type)
     os.close(handle)
     os.remove(f_name)
 

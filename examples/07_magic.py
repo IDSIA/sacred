@@ -10,7 +10,7 @@ ex.observers.append(
 )
 
 
-@ex.config
+@ex.config  # Configuration is defined through local variables.
 def cfg():
     C = 1.0
     gamma = 0.7
@@ -23,10 +23,10 @@ def get_model(C, gamma, kernel):
     return svm.SVC(C=C, kernel=kernel, gamma=gamma)
 
 
-@ex.automain  # Use automain to enable command line integration.
+@ex.automain  # Using automain to enable command line integration.
 def run():
     X, y = datasets.load_breast_cancer(return_X_y=True)
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
-    clf = get_model()
+    clf = get_model()  # Parameters are injected automatically.
     clf.fit(X_train, y_train)
     return clf.score(X_test, y_test)

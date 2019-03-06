@@ -91,12 +91,12 @@ optional dependencies but they offer some cool features:
 
 Tests
 -----
-The tests for sacred use the `py.test <http://pytest.org/latest/>`_ package.
-You can execute them by running ``py.test`` in the sacred directory like this:
+The tests for sacred use the `pytest <http://pytest.org/latest/>`_ package.
+You can execute them by running ``pytest`` in the sacred directory like this:
 
-    py.test
+    pytest
 
-There is also a config file for `tox <https://testrun.org/tox/latest/>`_ so you
+There is also a config file for `tox <https://tox.readthedocs.io/en/latest/>`_ so you
 can automatically run the tests for various python versions like this:
 
     tox
