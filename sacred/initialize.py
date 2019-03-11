@@ -113,7 +113,6 @@ class Scaffold(object):
             cfg_upup = ch(deepcopy(config), command_name, logger)
             if cfg_upup:
                 recursive_update(final_cfg_updates, cfg_upup)
-        recursive_update(final_cfg_updates, self.config_updates)
         return final_cfg_updates
 
     def get_config_modifications(self):

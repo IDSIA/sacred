@@ -169,13 +169,14 @@ class Ingredient(object):
         Decorator to add a config hook to this ingredient.
 
         Config hooks need to be a function that takes 3 parameters and returns
-        a dictionary:
+        a dictionary of updates:
         (config, command_name, logger) --> dict
 
         Config hooks are run after the configuration of this Ingredient, but
         before any further ingredient-configurations are run.
-        The dictionary returned by a config hook is used to update the
-        config updates.
+        The dictionary returned by a config hook is used to update the config
+        updates, while any insertion/deletion/update of the `config` parameter
+        is ignored.
         Note that they are not restricted to the local namespace of the
         ingredient.
         """

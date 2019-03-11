@@ -277,16 +277,19 @@ def test_config_hook_updates_config(ex):
 
     @ex.config
     def cfg():
-        a = 'hello'
+        a = 'before the hook'
 
     @ex.config_hook
     def hook(config, command_name, logger):
-        config.update({'a': 'me'})
-        return config
+        # Return a dictionary of updates
+        return {'a': config['a'].replace('before', 'after')}
 
     @ex.main
     def foo():
         pass
 
     r = ex.run()
-    assert r.config['a'] == 'me'
+    assert r.config['a'] == 'after the hook'
+
+    r = ex.run(config_updates={'a': 'talk before you think'})
+    assert r.config['a'] == 'talk after you think'
