@@ -64,7 +64,14 @@ def test_format_filtered_stacktrace_true():
     try:
         f()
     except:
-        st = format_filtered_stacktrace(filter_traceback=True)
+        st = format_filtered_stacktrace(filter_traceback='default')
+        assert 'captured_function' not in st
+        assert 'WITHOUT Sacred internals' in st
+
+    try:
+        f()
+    except:
+        st = format_filtered_stacktrace(filter_traceback='always')
         assert 'captured_function' not in st
         assert 'WITHOUT Sacred internals' in st
 
@@ -79,24 +86,29 @@ def test_format_filtered_stacktrace_false():
     try:
         f()
     except:
-        st = format_filtered_stacktrace(filter_traceback=False)
+        st = format_filtered_stacktrace(filter_traceback='never')
         assert 'captured_function' in st
 
 
 @pytest.mark.parametrize(
     'print_traceback,filter_traceback,print_usage,expected', [
-        (False, False, False, '.*SacredError: message'),
-        (True, False, False, r'Traceback \(most recent call last\):\n*'
-                             r'\s*File ".*", line \d*, in '
-                             r'test_format_sacred_error\n*'
-                             r'.*\n*'
-                             r'.*SacredError: message'),
-        (False, True, False, r'.*SacredError: message'),
-        (False, False, True, r'usage\n.*SacredError: message'),
-        (True, True, False, r'Traceback \(most recent calls WITHOUT Sacred '
-                            r'internals\):\n*'
-                            r'(\n|.)*'
-                            r'.*SacredError: message')
+        (False, 'never', False, '.*SacredError: message'),
+        (True, 'never', False, r'Traceback \(most recent call last\):\n*'
+                               r'\s*File ".*", line \d*, in '
+                               r'test_format_sacred_error\n*'
+                               r'.*\n*'
+                               r'.*SacredError: message'),
+        (False, 'default', False, r'.*SacredError: message'),
+        (False, 'always', False, r'.*SacredError: message'),
+        (False, 'never', True, r'usage\n.*SacredError: message'),
+        (True, 'default', False, r'Traceback \(most recent calls WITHOUT '
+                                 r'Sacred internals\):\n*'
+                                 r'(\n|.)*'
+                                 r'.*SacredError: message'),
+        (True, 'always', False, r'Traceback \(most recent calls WITHOUT '
+                                r'Sacred internals\):\n*'
+                                r'(\n|.)*'
+                                r'.*SacredError: message')
     ])
 def test_format_sacred_error(print_traceback, filter_traceback, print_usage,
                              expected):
@@ -105,5 +117,4 @@ def test_format_sacred_error(print_traceback, filter_traceback, print_usage,
                           print_usage)
     except SacredError as e:
         st = format_sacred_error(e, 'usage')
-        print(st)
         assert re.match(expected, st, re.MULTILINE)
