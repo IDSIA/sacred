@@ -89,10 +89,15 @@ class TimeoutInterrupt(SacredInterrupt):
 
 
 class SacredError(Exception):
-    def __init__(self, message, print_traceback=True, filter_traceback=True,
-                 print_usage=False):
+    def __init__(self, message, print_traceback=True,
+                 filter_traceback='default', print_usage=False):
         super(SacredError, self).__init__(message)
         self.print_traceback = print_traceback
+        if filter_traceback not in ['always', 'default', 'never']:
+            raise ValueError(
+                'filter_traceback must be one of \'always\', '
+                '\'default\' or \'never\', not ' + filter_traceback
+            )
         self.filter_traceback = filter_traceback
         self.print_usage = print_usage
 
@@ -114,7 +119,7 @@ class CircularDependencyError(SacredError):
 
     def __init__(self, message='Circular dependency detected:',
                  ingredients=None, print_traceback=True,
-                 filter_traceback=True, print_usage=False):
+                 filter_traceback='default', print_usage=False):
         super(CircularDependencyError, self).__init__(
             message,
             print_traceback=print_traceback,
@@ -139,7 +144,7 @@ class ConfigError(SacredError):
     def __init__(self, message, conflicting_configs=(),
                  print_conflicting_configs=True,
                  print_traceback=True,
-                 filter_traceback=True, print_usage=False,
+                 filter_traceback='default', print_usage=False,
                  config=None):
         super(ConfigError, self).__init__(message,
                                           print_traceback=print_traceback,
@@ -212,9 +217,9 @@ class MissingConfigError(SacredError):
 
     def __init__(self, message='Configuration values are missing:',
                  missing_configs=(),
-                 print_traceback=False, filter_traceback=True,
+                 print_traceback=False, filter_traceback='default',
                  print_usage=True):
-        message = '{}: {}'.format(message, missing_configs)
+        message = '{} {}'.format(message, missing_configs)
         super(MissingConfigError, self).__init__(
             message, print_traceback=print_traceback,
             filter_traceback=filter_traceback, print_usage=print_usage
@@ -227,7 +232,7 @@ class NamedConfigNotFoundError(SacredError):
     def __init__(self, named_config, message='Named config not found:',
                  available_named_configs=(),
                  print_traceback=False,
-                 filter_traceback=True, print_usage=False):
+                 filter_traceback='default', print_usage=False):
         message = '{} "{}". Available config values are: {}'.format(
             message, named_config, available_named_configs)
         super(NamedConfigNotFoundError, self).__init__(
@@ -247,7 +252,7 @@ class ConfigAddedError(ConfigError):
                  message='Added new config entry that is not used anywhere',
                  captured_args=(),
                  print_conflicting_configs=True, print_traceback=False,
-                 filter_traceback=True, print_usage=False,
+                 filter_traceback='default', print_usage=False,
                  print_suggestions=True,
                  config=None):
         super(ConfigAddedError, self).__init__(
@@ -269,6 +274,18 @@ class ConfigAddedError(ConfigError):
             if possible_keys:
                 s += '\nPossible config keys are: {}'.format(possible_keys)
         return s
+
+
+class SignatureError(SacredError, TypeError):
+    """
+    Error that is raised when the passed arguments do not match the functions
+    signature
+    """
+    def __init__(self, message, print_traceback=True,
+                 filter_traceback='always',
+                 print_usage=False):
+        super(SignatureError, self).__init__(
+            message, print_traceback, filter_traceback, print_usage)
 
 
 def create_basic_stream_logger():
@@ -459,42 +476,59 @@ def _is_sacred_frame(frame):
     return frame.f_globals["__name__"].split('.')[0] == 'sacred'
 
 
-def print_filtered_stacktrace(filter_traceback=True):
+def print_filtered_stacktrace(filter_traceback='default'):
     print(format_filtered_stacktrace(filter_traceback), file=sys.stderr)
 
 
-def format_filtered_stacktrace(filter_traceback=True):
+def format_filtered_stacktrace(filter_traceback='default'):
+    """
+    Returns the traceback as `string`.
+
+    `filter_traceback` can be one of:
+        - 'always': always filter out sacred internals
+        - 'default': Default behaviour: filter out sacred internals
+                if the exception did not originate from within sacred, and
+                print just the internal stack trace otherwise
+        - 'never': don't filter, always print full traceback
+        - All other values will fall back to 'never'.
+    """
     exc_type, exc_value, exc_traceback = sys.exc_info()
     # determine if last exception is from sacred
     current_tb = exc_traceback
     while current_tb.tb_next is not None:
         current_tb = current_tb.tb_next
 
-    if filter_traceback:
-        if _is_sacred_frame(current_tb.tb_frame):
-            header = ["Exception originated from within Sacred.\n"
-                      "Traceback (most recent calls):\n"]
-            texts = tb.format_exception(exc_type, exc_value, current_tb)
-            return ''.join(header + texts[1:]).strip()
+    if filter_traceback == 'default' \
+            and _is_sacred_frame(current_tb.tb_frame):
+        # just print sacred internal trace
+        header = ["Exception originated from within Sacred.\n"
+                  "Traceback (most recent calls):\n"]
+        texts = tb.format_exception(exc_type, exc_value, current_tb)
+        return ''.join(header + texts[1:]).strip()
+    elif filter_traceback in ('default', 'always'):
+        # print filtered stacktrace
+        if sys.version_info >= (3, 5):
+            tb_exception = \
+                tb.TracebackException(exc_type, exc_value, exc_traceback,
+                                      limit=None)
+            return ''.join(filtered_traceback_format(tb_exception))
         else:
-            if sys.version_info >= (3, 5):
-                tb_exception = \
-                    tb.TracebackException(exc_type, exc_value, exc_traceback,
-                                          limit=None)
-                return ''.join(filtered_traceback_format(tb_exception))
-            else:
-                s = "Traceback (most recent calls WITHOUT Sacred internals):"
-                current_tb = exc_traceback
-                while current_tb is not None:
-                    if not _is_sacred_frame(current_tb.tb_frame):
-                        tb.print_tb(current_tb, 1)
-                    current_tb = current_tb.tb_next
-                s += "\n".join(tb.format_exception_only(exc_type,
-                                                        exc_value)).strip()
-                return s
-    else:
+            s = "Traceback (most recent calls WITHOUT Sacred internals):"
+            current_tb = exc_traceback
+            while current_tb is not None:
+                if not _is_sacred_frame(current_tb.tb_frame):
+                    tb.print_tb(current_tb, 1)
+                current_tb = current_tb.tb_next
+            s += "\n".join(tb.format_exception_only(exc_type,
+                                                    exc_value)).strip()
+            return s
+    elif filter_traceback == 'never':
+        # print full stacktrace
         return '\n'.join(
             tb.format_exception(exc_type, exc_value, exc_traceback))
+    else:
+        raise ValueError('Unknown value for filter_traceback: ' +
+                         filter_traceback)
 
 
 def format_sacred_error(e, short_usage):
