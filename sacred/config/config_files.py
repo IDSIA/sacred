@@ -35,6 +35,9 @@ if opt.has_yaml:
 
 def get_handler(filename):
     _, extension = os.path.splitext(filename)
+    if extension in ('.yaml', '.yml') and not opt.has_yaml:
+        raise KeyError('Configuration file "{}" cannot be loaded as '
+                       'you do not have PyYAML installed.'.format(filename))
     try:
         return HANDLER_BY_EXT[extension]
     except KeyError:
