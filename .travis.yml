@@ -14,8 +14,3 @@ matrix:
     env: TOX_ENV=coverage
 script:
   - tox -e $TOX_ENV
-
-branches:
-  only:
-    - master
-    - /^release.*$/
