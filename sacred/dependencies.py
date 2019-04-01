@@ -401,7 +401,7 @@ def iterate_sys_modules():
 def get_sources_from_modules(module_iterator, base_path):
     sources = set()
     for modname, mod in module_iterator:
-        if not getattr(mod, '__file__', None):
+        if not hasattr(mod, '__file__'):
             continue
 
         filename = os.path.abspath(mod.__file__)
@@ -415,7 +415,7 @@ def get_sources_from_modules(module_iterator, base_path):
 def get_dependencies_from_modules(module_iterator, base_path):
     dependencies = set()
     for modname, mod in module_iterator:
-        if getattr(mod, '__file__', None) and is_local_source(
+        if hasattr(mod, '__file__') and is_local_source(
                 os.path.abspath(mod.__file__), modname, base_path):
             continue
         if modname.startswith('_') or '.' in modname:

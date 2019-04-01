@@ -31,8 +31,8 @@ class ContextMethodDecorator():
     def __enter__(self):
 
         self.original_method = getattr(self.classx, self.method_name)
-        if not getattr(self.original_method,
-                       "sacred_patched%s" % self.__class__.__name__, False):
+        if not hasattr(self.original_method,
+                       "sacred_patched%s" % self.__class__.__name__):
             @functools.wraps(self.original_method)
             def decorated(instance, *args, **kwargs):
                 return self.decorator_func(instance,
