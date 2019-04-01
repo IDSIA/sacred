@@ -27,15 +27,15 @@ HANDLER_BY_EXT = {
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),
 }
 
-yaml_extentions = ('.yaml', '.yml')
+yaml_extensions = ('.yaml', '.yml')
 if opt.has_yaml:
-    for extention in yaml_extentions:
+    for extention in yaml_extensions:
         HANDLER_BY_EXT[extention] = Handler(opt.yaml.load, opt.yaml.dump, '')
 
 
 def get_handler(filename):
     _, extension = os.path.splitext(filename)
-    if extension in yaml_extentions and not opt.has_yaml:
+    if extension in yaml_extensions and not opt.has_yaml:
         raise KeyError('Configuration file "{}" cannot be loaded as '
                        'you do not have PyYAML installed.'.format(filename))
     try:
