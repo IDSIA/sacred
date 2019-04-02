@@ -5,25 +5,6 @@ import importlib
 from sacred.utils import modules_exist
 
 
-class MissingDependencyMock(object):
-    def __init__(self, depends_on):
-        self.depends_on = depends_on
-
-    def __getattribute__(self, item):
-        dep = object.__getattribute__(self, 'depends_on')
-        if isinstance(dep, (list, tuple)):
-            raise ImportError('Depends on missing {!r} packages.'.format(dep))
-        else:
-            raise ImportError('Depends on missing {!r} package.'.format(dep))
-
-    def __call__(self, *args, **kwargs):
-        dep = object.__getattribute__(self, 'depends_on')
-        if isinstance(dep, (list, tuple)):
-            raise ImportError('Depends on missing {!r} packages.'.format(dep))
-        else:
-            raise ImportError('Depends on missing {!r} package.'.format(dep))
-
-
 def optional_import(*package_names):
     try:
         packages = [importlib.import_module(pn) for pn in package_names]
