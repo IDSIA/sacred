@@ -401,6 +401,7 @@ def iterate_sys_modules():
 def get_sources_from_modules(module_iterator, base_path):
     sources = set()
     for modname, mod in module_iterator:
+        # hasattr doesn't work with python extensions
         if not getattr(mod, '__file__', None):
             continue
 
@@ -415,6 +416,7 @@ def get_sources_from_modules(module_iterator, base_path):
 def get_dependencies_from_modules(module_iterator, base_path):
     dependencies = set()
     for modname, mod in module_iterator:
+        # hasattr doesn't work with python extensions
         if getattr(mod, '__file__', None) and is_local_source(
                 os.path.abspath(mod.__file__), modname, base_path):
             continue
