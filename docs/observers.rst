@@ -79,6 +79,26 @@ This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
 (See `here <http://docs.mongodb.org/manual/installation/>`_ on how to install)
 
+Installing MongoDB and Omniboard with Docker
+--------------------------------------------
+
+If you have Docker, it makes the installation of MongoDB and Omniboard much
+easier.
+
+.. code-block:: shell
+
+    # You might need to use sudo.
+    # /my/own/datadir is where your database files are going to be saved.
+    docker network create mongo_network
+    docker run -d --rm --network=mongo_network -p 27017:27017 --name=mongo -v /my/own/datadir:/data/db mongo
+    docker run -d --rm --network=mongo_network -p 9000:9000 --name omniboard vivekratnavel/omniboard -m mongo:27017:MY_DB
+
+You'll be able to access MongoDB through ``url='localhost:27017'`` and Omniboard
+by opening your browser and accessing `localhost:9000 <localhost:9000>`_ .
+If you want more configuration options,
+see `the MongoDB Docker page <https://hub.docker.com/_/mongo>`_ and the
+`the Omniboard installation page <https://vivekratnavel.github.io/omniboard/#/quick-start?id=docker>`_ .
+
 Authentication
 --------------
 If you need authentication a little more work might be necessary.
