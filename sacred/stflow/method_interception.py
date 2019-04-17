@@ -2,9 +2,9 @@ from .contextlibbackport import ContextDecorator
 from .internal import ContextMethodDecorator
 import sacred.optional as opt
 if opt.has_tensorflow:
-    import tensorflow
+    import tensorflow.compat.v1 as tf
 else:
-    tensorflow = None
+    tf = None
 
 
 class LogFileWriter(ContextDecorator, ContextMethodDecorator):
@@ -71,6 +71,6 @@ class LogFileWriter(ContextDecorator, ContextMethodDecorator):
             return result
 
         ContextMethodDecorator.__init__(self,
-                                        tensorflow.summary.FileWriter,
+                                        tf.summary.FileWriter,
                                         "__init__",
                                         log_writer_decorator)

@@ -30,12 +30,8 @@ def set_global_seed(seed):
     if opt.has_numpy:
         opt.np.random.seed(seed)
     if module_is_in_cache('tensorflow'):
-        import tensorflow as tf
-        from packaging import version
-        if version.parse(tf.__version__) < version.parse('2.0.0a0'):
-            tf.set_random_seed(seed)
-        else:
-            tf.random.set_seed(seed)
+        import tensorflow.compat.v1 as tf
+        tf.set_random_seed(seed)
     if module_is_in_cache('torch'):
         import torch
         torch.manual_seed(seed)
