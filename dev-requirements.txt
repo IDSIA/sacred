@@ -10,7 +10,7 @@ mock==2.0.0
 mongomock==3.7.0
 munch==2.0.4
 numpy==1.16.2
-packaging>=19.0
+packaging>=18.0
 pandas==0.24.2
 pbr==1.10.0
 py-cpuinfo==4.0
