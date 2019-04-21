@@ -7,7 +7,8 @@ if opt.has_tensorflow:
     if get_package_version('tensorflow') < parse_version('1.13.1'):
         import warnings
         warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
-                      "Use Tensorflow 1.13 or newer instead.", DeprecationWarning)
+                      "Use Tensorflow 1.13 or newer instead.",
+                      DeprecationWarning)
         import tensorflow as tf
     else:
         import tensorflow.compat.v1 as tf
