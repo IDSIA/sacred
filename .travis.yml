@@ -6,8 +6,12 @@ matrix:
   include:
   - python: "2.7"
     env: TOX_ENV=py27
-  - python: "3.4"
-    env: TOX_ENV=py34
+  - python: "3.5"
+    env: TOX_ENV=py35
+  - python: "3.6"
+    env: TOX_ENV=tensorflow-1
+  - python: "3.6"
+    env: TOX_ENV=tensorflow-2
   - python: "3.6"
     env: TOX_ENV=flake8
   - python: "3.5"

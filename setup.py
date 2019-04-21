@@ -10,6 +10,7 @@ Operating System :: OS Independent
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
+Programming Language :: Python :: 3.6
 Topic :: Utilities
 Topic :: Scientific/Engineering
 Topic :: Scientific/Engineering :: Artificial Intelligence
@@ -45,6 +46,7 @@ setup(
         'wrapt>=1.0, <2.0',
         'py-cpuinfo>=4.0',
         'colorama>=0.4',
+        'packaging>=18.0'
     ],
     tests_require=[
         'mock>=0.8, <3.0',
