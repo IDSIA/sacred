@@ -11,7 +11,8 @@ from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
                           recursive_update, set_by_dotted_path, get_inheritors,
                           convert_camel_case_to_snake_case,
                           apply_backspaces_and_linefeeds, module_exists,
-                          module_is_imported, module_is_in_cache, rel_path)
+                          module_is_imported, module_is_in_cache,
+                          get_package_version, parse_version, rel_path)
 
 
 def test_recursive_update():
@@ -199,6 +200,28 @@ def test_module_is_imported_uses_caller_globals_by_default():
     assert module_is_imported('pytest')
     assert not module_is_imported('pkgutil')
     assert not module_is_imported('does_not_even_exist')
+
+
+def test_get_package_version():
+    package_version = get_package_version('pytest')
+    assert str(package_version) == '4.3.0'
+
+
+def test_parse_version():
+    parsed_version = parse_version('4.3.0')
+    assert str(parsed_version) == '4.3.0'
+
+
+def test_get_package_version_comparison():
+    package_version = get_package_version('pytest')
+    current_version = parse_version('4.3.0')
+    old_version = parse_version('4.2.1')
+    new_version = parse_version('4.4.1')
+    assert package_version == current_version
+    assert not package_version < current_version
+    assert not package_version > current_version
+    assert package_version <= new_version
+    assert package_version >= old_version
 
 
 def test_rel_path():
