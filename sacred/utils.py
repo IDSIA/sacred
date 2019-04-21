@@ -8,12 +8,14 @@ import inspect
 import logging
 import os.path
 import pkgutil
+import pkg_resources
 import re
 import shlex
 import sys
 import threading
 import traceback as tb
 from functools import partial
+from packaging import version
 
 import wrapt
 
@@ -673,6 +675,17 @@ def module_is_imported(modname, scope=None):
             return True
 
     return False
+
+
+def get_package_version(dist_name):
+    """Returns a parsed version string of a package."""
+    version_string = pkg_resources.get_distribution(dist_name).version
+    return version.parse(version_string)
+
+
+def parse_version(version_string):
+    """Returns a parsed version string."""
+    return version.parse(version_string)
 
 
 def ensure_wellformed_argv(argv):

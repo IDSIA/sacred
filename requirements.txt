@@ -9,3 +9,4 @@ py-cpuinfo>=4.0
 pytest>=3.0.5
 six>=1.10.0
 wrapt>=1.10.8
+packaging>=19.0

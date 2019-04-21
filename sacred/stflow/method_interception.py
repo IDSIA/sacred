@@ -1,8 +1,16 @@
 from .contextlibbackport import ContextDecorator
 from .internal import ContextMethodDecorator
 import sacred.optional as opt
+from sacred.utils import get_package_version, parse_version
 if opt.has_tensorflow:
-    import tensorflow.compat.v1 as tf
+    # Ensures backward and forward compatibility with TensorFlow 1 and 2.
+    if get_package_version('tensorflow') < parse_version('1.13.1'):
+        import warnings
+        warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
+                      "Use Tensorflow 1.13 or newer instead.", DeprecationWarning)
+        import tensorflow as tf
+    else:
+        import tensorflow.compat.v1 as tf
 else:
     tf = None
 
