@@ -52,7 +52,8 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
-                                 'system.indexes', 'seach_space'}
+                                 'system.indexes', 'search_space',
+                                 'search_spaces'}
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
@@ -64,7 +65,7 @@ class MongoObserver(RunObserver):
 
         if client is not None:
             assert isinstance(client, pymongo.MongoClient)
-            assert url is None, 'Cannot pass both a client and an url.'
+            assert url is None, 'Cannot pass both a client and a url.'
         else:
             client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
@@ -223,7 +224,7 @@ class MongoObserver(RunObserver):
         """
         if self.metrics is None:
             # If, for whatever reason, the metrics collection has not been set
-            # do not try to save there anything
+            # do not try to save anything there.
             return
         for key in metrics_by_name:
             query = {"run_id": self.run_entry['_id'],
