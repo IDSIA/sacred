@@ -17,7 +17,7 @@ T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
 
 
-def test_create_should_raise_error_on_non_pymongo_clien t():
+def test_create_should_raise_error_on_non_pymongo_client():
     client = mongomock.MongoClient()
     with pytest.raises(ValueError):
         MongoObserver.create(client=client)
