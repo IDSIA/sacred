@@ -64,8 +64,11 @@ class MongoObserver(RunObserver):
         import gridfs
 
         if client is not None:
-            assert isinstance(client, pymongo.MongoClient)
-            assert url is None, 'Cannot pass both a client and a url.'
+            if not isinstance(client, pymongo.MongoClient):
+                raise ValueError("client needs to be a pymongo.MongoClient, "
+                                 "but is {} instead".format(type(client)))
+            if url is not None:
+                raise ValueError('Cannot pass both a client and a url.')
         else:
             client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
