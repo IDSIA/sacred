@@ -278,7 +278,7 @@ class Run(object):
         # only stop if heartbeat was started
         if self._heartbeat is not None:
             self._stop_heartbeat_event.set()
-            self._heartbeat.join(2)
+            self._heartbeat.join(timeout=2)
 
     def _emit_queued(self):
         self.status = 'QUEUED'

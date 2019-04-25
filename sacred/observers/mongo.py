@@ -59,7 +59,23 @@ class MongoObserver(RunObserver):
     @staticmethod
     def create(url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
-               client=None, **kwargs):
+               client=None, failure_dir=None, **kwargs):
+        """Factory method for MongoObserver.
+
+        Parameters
+        ----------
+        url: Mongo URI to connect to.
+        db_name: Database to connect to.
+        collection: Collection to write the runs to. (default: "runs").
+        overwrite: _id of a run that should be overwritten.
+        priority: (default 30)
+        client: Client to connect to. Do not use client and URL together.
+        failure_dir: Directory to save the run of a failed observer to.
+
+        Returns
+        -------
+        An instantiated MongoObserver.
+        """
         import pymongo
         import gridfs
 
@@ -78,10 +94,12 @@ class MongoObserver(RunObserver):
         return MongoObserver(runs_collection,
                              fs, overwrite=overwrite,
                              metrics_collection=metrics_collection,
+                             failure_dir=failure_dir,
                              priority=priority)
 
     def __init__(self, runs_collection,
                  fs, overwrite=None, metrics_collection=None,
+                 failure_dir=None,
                  priority=DEFAULT_MONGO_PRIORITY):
         self.runs = runs_collection
         self.metrics = metrics_collection
@@ -97,6 +115,7 @@ class MongoObserver(RunObserver):
         self.overwrite = overwrite
         self.run_entry = None
         self.priority = priority
+        self.failure_dir = failure_dir
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
@@ -285,6 +304,8 @@ class MongoObserver(RunObserver):
             except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:
                     time.sleep(1)
+            except pymongo.errors.ConnectionFailure:
+                pass
             except pymongo.errors.InvalidDocument:
                 self.run_entry = force_bson_encodeable(self.run_entry)
                 print("Warning: Some of the entries of the run were not "
@@ -294,8 +315,10 @@ class MongoObserver(RunObserver):
                       file=sys.stderr)
 
         from tempfile import NamedTemporaryFile
+        os.makedirs(self.failure_dir, exist_ok=True)
         with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                prefix='sacred_mongo_fail_') as f:
+                                prefix='sacred_mongo_fail_{}_'.format(self.run_entry["_id"]),
+                                dir=self.failure_dir) as f:
             pickle.dump(self.run_entry, f)
             print("Warning: saving to MongoDB failed! "
                   "Stored experiment entry in '{}'".format(f.name),

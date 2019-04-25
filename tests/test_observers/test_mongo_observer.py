@@ -2,6 +2,9 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 import datetime
+import os
+from glob import glob
+
 import mock
 import pytest
 
@@ -15,11 +18,73 @@ from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
+T3 = datetime.datetime(1999, 5, 5, 5, 10, 5)
+
+
+class FailingMongoClient(mongomock.MongoClient):
+    def __init__(self, max_calls_before_failure, **kwargs):
+        super().__init__(**kwargs)
+        self._max_calls_before_failure = max_calls_before_failure
+
+    def get_database(self, name, codec_options=None, read_preference=None,
+                     write_concern=None):
+        db = self._databases.get(name)
+        if db is None:
+            db = self._databases[name] = FailingDatabase(
+                client=self,
+                name=name,
+                max_calls_before_failure=self._max_calls_before_failure
+            )
+        return db
+
+
+class FailingDatabase(mongomock.Database):
+    def __init__(self, max_calls_before_failure, **kwargs):
+        super().__init__(**kwargs)
+        self._max_calls_before_failure = max_calls_before_failure
+
+    def get_collection(self, name, codec_options=None, read_preference=None,
+                       write_concern=None):
+        collection = self._collections.get(name)
+        if collection is None:
+            collection = self._collections[name] = FailingCollection(db=self,
+                                                                     name=name)
+        return collection
+
+
+class FailingCollection(mongomock.Collection):
+    def __init__(self, max_calls_before_failure=2, **kwargs):
+        super().__init__(**kwargs)
+        self._max_calls_before_failure = max_calls_before_failure
+        self._calls = 0
+
+    def insert_one(self, document):
+        self._calls += 1
+        if self._calls > self._max_calls_before_failure:
+            raise pymongo.errors.ConnectionFailure
+        else:
+            return super().insert_one(document)
+
+    def update_one(self, filter, update, upsert=False):
+        self._calls += 1
+        if self._calls > self._max_calls_before_failure:
+            raise pymongo.errors.ConnectionFailure
+        else:
+            return super().update_one(filter, update, upsert)
 
 
 @pytest.fixture
 def mongo_obs():
     db = mongomock.MongoClient().db
+    runs = db.runs
+    metrics = db.metrics
+    fs = mock.MagicMock()
+    return MongoObserver(runs, fs, metrics_collection=metrics)
+
+
+@pytest.fixture
+def failing_mongo_observer():
+    db = FailingMongoClient(max_calls_before_failure=2).db
     runs = db.runs
     metrics = db.metrics
     fs = mock.MagicMock()
@@ -101,6 +166,46 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
     assert db_run['result'] == 1337
     assert db_run['info'] == info
     assert db_run['captured_out'] == outp
+
+
+def test_mongo_observer_fails(failing_mongo_observer, sample_run):
+    failing_mongo_observer.started_event(**sample_run)
+
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+    failing_mongo_observer.heartbeat_event(
+        info=info, captured_out=outp,
+        beat_time=T2,
+        result=1337,
+    )
+
+    with pytest.raises(pymongo.errors.ConnectionFailure):
+        failing_mongo_observer.heartbeat_event(
+            info=info, captured_out=outp,
+            beat_time=T3,
+            result=1337,
+        )
+
+
+def test_mongo_observer_saves_after_failure(failing_mongo_observer,
+                                            sample_run):
+    failure_dir = "/tmp/my_failure/dir"
+    failing_mongo_observer.failure_dir = failure_dir
+    failing_mongo_observer.started_event(**sample_run)
+
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+    failing_mongo_observer.heartbeat_event(
+        info=info, captured_out=outp,
+        beat_time=T2,
+        result=1337,
+    )
+
+    failing_mongo_observer.completed_event(stop_time=T3, result=42)
+    glob_pattern = "{}/sacred_mongo_fail_{}*.pickle".format(
+        failure_dir, sample_run["_id"]
+    )
+    os.path.isfile(glob(glob_pattern)[-1])
 
 
 def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
@@ -214,17 +319,26 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
 @pytest.fixture
 def logged_metrics():
     return [
-        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
-        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
-        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
+        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(),
+                             1),
+        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(),
+                             2),
+        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(),
+                             3),
 
-        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
-        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
-        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+        ScalarMetricLogEntry("training.accuracy", 10,
+                             datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 20,
+                             datetime.datetime.utcnow(), 200),
+        ScalarMetricLogEntry("training.accuracy", 30,
+                             datetime.datetime.utcnow(), 300),
 
-        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
-        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
-        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
+        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(),
+                             10),
+        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(),
+                             20),
+        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(),
+                             30)
     ]
 
 
@@ -270,16 +384,20 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.metrics.count() == 2
     # Read the training.loss metric and make sure it references the correct run
     # and that the run (in the info dictionary) references the correct metric record.
-    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
-    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
+    loss = mongo_obs.metrics.find_one(
+        {"name": "training.loss", "run_id": db_run['_id']})
+    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info'][
+        "metrics"]
     assert loss["steps"] == [10, 20, 30]
     assert loss["values"] == [1, 2, 3]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
     # Read the training.accuracy metric and check the references as with the training.loss above
-    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
-    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
+    accuracy = mongo_obs.metrics.find_one(
+        {"name": "training.accuracy", "run_id": db_run['_id']})
+    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in \
+           db_run['info']["metrics"]
     assert accuracy["steps"] == [10, 20, 30]
     assert accuracy["values"] == [100, 200, 300]
 
@@ -296,16 +414,20 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # The newly added metrics belong to the same run and have the same names, so the total number
     # of metrics should not change.
     assert mongo_obs.metrics.count() == 2
-    loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
-    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
+    loss = mongo_obs.metrics.find_one(
+        {"name": "training.loss", "run_id": db_run['_id']})
+    assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info'][
+        "metrics"]
     # ... but the values should be appended to the original list
     assert loss["steps"] == [10, 20, 30, 40, 50, 60]
     assert loss["values"] == [1, 2, 3, 10, 20, 30]
     for i in range(len(loss["timestamps"]) - 1):
         assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
 
-    accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
-    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
+    accuracy = mongo_obs.metrics.find_one(
+        {"name": "training.accuracy", "run_id": db_run['_id']})
+    assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in \
+           db_run['info']["metrics"]
     assert accuracy["steps"] == [10, 20, 30]
     assert accuracy["values"] == [100, 200, 300]
 
@@ -323,7 +445,8 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.metrics.count() == 4
 
 
-def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):
+def test_mongo_observer_artifact_event_content_type_added(mongo_obs,
+                                                          sample_run):
     """Test that the detected content_type is added to other metadata."""
     mongo_obs.started_event(**sample_run)
 
@@ -339,7 +462,8 @@ def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run)
     assert db_run['artifacts']
 
 
-def test_mongo_observer_artifact_event_content_type_not_overwritten(mongo_obs, sample_run):
+def test_mongo_observer_artifact_event_content_type_not_overwritten(mongo_obs,
+                                                                    sample_run):
     """Test that manually set content_type is not overwritten by automatic detection."""
     mongo_obs.started_event(**sample_run)
 
@@ -362,10 +486,12 @@ def test_mongo_observer_artifact_event_metadata(mongo_obs, sample_run):
     filename = 'setup.py'
     name = 'mysetup'
 
-    mongo_obs.artifact_event(name, filename, metadata={'comment': 'the setup file'})
+    mongo_obs.artifact_event(name, filename,
+                             metadata={'comment': 'the setup file'})
 
     assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]['metadata']['comment'] == 'the setup file'
+    assert mongo_obs.fs.put.call_args[1]['metadata'][
+               'comment'] == 'the setup file'
 
     db_run = mongo_obs.runs.find_one()
     assert db_run['artifacts']
