@@ -23,7 +23,7 @@ T3 = datetime.datetime(1999, 5, 5, 5, 10, 5)
 
 class FailingMongoClient(mongomock.MongoClient):
     def __init__(self, max_calls_before_failure, **kwargs):
-        super().__init__(**kwargs)
+        super(FailingMongoClient, self).__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
 
     def get_database(self, name, codec_options=None, read_preference=None,
@@ -40,7 +40,7 @@ class FailingMongoClient(mongomock.MongoClient):
 
 class FailingDatabase(mongomock.Database):
     def __init__(self, max_calls_before_failure, **kwargs):
-        super().__init__(**kwargs)
+        super(FailingDatabase, self).__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
 
     def get_collection(self, name, codec_options=None, read_preference=None,
@@ -54,7 +54,7 @@ class FailingDatabase(mongomock.Database):
 
 class FailingCollection(mongomock.Collection):
     def __init__(self, max_calls_before_failure=2, **kwargs):
-        super().__init__(**kwargs)
+        super(FailingCollection, self).__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
         self._calls = 0
 

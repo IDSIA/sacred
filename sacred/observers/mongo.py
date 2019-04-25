@@ -320,7 +320,9 @@ class MongoObserver(RunObserver):
         from tempfile import NamedTemporaryFile
         os.makedirs(self.failure_dir, exist_ok=True)
         with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                prefix='sacred_mongo_fail_{}_'.format(self.run_entry["_id"]),
+                                prefix='sacred_mongo_fail_{}_'.format(
+                                    self.run_entry["_id"]
+                                ),
                                 dir=self.failure_dir) as f:
             pickle.dump(self.run_entry, f)
             print("Warning: saving to MongoDB failed! "
