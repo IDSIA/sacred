@@ -8,7 +8,6 @@ import inspect
 import logging
 import os.path
 import pkgutil
-import pkg_resources
 import re
 import shlex
 import sys
@@ -677,15 +676,15 @@ def module_is_imported(modname, scope=None):
     return False
 
 
-def get_package_version(dist_name):
-    """Returns a parsed version string of a package."""
-    version_string = pkg_resources.get_distribution(dist_name).version
-    return version.parse(version_string)
-
-
 def parse_version(version_string):
     """Returns a parsed version string."""
     return version.parse(version_string)
+
+
+def get_package_version(name):
+    """Returns a parsed version string of a package."""
+    version_string = __import__(name).__version__
+    return parse_version(version_string)
 
 
 def ensure_wellformed_argv(argv):
