@@ -136,7 +136,7 @@ def tee_output_fd():
             tee_stderr = subprocess.Popen(
                 ['tee', '-a', target.name], preexec_fn=os.setsid,
                 stdin=subprocess.PIPE, stdout=2)
-        except (FileNotFoundError, (OSError, AttributeError)):
+        except (FileNotFoundError, OSError, AttributeError):
             # No tee found in this operating system. Trying to use a python
             # implementation of tee. However this is slow and error-prone.
             tee_stdout = subprocess.Popen(
