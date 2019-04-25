@@ -73,6 +73,19 @@ class FailingCollection(mongomock.Collection):
             return super().update_one(filter, update, upsert)
 
 
+def test_create_should_raise_error_on_non_pymongo_client():
+    client = mongomock.MongoClient()
+    with pytest.raises(ValueError):
+        MongoObserver.create(client=client)
+
+
+def test_create_should_raise_error_on_both_client_and_url():
+    real_client = pymongo.MongoClient()
+    with pytest.raises(ValueError,
+                       match="Cannot pass both a client and a url."):
+        MongoObserver.create(client=real_client, url="mymongourl")
+
+
 @pytest.fixture
 def mongo_obs():
     db = mongomock.MongoClient().db
