@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 
 import collections
 import contextlib
+import importlib
 import inspect
 import logging
 import os.path
@@ -683,7 +684,7 @@ def parse_version(version_string):
 
 def get_package_version(name):
     """Returns a parsed version string of a package."""
-    version_string = __import__(name).__version__
+    version_string = importlib.import_module(name).__version__
     return parse_version(version_string)
 
 
