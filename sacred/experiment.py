@@ -7,12 +7,15 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
+import hashlib
+import json
 
 from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
-    ForceOption, gather_command_line_options, LoglevelOption)
+    ForceOption, gather_command_line_options, LoglevelOption,
+    MD5IgnoreOption)
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config,
                              print_named_configs)
@@ -22,7 +25,7 @@ from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
     SacredError, format_sacred_error
 
-__all__ = ('Experiment',)
+__all__ = ('Experiment', 'NoDuplicateExperiment', 'DuplicateError', )
 
 
 class Experiment(Ingredient):
@@ -254,10 +257,10 @@ class Experiment(Ingredient):
         if not args['help'] and err:
             print(short_usage)
             print(err)
-            exit(1)
+            sys.exit(1)
 
         if self._handle_help(args, usage):
-            exit()
+            sys.exit(0)
 
         try:
             return self.run(cmd_name, config_updates, named_configs, {}, args)
@@ -288,7 +291,7 @@ class Experiment(Ingredient):
                     print(format_sacred_error(e, short_usage), file=sys.stderr)
                 else:
                     print_filtered_stacktrace()
-                exit(1)
+                sys.exit(1)
 
     def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
@@ -466,6 +469,10 @@ class Experiment(Ingredient):
             if option_value:
                 option.apply(option_value, run)
 
+        if run._md5_enabled:
+            run.meta_info['md5'], run.meta_info['md5_ignored'] = \
+                self._compute_md5(run.config, run._md5_ignored)
+
         self.current_run = run
         return run
 
@@ -490,3 +497,15 @@ class Experiment(Ingredient):
                 print(help_for_command(commands[args['COMMAND']]))
                 return True
         return False
+
+    def _compute_md5(self, config, ignored_parameters):
+        actually_ignored = []
+        if not ignored_parameters is None:
+            config = config.copy()
+            for param in ignored_parameters:
+                if param in config:
+                    del config[param]
+                    actually_ignored.append(param)
+        return hashlib.sha1(
+            json.dumps(config, separators = (',', ':'), sort_keys = True)\
+                .encode('utf-8')).hexdigest(), tuple(actually_ignored)

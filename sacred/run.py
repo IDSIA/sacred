@@ -107,6 +107,9 @@ class Run(object):
         self._failed_observers = []
         self._output_file = None
 
+        self._md5_enabled = False
+        self._md5_ignored = None
+
         self._metrics = metrics_logger.MetricsLogger()
 
     def open_resource(self, filename, mode='r'):
@@ -222,6 +225,8 @@ class Run(object):
         capture_mode, capture_stdout = get_stdcapturer(capture_mode)
         self.run_logger.debug('Using capture mode "%s"', capture_mode)
 
+        self._execute_pre_run_hooks()
+
         if self.queue_only:
             self._emit_queued()
             return
@@ -229,7 +234,6 @@ class Run(object):
             with capture_stdout() as self._output_file:
                 self._emit_started()
                 self._start_heartbeat()
-                self._execute_pre_run_hooks()
                 self.result = self.main_function(*args)
                 self._execute_post_run_hooks()
                 if self.result is not None:
@@ -420,11 +424,11 @@ class Run(object):
 
     def _execute_pre_run_hooks(self):
         for pr in self.pre_run_hooks:
-            pr()
+            pr(self, self.run_logger)
 
     def _execute_post_run_hooks(self):
         for pr in self.post_run_hooks:
-            pr()
+            pr(self, self.run_logger)
 
     def warn_if_unobserved(self):
         if not self.observers and not self.debug and not self.unobserved:
