@@ -25,8 +25,7 @@ from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
     SacredError, format_sacred_error
 
-__all__ = ('Experiment', 'NoDuplicateExperiment', 'DuplicateError', )
-
+__all__ = ('Experiment', )
 
 class Experiment(Ingredient):
     """
@@ -506,6 +505,6 @@ class Experiment(Ingredient):
                 if param in config:
                     del config[param]
                     actually_ignored.append(param)
-        return hashlib.sha1(
+        return hashlib.md5(
             json.dumps(config, separators = (',', ':'), sort_keys = True)\
                 .encode('utf-8')).hexdigest(), tuple(actually_ignored)

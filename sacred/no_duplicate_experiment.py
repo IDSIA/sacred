@@ -1,11 +1,20 @@
+#!/usr/bin/env python
+# coding=utf-8
+"""This module defines experiments with duplication checking."""
+from __future__ import division, print_function, unicode_literals
+
 from sacred.experiment import Experiment
 
-class DuplicateError(Exception):
-  def set_info(self, info):
-    self.info = info
+__all__ = ('DuplicateChecker', 'DuplicateCheckerMongo', 'DuplicateError',
+  'NoDuplicateExperiment', )
+
+class DuplicateError(RuntimeError):
+  def __init__(*args, **kwargs):
+    self.info = None
 
 class NoDuplicateExperiment(Experiment):
-  def __init__(self, *args, duplicate_checker = None, ignored_params = None, **kwargs):
+  def __init__(self, *args, duplicate_checker = None,
+      ignored_params = None, **kwargs):
     super().__init__(*args, **kwargs)
     self._duplicate_checker = duplicate_checker
     self._ignored_params = ignored_params
@@ -30,7 +39,7 @@ class NoDuplicateExperiment(Experiment):
       raise exception
 
 class DuplicateChecker(object):
-  def check_duplicate(run, logger, exception):
+  def check_duplicate(self, run, logger, exception):
     return -1
 
 class DuplicateCheckerMongo(DuplicateChecker):
@@ -41,9 +50,10 @@ class DuplicateCheckerMongo(DuplicateChecker):
     self.collection = self.client[collection]
 
   def check_duplicate(self, run, logger, exception):
-    runs = tuple(self.collection.runs.find({'meta.md5': run.meta_info['md5']}))
+    runs = tuple(
+      self.collection.runs.find({'meta.md5': run.meta_info['md5']}))
     if len(runs) > 0:
-      exception.set_info(runs)
+      exception.info = runs
       found = runs[-1]['_id']
     else:
       found = -1

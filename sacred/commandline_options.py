@@ -334,7 +334,7 @@ class CaptureOption(CommandLineOption):
 
 class MD5Option(CommandLineOption):
     """Controls whether an MD5 hash of the used configuration is stored."""
-    
+
     short_flag = 'md5'
 
     @classmethod
@@ -344,7 +344,7 @@ class MD5Option(CommandLineOption):
 
 class MD5IgnoreOption(CommandLineOption):
     """Sets list of parameters ignored during hash calculation."""
-    
+
     short_flag = 'md5_ignore'
     arg = 'MD5_IGNORED'
     arg_description = 'Comma-separated list of parameters ignored during hash calculation.'
