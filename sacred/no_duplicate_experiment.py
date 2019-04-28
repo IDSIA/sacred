@@ -9,7 +9,7 @@ __all__ = ('DuplicateChecker', 'DuplicateCheckerMongo', 'DuplicateError',
   'NoDuplicateExperiment', )
 
 class DuplicateError(RuntimeError):
-  def __init__(*args, **kwargs):
+  def __init__(self, *args, **kwargs):
     self.info = None
 
 class NoDuplicateExperiment(Experiment):
