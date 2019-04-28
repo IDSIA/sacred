@@ -470,7 +470,7 @@ class Experiment(Ingredient):
 
         if run._md5_enabled:
             run.meta_info['md5'], run.meta_info['md5_ignored'] = \
-                self._compute_md5(run.config, run._md5_ignored)
+                self._compute_md5(run.experiment_info, run.config, run._md5_ignored)
 
         self.current_run = run
         return run
@@ -497,7 +497,7 @@ class Experiment(Ingredient):
                 return True
         return False
 
-    def _compute_md5(self, config, ignored_parameters):
+    def _compute_md5(self, info, config, ignored_parameters):
         actually_ignored = []
         if not ignored_parameters is None:
             config = config.copy()
@@ -506,5 +506,5 @@ class Experiment(Ingredient):
                     del config[param]
                     actually_ignored.append(param)
         return hashlib.md5(
-            json.dumps(config, separators = (',', ':'), sort_keys = True)\
+            json.dumps((info, config), separators = (',', ':'), sort_keys = True)\
                 .encode('utf-8')).hexdigest(), tuple(actually_ignored)
