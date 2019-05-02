@@ -413,6 +413,11 @@ class Run(object):
                 # others
                 self.run_logger.error(tb.format_exc())
 
+    def _wait_for_observers(self):
+        """Block until all observers finished processing."""
+        for observer in self.observers:
+            self._safe_call(observer, 'join')
+
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:
             self.run_logger.warning("The observer '{}' failed at some point "
