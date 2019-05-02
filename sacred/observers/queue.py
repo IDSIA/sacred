@@ -51,23 +51,32 @@ class QueueObserver(RunObserver):
             try:
                 event = self._queue.get()
             except IndexError:
+                # Currently there is no event on the queue so
+                # just go back to sleep.
                 pass
             else:
                 try:
                     method = getattr(self.covered_observer, event.name)
                 except NameError as e:
-                    # Observer does not implement event handler.
+                    # covered observer does not implement event handler
+                    # for the event, so just
+                    # discard the message.
                     print(e)
+                    self._queue.task_done()
                 else:
-                    try:
-                        method(*event.args, **event.kwargs)
-                    except Exception as e:
-                        # Something went wrong during the processing of the event.
-                        # So put the event back on the queue.
-                        self._queue.put(event)
-                        print(e)
-                    else:
-                        self._queue.task_done()
+                    while True:
+                        try:
+                            method(*event.args, **event.kwargs)
+                        except Exception as e:
+                            # Something went wrong during the processing of
+                            # the event so wait for some time and
+                            # then try again.
+                            self._stop_worker_event.wait(10)
+                            print(e)
+                            continue
+                        else:
+                            self._queue.task_done()
+                            break
 
     def _join(self):
         self._queue.join()
