@@ -2,8 +2,9 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+
 import sacred.optional as opt
-from sacred.utils import join_paths
+from sacred.utils import join_paths, SacredError
 
 
 class FallbackDict(dict):
@@ -224,6 +225,73 @@ class DogmaticList(list):
             if isinstance(obj, (DogmaticDict, DogmaticList)):
                 obj.revelation()
         return set()
+
+
+class ReadOnlyContainer:
+    def _readonly(self, *args, **kwargs):
+        raise SacredError(
+            self.message,
+            filter_traceback='always'
+        )
+
+
+class ReadOnlyDict(dict, ReadOnlyContainer):
+    """
+    A read-only variant of a `dict`
+    """
+    # Overwrite all methods that can modify a dict
+    clear = ReadOnlyContainer._readonly
+    pop = ReadOnlyContainer._readonly
+    popitem = ReadOnlyContainer._readonly
+    setdefault = ReadOnlyContainer._readonly
+    update = ReadOnlyContainer._readonly
+    __setitem__ = ReadOnlyContainer._readonly
+    __delitem__ = ReadOnlyContainer._readonly
+
+    def __init__(self, *args, message=None, **kwargs):
+        # Call list init
+        super().__init__(*args, **kwargs)
+
+        self.message = message or 'This ReadOnlyDict is read-only!'
+
+
+class ReadOnlyList(list, ReadOnlyContainer):
+    """
+    A read-only variant of a `list`
+    """
+    append = ReadOnlyContainer._readonly
+    clear = ReadOnlyContainer._readonly
+    extend = ReadOnlyContainer._readonly
+    insert = ReadOnlyContainer._readonly
+    pop = ReadOnlyContainer._readonly
+    remove = ReadOnlyContainer._readonly
+    reverse = ReadOnlyContainer._readonly
+    sort = ReadOnlyContainer._readonly
+    __setitem__ = ReadOnlyContainer._readonly
+    __delitem__ = ReadOnlyContainer._readonly
+
+    def __init__(self, *iterable, message=None):
+        # Call list init
+        super().__init__(*iterable)
+
+        self.message = message or 'This ReadOnlyList is read-only!'
+
+
+def make_read_only(o, error_message=None):
+    """
+    Converts every `list` and `dict` into `ReadOnlyList` and `ReadOnlyDict` in
+    a nested structure of `list`s, `dict`s and `tuple`s. Does not modify `o`
+    but returns the converted structure.
+    """
+    if isinstance(o, dict):
+        return ReadOnlyDict({k: make_read_only(v, error_message) for k, v in o.items()}, message=error_message)
+    elif isinstance(o, list):
+        return ReadOnlyList([make_read_only(v, error_message) for v in o], message=error_message)
+    elif isinstance(o, tuple):
+        return tuple(map(make_read_only, o))
+    else:
+        return o
+
 
 
 SIMPLIFY_TYPE = {

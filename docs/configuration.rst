@@ -402,6 +402,14 @@ You will still get an appropriate error in the following cases:
     hide some missing value errors from you, by (unintentionally) filling them
     in from the configuration.
 
+.. note::
+    Configuration values should not be changed in a captured function
+    because those changes cannot be recorded by the sacred experiment and can
+    lead to confusing and unintended behaviour.
+    Sacred will raise an Exception if you try to write to a nested
+    configuration item. You can disable this (not recommended) by setting
+    ``SETTINGS.CONFIG.READ_ONLY_CONFIG = False``.
+
 .. _special_values:
 
 Special Values
