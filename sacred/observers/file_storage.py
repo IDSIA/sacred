@@ -58,7 +58,7 @@ class FileStorageObserver(RunObserver):
         try:
             os.makedirs(name, mode, exist_ok)
         except TypeError:
-            if os.path.exists(name):
+            if not os.path.exists(name):
                 os.makedirs(name, mode)
 
     def _make_run_dir(self, _id):
