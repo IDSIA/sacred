@@ -53,8 +53,7 @@ class FileStorageObserver(RunObserver):
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
-        if not os.path.exists(self.basedir):
-            os.makedirs(self.basedir)
+        os.makedirs(self.basedir, exist_ok=True)
         if _id is None:
             self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
         else:
@@ -91,8 +90,7 @@ class FileStorageObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
-        if not os.path.exists(self.basedir):
-            os.makedirs(self.basedir)
+        os.makedirs(self.basedir, exist_ok=True)
         if _id is None:
             for i in range(200):
                 dir_nrs = [int(d) for d in os.listdir(self.basedir)
@@ -137,8 +135,7 @@ class FileStorageObserver(RunObserver):
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir):
-        if not os.path.exists(store_dir):
-            os.makedirs(store_dir)
+        os.makedirs(store_dir, exist_ok=True)
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + '_' + md5sum + ext
