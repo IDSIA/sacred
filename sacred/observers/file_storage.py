@@ -50,8 +50,19 @@ class FileStorageObserver(RunObserver):
         self.cout = ""
         self.cout_write_cursor = 0
 
+    @staticmethod
+    def _makedirs(name, mode=0o777, exist_ok=False):
+        """ Wrapper of os.makedirs with fallback
+            for exist_ok on python 2.
+        """
+        try:
+            os.makedirs(name, mode, exist_ok)
+        except TypeError:
+            if os.path.exists(name):
+                os.makedirs(name, mode)
+
     def _make_run_dir(self, _id):
-        os.makedirs(self.basedir, exist_ok=True)
+        self._makedirs(self.basedir, exist_ok=True)
         if _id is None:
             for i in range(200):
                 dir_nrs = [int(d) for d in os.listdir(self.basedir)
@@ -132,7 +143,7 @@ class FileStorageObserver(RunObserver):
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir):
-        os.makedirs(store_dir, exist_ok=True)
+        self._makedirs(store_dir, exist_ok=True)
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + '_' + md5sum + ext
