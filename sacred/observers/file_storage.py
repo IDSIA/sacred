@@ -4,7 +4,6 @@ from __future__ import division, print_function, unicode_literals
 import json
 import os
 import os.path
-import tempfile
 
 from shutil import copyfile
 
@@ -50,7 +49,7 @@ class FileStorageObserver(RunObserver):
         self.info = None
         self.cout = ""
         self.cout_write_cursor = 0
-    
+
     def _make_run_dir(self, _id):
         os.makedirs(self.basedir, exist_ok=True)
         if _id is None:
@@ -71,7 +70,7 @@ class FileStorageObserver(RunObserver):
         else:
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
-            
+
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
         self._make_run_dir(_id)
