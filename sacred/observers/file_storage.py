@@ -50,15 +50,31 @@ class FileStorageObserver(RunObserver):
         self.info = None
         self.cout = ""
         self.cout_write_cursor = 0
-
-    def queued_event(self, ex_info, command, host_info, queue_time, config,
-                     meta_info, _id):
+    
+    def _make_run_dir(self, _id):
         os.makedirs(self.basedir, exist_ok=True)
         if _id is None:
-            self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
+            for i in range(200):
+                dir_nrs = [int(d) for d in os.listdir(self.basedir)
+                           if os.path.isdir(os.path.join(self.basedir, d)) and
+                           d.isdigit()]
+                _id = max(dir_nrs + [0]) + 1
+                self.dir = os.path.join(self.basedir, str(_id))
+                try:
+                    os.mkdir(self.dir)
+                    break
+                except FileExistsError:  # Catch race conditions
+                    if i > 100:
+                        # After some tries,
+                        # expect that something other went wrong
+                        raise
         else:
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
+            
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
+        self._make_run_dir(_id)
 
         self.run_entry = {
             'experiment': dict(ex_info),
@@ -88,27 +104,10 @@ class FileStorageObserver(RunObserver):
             source_info.append([s, os.path.relpath(store_path, self.basedir)])
         return source_info
 
+                  
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
-        os.makedirs(self.basedir, exist_ok=True)
-        if _id is None:
-            for i in range(200):
-                dir_nrs = [int(d) for d in os.listdir(self.basedir)
-                           if os.path.isdir(os.path.join(self.basedir, d)) and
-                           d.isdigit()]
-                _id = max(dir_nrs + [0]) + 1
-                self.dir = os.path.join(self.basedir, str(_id))
-                try:
-                    os.mkdir(self.dir)
-                    break
-                except FileExistsError:  # Catch race conditions
-                    if i > 100:
-                        # After some tries,
-                        # expect that something other went wrong
-                        raise
-        else:
-            self.dir = os.path.join(self.basedir, str(_id))
-            os.mkdir(self.dir)
+        self._make_run_dir(_id)
 
         ex_info['sources'] = self.save_sources(ex_info)
 
