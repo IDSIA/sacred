@@ -103,7 +103,7 @@ class FileStorageObserver(RunObserver):
             # assert m == md5sum
             source_info.append([s, os.path.relpath(store_path, self.basedir)])
         return source_info
-           
+
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
         self._make_run_dir(_id)
