@@ -12,6 +12,7 @@ from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
+from .failing_mongo_mock import FailingMongoClient
 
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
@@ -19,58 +20,6 @@ from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
 T3 = datetime.datetime(1999, 5, 5, 5, 10, 5)
-
-
-class FailingMongoClient(mongomock.MongoClient):
-    def __init__(self, max_calls_before_failure, **kwargs):
-        super(FailingMongoClient, self).__init__(**kwargs)
-        self._max_calls_before_failure = max_calls_before_failure
-
-    def get_database(self, name, codec_options=None, read_preference=None,
-                     write_concern=None):
-        db = self._databases.get(name)
-        if db is None:
-            db = self._databases[name] = FailingDatabase(
-                client=self,
-                name=name,
-                max_calls_before_failure=self._max_calls_before_failure
-            )
-        return db
-
-
-class FailingDatabase(mongomock.Database):
-    def __init__(self, max_calls_before_failure, **kwargs):
-        super(FailingDatabase, self).__init__(**kwargs)
-        self._max_calls_before_failure = max_calls_before_failure
-
-    def get_collection(self, name, codec_options=None, read_preference=None,
-                       write_concern=None):
-        collection = self._collections.get(name)
-        if collection is None:
-            collection = self._collections[name] = FailingCollection(db=self,
-                                                                     name=name)
-        return collection
-
-
-class FailingCollection(mongomock.Collection):
-    def __init__(self, max_calls_before_failure=2, **kwargs):
-        super(FailingCollection, self).__init__(**kwargs)
-        self._max_calls_before_failure = max_calls_before_failure
-        self._calls = 0
-
-    def insert_one(self, document):
-        self._calls += 1
-        if self._calls > self._max_calls_before_failure:
-            raise pymongo.errors.ConnectionFailure
-        else:
-            return super().insert_one(document)
-
-    def update_one(self, filter, update, upsert=False):
-        self._calls += 1
-        if self._calls > self._max_calls_before_failure:
-            raise pymongo.errors.ConnectionFailure
-        else:
-            return super().update_one(filter, update, upsert)
 
 
 def test_create_should_raise_error_on_non_pymongo_client():
@@ -97,7 +46,9 @@ def mongo_obs():
 
 @pytest.fixture
 def failing_mongo_observer():
-    db = FailingMongoClient(max_calls_before_failure=2).db
+    db = FailingMongoClient(max_calls_before_failure=2,
+        # exception_to_raise=pymongo.errors.AutoReconnect
+        exception_to_raise=pymongo.errors.ServerSelectionTimeoutError).db
     runs = db.runs
     metrics = db.metrics
     fs = mock.MagicMock()
@@ -111,15 +62,9 @@ def sample_run():
     config = {'config': 'True', 'foo': 'bar', 'answer': 42}
     command = 'run'
     meta_info = {'comment': 'test run'}
-    return {
-        '_id': 'FEDCBA9876543210',
-        'ex_info': exp,
-        'command': command,
-        'host_info': host,
-        'start_time': T1,
-        'config': config,
-        'meta_info': meta_info,
-    }
+    return {'_id': 'FEDCBA9876543210', 'ex_info': exp, 'command': command,
+            'host_info': host, 'start_time': T1, 'config': config,
+            'meta_info': meta_info, }
 
 
 def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
@@ -128,22 +73,15 @@ def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
     assert _id is not None
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
-    assert db_run == {
-        '_id': _id,
-        'experiment': sample_run['ex_info'],
-        'format': mongo_obs.VERSION,
-        'command': sample_run['command'],
-        'host': sample_run['host_info'],
-        'start_time': sample_run['start_time'],
-        'heartbeat': None,
-        'info': {},
-        'captured_out': '',
-        'artifacts': [],
-        'config': sample_run['config'],
-        'meta': sample_run['meta_info'],
-        'status': 'RUNNING',
-        'resources': []
-    }
+    assert db_run == {'_id': _id, 'experiment': sample_run['ex_info'],
+                      'format': mongo_obs.VERSION,
+                      'command': sample_run['command'],
+                      'host': sample_run['host_info'],
+                      'start_time': sample_run['start_time'],
+                      'heartbeat': None, 'info': {}, 'captured_out': '',
+                      'artifacts': [], 'config': sample_run['config'],
+                      'meta': sample_run['meta_info'], 'status': 'RUNNING',
+                      'resources': []}
 
 
 def test_mongo_observer_started_event_uses_given_id(mongo_obs, sample_run):
@@ -186,18 +124,12 @@ def test_mongo_observer_fails(failing_mongo_observer, sample_run):
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    failing_mongo_observer.heartbeat_event(
-        info=info, captured_out=outp,
-        beat_time=T2,
-        result=1337,
-    )
+    failing_mongo_observer.heartbeat_event(info=info, captured_out=outp,
+                                           beat_time=T2, result=1337, )
 
     with pytest.raises(pymongo.errors.ConnectionFailure):
-        failing_mongo_observer.heartbeat_event(
-            info=info, captured_out=outp,
-            beat_time=T3,
-            result=1337,
-        )
+        failing_mongo_observer.heartbeat_event(info=info, captured_out=outp,
+                                               beat_time=T3, result=1337, )
 
 
 def test_mongo_observer_saves_after_failure(failing_mongo_observer,
@@ -208,16 +140,12 @@ def test_mongo_observer_saves_after_failure(failing_mongo_observer,
 
     info = {'my_info': [1, 2, 3], 'nr': 7}
     outp = 'some output'
-    failing_mongo_observer.heartbeat_event(
-        info=info, captured_out=outp,
-        beat_time=T2,
-        result=1337,
-    )
+    failing_mongo_observer.heartbeat_event(info=info, captured_out=outp,
+                                           beat_time=T2, result=1337, )
 
     failing_mongo_observer.completed_event(stop_time=T3, result=42)
-    glob_pattern = "{}/sacred_mongo_fail_{}*.pickle".format(
-        failure_dir, sample_run["_id"]
-    )
+    glob_pattern = "{}/sacred_mongo_fail_{}*.pickle".format(failure_dir,
+                                                            sample_run["_id"])
     os.path.isfile(glob(glob_pattern)[-1])
 
 
@@ -248,8 +176,7 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
     mongo_obs.started_event(**sample_run)
 
     fail_trace = "lots of errors and\nso\non..."
-    mongo_obs.failed_event(fail_time=T2,
-                           fail_trace=fail_trace)
+    mongo_obs.failed_event(fail_time=T2, fail_trace=fail_trace)
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -298,34 +225,18 @@ def test_force_bson_encodable_doesnt_change_valid_document():
 
 
 def test_force_bson_encodable_substitutes_illegal_value_with_strings():
-    d = {
-        'a_module': datetime,
-        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-        'nested': {
-            'dict': {
-                'with': {
-                    'illegal_module': mock
-                }
-            }
-        },
-        '$illegal': 'because it starts with a $',
-        'il.legal': 'because it contains a .',
-        12.7: 'illegal because it is not a string key'
-    }
-    expected = {
-        'a_module': str(datetime),
-        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-        'nested': {
-            'dict': {
-                'with': {
-                    'illegal_module': str(mock)
-                }
-            }
-        },
-        '@illegal': 'because it starts with a $',
-        'il,legal': 'because it contains a .',
-        '12,7': 'illegal because it is not a string key'
-    }
+    d = {'a_module': datetime,
+         'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
+         'nested': {'dict': {'with': {'illegal_module': mock}}},
+         '$illegal': 'because it starts with a $',
+         'il.legal': 'because it contains a .',
+         12.7: 'illegal because it is not a string key'}
+    expected = {'a_module': str(datetime),
+                'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
+                'nested': {'dict': {'with': {'illegal_module': str(mock)}}},
+                '@illegal': 'because it starts with a $',
+                'il,legal': 'because it contains a .',
+                '12,7': 'illegal because it is not a string key'}
     assert force_bson_encodeable(d) == expected
 
 
@@ -351,8 +262,7 @@ def logged_metrics():
         ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(),
                              20),
         ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(),
-                             30)
-    ]
+                             30)]
 
 
 def test_log_metrics(mongo_obs, sample_run, logged_metrics):
