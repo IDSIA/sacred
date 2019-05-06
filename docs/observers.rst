@@ -79,6 +79,9 @@ This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
 (See `here <http://docs.mongodb.org/manual/installation/>`_ on how to install)
 
+You can setup MongoDB easily with Docker. See the instructions
+in  :ref:`docker_setup` .
+
 Authentication
 --------------
 If you need authentication a little more work might be necessary.
