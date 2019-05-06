@@ -217,7 +217,7 @@ class MongoObserver(RunObserver):
                   'artifact {}.'.format(filename))
         return mime_type
 
-    def log_metrics(self, metrics_by_name, info):
+    def log_metrics(self, metric_name, metrics_values, info):
         """Store new measurements to the database.
 
         Take measurements and store them into
@@ -229,19 +229,18 @@ class MongoObserver(RunObserver):
             # If, for whatever reason, the metrics collection has not been set
             # do not try to save anything there.
             return
-        for key in metrics_by_name:
-            query = {"run_id": self.run_entry['_id'],
-                     "name": key}
-            push = {"steps": {"$each": metrics_by_name[key]["steps"]},
-                    "values": {"$each": metrics_by_name[key]["values"]},
-                    "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
-                    }
-            update = {"$push": push}
-            result = self.metrics.update_one(query, update, upsert=True)
-            if result.upserted_id is not None:
-                # This is the first time we are storing this metric
-                info.setdefault("metrics", []) \
-                    .append({"name": key, "id": str(result.upserted_id)})
+        query = {"run_id": self.run_entry['_id'],
+                 "name": metric_name}
+        push = {"steps": {"$each": metrics_values["steps"]},
+                "values": {"$each": metrics_values["values"]},
+                "timestamps": {"$each": metrics_values["timestamps"]}
+                }
+        update = {"$push": push}
+        result = self.metrics.update_one(query, update, upsert=True)
+        if result.upserted_id is not None:
+            # This is the first time we are storing this metric
+            info.setdefault("metrics", []) \
+                .append({"name": metric_name, "id": str(result.upserted_id)})
 
     def insert(self):
         import pymongo.errors
@@ -271,8 +270,8 @@ class MongoObserver(RunObserver):
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry})
-        except pymongo.errors.AutoReconnect:
-            pass  # just wait for the next save
+        # except pymongo.errors.AutoReconnect:
+        #     pass  # just wait for the next save
         except pymongo.errors.InvalidDocument:
             raise ObserverError('Run contained an unserializable entry.'
                                 '(most likely in the info)')
@@ -286,6 +285,7 @@ class MongoObserver(RunObserver):
                                      {'$set': self.run_entry}, upsert=True)
                 return
             except pymongo.errors.AutoReconnect:
+                print("autoreconnect")
                 if i < attempts - 1:
                     time.sleep(1)
             except pymongo.errors.InvalidDocument:
@@ -296,6 +296,7 @@ class MongoObserver(RunObserver):
                       "Most likely it is either the 'info' or the 'result'.",
                       file=sys.stderr)
 
+
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(suffix='.pickle', delete=False,
                                 prefix='sacred_mongo_fail_') as f:
@@ -303,6 +304,8 @@ class MongoObserver(RunObserver):
             print("Warning: saving to MongoDB failed! "
                   "Stored experiment entry in '{}'".format(f.name),
                   file=sys.stderr)
+
+        raise ObserverError("Warning: saving to MongoDB failed!")
 
     def save_sources(self, ex_info):
         base_dir = ex_info['base_dir']

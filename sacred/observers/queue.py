@@ -48,6 +48,11 @@ class QueueObserver(RunObserver):
     def artifact_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("artifact_event", args, kwargs))
 
+    def log_metrics(self, metrics_by_name, info):
+        for metric_name, metric_values in metrics_by_name.items():
+            self._queue.put(WrappedEvent("log_metrics", [metric_name, metric_values, info],
+                {}))
+
     def _run(self):
         while not self._queue.empty():
             try:
@@ -73,10 +78,11 @@ class QueueObserver(RunObserver):
                             # Something went wrong during the processing of
                             # the event so wait for some time and
                             # then try again.
-                            self._stop_worker_event.wait(10)
+                            self._stop_worker_event.wait(0.01)
                             print(e)
                             continue
                         else:
+                            print("done ", event)
                             self._queue.task_done()
                             break
 
@@ -86,6 +92,7 @@ class QueueObserver(RunObserver):
         self._worker.join(timeout=10)
 
     def __getattr__(self, item):
+        print("getattr ", item)
         return getattr(self.covered_observer, item)
 
     def __eq__(self, other):
