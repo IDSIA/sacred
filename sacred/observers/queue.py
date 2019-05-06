@@ -13,8 +13,10 @@ class QueueObserver(RunObserver):
     def __init__(self, covered_observer, interval=20):
         self.covered_observer = covered_observer
         self._queue = Queue()
-        self._stop_worker_event, self._worker = IntervalTimer.create(self._run,
-            interval=interval)
+        self._stop_worker_event, self._worker = IntervalTimer.create(
+            self._run,
+            interval=interval,
+        )
         self._worker.start()
 
     def queued_event(self, *args, **kwargs):
@@ -30,15 +32,15 @@ class QueueObserver(RunObserver):
 
     def completed_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("completed_event", args, kwargs))
-        self._join()
+        self.join()
 
     def interrupted_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("interrupted_event", args, kwargs))
-        self._join()
+        self.join()
 
     def failed_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("failed_event", args, kwargs))
-        self._join()
+        self.join()
 
     def resource_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("resource_event", args, kwargs))
@@ -78,13 +80,10 @@ class QueueObserver(RunObserver):
                             self._queue.task_done()
                             break
 
-    def _join(self):
+    def join(self):
         self._queue.join()
         self._stop_worker_event.set()
         self._worker.join(timeout=10)
-
-    def join(self):
-        self._join()
 
     def __getattr__(self, item):
         return getattr(self.covered_observer, item)
