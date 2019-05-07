@@ -1,7 +1,11 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 from collections import namedtuple
-from queue import Queue
+import sys
+if sys.version_info[0] >= 3:
+    from queue import Queue
+else:
+    from Queue import Queue
 from sacred.observers.base import RunObserver
 from sacred.utils import IntervalTimer
 
