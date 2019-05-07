@@ -13,7 +13,7 @@ gridfs = pytest.importorskip("gridfs")
 import pymongo.errors
 
 from sacred.dependencies import get_digest
-from sacred.observers.mongo import (QueuedMongoObserver, MongoObserver, force_bson_encodeable)
+from sacred.observers.mongo import QueuedMongoObserver, MongoObserver
 from .failing_mongo_mock import ReconnectingMongoClient
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
