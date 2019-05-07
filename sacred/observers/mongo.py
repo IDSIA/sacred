@@ -427,7 +427,6 @@ class QueueCompatibleMongoObserver(MongoObserver):
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
-        print("in subclass !!!!!!!!!!!!!!!!")
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry}, upsert=True)

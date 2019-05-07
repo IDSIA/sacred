@@ -80,7 +80,6 @@ class QueueObserver(RunObserver):
                     # covered observer does not implement event handler
                     # for the event, so just
                     # discard the message.
-                    print(e)
                     self._queue.task_done()
                 else:
                     while True:
@@ -91,10 +90,8 @@ class QueueObserver(RunObserver):
                             # the event so wait for some time and
                             # then try again.
                             self._stop_worker_event.wait(self._retry_interval)
-                            print(e)
                             continue
                         else:
-                            print("done ", event)
                             self._queue.task_done()
                             break
 
@@ -105,7 +102,6 @@ class QueueObserver(RunObserver):
             self._worker.join(timeout=10)
 
     def __getattr__(self, item):
-        print("getattr ", item)
         return getattr(self._covered_observer, item)
 
     def __eq__(self, other):
