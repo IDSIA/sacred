@@ -2,12 +2,13 @@
 from __future__ import division, print_function, unicode_literals
 from collections import namedtuple
 import sys
+from sacred.observers.base import RunObserver
+from sacred.utils import IntervalTimer
+
 if sys.version_info[0] >= 3:
     from queue import Queue
 else:
     from Queue import Queue
-from sacred.observers.base import RunObserver
-from sacred.utils import IntervalTimer
 
 WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
@@ -80,7 +81,7 @@ class QueueObserver(RunObserver):
                 try:
                     # method = getattr(self._covered_observer, event.name)
                     method = getattr(self._covered_observer, event.name)
-                except NameError as e:
+                except NameError:
                     # covered observer does not implement event handler
                     # for the event, so just
                     # discard the message.
@@ -89,7 +90,7 @@ class QueueObserver(RunObserver):
                     while True:
                         try:
                             method(*event.args, **event.kwargs)
-                        except Exception as e:
+                        except:
                             # Something went wrong during the processing of
                             # the event so wait for some time and
                             # then try again.
@@ -110,3 +111,6 @@ class QueueObserver(RunObserver):
 
     def __eq__(self, other):
         return self._covered_observer == other
+
+    def __ne__(self, other):
+        return not self._covered_observer == other
