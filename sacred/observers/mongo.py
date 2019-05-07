@@ -81,10 +81,8 @@ class MongoObserver(RunObserver):
         runs_collection = database[collection]
         metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return cls(runs_collection,
-                             fs, overwrite=overwrite,
-                             metrics_collection=metrics_collection,
-                             priority=priority)
+        return cls(runs_collection, fs, overwrite=overwrite,
+                   metrics_collection=metrics_collection, priority=priority)
 
     def __init__(self, runs_collection,
                  fs, overwrite=None, metrics_collection=None,
