@@ -13,7 +13,7 @@ gridfs = pytest.importorskip("gridfs")
 import pymongo.errors
 
 from sacred.dependencies import get_digest
-from sacred.observers.mongo import (QueuedMongoObserver, force_bson_encodeable)
+from sacred.observers.mongo import (QueuedMongoObserver, MongoObserver, force_bson_encodeable)
 from .failing_mongo_mock import ReconnectingMongoClient
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
@@ -193,45 +193,6 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     # for some reason py27 returns this as tuples and py36 as lists
     assert [tuple(r) for r in db_run['resources']] == [(filename, md5)]
 
-
-def test_force_bson_encodable_doesnt_change_valid_document():
-    d = {'int': 1, 'string': 'foo', 'float': 23.87, 'list': ['a', 1, True],
-         'bool': True, 'cr4zy: _but_ [legal) Key!': '$illegal.key.as.value',
-         'datetime': datetime.datetime.utcnow(), 'tuple': (1, 2.0, 'three'),
-         'none': None}
-    assert force_bson_encodeable(d) == d
-
-
-def test_force_bson_encodable_substitutes_illegal_value_with_strings():
-    d = {
-        'a_module': datetime,
-        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-        'nested': {
-            'dict': {
-                'with': {
-                    'illegal_module': mock
-                }
-            }
-        },
-        '$illegal': 'because it starts with a $',
-        'il.legal': 'because it contains a .',
-        12.7: 'illegal because it is not a string key'
-    }
-    expected = {
-        'a_module': str(datetime),
-        'some_legal_stuff': {'foo': 'bar', 'baz': [1, 23, 4]},
-        'nested': {
-            'dict': {
-                'with': {
-                    'illegal_module': str(mock)
-                }
-            }
-        },
-        '@illegal': 'because it starts with a $',
-        'il,legal': 'because it contains a .',
-        '12,7': 'illegal because it is not a string key'
-    }
-    assert force_bson_encodeable(d) == expected
 
 
 @pytest.fixture

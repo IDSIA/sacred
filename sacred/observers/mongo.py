@@ -9,14 +9,15 @@ import sys
 import time
 import mimetypes
 
+import pymongo
 import pymongo.errors
+import gridfs
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
-
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
 
@@ -60,12 +61,10 @@ class MongoObserver(RunObserver):
                                  'search_spaces'}
     VERSION = 'MongoObserver-0.7.0'
 
-    @staticmethod
-    def create(url=None, db_name='sacred', collection='runs',
+    @classmethod
+    def create(cls, url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
                client=None, **kwargs):
-        import pymongo
-        import gridfs
 
         if client is not None:
             if not isinstance(client, pymongo.MongoClient):
@@ -82,7 +81,7 @@ class MongoObserver(RunObserver):
         runs_collection = database[collection]
         metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return MongoObserver(runs_collection,
+        return cls(runs_collection,
                              fs, overwrite=overwrite,
                              metrics_collection=metrics_collection,
                              priority=priority)
@@ -221,7 +220,7 @@ class MongoObserver(RunObserver):
                   'artifact {}.'.format(filename))
         return mime_type
 
-    def log_metrics(self, metric_name, metrics_values, info):
+    def log_metrics(self, metrics_by_name, info):
         """Store new measurements to the database.
 
         Take measurements and store them into
@@ -233,22 +232,21 @@ class MongoObserver(RunObserver):
             # If, for whatever reason, the metrics collection has not been set
             # do not try to save anything there.
             return
-        query = {"run_id": self.run_entry['_id'],
-                 "name": metric_name}
-        push = {"steps": {"$each": metrics_values["steps"]},
-                "values": {"$each": metrics_values["values"]},
-                "timestamps": {"$each": metrics_values["timestamps"]}
-                }
-        update = {"$push": push}
-        result = self.metrics.update_one(query, update, upsert=True)
-        if result.upserted_id is not None:
-            # This is the first time we are storing this metric
-            info.setdefault("metrics", []) \
-                .append({"name": metric_name, "id": str(result.upserted_id)})
+        for key in metrics_by_name:
+            query = {"run_id": self.run_entry['_id'],
+                     "name": key}
+            push = {"steps": {"$each": metrics_by_name[key]["steps"]},
+                    "values": {"$each": metrics_by_name[key]["values"]},
+                    "timestamps": {"$each": metrics_by_name[key]["timestamps"]}
+                    }
+            update = {"$push": push}
+            result = self.metrics.update_one(query, update, upsert=True)
+            if result.upserted_id is not None:
+                # This is the first time we are storing this metric
+                info.setdefault("metrics", []) \
+                    .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
-        import pymongo.errors
-
         if self.overwrite:
             return self.save()
 
@@ -269,41 +267,39 @@ class MongoObserver(RunObserver):
                     raise
 
     def save(self):
-        import pymongo.errors
-
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry})
-        # except pymongo.errors.AutoReconnect:
-        #     pass  # just wait for the next save
+        except pymongo.errors.AutoReconnect:
+            pass  # just wait for the next save
         except pymongo.errors.InvalidDocument:
             raise ObserverError('Run contained an unserializable entry.'
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
-
-        try:
-            self.runs.update_one({'_id': self.run_entry['_id']},
-                                 {'$set': self.run_entry}, upsert=True)
-            return
-
-        except pymongo.errors.InvalidDocument:
-            self.run_entry = force_bson_encodeable(self.run_entry)
-            print("Warning: Some of the entries of the run were not "
-                  "BSON-serializable!\n They have been altered such that "
-                  "they can be stored, but you should fix your experiment!"
-                  "Most likely it is either the 'info' or the 'result'.",
-                  file=sys.stderr)
-
-            from tempfile import NamedTemporaryFile
-            with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                    prefix='sacred_mongo_fail_') as f:
-                pickle.dump(self.run_entry, f)
-                print("Warning: saving to MongoDB failed! "
-                      "Stored experiment entry in '{}'".format(f.name),
+        for i in range(attempts):
+            try:
+                self.runs.update_one({'_id': self.run_entry['_id']},
+                                     {'$set': self.run_entry}, upsert=True)
+                return
+            except pymongo.errors.AutoReconnect:
+                if i < attempts - 1:
+                    time.sleep(1)
+            except pymongo.errors.InvalidDocument:
+                self.run_entry = force_bson_encodeable(self.run_entry)
+                print("Warning: Some of the entries of the run were not "
+                      "BSON-serializable!\n They have been altered such that "
+                      "they can be stored, but you should fix your experiment!"
+                      "Most likely it is either the 'info' or the 'result'.",
                       file=sys.stderr)
 
-        raise ObserverError("Warning: saving to MongoDB failed!")
+        from tempfile import NamedTemporaryFile
+        with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                prefix='sacred_mongo_fail_') as f:
+            pickle.dump(self.run_entry, f)
+            print("Warning: saving to MongoDB failed! "
+                  "Stored experiment entry in '{}'".format(f.name),
+                  file=sys.stderr)
 
     def save_sources(self, ex_info):
         base_dir = ex_info['base_dir']
@@ -396,18 +392,77 @@ class MongoDbOption(CommandLineOption):
         return kwargs
 
 
-class QueuedMongoObserver(QueueObserver):
+class QueueCompatibleMongoObserver(MongoObserver):
 
+    def log_metrics(self, metric_name, metrics_values, info):
+        """Store new measurements to the database.
+
+        Take measurements and store them into
+        the metrics collection in the database.
+        Additionally, reference the metrics
+        in the info["metrics"] dictionary.
+        """
+        if self.metrics is None:
+            # If, for whatever reason, the metrics collection has not been set
+            # do not try to save anything there.
+            return
+        query = {"run_id": self.run_entry['_id'],
+                 "name": metric_name}
+        push = {"steps": {"$each": metrics_values["steps"]},
+                "values": {"$each": metrics_values["values"]},
+                "timestamps": {"$each": metrics_values["timestamps"]}}
+        update = {"$push": push}
+        result = self.metrics.update_one(query, update, upsert=True)
+        if result.upserted_id is not None:
+            # This is the first time we are storing this metric
+            info.setdefault("metrics", []) \
+                .append({"name": metric_name, "id": str(result.upserted_id)})
+
+    def save(self):
+        try:
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry})
+        except pymongo.errors.InvalidDocument:
+            raise ObserverError('Run contained an unserializable entry.'
+                                '(most likely in the info)')
+
+    def final_save(self, attempts):
+        print("in subclass !!!!!!!!!!!!!!!!")
+        try:
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry}, upsert=True)
+            return
+
+        except pymongo.errors.InvalidDocument:
+            self.run_entry = force_bson_encodeable(self.run_entry)
+            print("Warning: Some of the entries of the run were not "
+                  "BSON-serializable!\n They have been altered such that "
+                  "they can be stored, but you should fix your experiment!"
+                  "Most likely it is either the 'info' or the 'result'.",
+                  file=sys.stderr)
+
+            from tempfile import NamedTemporaryFile
+            with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                    prefix='sacred_mongo_fail_') as f:
+                pickle.dump(self.run_entry, f)
+                print("Warning: saving to MongoDB failed! "
+                      "Stored experiment entry in '{}'".format(f.name),
+                      file=sys.stderr)
+
+        raise ObserverError("Warning: saving to MongoDB failed!")
+
+
+class QueuedMongoObserver(QueueObserver):
     @classmethod
     def create(cls, interval=20, retry_interval=10, url=None, db_name='sacred',
                collection='runs', overwrite=None,
                priority=DEFAULT_MONGO_PRIORITY, client=None, **kwargs):
         return cls(
-            MongoObserver.create(url=url, db_name=db_name,
-                                 collection=collection,
-                                 overwrite=overwrite,
-                                 priority=priority, client=client,
-                                 **kwargs),
+            QueueCompatibleMongoObserver.create(url=url, db_name=db_name,
+                                                collection=collection,
+                                                overwrite=overwrite,
+                                                priority=priority,
+                                                client=client, **kwargs),
             interval=interval,
             retry_interval=retry_interval,
         )
