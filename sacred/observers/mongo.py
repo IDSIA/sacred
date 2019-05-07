@@ -9,6 +9,8 @@ import sys
 import time
 import mimetypes
 
+import pymongo.errors
+
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
@@ -277,33 +279,27 @@ class MongoObserver(RunObserver):
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
-        import pymongo.errors
 
-        for i in range(attempts):
-            try:
-                self.runs.update_one({'_id': self.run_entry['_id']},
-                                     {'$set': self.run_entry}, upsert=True)
-                return
-            except pymongo.errors.AutoReconnect:
-                print("autoreconnect")
-                if i < attempts - 1:
-                    time.sleep(1)
-            except pymongo.errors.InvalidDocument:
-                self.run_entry = force_bson_encodeable(self.run_entry)
-                print("Warning: Some of the entries of the run were not "
-                      "BSON-serializable!\n They have been altered such that "
-                      "they can be stored, but you should fix your experiment!"
-                      "Most likely it is either the 'info' or the 'result'.",
-                      file=sys.stderr)
+        try:
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry}, upsert=True)
+            return
 
-
-        from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                prefix='sacred_mongo_fail_') as f:
-            pickle.dump(self.run_entry, f)
-            print("Warning: saving to MongoDB failed! "
-                  "Stored experiment entry in '{}'".format(f.name),
+        except pymongo.errors.InvalidDocument:
+            self.run_entry = force_bson_encodeable(self.run_entry)
+            print("Warning: Some of the entries of the run were not "
+                  "BSON-serializable!\n They have been altered such that "
+                  "they can be stored, but you should fix your experiment!"
+                  "Most likely it is either the 'info' or the 'result'.",
                   file=sys.stderr)
+
+            from tempfile import NamedTemporaryFile
+            with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                    prefix='sacred_mongo_fail_') as f:
+                pickle.dump(self.run_entry, f)
+                print("Warning: saving to MongoDB failed! "
+                      "Stored experiment entry in '{}'".format(f.name),
+                      file=sys.stderr)
 
         raise ObserverError("Warning: saving to MongoDB failed!")
 
@@ -396,3 +392,26 @@ class MongoDbOption(CommandLineOption):
                 kwargs[p] = g[p]
 
         return kwargs
+
+
+# def queued(observer_cls):
+#     from .queue import QueueObserver
+#
+#     @classmethod
+#     def create(cls, *args, interval=20, retry_interval=10, **kwargs):
+#         return QueueObserver(
+#             observer_cls.create(*args, **kwargs),
+#             interval=interval,
+#             retry_interval=retry_interval,
+#         )
+#
+#     decorated_class = type(
+#         "Queue{}".format(observer_cls.__name__, (QueueObserver,), {"create": create}, )
+#     )
+#
+
+# from .queue import QueueObserver
+#
+# # @queued
+# class MongoQueueObserver(QueueObserver, MongoObserver):
+#     pass

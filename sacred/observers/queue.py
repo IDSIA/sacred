@@ -10,8 +10,9 @@ WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
 class QueueObserver(RunObserver):
 
-    def __init__(self, covered_observer, interval=20):
-        self.covered_observer = covered_observer
+    def __init__(self, covered_observer, interval=20, retry_interval=10):
+        self._covered_observer = covered_observer
+        self._retry_interval = retry_interval
         self._queue = Queue()
         self._stop_worker_event, self._worker = IntervalTimer.create(
             self._run,
@@ -25,7 +26,7 @@ class QueueObserver(RunObserver):
     def started_event(self, *args, **kwargs):
         # Putting the started event on the queue makes no sense
         # as it is required for initialization of the covered observer.
-        return self.covered_observer.started_event(*args, **kwargs)
+        return self._covered_observer.started_event(*args, **kwargs)
 
     def heartbeat_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("heartbeat_event", args, kwargs))
@@ -50,8 +51,13 @@ class QueueObserver(RunObserver):
 
     def log_metrics(self, metrics_by_name, info):
         for metric_name, metric_values in metrics_by_name.items():
-            self._queue.put(WrappedEvent("log_metrics", [metric_name, metric_values, info],
-                {}))
+            self._queue.put(
+                WrappedEvent(
+                    "log_metrics",
+                    [metric_name, metric_values, info],
+                    {},
+                )
+            )
 
     def _run(self):
         while not self._queue.empty():
@@ -63,7 +69,8 @@ class QueueObserver(RunObserver):
                 pass
             else:
                 try:
-                    method = getattr(self.covered_observer, event.name)
+                    # method = getattr(self._covered_observer, event.name)
+                    method = getattr(self._covered_observer, event.name)
                 except NameError as e:
                     # covered observer does not implement event handler
                     # for the event, so just
@@ -78,7 +85,7 @@ class QueueObserver(RunObserver):
                             # Something went wrong during the processing of
                             # the event so wait for some time and
                             # then try again.
-                            self._stop_worker_event.wait(0.01)
+                            self._stop_worker_event.wait(self._retry_interval)
                             print(e)
                             continue
                         else:
@@ -93,7 +100,7 @@ class QueueObserver(RunObserver):
 
     def __getattr__(self, item):
         print("getattr ", item)
-        return getattr(self.covered_observer, item)
+        return getattr(self._covered_observer, item)
 
     def __eq__(self, other):
-        return self.covered_observer == other
+        return self._covered_observer == other

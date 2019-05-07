@@ -13,6 +13,7 @@ mongomock = pytest.importorskip("mongomock")
 import pymongo.errors
 
 from sacred.dependencies import get_digest
+# from sacred.observers.mongo import (MongoObserver, MongoQueueObserver, force_bson_encodeable)
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 from sacred.observers.queue import QueueObserver
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
@@ -33,6 +34,22 @@ from .failing_mongo_mock import ReconnectingMongoClient
 #     )
 
 
+# @pytest.fixture
+# def mongo_obs():
+#     db = ReconnectingMongoClient(
+#         max_calls_before_reconnect=10,
+#         max_calls_before_failure=1,
+#         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError
+#     ).db
+#     runs = db.runs
+#     metrics = db.metrics
+#     fs = mock.MagicMock()
+#     return QueueObserver(
+#         MongoObserver(runs, fs, metrics_collection=metrics),
+#         interval=0.01,
+#         retry_interval=0.01,
+#     )
+
 @pytest.fixture
 def mongo_obs():
     db = ReconnectingMongoClient(
@@ -46,6 +63,7 @@ def mongo_obs():
     return QueueObserver(
         MongoObserver(runs, fs, metrics_collection=metrics),
         interval=0.01,
+        retry_interval=0.01,
     )
 
 
