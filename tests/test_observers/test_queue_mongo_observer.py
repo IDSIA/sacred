@@ -9,63 +9,31 @@ from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
-
+gridfs = pytest.importorskip("gridfs")
 import pymongo.errors
 
 from sacred.dependencies import get_digest
-# from sacred.observers.mongo import (MongoObserver, MongoQueueObserver, force_bson_encodeable)
-from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
-from sacred.observers.queue import QueueObserver
+from sacred.observers.mongo import (QueuedMongoObserver, force_bson_encodeable)
+from .failing_mongo_mock import ReconnectingMongoClient
+
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
 
-from .failing_mongo_mock import ReconnectingMongoClient
-
-
-# @pytest.fixture
-# def mongo_obs():
-#     db = mongomock.MongoClient().db
-#     runs = db.runs
-#     metrics = db.metrics
-#     fs = mock.MagicMock()
-#     return QueueObserver(
-#         MongoObserver(runs, fs, metrics_collection=metrics),
-#         interval=0.1
-#     )
-
-
-# @pytest.fixture
-# def mongo_obs():
-#     db = ReconnectingMongoClient(
-#         max_calls_before_reconnect=10,
-#         max_calls_before_failure=1,
-#         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError
-#     ).db
-#     runs = db.runs
-#     metrics = db.metrics
-#     fs = mock.MagicMock()
-#     return QueueObserver(
-#         MongoObserver(runs, fs, metrics_collection=metrics),
-#         interval=0.01,
-#         retry_interval=0.01,
-#     )
 
 @pytest.fixture
-def mongo_obs():
-    db = ReconnectingMongoClient(
+def mongo_obs(monkeypatch):
+    client = ReconnectingMongoClient(
         max_calls_before_reconnect=10,
         max_calls_before_failure=1,
         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError
-    ).db
-    runs = db.runs
-    metrics = db.metrics
-    fs = mock.MagicMock()
-    return QueueObserver(
-        MongoObserver(runs, fs, metrics_collection=metrics),
+    )
+    monkeypatch.setattr(pymongo, "MongoClient", lambda *args, **kwargs: client)
+    monkeypatch.setattr(gridfs, "GridFS", lambda d: mock.MagicMock())
+
+    return QueuedMongoObserver.create(
         interval=0.01,
         retry_interval=0.01,
     )
-
 
 @pytest.fixture()
 def sample_run():
@@ -282,7 +250,7 @@ def logged_metrics():
         ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
     ]
 
-# @pytest.mark.skip
+
 def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     """
     Test storing scalar measurements
@@ -312,37 +280,11 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Call standard heartbeat event (store the info dictionary to the database)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
                               result=0)
-    # There should be only one run stored
-    # assert mongo_obs.runs.count() == 1
-    # db_run = mongo_obs.runs.find_one()
-    # # ... and the info dictionary should contain a list of created metrics
-    # assert "metrics" in db_run['info']
-    # assert type(db_run['info']["metrics"]) == list
-    #
-    # # The metrics, stored in the metrics collection,
-    # # should be two (training.loss and training.accuracy)
-    # assert mongo_obs.metrics.count() == 2
-    # # Read the training.loss metric and make sure it references the correct run
-    # # and that the run (in the info dictionary) references the correct metric record.
-    # loss = mongo_obs.metrics.find_one({"name": "training.loss", "run_id": db_run['_id']})
-    # assert {"name": "training.loss", "id": str(loss["_id"])} in db_run['info']["metrics"]
-    # assert loss["steps"] == [10, 20, 30]
-    # assert loss["values"] == [1, 2, 3]
-    # for i in range(len(loss["timestamps"]) - 1):
-    #     assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
-    #
-    # # Read the training.accuracy metric and check the references as with the training.loss above
-    # accuracy = mongo_obs.metrics.find_one({"name": "training.accuracy", "run_id": db_run['_id']})
-    # assert {"name": "training.accuracy", "id": str(accuracy["_id"])} in db_run['info']["metrics"]
-    # assert accuracy["steps"] == [10, 20, 30]
-    # assert accuracy["values"] == [100, 200, 300]
-
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
                               result=0)
-
     mongo_obs.join()
 
     assert mongo_obs.runs.count() == 1
@@ -367,16 +309,17 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
 
     # Make sure that when starting a new experiment, new records in metrics are created
     # instead of appending to the old ones.
-    # sample_run["_id"] = "NEWID"
-    # # Start the experiment
-    # mongo_obs.started_event(**sample_run)
-    # mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
-    # mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
-    #                           result=0)
-    # # A new run has been created
-    # assert mongo_obs.runs.count() == 2
-    # # Another 2 metrics have been created
-    # assert mongo_obs.metrics.count() == 4
+    sample_run["_id"] = "NEWID"
+    # Start the experiment
+    mongo_obs.started_event(**sample_run)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
+    mongo_obs.join()
+    # A new run has been created
+    assert mongo_obs.runs.count() == 2
+    # Another 2 metrics have been created
+    assert mongo_obs.metrics.count() == 4
 
 
 def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):

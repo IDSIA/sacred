@@ -15,6 +15,8 @@ import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.observers.queue import QueueObserver
+
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
 
@@ -394,24 +396,18 @@ class MongoDbOption(CommandLineOption):
         return kwargs
 
 
-# def queued(observer_cls):
-#     from .queue import QueueObserver
-#
-#     @classmethod
-#     def create(cls, *args, interval=20, retry_interval=10, **kwargs):
-#         return QueueObserver(
-#             observer_cls.create(*args, **kwargs),
-#             interval=interval,
-#             retry_interval=retry_interval,
-#         )
-#
-#     decorated_class = type(
-#         "Queue{}".format(observer_cls.__name__, (QueueObserver,), {"create": create}, )
-#     )
-#
+class QueuedMongoObserver(QueueObserver):
 
-# from .queue import QueueObserver
-#
-# # @queued
-# class MongoQueueObserver(QueueObserver, MongoObserver):
-#     pass
+    @classmethod
+    def create(cls, interval=20, retry_interval=10, url=None, db_name='sacred',
+               collection='runs', overwrite=None,
+               priority=DEFAULT_MONGO_PRIORITY, client=None, **kwargs):
+        return cls(
+            MongoObserver.create(url=url, db_name=db_name,
+                                 collection=collection,
+                                 overwrite=overwrite,
+                                 priority=priority, client=client,
+                                 **kwargs),
+            interval=interval,
+            retry_interval=retry_interval,
+        )

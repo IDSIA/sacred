@@ -13,17 +13,22 @@ class QueueObserver(RunObserver):
     def __init__(self, covered_observer, interval=20, retry_interval=10):
         self._covered_observer = covered_observer
         self._retry_interval = retry_interval
-        self._queue = Queue()
-        self._stop_worker_event, self._worker = IntervalTimer.create(
-            self._run,
-            interval=interval,
-        )
-        self._worker.start()
+        self._interval = interval
+        self._queue = None
+        self._worker = None
+        self._stop_worker_event = None
 
     def queued_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("queued_event", args, kwargs))
 
     def started_event(self, *args, **kwargs):
+        self._queue = Queue()
+        self._stop_worker_event, self._worker = IntervalTimer.create(
+            self._run,
+            interval=self._interval,
+        )
+        self._worker.start()
+
         # Putting the started event on the queue makes no sense
         # as it is required for initialization of the covered observer.
         return self._covered_observer.started_event(*args, **kwargs)
@@ -94,9 +99,10 @@ class QueueObserver(RunObserver):
                             break
 
     def join(self):
-        self._queue.join()
-        self._stop_worker_event.set()
-        self._worker.join(timeout=10)
+        if self._queue is not None:
+            self._queue.join()
+            self._stop_worker_event.set()
+            self._worker.join(timeout=10)
 
     def __getattr__(self, item):
         print("getattr ", item)
