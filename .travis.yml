@@ -14,8 +14,6 @@ matrix:
     env: TOX_ENV=tensorflow-2
   - python: "3.6"
     env: TOX_ENV=flake8
-  - python: "2.7"
-    env: TOX_ENV=coverage
   - python: "3.5"
     env: TOX_ENV=coverage
 script:
