@@ -68,7 +68,7 @@ class FileStorageObserver(RunObserver):
                 dir_nrs = [int(d) for d in os.listdir(self.basedir)
                            if os.path.isdir(os.path.join(self.basedir, d)) and
                            d.isdigit()]
-                _id = max(dir_nrs + [0]) + 1
+                _id = max(*dir_nrs, 0) + 1
                 self.dir = os.path.join(self.basedir, str(_id))
                 try:
                     os.mkdir(self.dir)
