@@ -8,13 +8,8 @@ import tempfile
 from copy import copy
 import pytest
 import json
-try:  # unittest.mock requires python >=3.3
-    from unittest import mock
-except ImportError:
-    mock = None
 
 from sacred.observers.file_storage import FileStorageObserver
-from sacred.serializer import restore
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 
@@ -95,7 +90,7 @@ def test_fs_observer_queued_event_creates_rundir(dir_obs, sample_run):
     }
 
 
-def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
+def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypatch):
     basedir, obs = dir_obs
     sample_run['_id'] = None
     _id = obs.started_event(**sample_run)
@@ -122,12 +117,11 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
     def mkdir_raises_file_exists(name):
         raise FileExistsError
 
-    # unittest.mock requires python >=3.3
-    if mock is not None:
+    with monkeypatch.context() as m:
+        m.setattr('os.mkdir', mkdir_raises_file_exists)
         with pytest.raises(FileExistsError):
-            with mock.patch('os.mkdir', mkdir_raises_file_exists):
-                sample_run['_id'] = None
-                _id = obs.started_event(**sample_run)
+            sample_run['_id'] = None
+            _id = obs.started_event(**sample_run)
 
 
 def test_fs_observer_started_event_stores_source(dir_obs, sample_run, tmpfile):
