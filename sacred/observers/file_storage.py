@@ -10,9 +10,11 @@ from shutil import copyfile
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
-from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat. pylint: disable=redefined-builtin
 from sacred import optional as opt
 from sacred.serializer import flatten
+# pylint: disable=redefined-builtin
+from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat.
+# pylint: enable=redefined-builtin
 
 
 DEFAULT_FILE_STORAGE_PRIORITY = 20
