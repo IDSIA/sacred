@@ -10,7 +10,7 @@ from shutil import copyfile
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
-from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat.
+from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat. pylint: disable=redefined-builtin
 from sacred import optional as opt
 from sacred.serializer import flatten
 
@@ -66,10 +66,10 @@ class FileStorageObserver(RunObserver):
                    if os.path.isdir(os.path.join(self.basedir, d)) and
                    d.isdigit()]
         _id = max(dir_nrs + [0]) + 1
-        dir = os.path.join(self.basedir, str(_id))
+        new_dir = os.path.join(self.basedir, str(_id))
         try:
-            os.mkdir(dir)
-            self.dir = dir
+            os.mkdir(new_dir)
+            self.dir = new_dir
         except FileExistsError:  # Catch race conditions
             if raise_error:
                 # After some tries,

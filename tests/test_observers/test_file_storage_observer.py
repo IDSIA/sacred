@@ -10,7 +10,7 @@ import pytest
 import json
 
 from sacred.observers.file_storage import FileStorageObserver
-from sacred.utils import FileExistsError  # py2 compat.
+from sacred.utils import FileExistsError  # py2 compat. pylint: disable=redefined-builtin
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 
