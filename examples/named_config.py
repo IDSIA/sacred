@@ -9,6 +9,7 @@ ex = Experiment('hello_config')
 
 @ex.named_config
 def rude():
+    """A rude named config"""
     recipient = "bastard"
     message = "Fuck off you {}!".format(recipient)
 

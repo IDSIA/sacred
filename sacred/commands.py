@@ -6,27 +6,31 @@ from __future__ import division, print_function, unicode_literals
 import pprint
 import pydoc
 import re
-from collections import namedtuple
+import os
+from collections import namedtuple, OrderedDict
+from pkg_resources import parse_version
+
+from colorama import Fore, Style
 
 from sacred.config import save_config_file
 from sacred.serializer import flatten
 from sacred.utils import PATHCHANGE, iterate_flattened_separately
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('print_config', 'print_dependencies', 'save_config',
-           'help_for_command')
+           'help_for_command', 'print_named_configs')
 
-BLUE = '\033[94m'
-GREEN = '\033[92m'
-RED = '\033[91m'
-GREY = '\033[90m'
-ENDC = '\033[0m'
+COLOR_DIRTY = Fore.RED
+COLOR_TYPECHANGED = Fore.RED  # prepend Style.BRIGHT for bold
+COLOR_ADDED = Fore.GREEN
+COLOR_MODIFIED = Fore.BLUE
+COLOR_DOC = Style.DIM
+ENDC = Style.RESET_ALL  # '\033[0m'
 
-LEGEND = '(' + BLUE + 'modified' + ENDC +\
-    ', ' + GREEN + 'added' + ENDC +\
-    ', ' + RED + 'typechanged' + ENDC +\
-    ', ' + GREY + 'doc' + ENDC + ')'
+LEGEND = \
+    '(' + COLOR_MODIFIED + 'modified' + ENDC +\
+    ', ' + COLOR_ADDED + 'added' + ENDC +\
+    ', ' + COLOR_TYPECHANGED + 'typechanged' + ENDC +\
+    ', ' + COLOR_DOC + 'doc' + ENDC + ')'
 
 ConfigEntry = namedtuple('ConfigEntry',
                          'key value added modified typechanged doc')
@@ -64,6 +68,47 @@ def print_config(_run):
     print(_format_config(final_config, config_mods))
 
 
+def _format_named_config(indent, path, named_config):
+    indent = ' ' * indent
+    assign = path
+    if hasattr(named_config, '__doc__') and named_config.__doc__ is not None:
+        doc_string = named_config.__doc__
+        if doc_string.strip().count('\n') == 0:
+            assign += COLOR_DOC + '   # {}'.format(doc_string.strip()) + ENDC
+        else:
+            doc_string = doc_string.replace('\n', '\n' + indent)
+            assign += COLOR_DOC + '\n{}"""{}"""'.format(indent + '  ',
+                                                        doc_string) + ENDC
+    return indent + assign
+
+
+def _format_named_configs(named_configs, indent=2):
+    lines = ['Named Configurations (' + COLOR_DOC + 'doc' + ENDC + '):']
+    for path, named_config in named_configs.items():
+        lines.append(_format_named_config(indent, path, named_config))
+    if len(lines) < 2:
+        lines.append(' ' * indent + 'No named configs')
+    return '\n'.join(lines)
+
+
+def print_named_configs(ingredient):
+    """
+    Returns a command function that prints the available named configs for the
+     ingredient and all sub-ingredients and exits.
+
+     The output is highlighted:
+       white: config names
+       grey:  doc
+     """
+
+    def print_named_configs():
+        """Print the available named configs and exit."""
+        named_configs = OrderedDict(ingredient.gather_named_configs())
+        print(_format_named_configs(named_configs, 2))
+
+    return print_named_configs
+
+
 def help_for_command(command):
     """Get the help text (signature + docstring) for a command (function)."""
     help_text = pydoc.text.document(command)
@@ -86,7 +131,7 @@ def print_dependencies(_run):
         repos = _run.experiment_info['repositories']
         print('\nVersion Control:')
         for repo in repos:
-            mod = RED + 'M' if repo['dirty'] else ' '
+            mod = COLOR_DIRTY + 'M' if repo['dirty'] else ' '
             print('{} {:<43}  {}'.format(mod, repo['url'], repo['commit']) +
                   ENDC)
     print('')
@@ -128,13 +173,13 @@ def _format_entry(indent, entry):
     color = ""
     indent = ' ' * indent
     if entry.typechanged:
-        color = RED
+        color = COLOR_TYPECHANGED  # red
     elif entry.added:
-        color = GREEN
+        color = COLOR_ADDED  # green
     elif entry.modified:
-        color = BLUE
+        color = COLOR_MODIFIED  # blue
     if entry.key == '__doc__':
-        color = GREY
+        color = COLOR_DOC  # grey
         doc_string = entry.value.replace('\n', '\n' + indent)
         assign = '{}"""{}"""'.format(indent, doc_string)
     elif isinstance(entry, ConfigEntry):
@@ -142,7 +187,7 @@ def _format_entry(indent, entry):
     else:  # isinstance(entry, PathEntry):
         assign = indent + entry.key + ":"
     if entry.doc:
-        doc_string = GREY + '# ' + entry.doc + ENDC
+        doc_string = COLOR_DOC + '# ' + entry.doc + ENDC
         if len(assign) <= 35:
             assign = "{:<35}  {}".format(assign, doc_string)
         else:

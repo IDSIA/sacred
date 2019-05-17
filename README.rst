@@ -6,7 +6,7 @@ Sacred
     | *If an experiment is wasted*
     | *God gets quite irate*
 
-|pypi| |py_versions| |license| |doi|
+|pypi| |py_versions| |license| |rtfd| |doi|
 
 |unix_build| |windows_build| |coverage| |code_quality| |codacy|
 
@@ -91,20 +91,48 @@ optional dependencies but they offer some cool features:
 
 Tests
 -----
-The tests for sacred use the `py.test <http://pytest.org/latest/>`_ package.
-You can execute them by running ``py.test`` in the sacred directory like this:
+The tests for sacred use the `pytest <http://pytest.org/latest/>`_ package.
+You can execute them by running ``pytest`` in the sacred directory like this:
 
-    py.test
+    pytest
 
-There is also a config file for `tox <https://testrun.org/tox/latest/>`_ so you
+There is also a config file for `tox <https://tox.readthedocs.io/en/latest/>`_ so you
 can automatically run the tests for various python versions like this:
 
     tox
 
+Contributing
+------------
+If you find a bug, have a feature request or want to discuss something general you are welcome to open an
+`issue <https://github.com/IDSIA/sacred/issues>`_. If you have a specific question related
+to the usage of sacred, please ask a question on StackOverflow under the
+`python-sacred tag <https://stackoverflow.com/questions/tagged/python-sacred>`_. We value documentation
+a lot. If you find something that should be included in the documentation please
+document it or let us know whats missing. If you are using Sacred in one of your projects and want to share
+your code with others, put your repo in the `Projects using Sacred <docs/projects_using_sacred.rst`>_ list.
+Pull requests are highly welcome!
+
 Frontends
 ---------
-At this point there are two frontends to the database entries created by sacred (that I'm aware of).
+At this point there are three frontends to the database entries created by sacred (that I'm aware of).
 They are developed externally as separate projects.
+
+`Omniboard <https://github.com/vivekratnavel/omniboard>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/omniboard-table.png
+.. image:: docs/images/omniboard-metric-graphs.png
+
+Omniboard is a web dashboard that helps in visualizing the experiments and metrics / logs collected by sacred.
+Omniboard is written with React, Node.js, Express and Bootstrap.
+
+
+`Incense <https://github.com/JarnoRFB/incense>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/incense-artifact.png
+.. image:: docs/images/incense-metric.png
+
+Incense is a Python library to retrieve runs stored in a MongoDB and interactively display metrics and artifacts
+in Jupyter notebooks.
 
 `Sacredboard <https://github.com/chovanecm/sacredboard>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -177,6 +205,14 @@ program execution. It *only* solves reproducibility, but it does so thoroughly.
 License
 -------
 This project is released under the terms of the `MIT license <http://opensource.org/licenses/MIT>`_.
+
+
+Citing Sacred
+-------------
+`K. Greff, A. Klein, M. Chovanec, F. Hutter, and J. Schmidhuber, ‘The Sacred Infrastructure for Computational Research’, 
+in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Texas, 2017, pp. 49–56 
+<http://conference.scipy.org/proceedings/scipy2017/klaus_greff.html>`_.
+
 
 .. |pypi| image:: https://img.shields.io/pypi/v/sacred.svg
     :target: https://pypi.python.org/pypi/sacred

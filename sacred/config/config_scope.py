@@ -13,24 +13,24 @@ from copy import copy
 from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
-
-__sacred__ = True
+from sacred.config.signature import get_argspec
 
 
 class ConfigScope(object):
     def __init__(self, func):
         super(ConfigScope, self).__init__()
-        self.arg_spec = inspect.getargspec(func)
-        assert self.arg_spec.varargs is None, \
-            "varargs are not allowed for ConfigScope functions"
-        assert self.arg_spec.keywords is None, \
-            "kwargs are not allowed for ConfigScope functions"
-        assert self.arg_spec.defaults is None, \
+        self.args, vararg_name, kw_wildcard, _, kwargs = get_argspec(func)
+        assert vararg_name is None, \
+            "*args not allowed for ConfigScope functions"
+        assert kw_wildcard is None, \
+            "**kwargs not allowed for ConfigScope functions"
+        assert not kwargs, \
             "default values are not allowed for ConfigScope functions"
 
         self._func = func
         self._body_code = get_function_body_code(func)
         self._var_docs = get_config_comments(func)
+        self.__doc__ = self._func.__doc__
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -62,7 +62,7 @@ class ConfigScope(object):
 
         available_entries = set(preset.keys()) | set(fallback.keys())
 
-        for arg in self.arg_spec.args:
+        for arg in self.args:
             if arg not in available_entries:
                 raise KeyError("'{}' not in preset for ConfigScope. "
                                "Available options are: {}"
@@ -133,7 +133,7 @@ def dedent_function_body(body):
         if is_empty_or_comment(line):
             continue
         else:
-            indent = re.match('^\s*', line).group()
+            indent = re.match(r'^\s*', line).group()
             break
 
     out_lines = [dedent_line(line, indent) for line in lines]

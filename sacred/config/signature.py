@@ -6,8 +6,7 @@ import inspect
 from collections import OrderedDict
 import sys
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
+from sacred.utils import MissingConfigError, SignatureError
 
 if sys.version_info[0] < 3:  # python2
     def get_argspec(f):
@@ -128,7 +127,7 @@ class Signature(object):
     def _assert_no_unexpected_args(self, expected_args, args):
         if not self.vararg_name and len(args) > len(expected_args):
             unexpected_args = args[len(expected_args):]
-            raise TypeError("{} got unexpected argument(s): {}".format(
+            raise SignatureError("{} got unexpected argument(s): {}".format(
                 self.name, unexpected_args))
 
     def _assert_no_unexpected_kwargs(self, expected_args, kwargs):
@@ -136,15 +135,16 @@ class Signature(object):
             return
         unexpected_kwargs = set(kwargs) - set(expected_args)
         if unexpected_kwargs:
-            raise TypeError("{} got unexpected kwarg(s): {}".format(
+            raise SignatureError("{} got unexpected kwarg(s): {}".format(
                 self.name, sorted(unexpected_kwargs)))
 
     def _assert_no_duplicate_args(self, expected_args, args, kwargs):
         positional_arguments = expected_args[:len(args)]
         duplicate_arguments = [v for v in positional_arguments if v in kwargs]
         if duplicate_arguments:
-            raise TypeError("{} got multiple values for argument(s) {}".format(
-                self.name, duplicate_arguments))
+            raise SignatureError(
+                "{} got multiple values for argument(s) {}".format(
+                    self.name, duplicate_arguments))
 
     def _fill_in_options(self, args, kwargs, options, bound):
         free_params = self.get_free_parameters(args, kwargs, bound)
@@ -158,5 +158,7 @@ class Signature(object):
         free_params = self.get_free_parameters(args, kwargs, bound)
         missing_args = [m for m in free_params if m not in self.kwargs]
         if missing_args:
-            raise TypeError("{} is missing value(s) for {}".format(
-                self.name, missing_args))
+            raise MissingConfigError(
+                '{} is missing value(s):'.format(self.name),
+                missing_configs=missing_args
+            )

@@ -1,3 +1,4 @@
+colorama==0.4.1
 docopt==0.6.2
 gitdb2==2.0.0
 GitPython==2.1.1
@@ -8,15 +9,16 @@ MarkupSafe==0.23
 mock==2.0.0
 mongomock==3.7.0
 munch==2.0.4
-numpy==1.11.3
-pandas==0.19.2
+numpy==1.16.2
+packaging>=18.0
+pandas==0.24.2
 pbr==1.10.0
-py==1.4.32
+py-cpuinfo==4.0
 pymongo==3.4.0
-pytest==3.0.5
+pytest==4.3.0
 python-dateutil==2.6.0
 pytz==2016.10
-PyYAML==3.12
+PyYAML>=4.2b1
 scandir==1.4
 sentinels==1.0.0
 smmap2==2.0.1
@@ -24,3 +26,4 @@ SQLAlchemy==1.1.4
 tinydb==3.2.1
 tinydb-serialization==1.0.3
 wrapt==1.10.8
+scikit-learn==0.20.3

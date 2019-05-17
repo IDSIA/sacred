@@ -13,11 +13,10 @@ from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
 from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
-                          get_by_dotted_path, is_prefix,
+                          get_by_dotted_path, is_prefix, rel_path,
                           iterate_flattened, set_by_dotted_path,
-                          recursive_update, iter_prefixes, join_paths)
-
-__sacred__ = True  # marks files that should be filtered from stack traces
+                          recursive_update, iter_prefixes, join_paths,
+                          NamedConfigNotFoundError, ConfigAddedError)
 
 
 class Scaffold(object):
@@ -45,6 +44,7 @@ class Scaffold(object):
         self.captured_args = {join_paths(cf.prefix, n)
                               for cf in self._captured_functions
                               for n in cf.signature.arguments}
+        self.captured_args.add('__doc__')  # allow setting the config docstring
 
     def set_up_seed(self, rnd=None):
         if self.seed is not None:
@@ -70,7 +70,7 @@ class Scaffold(object):
                 subrunner.set_up_seed(self.rnd)
 
     def gather_fallbacks(self):
-        fallback = {}
+        fallback = {'_log': self.logger}
         for sr_path, subrunner in self.subrunners.items():
             if self.path and is_prefix(self.path, sr_path):
                 path = sr_path[len(self.path):].strip('.')
@@ -83,12 +83,16 @@ class Scaffold(object):
         self.fallback.revelation()
 
     def run_named_config(self, config_name):
-        if os.path.exists(config_name):
+        if os.path.isfile(config_name):
             nc = ConfigDict(load_config_file(config_name))
         else:
+            if config_name not in self.named_configs:
+                raise NamedConfigNotFoundError(
+                    named_config=config_name,
+                    available_named_configs=tuple(self.named_configs.keys()))
             nc = self.named_configs[config_name]
 
-        cfg = nc(fixed=self.config_updates,
+        cfg = nc(fixed=self.get_config_updates_recursive(),
                  preset=self.presets,
                  fallback=self.fallback)
 
@@ -103,13 +107,13 @@ class Scaffold(object):
 
         self.get_config_modifications()
 
-    def run_config_hooks(self, config, config_updates, command_name, logger):
+    def run_config_hooks(self, config, command_name, logger):
         final_cfg_updates = {}
         for ch in self.config_hooks:
             cfg_upup = ch(deepcopy(config), command_name, logger)
             if cfg_upup:
                 recursive_update(final_cfg_updates, cfg_upup)
-        recursive_update(final_cfg_updates, config_updates)
+        recursive_update(final_cfg_updates, self.config_updates)
         return final_cfg_updates
 
     def get_config_modifications(self):
@@ -118,6 +122,16 @@ class Scaffold(object):
                    for key, value in iterate_flattened(self.config_updates)})
         for cfg_summary in self.summaries:
             self.config_mods.update_from(cfg_summary)
+
+    def get_config_updates_recursive(self):
+        config_updates = self.config_updates.copy()
+        for sr_path, subrunner in self.subrunners.items():
+            if not is_prefix(self.path, sr_path):
+                continue
+            update = subrunner.get_config_updates_recursive()
+            if update:
+                config_updates[rel_path(self.path, sr_path)] = update
+        return config_updates
 
     def get_fixture(self):
         if self.fixture is not None:
@@ -161,8 +175,9 @@ class Scaffold(object):
     def _warn_about_suspicious_changes(self):
         for add in sorted(self.config_mods.added):
             if not set(iter_prefixes(add)).intersection(self.captured_args):
-                raise KeyError('Added a new config entry "{}" that is not used'
-                               ' anywhere'.format(add))
+                if self.path:
+                    add = join_paths(self.path, add)
+                raise ConfigAddedError(add, config=self.config)
             else:
                 self.logger.warning('Added new config entry: "%s"' % add)
 
@@ -208,7 +223,7 @@ def distribute_named_configs(scaffolding, named_configs):
             scaffolding[path].use_named_config(cfg_name)
 
 
-def initialize_logging(experiment, scaffolding):
+def initialize_logging(experiment, scaffolding, log_level=None):
     if experiment.logger is None:
         root_logger = create_basic_stream_logger()
     else:
@@ -220,6 +235,14 @@ def initialize_logging(experiment, scaffolding):
         else:
             scaffold.logger = root_logger
 
+    # set log level
+    if log_level is not None:
+        try:
+            lvl = int(log_level)
+        except ValueError:
+            lvl = log_level
+        root_logger.setLevel(lvl)
+
     return root_logger, root_logger.getChild(experiment.path)
 
 
@@ -230,7 +253,7 @@ def create_scaffolding(experiment, sorted_ingredients):
             config_scopes=ingredient.configurations,
             subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                     for m in ingredient.ingredients]),
-            path=ingredient.path if ingredient != experiment else '',
+            path=ingredient.path,
             captured_functions=ingredient.captured_functions,
             commands=ingredient.commands,
             named_configs=ingredient.named_configs,
@@ -241,7 +264,7 @@ def create_scaffolding(experiment, sorted_ingredients):
         experiment.configurations,
         subrunners=OrderedDict([(scaffolding[m].path, scaffolding[m])
                                 for m in experiment.ingredients]),
-        path=experiment.path if experiment != experiment else '',
+        path='',
         captured_functions=experiment.captured_functions,
         commands=experiment.commands,
         named_configs=experiment.named_configs,
@@ -327,7 +350,7 @@ def get_scaffolding_and_config_name(named_config, scaffolding):
 
 
 def create_run(experiment, command_name, config_updates=None,
-               named_configs=(), force=False):
+               named_configs=(), force=False, log_level=None):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = create_scaffolding(experiment, sorted_ingredients)
@@ -340,7 +363,8 @@ def create_run(experiment, command_name, config_updates=None,
     # Phase 1: Config updates
     config_updates = config_updates or {}
     config_updates = convert_to_nested_dict(config_updates)
-    root_logger, run_logger = initialize_logging(experiment, scaffolding)
+    root_logger, run_logger = initialize_logging(experiment, scaffolding,
+                                                 log_level)
     distribute_config_updates(prefixes, scaffolding, config_updates)
 
     # Phase 2: Named Configs
@@ -364,8 +388,9 @@ def create_run(experiment, command_name, config_updates=None,
         # update global config
         config = get_configuration(scaffolding)
         # run config hooks
-        config_updates = scaffold.run_config_hooks(config, config_updates,
-                                                   command_name, run_logger)
+        config_hook_updates = scaffold.run_config_hooks(
+            config, command_name, run_logger)
+        recursive_update(scaffold.config, config_hook_updates)
 
     # Phase 4: finalize seeding
     for scaffold in reversed(list(scaffolding.values())):

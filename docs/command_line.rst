@@ -137,7 +137,7 @@ The name of the command has to be first on the commandline::
 
     >>> ./my_demo.py COMMAND_NAME with seed=123
 
-If the COMMAND_NAME is ommitted it defaults to the main function, but the name
+If the COMMAND_NAME is omitted it defaults to the main function, but the name
 of that function can also explicitly used as the name of the command.
 So for this experiment
 
@@ -262,6 +262,32 @@ The filename can be configured by setting ``config_filename`` like this::
 The format for exporting the config is inferred from the filename and can be
 any format supported for :ref:`config files <config_files>`.
 
+
+.. _print_named_configs:
+
+Print Named Configs
+-------------------
+
+The ``print_named_configs`` command prints all available named configurations.
+Function docstrings for named config functions are copied and displayed colored
+in **grey**.
+For example::
+
+    >> ./named_config print_named_configs
+    INFO - hello_config - Running command 'print_named_configs'
+    INFO - hello_config - Started
+    Named Configurations (doc):
+      rude   # A rude named config
+    INFO - hello_config - Completed after 0:00:00
+
+If no named configs are available for the experiment, an empty list is printed::
+
+    >> ./01_hello_world print_named_configs
+    INFO - 01_hello_world - Running command 'print_named_configs'
+    INFO - 01_hello_world - Started
+    Named Configurations (doc):
+      No named configs
+    INFO - 01_hello_world - Completed after 0:00:00
 
 Custom Commands
 ---------------
@@ -548,11 +574,11 @@ some distributed workers fetch and start the queued up runs.
 Priority
 --------
 
-+---------------+-----------------------------------------+
-| ``-p``        |  Only queue this run, do not start it.  |
-+---------------+                                         |
-| ``--queue``   |                                         |
-+---------------+-----------------------------------------+
++--------------------------+----------------------------------------+
+| ``-P PRIORITY``          |  The (numeric) priority for this run.  |
++--------------------------+                                        |
+| ``--priority=PRIORITY``  |                                        |
++--------------------------+----------------------------------------+
 
 
 
@@ -579,11 +605,11 @@ repository, i.e. with no uncommitted changes.
 
 Print Config
 ------------
-+-------------------------+---------------------------------------------------+
-| ``-P PRIORITY``         |  Always print the config first.                   |
-+-------------------------+                                                   |
-| ``--priority=PRIORITY`` |                                                   |
-+-------------------------+---------------------------------------------------+
++------------------------+------------------------------------------+
+| ``-p``                 |  Always print the config first.          |
++------------------------+                                          |
+| ``--print_config``     |                                          |
++------------------------+------------------------------------------+
 
 If this flag is set, sacred will always print the current configuration
 including modifications (like the :ref:`print_config` command) before running

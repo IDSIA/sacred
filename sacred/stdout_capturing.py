@@ -13,11 +13,6 @@ from sacred.settings import SETTINGS
 from sacred.utils import FileNotFoundError, StringIO
 
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
-__sacred__ = True  # marks files that should be filtered from stack traces
-
-
 def flush():
     """Try to flush all stdio buffers, both from python and from C."""
     try:
@@ -33,10 +28,14 @@ def flush():
 
 def get_stdcapturer(mode=None):
     mode = mode if mode is not None else SETTINGS.CAPTURE_MODE
-    return mode, {
+    capture_options = {
         "no": no_tee,
         "fd": tee_output_fd,
-        "sys": tee_output_python}[mode]
+        "sys": tee_output_python}
+    if mode not in capture_options:
+        raise KeyError("Unknown capture mode '{}'. Available options are {}"
+                       .format(mode, sorted(capture_options.keys())))
+    return mode, capture_options[mode]
 
 
 class TeeingStreamProxy(wrapt.ObjectProxy):
@@ -72,7 +71,7 @@ class CapturedStdout(object):
         if self.final is None:
             self.buffer.seek(self.read_position)
             value = self.buffer.read()
-            self.read_position += len(value)
+            self.read_position = self.buffer.tell()
             return value
         else:
             value = self.final
@@ -81,7 +80,7 @@ class CapturedStdout(object):
 
     def finalize(self):
         self.flush()
-        self. final = self.get()
+        self.final = self.get()
         self.buffer.close()
 
 
@@ -132,12 +131,12 @@ def tee_output_fd():
             # this is done to avoid receiving KeyboardInterrupts (see #149)
             # in Python 3 we could just pass start_new_session=True
             tee_stdout = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=1)
+                ['tee', '-a', target.name], preexec_fn=os.setsid,
+                stdin=subprocess.PIPE, stdout=1)
             tee_stderr = subprocess.Popen(
-                ['tee', '-a', '/dev/stderr'], preexec_fn=os.setsid,
-                stdin=subprocess.PIPE, stderr=target_fd, stdout=2)
-        except (FileNotFoundError, (OSError, AttributeError)):
+                ['tee', '-a', target.name], preexec_fn=os.setsid,
+                stdin=subprocess.PIPE, stdout=2)
+        except (FileNotFoundError, OSError, AttributeError):
             # No tee found in this operating system. Trying to use a python
             # implementation of tee. However this is slow and error-prone.
             tee_stdout = subprocess.Popen(

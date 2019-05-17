@@ -7,14 +7,14 @@ import os.path
 
 from collections import OrderedDict
 
+import wrapt
+
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
 from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
-                          basestring)
-
-__sacred__ = True  # marks files that should be filtered from stack traces
+                          basestring, join_paths)
 
 __all__ = ('Ingredient',)
 
@@ -22,6 +22,20 @@ __all__ = ('Ingredient',)
 def collect_repositories(sources):
     return [{'url': s.repo, 'commit': s.commit, 'dirty': s.is_dirty}
             for s in sources if s.repo]
+
+
+@wrapt.decorator
+def gather_from_ingredients(wrapped, instance=None, args=None, kwargs=None):
+    """
+    Decorator that calls `_gather` on the instance the wrapped function is
+    bound to (should be an `Ingredient`) and yields from the returned
+    generator.
+
+    This function is necessary, because `Ingredient._gather` cannot directly be
+    used as a decorator inside of `Ingredient`.
+    """
+    for item in instance._gather(wrapped):
+        yield item
 
 
 class Ingredient(object):
@@ -268,7 +282,22 @@ class Ingredient(object):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def gather_commands(self):
+    def _gather(self, func):
+        """
+        Function needed and used by gathering functions through the decorator
+        `gather_from_ingredients` in `Ingredient`. Don't use this function by
+        itself outside of the decorator!
+
+        By overwriting this function you can filter what is visible when
+        gathering something (e.g. commands). See `Experiment._gather` for an
+        example.
+        """
+        for ingredient, _ in self.traverse_ingredients():
+            for item in func(ingredient):
+                yield item
+
+    @gather_from_ingredients
+    def gather_commands(self, ingredient):
         """Collect all commands from this ingredient and its sub-ingredients.
 
         Yields
@@ -278,12 +307,23 @@ class Ingredient(object):
         cmd: function
             The corresponding captured function.
         """
-        for cmd_name, cmd in self.commands.items():
-            yield self.path + '.' + cmd_name, cmd
+        for command_name, command in ingredient.commands.items():
+            yield join_paths(ingredient.path, command_name), command
 
-        for ingred in self.ingredients:
-            for cmd_name, cmd in ingred.gather_commands():
-                yield cmd_name, cmd
+    @gather_from_ingredients
+    def gather_named_configs(self, ingredient):
+        """Collect all named configs from this ingredient and its
+        sub-ingredients.
+
+        Yields
+        ------
+        config_name: str
+            The full (dotted) name of the named config.
+        config: ConfigScope or ConfigDict or basestring
+            The corresponding named config.
+        """
+        for config_name, config in ingredient.named_configs.items():
+            yield join_paths(ingredient.path, config_name), config
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
@@ -323,6 +363,7 @@ class Ingredient(object):
 
     def traverse_ingredients(self):
         """Recursively traverse this ingredient and its sub-ingredients.
+
         Yields
         ------
         ingredient: sacred.Ingredient
@@ -336,11 +377,12 @@ class Ingredient(object):
             If a circular structure among ingredients was detected.
         """
         if self._is_traversing:
-            raise CircularDependencyError()
+            raise CircularDependencyError(ingredients=[self])
         else:
             self._is_traversing = True
         yield self, 0
-        for ingredient in self.ingredients:
-            for ingred, depth in ingredient.traverse_ingredients():
-                yield ingred, depth + 1
+        with CircularDependencyError.track(self):
+            for ingredient in self.ingredients:
+                for ingred, depth in ingredient.traverse_ingredients():
+                    yield ingred, depth + 1
         self._is_traversing = False

@@ -2,7 +2,9 @@ from sacred.stflow.internal import ContextMethodDecorator
 
 
 def test_context_method_decorator():
-    " Ensure that ContextMethodDecorator can intercept method calls "
+    """
+    Ensure that ContextMethodDecorator can intercept method calls.
+    """
     class FooClass():
         def __init__(self, x):
             self.x = x

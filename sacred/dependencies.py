@@ -14,8 +14,6 @@ import sacred.optional as opt
 from sacred import SETTINGS
 from sacred.utils import is_subdir, iter_prefixes, basestring
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 MB = 1048576
 MODULE_BLACKLIST = set(sys.builtin_module_names)
 # sadly many builtins are missing from the above, so we list them manually:
@@ -92,7 +90,7 @@ $
 
 def get_py_file_if_possible(pyc_name):
     """Try to retrieve a X.py file for a given X.py[c] file."""
-    if pyc_name.endswith('.py'):
+    if pyc_name.endswith(('.py', '.so', '.pyd')):
         return pyc_name
     assert pyc_name.endswith('.pyc')
     non_compiled_file = pyc_name[:-1]
@@ -143,7 +141,7 @@ def get_commit_if_possible(filename):
             is_dirty = repo.is_dirty()
             commit = repo.head.commit.hexsha
             return path, commit, is_dirty
-        except (InvalidGitRepositoryError, ValueError) as e:
+        except (InvalidGitRepositoryError, ValueError):
             pass
     return None, None, None
 
@@ -250,7 +248,7 @@ class PackageDependency(object):
                     for tln in toplevel_names:
                         cls.modname_to_dist[
                             tln] = dist.project_name, dist.version
-                except:
+                except Exception:
                     pass
 
         # version = PackageDependency.get_version_heuristic(mod)
@@ -403,7 +401,8 @@ def iterate_sys_modules():
 def get_sources_from_modules(module_iterator, base_path):
     sources = set()
     for modname, mod in module_iterator:
-        if not hasattr(mod, '__file__'):
+        # hasattr doesn't work with python extensions
+        if not getattr(mod, '__file__', None):
             continue
 
         filename = os.path.abspath(mod.__file__)
@@ -417,7 +416,8 @@ def get_sources_from_modules(module_iterator, base_path):
 def get_dependencies_from_modules(module_iterator, base_path):
     dependencies = set()
     for modname, mod in module_iterator:
-        if hasattr(mod, '__file__') and is_local_source(
+        # hasattr doesn't work with python extensions
+        if getattr(mod, '__file__', None) and is_local_source(
                 os.path.abspath(mod.__file__), modname, base_path):
             continue
         if modname.startswith('_') or '.' in modname:

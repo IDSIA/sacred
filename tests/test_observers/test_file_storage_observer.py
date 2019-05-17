@@ -10,7 +10,11 @@ import pytest
 import json
 
 from sacred.observers.file_storage import FileStorageObserver
-from sacred.serializer import restore
+from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+# pylint: disable=redefined-builtin
+from sacred.utils import FileExistsError  # py2 compat.
+# pylint: enable=redefined-builtin
+
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -36,7 +40,8 @@ def sample_run():
 
 @pytest.fixture()
 def dir_obs(tmpdir):
-    return tmpdir, FileStorageObserver.create(tmpdir.strpath)
+    basedir = tmpdir.join('file_storage')
+    return basedir, FileStorageObserver.create(basedir.strpath)
 
 
 @pytest.fixture
@@ -60,7 +65,35 @@ def tmpfile():
     os.remove(f.name)
 
 
-def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
+def test_fs_observer_create_does_not_create_basedir(dir_obs):
+    basedir, obs = dir_obs
+    assert not basedir.exists()
+
+
+def test_fs_observer_queued_event_creates_rundir(dir_obs, sample_run):
+    basedir, obs = dir_obs
+    _id = obs.queued_event(
+        sample_run['ex_info'], sample_run['command'], sample_run['host_info'],
+        datetime.datetime.utcnow(), sample_run['config'],
+        sample_run['meta_info'], sample_run['_id'])
+
+    assert _id is not None
+    run_dir = basedir.join(str(_id))
+    assert run_dir.exists()
+    config = json.loads(run_dir.join('config.json').read())
+    assert config == sample_run['config']
+
+    run = json.loads(run_dir.join('run.json').read())
+    assert run == {
+        'experiment': sample_run['ex_info'],
+        'command': sample_run['command'],
+        'host': sample_run['host_info'],
+        'meta': sample_run['meta_info'],
+        'status': 'QUEUED'
+    }
+
+
+def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypatch):
     basedir, obs = dir_obs
     sample_run['_id'] = None
     _id = obs.started_event(**sample_run)
@@ -83,6 +116,15 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
         "artifacts": [],
         "status": "RUNNING"
     }
+
+    def mkdir_raises_file_exists(name):
+        raise FileExistsError("File already exists: " + name)
+
+    with monkeypatch.context() as m:
+        m.setattr('os.mkdir', mkdir_raises_file_exists)
+        with pytest.raises(FileExistsError):
+            sample_run['_id'] = None
+            _id = obs.started_event(**sample_run)
 
 
 def test_fs_observer_started_event_stores_source(dir_obs, sample_run, tmpfile):
@@ -126,6 +168,32 @@ def test_fs_observer_heartbeat_event_updates_run(dir_obs, sample_run):
     assert run_dir.join('info.json').exists()
     i = json.loads(run_dir.join('info.json').read())
     assert info == i
+
+
+def test_fs_observer_heartbeat_event_multiple_updates_run(dir_obs, sample_run):
+    basedir, obs = dir_obs
+    _id = obs.started_event(**sample_run)
+    run_dir = basedir.join(_id)
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+
+    captured_outs = [("some output %d\n" % i) for i in range(10)]
+    beat_times = [(T2 + datetime.timedelta(seconds=i*10)) for i in range(10)]
+
+    for idx in range(len(beat_times)):
+        expected_captured_output = "\n".join(
+            [x.strip() for x in captured_outs[:(idx+1)]]) + "\n"
+        obs.heartbeat_event(info=info, captured_out=expected_captured_output,
+                            beat_time=beat_times[idx], result=17)
+
+        assert run_dir.join('cout.txt').read() == expected_captured_output
+        run = json.loads(run_dir.join('run.json').read())
+
+        assert run['heartbeat'] == beat_times[idx].isoformat()
+        assert run['result'] == 17
+
+        assert run_dir.join('info.json').exists()
+        i = json.loads(run_dir.join('info.json').read())
+        assert info == i
 
 
 def test_fs_observer_completed_event_updates_run(dir_obs, sample_run):
@@ -231,3 +299,101 @@ def test_fs_observer_equality(dir_obs):
 
     assert not obs == 'foo'
     assert obs != 'foo'
+
+@pytest.fixture
+def logged_metrics():
+    return [
+        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
+        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
+        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
+
+        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
+        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+
+        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
+        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
+        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30)
+    ]
+
+
+def test_log_metrics(dir_obs, sample_run, logged_metrics):
+    """Test storing of scalar measurements.
+
+    Test whether measurements logged using _run.metrics.log_scalar_metric
+    are being stored in the metrics.json file.
+
+    Metrics are stored as a json with each metric indexed by a name 
+    (e.g.: 'training.loss'). Each metric for the given name is then
+    stored as three lists: iteration step(steps), the values logged(values)
+    and the timestamp at which the measurement was taken(timestamps)
+    """
+
+    # Start the experiment 
+    basedir, obs = dir_obs
+    sample_run['_id'] = None
+    _id = obs.started_event(**sample_run)    
+    run_dir = basedir.join(str(_id))
+
+    # Initialize the info dictionary and standard output with arbitrary values
+    info = {'my_info': [1, 2, 3], 'nr': 7}
+    outp = 'some output'
+
+    obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1,
+                              result=0)
+
+
+    assert run_dir.join('metrics.json').exists()
+    metrics = json.loads(run_dir.join('metrics.json').read())
+
+
+    # Confirm that we have only two metric names registered.
+    # and they have all the information we need.
+    assert len(metrics) == 2
+    assert "training.loss" in metrics
+    assert "training.accuracy" in metrics
+    for v in ["steps","values","timestamps"]:
+        assert v in metrics["training.loss"] 
+        assert v in metrics["training.accuracy"]
+
+
+    # Verify they have all the information 
+    # we logged in the right order.
+    loss = metrics["training.loss"]
+    assert loss["steps"] == [10, 20, 30]
+    assert loss["values"] == [1, 2, 3]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+    accuracy = metrics["training.accuracy"]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]
+
+
+    # Now, process the remaining events
+    # The metrics shouldn't be overwritten, but appended instead.
+    obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2,
+                              result=0)
+
+    # Reload the new metrics
+    metrics = json.loads(run_dir.join('metrics.json').read())
+
+    # The newly added metrics belong to the same run and have the same names,
+    # so the total number of metrics should not change.
+    assert len(metrics) == 2
+
+    assert "training.loss" in metrics
+    loss = metrics["training.loss"]
+    assert loss["steps"] == [10, 20, 30, 40, 50, 60]
+    assert loss["values"] == [1, 2, 3, 10, 20, 30]
+    for i in range(len(loss["timestamps"]) - 1):
+        assert loss["timestamps"][i] <= loss["timestamps"][i + 1]
+
+
+    # Read the training.accuracy metric and verify it's unchanged
+    assert "training.accuracy" in metrics
+    accuracy = metrics["training.accuracy"]
+    assert accuracy["steps"] == [10, 20, 30]
+    assert accuracy["values"] == [100, 200, 300]

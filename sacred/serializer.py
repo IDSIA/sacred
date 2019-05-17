@@ -7,8 +7,6 @@ import json as _json
 
 from sacred import optional as opt
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('flatten', 'restore')
 
 

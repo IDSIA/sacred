@@ -97,7 +97,7 @@ also collected. The default host info includes:
     ENV              captured ENVIRONMENT variables (if set)
     ===============  ==========================================
 
-Host information is available from the :ref:api_run through ``run.host_info``.
+Host information is available from the :ref:`api_run` through ``run.host_info``.
 It is sent to the observers by the :ref:`started_event <event_started>`.
 
 The list of captured ENVIRONMENT variables (empty by default) can be extended
@@ -159,7 +159,7 @@ captured output. To interpret control characters like a console this would do:
 
 
 Metrics API
------------------
+-----------
 You might want to measure various values during your experiments, such as
 the progress of prediction accuracy over training steps.
 
@@ -168,8 +168,6 @@ To access the API in experiments, the experiment must be running and the variabl
 or run must be available in the scope. The ``_run.log_scalar(metric_name, value, step)`` method takes
 a metric name (e.g. "training.loss"), the measured value and the iteration step in which the value was taken.
 If no step is specified, a counter that increments by one automatically is set up for each metric.
-
-It is important that the value is a Python native type (int, float) and not e.g. a numpy.float64.
 
 Step should be an integer describing the position of the value in the series. Steps can be numbered either sequentially
 0, 1, 2, 3, ... or they may be given a different meaning, for instance the current iteration round.
@@ -200,8 +198,7 @@ In any case, the numbers should form an increasing sequence.
             ex.log_scalar("training.diff", value * 2)
 
 
-Currently, the information is collected only by the :ref:`mongo_observer`. Metrics are stored in the ``metrics`` collection
-of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to.
+Currently, the information is collected only by two observers: the :ref:`mongo_observer` and the :ref:`file_observer`. For the Mongo Observer, metrics are stored in the ``metrics`` collection of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to. For the :ref:`file_observer`, metrics are stored in the file ``metrics.json`` in the run id's directory and are organized by metric name (e.g. "training.loss").
 
 
 Metrics Records
@@ -253,7 +250,7 @@ defaults to the filename.
 
 
 Bookkeeping
-==========
+===========
 Finally, Sacred stores some additional bookkeeping information, and some custom
 meta information about the runs.
 This information is reported to the observers as soon as it is available, and

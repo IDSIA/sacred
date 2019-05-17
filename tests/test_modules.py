@@ -137,6 +137,30 @@ def test_experiment_named_config_subingredient():
     assert ex.run(named_configs=['somemod.nsubcfg', 'ncfg']).result == (2, 25)
 
 
+def test_experiment_named_config_subingredient_overwrite():
+    somemod = Ingredient("somemod")
+
+    @somemod.capture
+    def get_answer(a):
+        return a
+
+    ex = Experiment("some_experiment", ingredients=[somemod])
+
+    @ex.named_config
+    def ncfg():
+        somemod = {'a': 1}
+
+    @ex.main
+    def main():
+        return get_answer()
+
+    assert ex.run(named_configs=['ncfg']).result == 1
+    assert ex.run(config_updates={'somemod': {'a': 2}}).result == 2
+    assert ex.run(named_configs=['ncfg'],
+                  config_updates={'somemod': {'a': 2}}
+                  ).result == 2
+
+
 def test_experiment_double_named_config():
     ex = Experiment()
 

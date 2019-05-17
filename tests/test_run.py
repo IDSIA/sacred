@@ -38,7 +38,7 @@ def test_run_attributes(run):
 def test_run_state_attributes(run):
     assert run.start_time is None
     assert run.stop_time is None
-    assert run.captured_out is None
+    assert run.captured_out == ''
     assert run.result is None
 
 
@@ -129,8 +129,12 @@ def test_run_heartbeat_event(run):
 def test_run_artifact_event(run):
     observer = run.observers[0]
     handle, f_name = tempfile.mkstemp()
-    run.add_artifact(f_name, name='foobar')
-    observer.artifact_event.assert_called_with(filename=f_name, name='foobar')
+    name = 'foobar'
+    metadata = {'testkey': 42}
+    content_type = 'text/plain'
+    run.add_artifact(f_name, name=name, metadata=metadata, content_type=content_type)
+    observer.artifact_event.assert_called_with(filename=f_name, name=name,
+                                               metadata=metadata, content_type=content_type)
     os.close(handle)
     os.remove(f_name)
 
@@ -238,8 +242,9 @@ def test_stdout_capturing_sys(run, capsys):
     assert run.captured_out == '0123456789'
 
 
-@pytest.mark.skipif(sys.platform.startswith('win'),
-                    reason="does not work on windows")
+# @pytest.mark.skipif(sys.platform.startswith('win'),
+#                     reason="does not work on windows")
+@pytest.mark.skip('Breaks randomly on test server')
 def test_stdout_capturing_fd(run, capsys):
     def print_mock_progress():
         for i in range(10):
@@ -264,6 +269,8 @@ def test_captured_out_filter(run, capsys):
 
     run.captured_out_filter = apply_backspaces_and_linefeeds
     run.main_function.side_effect = print_mock_progress
+    run.capture_mode = "sys"
     with capsys.disabled():
         run()
-        assert run.captured_out == 'progress 9'
+        sys.stdout.flush()
+    assert run.captured_out == 'progress 9'

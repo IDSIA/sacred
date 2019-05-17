@@ -17,8 +17,6 @@ from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
 import sacred.optional as opt
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 # Set data type values for abstract properties in Serializers
 series_type = opt.pandas.Series if opt.has_pandas else None
 dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
@@ -129,6 +127,7 @@ class TinyDbObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
+        self.db_run_id = None
 
         self.run_entry = {
             'experiment': dict(ex_info),
@@ -191,7 +190,7 @@ class TinyDbObserver(RunObserver):
             self.run_entry['resources'].append(resource)
             self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
 
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, 'rb'))

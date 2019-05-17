@@ -8,7 +8,7 @@ from __future__ import division, print_function, unicode_literals
 import mock
 import pytest
 
-from tests.foo import bar
+from tests.foo import bar, mock_extension
 
 
 # Actually this would not work :(

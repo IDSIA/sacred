@@ -13,8 +13,21 @@ mongomock = pytest.importorskip("mongomock")
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
+T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
+
+
+def test_create_should_raise_error_on_non_pymongo_client():
+    client = mongomock.MongoClient()
+    with pytest.raises(ValueError):
+        MongoObserver.create(client=client)
+
+
+def test_create_should_raise_error_on_both_client_and_url():
+    real_client = pymongo.MongoClient()
+    with pytest.raises(ValueError,
+                       match="Cannot pass both a client and a url."):
+        MongoObserver.create(client=real_client, url="mymongourl")
 
 
 @pytest.fixture
@@ -167,7 +180,8 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.fs.exists.assert_any_call(filename=filename)
 
     db_run = mongo_obs.runs.find_one()
-    assert db_run['resources'] == [(filename, md5)]
+    # for some reason py27 returns this as tuples and py36 as lists
+    assert [tuple(r) for r in db_run['resources']] == [(filename, md5)]
 
 
 def test_force_bson_encodable_doesnt_change_valid_document():
@@ -320,3 +334,51 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.runs.count() == 2
     # Another 2 metrics have been created
     assert mongo_obs.metrics.count() == 4
+
+
+def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):
+    """Test that the detected content_type is added to other metadata."""
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename)
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['content_type'] == 'text/x-python'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']
+
+
+def test_mongo_observer_artifact_event_content_type_not_overwritten(mongo_obs, sample_run):
+    """Test that manually set content_type is not overwritten by automatic detection."""
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename, content_type='application/json')
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['content_type'] == 'application/json'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']
+
+
+def test_mongo_observer_artifact_event_metadata(mongo_obs, sample_run):
+    """Test that the detected content-type is added to other metadata."""
+    mongo_obs.started_event(**sample_run)
+
+    filename = 'setup.py'
+    name = 'mysetup'
+
+    mongo_obs.artifact_event(name, filename, metadata={'comment': 'the setup file'})
+
+    assert mongo_obs.fs.put.called
+    assert mongo_obs.fs.put.call_args[1]['metadata']['comment'] == 'the setup file'
+
+    db_run = mongo_obs.runs.find_one()
+    assert db_run['artifacts']

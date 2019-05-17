@@ -7,6 +7,7 @@ import re
 import os.path
 import sys
 import time
+import mimetypes
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -15,8 +16,10 @@ from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
 
-
 DEFAULT_MONGO_PRIORITY = 30
+
+# This ensures consistent mimetype detection across platforms.
+mimetypes.init(files=[])
 
 
 def force_valid_bson_key(key):
@@ -49,18 +52,23 @@ def force_bson_encodeable(obj):
 
 class MongoObserver(RunObserver):
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
-                                 'system.indexes', 'seach_space'}
+                                 'system.indexes', 'search_space',
+                                 'search_spaces'}
     VERSION = 'MongoObserver-0.7.0'
 
     @staticmethod
-    def create(url='localhost', db_name='sacred', collection='runs',
+    def create(url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
-               client=None,**kwargs):
+               client=None, **kwargs):
         import pymongo
         import gridfs
 
         if client is not None:
-            assert isinstance(client, pymongo.MongoClient)
+            if not isinstance(client, pymongo.MongoClient):
+                raise ValueError("client needs to be a pymongo.MongoClient, "
+                                 "but is {} instead".format(type(client)))
+            if url is not None:
+                raise ValueError('Cannot pass both a client and a url.')
         else:
             client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
@@ -183,15 +191,31 @@ class MongoObserver(RunObserver):
         self.run_entry['resources'].append((filename, md5hash))
         self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
         with open(filename, 'rb') as f:
             run_id = self.run_entry['_id']
             db_filename = 'artifact://{}/{}/{}'.format(self.runs.name, run_id,
                                                        name)
-            file_id = self.fs.put(f, filename=db_filename)
+            if content_type is None:
+                content_type = self._try_to_detect_content_type(filename)
+
+            file_id = self.fs.put(f, filename=db_filename,
+                                  metadata=metadata, content_type=content_type)
+
         self.run_entry['artifacts'].append({'name': name,
                                             'file_id': file_id})
         self.save()
+
+    @staticmethod
+    def _try_to_detect_content_type(filename):
+        mime_type, _ = mimetypes.guess_type(filename)
+        if mime_type is not None:
+            print('Added {} as content-type of artifact {}.'.format(
+                mime_type, filename))
+        else:
+            print('Failed to detect content-type automatically for '
+                  'artifact {}.'.format(filename))
+        return mime_type
 
     def log_metrics(self, metrics_by_name, info):
         """Store new measurements to the database.
@@ -203,7 +227,7 @@ class MongoObserver(RunObserver):
         """
         if self.metrics is None:
             # If, for whatever reason, the metrics collection has not been set
-            # do not try to save there anything
+            # do not try to save anything there.
             return
         for key in metrics_by_name:
             query = {"run_id": self.run_entry['_id'],
@@ -245,8 +269,8 @@ class MongoObserver(RunObserver):
         import pymongo.errors
 
         try:
-            self.runs.replace_one({'_id': self.run_entry['_id']},
-                                  self.run_entry)
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry})
         except pymongo.errors.AutoReconnect:
             pass  # just wait for the next save
         except pymongo.errors.InvalidDocument:
@@ -258,7 +282,8 @@ class MongoObserver(RunObserver):
 
         for i in range(attempts):
             try:
-                self.runs.save(self.run_entry)
+                self.runs.update_one({'_id': self.run_entry['_id']},
+                                     {'$set': self.run_entry}, upsert=True)
                 return
             except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:
@@ -314,7 +339,7 @@ class MongoDbOption(CommandLineOption):
     RUN_ID_PATTERN = r"(?P<overwrite>\d{1,12})"
     PORT1_PATTERN = r"(?P<port1>\d{1,5})"
     PORT2_PATTERN = r"(?P<port2>\d{1,5})"
-    PRIORITY_PATTERN = "(?P<priority>-?\d+)?"
+    PRIORITY_PATTERN = r"(?P<priority>-?\d+)?"
     DB_NAME_PATTERN = r"(?P<db_name>[_A-Za-z]" \
                       r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
     COLL_NAME_PATTERN = r"(?P<collection>[_A-Za-z]" \

@@ -79,6 +79,9 @@ This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
 (See `here <http://docs.mongodb.org/manual/installation/>`_ on how to install)
 
+You can setup MongoDB easily with Docker. See the instructions
+in  :ref:`docker_setup` .
+
 Authentication
 --------------
 If you need authentication a little more work might be necessary.
@@ -672,6 +675,12 @@ or pickle file containing...
   * optionally: a boolean for ``silent_completion``. If set to true, regular experiment completions
     will use no or less intrusive notifications, depending on the receiving device's platform.
     Experiment starts will always be sent silently, interruptions and failures always with full notifications.
+  * optionally: a string for ``proxy_url``. Specify this field, if Telegram is blocked in the local network or
+    in the country, and you want to use proxy server.
+    Format: ``PROTOCOL://PROXY_HOST:[PROXY_PORT]/``. Socks5 and HTTP protocols are supported.
+    These settings also could be received from ``HTTPS_PROXY`` or ``https_proxy`` environment variable.
+  * optionally: ``username`` for proxy.
+  * optionally: ``password`` for proxy.
 
 The observer is then added to the experment like this:
 

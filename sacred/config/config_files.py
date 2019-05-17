@@ -10,8 +10,6 @@ import json
 import sacred.optional as opt
 from sacred.serializer import flatten, restore
 
-__sacred__ = True  # marks files that should be filtered from stack traces
-
 __all__ = ('load_config_file', 'save_config_file')
 
 
@@ -29,14 +27,24 @@ HANDLER_BY_EXT = {
     '.pickle': Handler(pickle.load, pickle.dump, 'b'),
 }
 
-
+yaml_extensions = ('.yaml', '.yml')
 if opt.has_yaml:
-    HANDLER_BY_EXT['.yaml'] = Handler(opt.yaml.load, opt.yaml.dump, '')
+    for extension in yaml_extensions:
+        HANDLER_BY_EXT[extension] = Handler(opt.yaml.load, opt.yaml.dump, '')
 
 
 def get_handler(filename):
     _, extension = os.path.splitext(filename)
-    return HANDLER_BY_EXT[extension]
+    if extension in yaml_extensions and not opt.has_yaml:
+        raise KeyError('Configuration file "{}" cannot be loaded as '
+                       'you do not have PyYAML installed.'.format(filename))
+    try:
+        return HANDLER_BY_EXT[extension]
+    except KeyError:
+        raise ValueError(
+            'Configuration file "{}" has invalid or unsupported extension '
+            '"{}".'.format(filename, extension)
+        )
 
 
 def load_config_file(filename):

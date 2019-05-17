@@ -3,6 +3,7 @@ import pytest
 
 from sacred import Experiment
 from sacred.stflow import LogFileWriter
+from sacred.utils import get_package_version, parse_version
 
 
 @pytest.fixture
@@ -10,25 +11,31 @@ def ex():
     return Experiment('tensorflow_tests')
 
 
-# Creates a simplified tensorflow interface if necessary
-# so tensorflow is not required during the tests
 @pytest.fixture()
 def tf():
+    """
+    Creates a simplified tensorflow interface if necessary,
+    so `tensorflow` is not required during the tests.
+    """
     from sacred.optional import has_tensorflow
     if has_tensorflow:
-        import tensorflow
-        return tensorflow
+        # Ensures backward and forward compatibility with TensorFlow 1 and 2.
+        if get_package_version('tensorflow') < parse_version('1.13.1'):
+            import tensorflow as tf
+        else:
+            import tensorflow.compat.v1 as tf
+        return tf
     else:
         # Let's define a mocked tensorflow
-        class tensorflow():
-            class summary():
-                class FileWriter():
+        class tensorflow:
+            class summary:
+                class FileWriter:
                     def __init__(self, logdir, graph):
                         self.logdir = logdir
                         self.graph = graph
                         print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
 
-            class Session():
+            class Session:
                 def __init__(self):
                     self.graph = None
 
@@ -40,12 +47,14 @@ def tf():
 
         # Set stflow to use the mock as the test
         import sacred.stflow.method_interception
-        sacred.stflow.method_interception.tensorflow = tensorflow
+        sacred.stflow.method_interception.tf = tensorflow
         return tensorflow
 
 
-# Tests whether logdir is stored into the info dictionary when creating a new FileWriter object
 def test_log_file_writer(ex, tf):
+    """
+    Tests whether logdir is stored into the info dictionary when creating a new FileWriter object.
+    """
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
@@ -65,7 +74,9 @@ def test_log_file_writer(ex, tf):
 
 
 def test_log_summary_writer_as_context_manager(ex, tf):
-    """ Check that Tensorflow log directory is captured by LogFileWriter context manager"""
+    """
+    Check that Tensorflow log directory is captured by LogFileWriter context manager.
+    """
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
@@ -92,8 +103,11 @@ def test_log_summary_writer_as_context_manager(ex, tf):
 
     ex.run()
 
+
 def test_log_file_writer_as_context_manager_with_exception(ex, tf):
-    """ Check that Tensorflow log directory is captured by LogFileWriter context manager"""
+    """
+    Check that Tensorflow log directory is captured by LogFileWriter context manager.
+    """
     TEST_LOG_DIR = "/tmp/sacred_test"
 
     @ex.main
@@ -115,9 +129,12 @@ def test_log_file_writer_as_context_manager_with_exception(ex, tf):
 
     ex.run()
 
-# Tests whether logdir is stored into the info dictionary when creating a new FileWriter object,
-# but this time on a method of a class
+
 def test_log_summary_writer_class(ex, tf):
+    """
+    Tests whether logdir is stored into the info dictionary when creating a new FileWriter object,
+    but this time on a method of a class.
+    """
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
@@ -149,6 +166,7 @@ def test_log_summary_writer_class(ex, tf):
             assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR2]
 
     ex.run()
+
 
 if __name__ == "__main__":
     test_log_file_writer(ex(), tf())

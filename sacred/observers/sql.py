@@ -21,7 +21,10 @@ class SqlObserver(RunObserver):
     @classmethod
     def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         engine = sa.create_engine(url, echo=echo)
-        return cls(engine, sessionmaker(bind=engine)(), priority)
+        session_factory = sessionmaker(bind=engine)
+        # make session thread-local to avoid problems with sqlite (see #275)
+        session = scoped_session(session_factory)
+        return cls(engine, session, priority)
 
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
@@ -103,7 +106,7 @@ class SqlObserver(RunObserver):
         self.run.resources.append(res)
         self.save()
 
-    def artifact_event(self, name, filename):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
         a = Artifact.create(name, filename)
         self.run.artifacts.append(a)
         self.save()
@@ -146,7 +149,7 @@ class SqlOption(CommandLineOption):
 if opt.has_sqlalchemy:  # noqa
     import sqlalchemy as sa
     from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, scoped_session
 
     Base = declarative_base()
 
@@ -331,7 +334,7 @@ if opt.has_sqlalchemy:  # noqa
         __tablename__ = 'run'
         id = sa.Column(sa.Integer, primary_key=True)
 
-        run_id = sa.Column(sa.String(24))
+        run_id = sa.Column(sa.String(24), unique=True)
 
         command = sa.Column(sa.String(64))
 
@@ -357,7 +360,7 @@ if opt.has_sqlalchemy:  # noqa
         info = sa.Column(sa.Text)
 
         status = sa.Column(sa.Enum("RUNNING", "COMPLETED", "INTERRUPTED",
-                                   "TIMEOUT", "FAILED"))
+                                   "TIMEOUT", "FAILED", name="status_enum"))
 
         host_id = sa.Column(sa.Integer, sa.ForeignKey('host.host_id'))
         host = sa.orm.relationship("Host", backref=sa.orm.backref('runs'))

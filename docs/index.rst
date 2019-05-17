@@ -54,6 +54,7 @@ Contents
    optional
    settings
    examples
+   projects_using_sacred
    tensorflow
    apidoc
    internals

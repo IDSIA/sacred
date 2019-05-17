@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
+
+from sacred import Ingredient
+
 """Global Docstring"""
 
 from mock import patch
@@ -8,7 +11,7 @@ import pytest
 import sys
 
 from sacred.experiment import Experiment
-from sacred.utils import apply_backspaces_and_linefeeds
+from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError
 
 
 @pytest.fixture
@@ -79,7 +82,7 @@ def test_fails_on_unused_config_updates(ex):
     assert ex.run(config_updates={'c': 9}).result == 3
 
     # unused config updates raise
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'d': 3})
 
 
@@ -101,7 +104,7 @@ def test_fails_on_nested_unused_config_updates(ex):
     assert ex.run(config_updates={'d': {'e': 7}}).result == 1
 
     # unused nested config updates raise
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'d': {'f': 3}})
 
 
@@ -121,7 +124,7 @@ def test_considers_captured_functions_for_fail_on_unused_config(ex):
     assert ex.run(config_updates={'a': 7}).result == 7
     assert ex.run(config_updates={'b': 3}).result == 4
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'c': 3})
 
 
@@ -140,10 +143,10 @@ def test_considers_prefix_for_fail_on_unused_config(ex):
 
     assert ex.run(config_updates={'a': {'b': 3}}).result == 3
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'b': 5})
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ConfigAddedError):
         ex.run(config_updates={'a': {'c': 5}})
 
 
@@ -174,6 +177,63 @@ def test_using_a_named_config(ex):
 
     assert ex.run().result == 1
     assert ex.run(named_configs=['ncfg']).result == 10
+
+
+def test_empty_dict_named_config(ex):
+    @ex.named_config
+    def ncfg():
+        empty_dict = {}
+        nested_empty_dict = {'k1': {'k2': {}}}
+
+    @ex.automain
+    def main(empty_dict=1, nested_empty_dict=2):
+        return empty_dict, nested_empty_dict
+
+    assert ex.run().result == (1, 2)
+    assert ex.run(named_configs=['ncfg']).result == ({}, {'k1': {'k2': {}}})
+
+
+def test_empty_dict_config_updates(ex):
+    @ex.config
+    def cfg():
+        a = 1
+
+    @ex.config
+    def default():
+        a = {'b': 1}
+
+    @ex.main
+    def main():
+        pass
+
+    r = ex.run()
+    assert r.config['a']['b'] == 1
+
+
+def test_named_config_and_ingredient():
+    ing = Ingredient('foo')
+
+    @ing.config
+    def cfg():
+        a = 10
+
+    ex = Experiment(ingredients=[ing])
+
+    @ex.config
+    def default():
+        b = 20
+
+    @ex.named_config
+    def named():
+        b = 30
+
+    @ex.main
+    def main():
+        pass
+
+    r = ex.run(named_configs=['named'])
+    assert r.config['b'] == 30
+    assert r.config['foo'] == {'a': 10}
 
 
 def test_captured_out_filter(ex, capsys):
@@ -211,3 +271,22 @@ def test_option_hooks_without_options_arg_raises(ex):
         @ex.option_hook
         def invalid_hook(wrong_arg_name):
             pass
+
+
+def test_config_hook_updates_config(ex):
+
+    @ex.config
+    def cfg():
+        a = 'hello'
+
+    @ex.config_hook
+    def hook(config, command_name, logger):
+        config.update({'a': 'me'})
+        return config
+
+    @ex.main
+    def foo():
+        pass
+
+    r = ex.run()
+    assert r.config['a'] == 'me'
