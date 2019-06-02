@@ -56,8 +56,8 @@ def test_log_metrics(queue_observer):
     queue_observer.log_metrics(OrderedDict([first, second]), "info")
     queue_observer.join()
     assert queue_observer._covered_observer.method_calls[1][0] == "log_metrics"
-    assert queue_observer._covered_observer.method_calls[1][1] == (*first, "info")
+    assert queue_observer._covered_observer.method_calls[1][1] == (first[0], first[1], "info")
     assert queue_observer._covered_observer.method_calls[1][2] == {}
     assert queue_observer._covered_observer.method_calls[2][0] == "log_metrics"
-    assert queue_observer._covered_observer.method_calls[2][1] == (*second, "info")
+    assert queue_observer._covered_observer.method_calls[2][1] == (second[0], second[1], "info")
     assert queue_observer._covered_observer.method_calls[2][2] == {}
