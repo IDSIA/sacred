@@ -712,6 +712,7 @@ class IntervalTimer(threading.Thread):
         return stop_event, timer_thread
 
     def __init__(self, event, func, interval=10.):
+        # TODO use super here.
         threading.Thread.__init__(self)
         self.stopped = event
         self.func = func
