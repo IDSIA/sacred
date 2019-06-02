@@ -8,6 +8,7 @@ class FailingMongoClient(mongomock.MongoClient):
                  exception_to_raise=pymongo.errors.AutoReconnect, **kwargs):
         super(FailingMongoClient, self).__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
+        self.exception_to_raise = exception_to_raise
         self._exception_to_raise = exception_to_raise
 
     def get_database(self, name, codec_options=None, read_preference=None,

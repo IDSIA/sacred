@@ -2,12 +2,13 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import mimetypes
+import os.path
 import pickle
 import re
-import os.path
 import sys
 import time
-import mimetypes
+from tempfile import NamedTemporaryFile
 
 import pymongo
 import pymongo.errors
@@ -64,7 +65,23 @@ class MongoObserver(RunObserver):
     @classmethod
     def create(cls, url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
-               client=None, **kwargs):
+               client=None, failure_dir=None, **kwargs):
+        """Factory method for MongoObserver.
+
+        Parameters
+        ----------
+        url: Mongo URI to connect to.
+        db_name: Database to connect to.
+        collection: Collection to write the runs to. (default: "runs").
+        overwrite: _id of a run that should be overwritten.
+        priority: (default 30)
+        client: Client to connect to. Do not use client and URL together.
+        failure_dir: Directory to save the run of a failed observer to.
+
+        Returns
+        -------
+        An instantiated MongoObserver.
+        """
 
         if client is not None:
             if not isinstance(client, pymongo.MongoClient):
@@ -81,11 +98,15 @@ class MongoObserver(RunObserver):
         runs_collection = database[collection]
         metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return cls(runs_collection, fs, overwrite=overwrite,
-                   metrics_collection=metrics_collection, priority=priority)
+        return cls(runs_collection,
+                   fs, overwrite=overwrite,
+                   metrics_collection=metrics_collection,
+                   failure_dir=failure_dir,
+                   priority=priority)
 
     def __init__(self, runs_collection,
                  fs, overwrite=None, metrics_collection=None,
+                 failure_dir=None,
                  priority=DEFAULT_MONGO_PRIORITY):
         self.runs = runs_collection
         self.metrics = metrics_collection
@@ -101,6 +122,7 @@ class MongoObserver(RunObserver):
         self.overwrite = overwrite
         self.run_entry = None
         self.priority = priority
+        self.failure_dir = failure_dir
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
@@ -265,6 +287,8 @@ class MongoObserver(RunObserver):
                     raise
 
     def save(self):
+        import pymongo.errors
+
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry})
@@ -275,6 +299,8 @@ class MongoObserver(RunObserver):
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
+        import pymongo.errors
+
         for i in range(attempts):
             try:
                 self.runs.update_one({'_id': self.run_entry['_id']},
@@ -283,6 +309,8 @@ class MongoObserver(RunObserver):
             except pymongo.errors.AutoReconnect:
                 if i < attempts - 1:
                     time.sleep(1)
+            except pymongo.errors.ConnectionFailure:
+                pass
             except pymongo.errors.InvalidDocument:
                 self.run_entry = force_bson_encodeable(self.run_entry)
                 print("Warning: Some of the entries of the run were not "
@@ -291,9 +319,13 @@ class MongoObserver(RunObserver):
                       "Most likely it is either the 'info' or the 'result'.",
                       file=sys.stderr)
 
-        from tempfile import NamedTemporaryFile
+        if not os.path.exists(self.failure_dir):
+            os.makedirs(self.failure_dir)
         with NamedTemporaryFile(suffix='.pickle', delete=False,
-                                prefix='sacred_mongo_fail_') as f:
+                                prefix='sacred_mongo_fail_{}_'.format(
+                                    self.run_entry["_id"]
+                                ),
+                                dir=self.failure_dir) as f:
             pickle.dump(self.run_entry, f)
             print("Warning: saving to MongoDB failed! "
                   "Stored experiment entry in '{}'".format(f.name),
