@@ -10,8 +10,10 @@ import pytest
 import json
 
 from sacred.observers.file_storage import FileStorageObserver
-from sacred.serializer import restore
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+# pylint: disable=redefined-builtin
+from sacred.utils import FileExistsError  # py2 compat.
+# pylint: enable=redefined-builtin
 
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -91,7 +93,7 @@ def test_fs_observer_queued_event_creates_rundir(dir_obs, sample_run):
     }
 
 
-def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
+def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypatch):
     basedir, obs = dir_obs
     sample_run['_id'] = None
     _id = obs.started_event(**sample_run)
@@ -114,6 +116,15 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
         "artifacts": [],
         "status": "RUNNING"
     }
+
+    def mkdir_raises_file_exists(name):
+        raise FileExistsError("File already exists: " + name)
+
+    with monkeypatch.context() as m:
+        m.setattr('os.mkdir', mkdir_raises_file_exists)
+        with pytest.raises(FileExistsError):
+            sample_run['_id'] = None
+            _id = obs.started_event(**sample_run)
 
 
 def test_fs_observer_started_event_stores_source(dir_obs, sample_run, tmpfile):

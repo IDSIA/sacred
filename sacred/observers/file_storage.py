@@ -4,16 +4,17 @@ from __future__ import division, print_function, unicode_literals
 import json
 import os
 import os.path
-import tempfile
 
 from shutil import copyfile
 
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
-from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat.
 from sacred import optional as opt
 from sacred.serializer import flatten
+# pylint: disable=redefined-builtin
+from sacred.utils import FileNotFoundError, FileExistsError  # py2 compat.
+# pylint: enable=redefined-builtin
 
 
 DEFAULT_FILE_STORAGE_PRIORITY = 20
@@ -51,15 +52,46 @@ class FileStorageObserver(RunObserver):
         self.cout = ""
         self.cout_write_cursor = 0
 
-    def queued_event(self, ex_info, command, host_info, queue_time, config,
-                     meta_info, _id):
-        if not os.path.exists(self.basedir):
-            os.makedirs(self.basedir)
+    @staticmethod
+    def _makedirs(name, mode=0o777, exist_ok=False):
+        """ Wrapper of os.makedirs with fallback
+            for exist_ok on python 2.
+        """
+        try:
+            os.makedirs(name, mode, exist_ok)
+        except TypeError:
+            if not os.path.exists(name):
+                os.makedirs(name, mode)
+
+    def _make_next_dir(self):
+        dir_nrs = [int(d) for d in os.listdir(self.basedir)
+                   if os.path.isdir(os.path.join(self.basedir, d)) and
+                   d.isdigit()]
+        _id = max(dir_nrs + [0]) + 1
+        new_dir = os.path.join(self.basedir, str(_id))
+        os.mkdir(new_dir)
+        self.dir = new_dir  # set only if mkdir is successful
+
+    def _make_run_dir(self, _id):
+        self._makedirs(self.basedir, exist_ok=True)
+        self.dir = None
         if _id is None:
-            self.dir = tempfile.mkdtemp(prefix='run_', dir=self.basedir)
+            fail_count = 0
+            while self.dir is None:
+                try:
+                    self._make_next_dir()
+                except FileExistsError:  # Catch race conditions
+                    if fail_count < 100:
+                        fail_count += 1
+                    else:  # expect that something else went wrong
+                        raise
         else:
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
+
+    def queued_event(self, ex_info, command, host_info, queue_time, config,
+                     meta_info, _id):
+        self._make_run_dir(_id)
 
         self.run_entry = {
             'experiment': dict(ex_info),
@@ -91,26 +123,7 @@ class FileStorageObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
-        if not os.path.exists(self.basedir):
-            os.makedirs(self.basedir)
-        if _id is None:
-            for i in range(200):
-                dir_nrs = [int(d) for d in os.listdir(self.basedir)
-                           if os.path.isdir(os.path.join(self.basedir, d)) and
-                           d.isdigit()]
-                _id = max(dir_nrs + [0]) + 1
-                self.dir = os.path.join(self.basedir, str(_id))
-                try:
-                    os.mkdir(self.dir)
-                    break
-                except FileExistsError:  # Catch race conditions
-                    if i > 100:
-                        # After some tries,
-                        # expect that something other went wrong
-                        raise
-        else:
-            self.dir = os.path.join(self.basedir, str(_id))
-            os.mkdir(self.dir)
+        self._make_run_dir(_id)
 
         ex_info['sources'] = self.save_sources(ex_info)
 
@@ -137,8 +150,7 @@ class FileStorageObserver(RunObserver):
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir):
-        if not os.path.exists(store_dir):
-            os.makedirs(store_dir)
+        self._makedirs(store_dir, exist_ok=True)
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + '_' + md5sum + ext
