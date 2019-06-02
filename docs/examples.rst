@@ -76,6 +76,8 @@ if you feel more comfortable with classical Python. At its core Sacred is about
 tracking computatonal experiments, not about any particular coding style.
 
 
+.. _docker_setup:
+
 Docker Setup
 ============
 `examples/docker <https://github.com/IDSIA/sacred/tree/master/examples/docker>`_

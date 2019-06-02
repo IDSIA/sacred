@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+
+import codecs
+
 from setuptools import setup
 
 classifiers = """
@@ -54,5 +57,5 @@ setup(
 
     classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',
-    long_description=open('README.rst').read()
+    long_description=codecs.open('README.rst', encoding='utf_8').read()
 )
