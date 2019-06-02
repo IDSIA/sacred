@@ -2,12 +2,13 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
+import mimetypes
+import os.path
 import pickle
 import re
-import os.path
 import sys
 import time
-import mimetypes
+from tempfile import NamedTemporaryFile
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -317,8 +318,8 @@ class MongoObserver(RunObserver):
                       "Most likely it is either the 'info' or the 'result'.",
                       file=sys.stderr)
 
-        from tempfile import NamedTemporaryFile
-        os.makedirs(self.failure_dir, exist_ok=True)
+        if not os.path.exists(self.failure_dir):
+            os.makedirs(self.failure_dir)
         with NamedTemporaryFile(suffix='.pickle', delete=False,
                                 prefix='sacred_mongo_fail_{}_'.format(
                                     self.run_entry["_id"]
