@@ -470,7 +470,6 @@ class QueueCompatibleMongoObserver(MongoObserver):
                   "Most likely it is either the 'info' or the 'result'.",
                   file=sys.stderr)
 
-            from tempfile import NamedTemporaryFile
             with NamedTemporaryFile(suffix='.pickle', delete=False,
                                     prefix='sacred_mongo_fail_') as f:
                 pickle.dump(self.run_entry, f)

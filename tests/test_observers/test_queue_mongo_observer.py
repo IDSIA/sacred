@@ -35,6 +35,7 @@ def mongo_obs(monkeypatch):
         retry_interval=0.01,
     )
 
+
 @pytest.fixture()
 def sample_run():
     exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
@@ -192,7 +193,6 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     db_run = mongo_obs.runs.find_one()
     # for some reason py27 returns this as tuples and py36 as lists
     assert [tuple(r) for r in db_run['resources']] == [(filename, md5)]
-
 
 
 @pytest.fixture
