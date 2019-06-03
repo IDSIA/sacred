@@ -250,8 +250,5 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
-.. |codacy| image:: https://img.shields.io/codacy/acb7bba4467e47deaf260d6df5c0279f.svg?style=flat
-    :target: https://www.codacy.com/app/qwlouse/sacred
-    :alt: Codacity rating
 
 

@@ -1,5 +1,6 @@
 language: python
 sudo: false
+dist: xenial
 install:
   - pip install tox
 matrix:
@@ -9,12 +10,16 @@ matrix:
   - python: "3.5"
     env: TOX_ENV=py35
   - python: "3.6"
+    env: TOX_ENV=py36
+  - python: "3.7"
+    env: TOX_ENV=py37
+  - python: "3.6"
     env: TOX_ENV=tensorflow-1
   - python: "3.6"
     env: TOX_ENV=tensorflow-2
   - python: "3.6"
     env: TOX_ENV=flake8
-  - python: "3.5"
+  - python: "3.6"
     env: TOX_ENV=coverage
 script:
   - tox -e $TOX_ENV
