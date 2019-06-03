@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|unix_build| |windows_build| |coverage| |code_quality| |codacy|
+|unix_build| |windows_build| |coverage| |code_quality|
 
 
 
