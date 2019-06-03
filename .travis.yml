@@ -1,5 +1,6 @@
 language: python
 sudo: false
+dist: xenial
 install:
   - pip install tox
 matrix:
