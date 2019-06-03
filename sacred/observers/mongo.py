@@ -10,10 +10,15 @@ import sys
 import time
 from tempfile import NamedTemporaryFile
 
+import pymongo
+import pymongo.errors
+import gridfs
+
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
+from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError
 
@@ -57,8 +62,8 @@ class MongoObserver(RunObserver):
                                  'search_spaces'}
     VERSION = 'MongoObserver-0.7.0'
 
-    @staticmethod
-    def create(url=None, db_name='sacred', collection='runs',
+    @classmethod
+    def create(cls, url=None, db_name='sacred', collection='runs',
                overwrite=None, priority=DEFAULT_MONGO_PRIORITY,
                client=None, failure_dir=None, **kwargs):
         """Factory method for MongoObserver.
@@ -77,8 +82,6 @@ class MongoObserver(RunObserver):
         -------
         An instantiated MongoObserver.
         """
-        import pymongo
-        import gridfs
 
         if client is not None:
             if not isinstance(client, pymongo.MongoClient):
@@ -95,11 +98,11 @@ class MongoObserver(RunObserver):
         runs_collection = database[collection]
         metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return MongoObserver(runs_collection,
-                             fs, overwrite=overwrite,
-                             metrics_collection=metrics_collection,
-                             failure_dir=failure_dir,
-                             priority=priority)
+        return cls(runs_collection,
+                   fs, overwrite=overwrite,
+                   metrics_collection=metrics_collection,
+                   failure_dir=failure_dir,
+                   priority=priority)
 
     def __init__(self, runs_collection,
                  fs, overwrite=None, metrics_collection=None,
@@ -264,8 +267,6 @@ class MongoObserver(RunObserver):
                     .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
-        import pymongo.errors
-
         if self.overwrite:
             return self.save()
 
@@ -419,3 +420,77 @@ class MongoDbOption(CommandLineOption):
                 kwargs[p] = g[p]
 
         return kwargs
+
+
+class QueueCompatibleMongoObserver(MongoObserver):
+
+    def log_metrics(self, metric_name, metrics_values, info):
+        """Store new measurements to the database.
+
+        Take measurements and store them into
+        the metrics collection in the database.
+        Additionally, reference the metrics
+        in the info["metrics"] dictionary.
+        """
+        if self.metrics is None:
+            # If, for whatever reason, the metrics collection has not been set
+            # do not try to save anything there.
+            return
+        query = {"run_id": self.run_entry['_id'],
+                 "name": metric_name}
+        push = {"steps": {"$each": metrics_values["steps"]},
+                "values": {"$each": metrics_values["values"]},
+                "timestamps": {"$each": metrics_values["timestamps"]}}
+        update = {"$push": push}
+        result = self.metrics.update_one(query, update, upsert=True)
+        if result.upserted_id is not None:
+            # This is the first time we are storing this metric
+            info.setdefault("metrics", []) \
+                .append({"name": metric_name, "id": str(result.upserted_id)})
+
+    def save(self):
+        try:
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry})
+        except pymongo.errors.InvalidDocument:
+            raise ObserverError('Run contained an unserializable entry.'
+                                '(most likely in the info)')
+
+    def final_save(self, attempts):
+        try:
+            self.runs.update_one({'_id': self.run_entry['_id']},
+                                 {'$set': self.run_entry}, upsert=True)
+            return
+
+        except pymongo.errors.InvalidDocument:
+            self.run_entry = force_bson_encodeable(self.run_entry)
+            print("Warning: Some of the entries of the run were not "
+                  "BSON-serializable!\n They have been altered such that "
+                  "they can be stored, but you should fix your experiment!"
+                  "Most likely it is either the 'info' or the 'result'.",
+                  file=sys.stderr)
+
+            with NamedTemporaryFile(suffix='.pickle', delete=False,
+                                    prefix='sacred_mongo_fail_') as f:
+                pickle.dump(self.run_entry, f)
+                print("Warning: saving to MongoDB failed! "
+                      "Stored experiment entry in '{}'".format(f.name),
+                      file=sys.stderr)
+
+        raise ObserverError("Warning: saving to MongoDB failed!")
+
+
+class QueuedMongoObserver(QueueObserver):
+    @classmethod
+    def create(cls, interval=20, retry_interval=10, url=None, db_name='sacred',
+               collection='runs', overwrite=None,
+               priority=DEFAULT_MONGO_PRIORITY, client=None, **kwargs):
+        return cls(
+            QueueCompatibleMongoObserver.create(url=url, db_name=db_name,
+                                                collection=collection,
+                                                overwrite=overwrite,
+                                                priority=priority,
+                                                client=client, **kwargs),
+            interval=interval,
+            retry_interval=retry_interval,
+        )
