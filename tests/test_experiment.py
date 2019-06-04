@@ -290,3 +290,27 @@ def test_config_hook_updates_config(ex):
 
     r = ex.run()
     assert r.config['a'] == 'me'
+
+
+def test_info_kwarg_updates_info(ex):
+    """ Tests that the info kwarg of Experiment.create_run is used to update Run.info
+    """
+
+    @ex.automain
+    def foo():
+        pass
+
+    run = ex.run(info={'bar': 'baz'})
+    assert 'bar' in run.info
+
+
+def test_info_kwargs_default_behavior(ex):
+    """ Tests the default behavior of Experiment.create_run when the info kwarg is not specified.
+    """
+
+    @ex.automain
+    def foo(_run):
+        _run.info['bar'] = 'baz'
+
+    run = ex.run()
+    assert 'bar' in run.info
