@@ -204,6 +204,7 @@ def test_double_nested_config():
     @ex.config
     def config():
         a = 1
+        seed = 42
 
     @ing.config
     def config():
@@ -240,12 +241,12 @@ def test_double_nested_config():
 
     @ex.main
     def main(_config):
-        _config.pop('seed')
         assert _config == {
             'a': 1,
             'sub_sub_ing': {'d': 3},
             'sub_ing': {'c': 2},
-            'ing': {'b': 1}
+            'ing': {'b': 1},
+            'seed': 42
         }, _config
 
         ing_main()

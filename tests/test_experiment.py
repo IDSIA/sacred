@@ -11,7 +11,8 @@ import pytest
 import sys
 
 from sacred.experiment import Experiment
-from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError
+from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError, \
+    SacredError
 
 
 @pytest.fixture
@@ -290,3 +291,56 @@ def test_config_hook_updates_config(ex):
 
     r = ex.run()
     assert r.config['a'] == 'me'
+
+
+def test_fails_on_config_write(ex):
+    @ex.config
+    def cfg():
+        a = 'hello'
+        nested_dict = {'dict': {'dict': 1234, 'list': [1, 2, 3, 4]}}
+        nested_list = [{'a': 42}, (1, 2, 3, 4), [1, 2, 3, 4]]
+        nested_tuple = ({'a': 42}, (1, 2, 3, 4), [1, 2, 3, 4])
+
+    @ex.main
+    def main(_config, nested_dict, nested_list, nested_tuple):
+        raises_list = pytest.raises(
+            SacredError, match='The configuration is read-only in a captured function!')
+        raises_dict = pytest.raises(
+            SacredError, match='The configuration is read-only in a captured function!')
+
+        print('in main')
+
+        # Test for ReadOnlyDict
+        with raises_dict:
+            _config['a'] = 'world!'
+
+        with raises_dict:
+            nested_dict['dict'] = 'world!'
+
+        with raises_dict:
+            nested_dict['list'] = 'world!'
+
+        with raises_dict:
+            nested_dict.clear()
+
+        with raises_dict:
+            nested_dict.update({'a': 'world'})
+
+        # Test ReadOnlyList
+        with raises_list:
+            nested_dict['dict']['list'][0] = 1
+
+        with raises_list:
+            nested_list[0] = 'world!'
+
+        with raises_list:
+            nested_dict.clear()
+
+        # Test nested tuple
+        with raises_dict:
+            nested_tuple[0]['a'] = 'world!'
+
+        with raises_list:
+            nested_tuple[2][0] = 123
+
+    ex.run()
