@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import division, print_function, unicode_literals
 
-
 import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
 
@@ -248,11 +247,13 @@ class ReadOnlyDict(dict, ReadOnlyContainer):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *args, message=None, **kwargs):
-        # Call list init
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        # Python 2.7 compatibility
+        self.message = kwargs.pop('message', None) or \
+            'This ReadOnlyDict is read-only!'
 
-        self.message = message or 'This ReadOnlyDict is read-only!'
+        # Call dict init
+        super(ReadOnlyDict, self).__init__(*args, **kwargs)
 
 
 class ReadOnlyList(list, ReadOnlyContainer):
@@ -270,11 +271,13 @@ class ReadOnlyList(list, ReadOnlyContainer):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *iterable, message=None):
-        # Call list init
-        super().__init__(*iterable)
+    def __init__(self, *iterable, **kwargs):
+        # Python 2.7 compatibility
+        self.message = kwargs.pop('message', None) or \
+            'This ReadOnlyList is read-only!'
 
-        self.message = message or 'This ReadOnlyList is read-only!'
+        # Call list init
+        super(ReadOnlyList, self).__init__(*iterable)
 
 
 def make_read_only(o, error_message=None):
@@ -284,14 +287,17 @@ def make_read_only(o, error_message=None):
     but returns the converted structure.
     """
     if isinstance(o, dict):
-        return ReadOnlyDict({k: make_read_only(v, error_message) for k, v in o.items()}, message=error_message)
+        return ReadOnlyDict(
+            {k: make_read_only(v, error_message) for k, v in o.items()},
+            message=error_message)
     elif isinstance(o, list):
-        return ReadOnlyList([make_read_only(v, error_message) for v in o], message=error_message)
+        return ReadOnlyList(
+            [make_read_only(v, error_message) for v in o],
+            message=error_message)
     elif isinstance(o, tuple):
         return tuple(map(make_read_only, o))
     else:
         return o
-
 
 
 SIMPLIFY_TYPE = {
