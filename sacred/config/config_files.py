@@ -29,8 +29,12 @@ HANDLER_BY_EXT = {
 
 yaml_extensions = ('.yaml', '.yml')
 if opt.has_yaml:
+    def load_yaml(filename):
+        return opt.yaml.load(filename, Loader=opt.yaml.FullLoader)
+    yaml_handler = Handler(load_yaml, opt.yaml.dump, '')
+
     for extension in yaml_extensions:
-        HANDLER_BY_EXT[extension] = Handler(opt.yaml.load, opt.yaml.dump, '')
+        HANDLER_BY_EXT[extension] = yaml_handler
 
 
 def get_handler(filename):
