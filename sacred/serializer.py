@@ -34,7 +34,7 @@ if opt.has_numpy:
 
     class NumpyGenericHandler(BaseHandler):
         def flatten(self, obj, data):
-            return np.asscalar(obj)
+            return obj.item()
 
         def restore(self, obj):
             return obj
