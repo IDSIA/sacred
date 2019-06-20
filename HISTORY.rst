@@ -1,6 +1,34 @@
 Release History
 ---------------
 
+0.7.5 (2019-06-20)
+++++++++++++++++++
+Last release to support Python 2.7.
+
+* Feature: major improvements to error reporting (thanks @thequilo)
+* Feature: added print_named_configs command
+* Feature: added option to add metadata to artifacts (thanks @jarnoRFB)
+* Feature: content type detection for artifacts (thanks @jarnoRFB)
+* Feature: automatic seeding for pytorch (thanks @srossi93)
+* Feature: add proxy support to telegram observer (thanks @brickerino)
+* Feature: made MongoObserver fail dump dir configurable (thanks @jarnoRFB)
+* Feature: added queue-based observer that better handles unreliable connections (thanks @jarnoRFB)
+* Bugfix: some fixes to stdout capturing
+* Bugfix: FileStorageObserver now creates directories only when starting a run (#329; thanks @thomasjpfan)
+* Bugfix: Fixed config_hooks (#326; thanks @thomasjpfan)
+* Bugfix: Fixed a crash when overwriting non-dict config entries with dicts (#325; thanks @thomasjpfan)
+* Bugfix: fixed problem with running in conda environment (#341)
+* Bugfix: numpy aware config change detection (#344)
+* Bugfix: allow dependencies to be compiled libraries (thanks @jnphilipp)
+* Bugfix: output colorization now works on 256 and 16 color terminals (thanks @bosr)
+* Bugfix: fixed problem with tinydb observer logging (#327; thanks @michalgregor)
+* Bugfix: ignore folders that have the same name as a named_config (thanks @boeddeker)
+* Bugfix: setup no longer overwrites pre-configured root logger (thanks @thequilo)
+* Bugfix: compatibility with tensorflow 2.0 (thanks @tarik, @gabrieldemarmiesse)
+* Bugfix: fixed exception when no tee is available for stdout capturing (thanks @greg-farquhar)
+* Bugfix: fixed concurrency issue with FileStorageObserver (thanks @dekuenstle)
+
+
 0.7.4 (2018-06-12)
 ++++++++++++++++++
 * Bugfix: fixed problem with postgres backend of SQLObserver (thanks @bensternlieb)

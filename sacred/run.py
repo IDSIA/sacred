@@ -278,7 +278,7 @@ class Run(object):
         # only stop if heartbeat was started
         if self._heartbeat is not None:
             self._stop_heartbeat_event.set()
-            self._heartbeat.join(2)
+            self._heartbeat.join(timeout=2)
 
     def _emit_queued(self):
         self.status = 'QUEUED'
@@ -412,6 +412,11 @@ class Run(object):
                 # finishing up, so we don't want one observer to kill the
                 # others
                 self.run_logger.error(tb.format_exc())
+
+    def _wait_for_observers(self):
+        """Block until all observers finished processing."""
+        for observer in self.observers:
+            self._safe_call(observer, 'join')
 
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:
