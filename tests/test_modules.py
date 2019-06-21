@@ -44,7 +44,7 @@ def test_ingredient_command():
     assert m.commands['transmogrify'] == transmogrify
     ex = Experiment('foo', ingredients=[m])
 
-    assert ex.run_command('somemod.transmogrify').result == 'foo42'
+    assert ex.run('somemod.transmogrify').result == 'foo42'
 
 
 # ############# Experiment ####################################################

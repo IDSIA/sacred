@@ -211,20 +211,6 @@ class Experiment(Ingredient):
         run()
         return run
 
-    def run_command(self, command_name, config_updates=None,
-                    named_configs=(), args=(), meta_info=None):
-        """Run the command with the given name.
-
-        .. note:: Deprecated in Sacred 0.7
-            run_command() will be removed in Sacred 1.0.
-            It is replaced by run() which can now also handle command_names.
-        """
-        import warnings
-        warnings.warn("run_command is deprecated. Use run instead",
-                      DeprecationWarning)
-        return self.run(command_name, config_updates, named_configs, meta_info,
-                        args)
-
     def run_commandline(self, argv=None):
         """
         Run the command-line interface of this experiment.
