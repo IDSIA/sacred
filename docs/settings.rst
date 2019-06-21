@@ -37,6 +37,10 @@ Here is a brief list of all currently available options.
   * ``IGNORED_COMMENTS`` *(default: ['^pylint:', '^noinspection'])*
     list of regex patterns to filter out certain IDE or linter directives
     from in-line comments in the documentation.
+  * ``READ_ONLY_CONFIG`` *(default: True)*
+    Make the configuration read-only inside of captured functions. This
+    only works to a limited extend because custom types cannot be
+    controlled.
 
 * ``HOST_INFO``
 

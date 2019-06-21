@@ -11,7 +11,7 @@ from __future__ import division, print_function, unicode_literals
 
 __all__ = ("__version__", "__author__", "__author_email__", "__url__")
 
-__version__ = "0.7.4-onurgu"
+__version__ = "0.7.5"
 
 __author__ = 'Klaus Greff'
 __author_email__ = 'klaus.greff@startmail.com'

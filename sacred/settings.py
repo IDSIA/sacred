@@ -20,6 +20,10 @@ SETTINGS = munchify({
         'ENFORCE_STRING_KEYS': False,
         # make sure no config key contains an equals sign
         'ENFORCE_KEYS_NO_EQUALS': True,
+        # if true, all dicts and lists in the configuration of a captured
+        # function are replaced with a read-only container that raises an
+        # Exception if it is attempted to write to those containers
+        'READ_ONLY_CONFIG': True,
 
         # regex patterns to filter out certain IDE or linter directives from
         # inline comments in the documentation

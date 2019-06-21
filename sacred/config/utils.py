@@ -68,7 +68,7 @@ def assert_is_valid_key(key):
 def normalize_numpy(obj):
     if opt.has_numpy and isinstance(obj, opt.np.generic):
         try:
-            return opt.np.asscalar(obj)
+            return obj.item()
         except ValueError:
             pass
     return obj

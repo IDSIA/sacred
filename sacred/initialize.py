@@ -9,6 +9,7 @@ from copy import copy, deepcopy
 from sacred.config import (ConfigDict, chain_evaluate_config_scopes, dogmatize,
                            load_config_file, undogmatize)
 from sacred.config.config_summary import ConfigSummary
+from sacred.config.custom_containers import make_read_only
 from sacred.host_info import get_host_info
 from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
@@ -17,6 +18,7 @@ from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
                           iterate_flattened, set_by_dotted_path,
                           recursive_update, iter_prefixes, join_paths,
                           NamedConfigNotFoundError, ConfigAddedError)
+from sacred.settings import SETTINGS
 
 
 class Scaffold(object):
@@ -162,12 +164,20 @@ class Scaffold(object):
         self.rnd = create_rnd(self.seed)
 
         for cfunc in self._captured_functions:
+            # Setup the captured function
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix,
-                                              default={})
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
             cfunc.run = run
+            cfunc.config = get_by_dotted_path(self.get_fixture(), cfunc.prefix,
+                                              default={})
+
+            # Make configuration read only if enabled in settings
+            if SETTINGS.CONFIG.READ_ONLY_CONFIG:
+                cfunc.config = make_read_only(
+                    cfunc.config,
+                    error_message='The configuration is read-only in a '
+                                  'captured function!')
 
         if not run.force:
             self._warn_about_suspicious_changes()
