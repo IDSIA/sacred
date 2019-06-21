@@ -6,9 +6,6 @@ environment:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
 
   matrix:
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.x"
-
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5.x"
 

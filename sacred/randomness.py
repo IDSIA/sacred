@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import random
 
 import sacred.optional as opt
-from sacred.utils import module_is_in_cache, get_package_version, \
-    parse_version, int_types
+from sacred.utils import (module_is_in_cache, get_package_version,
+                          parse_version)
 
 SEEDRANGE = (1, int(1e9))
 
@@ -18,7 +17,7 @@ def get_seed(rnd=None):
 
 
 def create_rnd(seed):
-    assert isinstance(seed, int_types), \
+    assert isinstance(seed, int), \
         "Seed has to be integer but was {} {}".format(repr(seed), type(seed))
     if opt.has_numpy:
         return opt.np.random.RandomState(seed)

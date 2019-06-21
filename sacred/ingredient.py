@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import inspect
 import os.path
@@ -14,7 +13,7 @@ from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  Source, gather_sources_and_dependencies)
 from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
-                          basestring, join_paths)
+                          join_paths)
 
 __all__ = ('Ingredient',)
 
@@ -227,7 +226,7 @@ class Ingredient(object):
             return ConfigDict(kw_conf)
         elif isinstance(cfg_or_file, dict):
             return ConfigDict(cfg_or_file)
-        elif isinstance(cfg_or_file, basestring):
+        elif isinstance(cfg_or_file, str):
             if not os.path.exists(cfg_or_file):
                 raise IOError('File not found {}'.format(cfg_or_file))
             abspath = os.path.abspath(cfg_or_file)

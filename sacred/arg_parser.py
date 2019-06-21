@@ -7,7 +7,7 @@ The command-line interface of sacred is built on top of ``docopt``, which
 constructs a command-line parser from a usage text. Curiously in sacred we
 first programmatically generate a usage text and then parse it with ``docopt``.
 """
-from __future__ import division, print_function, unicode_literals
+
 import ast
 from collections import OrderedDict
 import textwrap

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 """Defines the stock-commands that every sacred experiment ships with."""
-from __future__ import division, print_function, unicode_literals
 
 import pprint
 import pydoc

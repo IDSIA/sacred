@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 """This module helps to collect information about the host of an experiment."""
-from __future__ import division, print_function, unicode_literals
 
 import os
 import platform
@@ -11,7 +10,7 @@ from xml.etree import ElementTree
 
 import cpuinfo
 
-from sacred.utils import optional_kwargs_decorator, FileNotFoundError
+from sacred.utils import optional_kwargs_decorator
 from sacred.settings import SETTINGS
 
 __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')

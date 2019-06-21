@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, undogmatize

@@ -50,7 +50,7 @@ Here are a couple of things you should try:
       [82, 9, 3]
 
 """
-from __future__ import division, print_function, unicode_literals
+
 from sacred import Experiment
 
 ex = Experiment('randomness')

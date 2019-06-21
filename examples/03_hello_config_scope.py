@@ -34,7 +34,7 @@ recipient we can also just modify that::
   Hello Bob!
   INFO - hello_cs - Completed after 0:00:00
 """
-from __future__ import division, print_function, unicode_literals
+
 from sacred import Experiment
 
 ex = Experiment('hello_cs')  # here we name the experiment explicitly

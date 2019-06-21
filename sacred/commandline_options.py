@@ -7,7 +7,6 @@ It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
 
-from __future__ import division, print_function, unicode_literals
 from sacred.commands import print_config
 from sacred.settings import SETTINGS
 from sacred.utils import (convert_camel_case_to_snake_case, get_inheritors,

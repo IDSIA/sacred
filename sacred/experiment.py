@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 """This module defines the Experiment class, which is central to sacred."""
-from __future__ import division, print_function, unicode_literals
 
 import inspect
 import os.path

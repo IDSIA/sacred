@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 """global docstring"""
-from __future__ import division, print_function, unicode_literals
 
 import os
 import pytest

@@ -18,7 +18,6 @@ When run, this example will output the following::
   Overriding the default message for foo.
 
 """
-from __future__ import division, print_function, unicode_literals
 
 from sacred import Experiment
 

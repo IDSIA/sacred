@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import functools
 import hashlib
@@ -12,7 +11,7 @@ import pkg_resources
 
 import sacred.optional as opt
 from sacred import SETTINGS
-from sacred.utils import is_subdir, iter_prefixes, basestring
+from sacred.utils import is_subdir, iter_prefixes
 
 MB = 1048576
 MODULE_BLACKLIST = set(sys.builtin_module_names)
@@ -177,7 +176,7 @@ class Source(object):
     def __eq__(self, other):
         if isinstance(other, Source):
             return self.filename == other.filename
-        elif isinstance(other, basestring):
+        elif isinstance(other, str):
             return self.filename == other
         else:
             return False
@@ -227,7 +226,7 @@ class PackageDependency(object):
         for vattr in possible_version_attributes:
             if hasattr(mod, vattr):
                 version = getattr(mod, vattr)
-                if isinstance(version, basestring) and \
+                if isinstance(version, str) and \
                         PEP440_VERSION_PATTERN.match(version):
                     return version
                 if isinstance(version, tuple):

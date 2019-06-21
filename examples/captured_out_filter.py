@@ -6,7 +6,6 @@ of a run. This is often useful when using progress bars or similar in the text
 UI and you don't want to store formatting characters like backspaces and
 linefeeds in the database.
 """
-from __future__ import division, print_function, unicode_literals
 
 import sys
 import time

@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
+
 import os
 import sys
 import subprocess
+from io import StringIO
 from threading import Timer
 from contextlib import contextmanager
 import wrapt
 from sacred.optional import libc
 from tempfile import NamedTemporaryFile
 from sacred.settings import SETTINGS
-from sacred.utils import FileNotFoundError, StringIO
 
 
 def flush():

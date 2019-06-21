@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import ast
 import inspect
 import io
 import re
-import sys
-from tokenize import generate_tokens, tokenize, TokenError, COMMENT
+from tokenize import tokenize, TokenError, COMMENT
 from copy import copy
 
 from sacred import SETTINGS
@@ -175,12 +173,9 @@ def find_doc_for(ast_entry, body_lines):
     lineno = ast_entry.lineno - 1
     line_io = io.BytesIO(body_lines[lineno].encode())
     try:
-        if sys.version_info[0] >= 3:
-            tokens = tokenize(line_io.readline) or []
-            line_comments = [t.string for t in tokens if t.type == COMMENT]
-        else:  # sys.version[0] == 2:
-            tokens = generate_tokens(line_io.readline)
-            line_comments = [s for (t, s, _, _, _) in tokens if t == COMMENT]
+        tokens = tokenize(line_io.readline) or []
+        line_comments = [t.string for t in tokens if t.type == COMMENT]
+
         if line_comments:
             formatted_lcs = [l[1:].strip() for l in line_comments]
             filtered_lcs = [l for l in formatted_lcs if not is_ignored(l)]

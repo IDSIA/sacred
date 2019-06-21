@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import collections
 import contextlib
@@ -28,33 +27,7 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
            "print_filtered_stacktrace", "is_subdir",
            "optional_kwargs_decorator", "get_inheritors",
-           "apply_backspaces_and_linefeeds", "StringIO", "FileNotFoundError",
-           "FileExistsError", "rel_path", "IntervalTimer"]
-
-# A PY2 compatible basestring, int_types and FileNotFoundError
-if sys.version_info[0] == 2:
-    basestring = basestring
-    int_types = (int, long)
-
-    import errno
-
-    class FileNotFoundError(IOError):
-        def __init__(self, msg):
-            super(FileNotFoundError, self).__init__(errno.ENOENT, msg)
-
-    class FileExistsError(OSError):
-        def __init__(self, msg):
-            super(FileExistsError, self).__init__(errno.EEXIST, msg)
-
-    from StringIO import StringIO
-else:
-    basestring = str
-    int_types = (int,)
-
-    # Reassign so that we can import it from here
-    FileNotFoundError = FileNotFoundError
-    FileExistsError = FileExistsError
-    from io import StringIO
+           "apply_backspaces_and_linefeeds", "rel_path", "IntervalTimer"]
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -691,14 +664,14 @@ def get_package_version(name):
 def ensure_wellformed_argv(argv):
     if argv is None:
         argv = sys.argv
-    elif isinstance(argv, basestring):
+    elif isinstance(argv, str):
         argv = shlex.split(argv)
     else:
         if not isinstance(argv, (list, tuple)):
             raise ValueError("argv must be str or list, but was {}"
                              .format(type(argv)))
-        if not all([isinstance(a, basestring) for a in argv]):
-            problems = [a for a in argv if not isinstance(a, basestring)]
+        if not all([isinstance(a, str) for a in argv]):
+            problems = [a for a in argv if not isinstance(a, str)]
             raise ValueError("argv must be list of str but contained the "
                              "following elements: {}".format(problems))
     return argv

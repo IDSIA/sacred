@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import os.path
 import re
@@ -65,10 +64,6 @@ def pytest_addoption(parser):
                      default='sqlite://',
                      help="Name of the database to connect to")
 
-
-collect_ignore = []
-if sys.version_info[0] < 3:
-    collect_ignore.append("test_config/test_signature_py3.py")
 
 # Deactivate GPU info to speed up tests
 SETTINGS.HOST_INFO.INCLUDE_GPU_INFO = False

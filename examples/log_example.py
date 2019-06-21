@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """ An example showcasing the logging system of Sacred."""
-from __future__ import division, print_function, unicode_literals
+
 import logging
 from sacred import Experiment
 

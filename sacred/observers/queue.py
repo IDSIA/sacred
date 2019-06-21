@@ -1,14 +1,11 @@
+#!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
+
 from collections import namedtuple
-import sys
+from queue import Queue
 from sacred.observers.base import RunObserver
 from sacred.utils import IntervalTimer
 
-if sys.version_info[0] >= 3:
-    from queue import Queue
-else:
-    from Queue import Queue
 
 WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import jsonpickle.tags
 
 from sacred import SETTINGS
 import sacred.optional as opt
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
-from sacred.utils import PYTHON_IDENTIFIER, basestring
+from sacred.utils import PYTHON_IDENTIFIER
 
 
 def assert_is_valid_key(key):
@@ -38,29 +37,29 @@ def assert_is_valid_key(key):
 
     """
     if SETTINGS.CONFIG.ENFORCE_KEYS_MONGO_COMPATIBLE and (
-            isinstance(key, basestring) and ('.' in key or key[0] == '$')):
+            isinstance(key, str) and ('.' in key or key[0] == '$')):
         raise KeyError('Invalid key "{}". Config-keys cannot '
                        'contain "." or start with "$"'.format(key))
 
     if SETTINGS.CONFIG.ENFORCE_KEYS_JSONPICKLE_COMPATIBLE and \
-            isinstance(key, basestring) and (
+            isinstance(key, str) and (
             key in jsonpickle.tags.RESERVED or key.startswith('json://')):
         raise KeyError('Invalid key "{}". Config-keys cannot be one of the'
                        'reserved jsonpickle tags: {}'
                        .format(key, jsonpickle.tags.RESERVED))
 
     if SETTINGS.CONFIG.ENFORCE_STRING_KEYS and (
-            not isinstance(key, basestring)):
+            not isinstance(key, str)):
         raise KeyError('Invalid key "{}". Config-keys have to be strings, '
                        'but was {}'.format(key, type(key)))
 
     if SETTINGS.CONFIG.ENFORCE_VALID_PYTHON_IDENTIFIER_KEYS and (
-            isinstance(key, basestring) and not PYTHON_IDENTIFIER.match(key)):
+            isinstance(key, str) and not PYTHON_IDENTIFIER.match(key)):
         raise KeyError('Key "{}" is not a valid python identifier'
                        .format(key))
 
     if SETTINGS.CONFIG.ENFORCE_KEYS_NO_EQUALS and (
-            isinstance(key, basestring) and '=' in key):
+            isinstance(key, str) and '=' in key):
         raise KeyError('Invalid key "{}". Config keys may not contain an'
                        'equals sign ("=").'.format('='))
 

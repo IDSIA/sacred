@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
+
 from sacred.host_info import (get_host_info, host_info_getter,
                               host_info_gatherers)
-from sacred.utils import basestring
 
 
 def test_get_host_info():
     host_info = get_host_info()
-    assert isinstance(host_info['hostname'], basestring)
-    assert isinstance(host_info['cpu'], basestring)
+    assert isinstance(host_info['hostname'], str)
+    assert isinstance(host_info['cpu'], str)
     assert isinstance(host_info['os'], (tuple, list))
-    assert isinstance(host_info['python_version'], basestring)
+    assert isinstance(host_info['python_version'], str)
 
 
 def test_host_info_decorator():

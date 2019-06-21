@@ -1,6 +1,7 @@
-import datetime
-from time import sleep
+#!/usr/bin/env python
+# coding=utf-8
 
+import datetime
 import pytest
 from sacred import Experiment
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics

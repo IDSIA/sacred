@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import os.path
 
@@ -13,7 +12,7 @@ from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
 import sacred.optional as opt
 
 EXAMPLE_SOURCE = 'tests/__init__.py'
-EXAMPLE_DIGEST = 'e3e5102d21897ad2bfa1140e359075e1'
+EXAMPLE_DIGEST = '9e428c0aa58b75ff150c4f625e32af68'
 
 
 @pytest.mark.parametrize('version', [

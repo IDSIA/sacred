@@ -40,7 +40,6 @@ Commands also appear in the help text, and you can get additional information
 about all commands using ``./05_my_commands.py help [command]``.
 """
 
-from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
 ex = Experiment('my_commands')

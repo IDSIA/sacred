@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
+
 import pytest
 from sacred import optional as opt
 from sacred.config.utils import normalize_or_die
