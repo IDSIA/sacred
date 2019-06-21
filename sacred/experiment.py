@@ -196,7 +196,7 @@ class Experiment(Ingredient):
             list of names of named_configs to use
 
         info : dict, optional
-            Additional meta information for this run.
+            Additional information for this run.
 
         meta_info : dict, optional
             Additional meta information for this run.
