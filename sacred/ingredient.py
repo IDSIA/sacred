@@ -178,10 +178,10 @@ class Ingredient(object):
         Note that they are not restricted to the local namespace of the
         ingredient.
         """
-        argspec = inspect.getargspec(func)
+        argspec = inspect.getfullargspec(func)
         args = ['config', 'command_name', 'logger']
         if not (argspec.args == args and argspec.varargs is None and
-                argspec.keywords is None and argspec.defaults is None):
+                not argspec.kwonlyargs and argspec.defaults is None):
             raise ValueError('Wrong signature for config_hook. Expected: '
                              '(config, command_name, logger)')
         self.config_hooks.append(func)
