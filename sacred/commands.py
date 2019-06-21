@@ -7,7 +7,6 @@ import pydoc
 import re
 import os
 from collections import namedtuple, OrderedDict
-from pkg_resources import parse_version
 
 from colorama import Fore, Style
 
@@ -208,8 +207,3 @@ def _write_file(base_dir, filename, content, mode='t'):
     os.makedirs(os.path.dirname(full_name), exist_ok=True)
     with open(full_name, 'w' + mode) as f:
         f.write(content)
-
-
-def _get_truncated_python_version(host_info):
-    version = parse_version(host_info['python_version'])
-    return '{}.{}'.format(*version._version.release[:2])

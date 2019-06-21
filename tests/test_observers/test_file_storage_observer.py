@@ -114,7 +114,7 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypat
         "status": "RUNNING"
     }
 
-    def mkdir_raises_file_exists(name):
+    def mkdir_raises_file_exists(name, mode=0o777):
         raise FileExistsError("File already exists: " + name)
 
     with monkeypatch.context() as m:

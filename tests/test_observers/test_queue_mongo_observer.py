@@ -191,8 +191,7 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.fs.exists.assert_any_call(filename=filename)
 
     db_run = mongo_obs.runs.find_one()
-    # for some reason py27 returns this as tuples and py36 as lists
-    assert [tuple(r) for r in db_run['resources']] == [(filename, md5)]
+    assert db_run['resources'] == [(filename, md5)]
 
 
 @pytest.fixture

@@ -226,6 +226,10 @@ class DogmaticList(list):
 
 
 class ReadOnlyContainer:
+    def __init__(self, *args, message=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = message or 'This container is read-only!'
+
     def _readonly(self, *args, **kwargs):
         raise SacredError(
             self.message,
@@ -233,7 +237,7 @@ class ReadOnlyContainer:
         )
 
 
-class ReadOnlyDict(dict, ReadOnlyContainer):
+class ReadOnlyDict(ReadOnlyContainer, dict):
     """
     A read-only variant of a `dict`
     """
@@ -246,16 +250,13 @@ class ReadOnlyDict(dict, ReadOnlyContainer):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *args, **kwargs):
-        # Python 2.7 compatibility
-        self.message = kwargs.pop('message', None) or \
-            'This ReadOnlyDict is read-only!'
-
-        # Call dict init
-        super(ReadOnlyDict, self).__init__(*args, **kwargs)
+    def __init__(self, *args, message=None, **kwargs):
+        if message is None:
+            message = 'This ReadOnlyDict is read-only!'
+        super().__init__(*args, message=message, **kwargs)
 
 
-class ReadOnlyList(list, ReadOnlyContainer):
+class ReadOnlyList(ReadOnlyContainer, list):
     """
     A read-only variant of a `list`
     """
@@ -270,13 +271,10 @@ class ReadOnlyList(list, ReadOnlyContainer):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *iterable, **kwargs):
-        # Python 2.7 compatibility
-        self.message = kwargs.pop('message', None) or \
-            'This ReadOnlyList is read-only!'
-
-        # Call list init
-        super(ReadOnlyList, self).__init__(*iterable)
+    def __init__(self, *iterable, message=None, **kwargs):
+        if message is None:
+            message = 'This ReadOnlyList is read-only!'
+        super().__init__(*iterable, message=message, **kwargs)
 
 
 def make_read_only(o, error_message=None):
@@ -311,13 +309,6 @@ SIMPLIFY_TYPE = {
     DogmaticDict: dict,
     DogmaticList: list,
 }
-
-# if in python 2 we want to ignore unicode/str and int/long typechanges
-try:
-    SIMPLIFY_TYPE[unicode] = str
-    SIMPLIFY_TYPE[long] = int
-except NameError:
-    pass
 
 # if numpy is available we also want to ignore typechanges from numpy
 # datatypes to the corresponding python datatype
