@@ -179,7 +179,7 @@ class Experiment(Ingredient):
         return short_usage, long_usage, internal_usage
 
     def run(self, command_name=None, config_updates=None, named_configs=(),
-            meta_info=None, options=None):
+            info=None, meta_info=None, options=None):
         """
         Run the main function of the experiment or a given command.
 
@@ -194,6 +194,9 @@ class Experiment(Ingredient):
         named_configs : list[str], optional
             list of names of named_configs to use
 
+        info : dict, optional
+            Additional information for this run.
+
         meta_info : dict, optional
             Additional meta information for this run.
 
@@ -207,7 +210,7 @@ class Experiment(Ingredient):
 
         """
         run = self._create_run(command_name, config_updates, named_configs,
-                               meta_info, options)
+                               info, meta_info, options)
         run()
         return run
 
@@ -420,7 +423,7 @@ class Experiment(Ingredient):
     # =========================== Internal Interface ==========================
 
     def _create_run(self, command_name=None, config_updates=None,
-                    named_configs=(), meta_info=None, options=None):
+                    named_configs=(), info=None, meta_info=None, options=None):
         command_name = command_name or self.default_command
         if command_name is None:
             raise RuntimeError('No command found to be run. Specify a command '
@@ -440,6 +443,9 @@ class Experiment(Ingredient):
                          force=options.get(ForceOption.get_flag(), False),
                          log_level=options.get(LoglevelOption.get_flag(),
                                                None))
+        if info is not None:
+            run.info.update(info)
+
         run.meta_info['command'] = command_name
         run.meta_info['options'] = options
 
