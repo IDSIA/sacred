@@ -11,8 +11,12 @@ from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
                                  is_local_source)
 import sacred.optional as opt
 
-EXAMPLE_SOURCE = 'tests/__init__.py'
-EXAMPLE_DIGEST = '9e428c0aa58b75ff150c4f625e32af68'
+TEST_DIRECTORY = os.path.dirname(__file__)
+EXAMPLE_SOURCE = os.path.join(TEST_DIRECTORY, '__init__.py')
+
+# The digest below is calculated from the test/__init__.py with only Python shebang and coding-information.
+# This type of hard-coding is most probably a quite bad idea.
+EXAMPLE_DIGEST = '0ce83bfac9c94fe637760c887921e269'
 
 
 @pytest.mark.parametrize('version', [
@@ -138,12 +142,12 @@ def test_gather_sources_and_dependencies():
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
-    assert main == Source.create('tests/dependency_example.py')
+    assert main == Source.create(os.path.join(TEST_DIRECTORY, 'dependency_example.py'))
     expected_sources = {
-        Source.create('tests/__init__.py'),
-        Source.create('tests/dependency_example.py'),
-        Source.create('tests/foo/__init__.py'),
-        Source.create('tests/foo/bar.py')
+        Source.create(os.path.join(TEST_DIRECTORY, '__init__.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'dependency_example.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'foo', '__init__.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'foo', 'bar.py'))
     }
     assert sources == expected_sources
 
@@ -160,18 +164,17 @@ def test_gather_sources_and_dependencies():
 
 def test_custom_base_dir():
     from tests.basedir.my_experiment import some_func
-    base_dir = os.path.abspath('tests')
-    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__, base_dir)
+    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__, TEST_DIRECTORY)
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
-    assert main == Source.create('tests/basedir/my_experiment.py')
+    assert main == Source.create(os.path.join(TEST_DIRECTORY, 'basedir', 'my_experiment.py'))
     expected_sources = {
-        Source.create('tests/__init__.py'),
-        Source.create('tests/basedir/__init__.py'),
-        Source.create('tests/basedir/my_experiment.py'),
-        Source.create('tests/foo/__init__.py'),
-        Source.create('tests/foo/bar.py')
+        Source.create(os.path.join(TEST_DIRECTORY, '__init__.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'basedir', '__init__.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'basedir', 'my_experiment.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'foo', '__init__.py')),
+        Source.create(os.path.join(TEST_DIRECTORY, 'foo', 'bar.py'))
     }
     assert sources == expected_sources
 

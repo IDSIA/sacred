@@ -6,8 +6,10 @@ munch>=2.0.4
 pbr>=1.10.0
 py>=1.4.32
 py-cpuinfo>=4.0
-pytest>=3.0.5
 six>=1.10.0
 wrapt>=1.10.8
 packaging>=18.0
 pymongo>=3.8.0
+
+# tests/test_utils.py depends on that pytest version is exactly 4.3.0
+pytest==4.3.0

@@ -53,7 +53,7 @@ setup(
     ],
     tests_require=[
         'mock>=0.8, <3.0',
-        'pytest>=3.0.1, <4.0'],
+        'pytest==4.3.0'],
 
     classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',
