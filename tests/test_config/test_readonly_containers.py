@@ -1,7 +1,8 @@
 import pytest
+from copy import copy, deepcopy
 
-from sacred.config.custom_containers import make_read_only, ReadOnlyList, \
-    ReadOnlyDict
+from sacred.config.custom_containers import (make_read_only, ReadOnlyList,
+                                             ReadOnlyDict, )
 from sacred.utils import SacredError
 
 
@@ -126,3 +127,55 @@ def test_nested_readonly_containers():
     assert type(container) == tuple
     assert type(container[0][3]) == tuple
     assert type(container[1][0]) == tuple
+
+
+def test_copy_on_readonly_dict():
+    d = dict(a=1, b=2, c=3)
+    d = make_read_only(d)
+    copied_d = copy(d)
+    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+        assert k == k_copied
+        assert v == v_copied
+
+
+def test_copy_on_nested_readonly_dict():
+    d = dict(a=1, b=dict(c=3))
+    d = make_read_only(d)
+    copied_d = copy(d)
+    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+        assert k == k_copied
+        assert v == v_copied
+
+
+def test_copy_on_nested_readonly_dict_still_raises():
+    d = dict(a=1, b=dict(c=3))
+    d = make_read_only(d)
+    copied_d = copy(d)
+    with pytest.raises(SacredError):
+        copied_d["b"]["c"] = 4
+
+
+def test_deepcopy_on_readonly_dict():
+    d = dict(a=1, b=2, c=3)
+    d = make_read_only(d)
+    copied_d = deepcopy(d)
+    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+        assert k == k_copied
+        assert v == v_copied
+
+
+def test_deepcopy_on_nested_readonly_dict():
+    d = dict(a=1, b=dict(c=3))
+    d = make_read_only(d)
+    copied_d = deepcopy(d)
+    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+        assert k == k_copied
+        assert v == v_copied
+
+
+def test_deepcopy_on_nested_readonly_dict_can_be_mutated():
+    d = dict(a=1, b=dict(c=3))
+    d = make_read_only(d)
+    copied_d = deepcopy(d)
+    copied_d["b"]["c"] = 4
+    assert d["b"]["c"] != copied_d["b"]["c"]
