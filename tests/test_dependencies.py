@@ -16,7 +16,7 @@ EXAMPLE_SOURCE = os.path.join(TEST_DIRECTORY, '__init__.py')
 
 # The digest below is calculated from the test/__init__.py with only Python shebang and coding-information.
 # This type of hard-coding is most probably a quite bad idea.
-EXAMPLE_DIGEST = '0ce83bfac9c94fe637760c887921e269'
+EXAMPLE_DIGEST = '9e428c0aa58b75ff150c4f625e32af68'
 
 
 @pytest.mark.parametrize('version', [
