@@ -284,6 +284,13 @@ class ReadOnlyList(ReadOnlyContainer, list):
             message = 'This ReadOnlyList is read-only!'
         super().__init__(*iterable, message=message, **kwargs)
 
+    def __copy__(self):
+        return [*self]
+
+    def __deepcopy__(self, memo):
+        l = list(self)
+        return copy.deepcopy(l, memo=memo)
+
 
 def make_read_only(o, error_message=None):
     """

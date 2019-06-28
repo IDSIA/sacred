@@ -179,3 +179,53 @@ def test_deepcopy_on_nested_readonly_dict_can_be_mutated():
     copied_d = deepcopy(d)
     copied_d["b"]["c"] = 4
     assert d["b"]["c"] != copied_d["b"]["c"]
+
+
+def test_copy_on_readonly_list():
+    l = [1, 2, 3, 4]
+    l = make_read_only(l)
+    l = make_read_only(l)
+    copied_l = copy(l)
+    for v, v_copied in zip(l, copied_l):
+        assert v == v_copied
+
+
+def test_copy_on_nested_readonly_list():
+    l = [1, [2, [3, [4]]]]
+    l = make_read_only(l)
+    copied_l = copy(l)
+    for v, v_copied in zip(l, copied_l):
+        assert v == v_copied
+
+
+def test_copy_on_nested_readonly_dict_still_list():
+    l = [1, [2, [3, [4]]]]
+    l = make_read_only(l)
+    copied_l = copy(l)
+    with pytest.raises(SacredError):
+        copied_l[1][1].append(5)
+
+
+def test_deepcopy_on_readonly_list():
+    l = [1, 2, 3, 4]
+    l = make_read_only(l)
+    l = make_read_only(l)
+    copied_l = deepcopy(l)
+    for v, v_copied in zip(l, copied_l):
+        assert v == v_copied
+
+
+def test_deepcopy_on_nested_readonly_list():
+    l = [1, [2, [3, [4]]]]
+    l = make_read_only(l)
+    copied_l = deepcopy(l)
+    for v, v_copied in zip(l, copied_l):
+        assert v == v_copied
+
+
+def test_deepcopy_on_nested_readonly_list_can_be_mutated():
+    l = [1, [2, [3, [4]]]]
+    l = make_read_only(l)
+    copied_l = deepcopy(l)
+    copied_l[1][1].append(5)
+    assert l[1][1] != copied_l[1][1]
