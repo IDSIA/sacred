@@ -248,7 +248,8 @@ class Experiment(Ingredient):
             exit()
 
         try:
-            return self.run(cmd_name, config_updates, named_configs, {}, args)
+            return self.run(cmd_name, config_updates, named_configs, info={},
+                            meta_info={}, options=args)
         except Exception as e:
             if self.current_run:
                 debug = self.current_run.debug
