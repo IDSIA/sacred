@@ -43,45 +43,45 @@ def _check_read_only_dict(d):
         d.setdefault('a', 0)
 
 
-def _check_read_only_list(l):
-    assert isinstance(l, ReadOnlyList)
+def _check_read_only_list(lst):
+    assert isinstance(lst, ReadOnlyList)
 
     raises_list = pytest.raises(
         SacredError, match='This ReadOnlyList is read-only!')
 
-    if len(l):
+    if len(lst):
         with raises_list:
-            del l[0]
-
-        with raises_list:
-            l[0] = 42
+            del lst[0]
 
         with raises_list:
-            l.pop(0)
+            lst[0] = 42
+
+        with raises_list:
+            lst.pop(0)
 
     with raises_list:
-        l.pop()
+        lst.pop()
 
     with raises_list:
-        l.clear()
+        lst.clear()
 
     with raises_list:
-        l.append(42)
+        lst.append(42)
 
     with raises_list:
-        l.extend([1, 2, 3, 4])
+        lst.extend([1, 2, 3, 4])
 
     with raises_list:
-        l.insert(0, 0)
+        lst.insert(0, 0)
 
     with raises_list:
-        l.remove(1)
+        lst.remove(1)
 
     with raises_list:
-        l.sort()
+        lst.sort()
 
     with raises_list:
-        l.reverse()
+        lst.reverse()
 
 
 def test_readonly_dict():
@@ -98,18 +98,18 @@ def test_nested_readonly_dict():
 
 
 def test_readonly_list():
-    l = [1, 2, 3, 4]
-    l = make_read_only(l)
-    _check_read_only_list(l)
+    lst = [1, 2, 3, 4]
+    lst = make_read_only(lst)
+    _check_read_only_list(lst)
 
 
 def test_nested_readonly_list():
-    l = [1, [2, [3, [4]]]]
-    l = make_read_only(l)
-    _check_read_only_list(l)
-    _check_read_only_list(l[1])
-    _check_read_only_list(l[1][1])
-    _check_read_only_list(l[1][1][1])
+    lst = [1, [2, [3, [4]]]]
+    lst = make_read_only(lst)
+    _check_read_only_list(lst)
+    _check_read_only_list(lst[1])
+    _check_read_only_list(lst[1][1])
+    _check_read_only_list(lst[1][1][1])
 
 
 def test_nested_readonly_containers():
@@ -182,50 +182,50 @@ def test_deepcopy_on_nested_readonly_dict_can_be_mutated():
 
 
 def test_copy_on_readonly_list():
-    l = [1, 2, 3, 4]
-    l = make_read_only(l)
-    l = make_read_only(l)
-    copied_l = copy(l)
-    for v, v_copied in zip(l, copied_l):
+    lst = [1, 2, 3, 4]
+    lst = make_read_only(lst)
+    lst = make_read_only(lst)
+    copied_l = copy(lst)
+    for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
 
 
 def test_copy_on_nested_readonly_list():
-    l = [1, [2, [3, [4]]]]
-    l = make_read_only(l)
-    copied_l = copy(l)
-    for v, v_copied in zip(l, copied_l):
+    lst = [1, [2, [3, [4]]]]
+    lst = make_read_only(lst)
+    copied_l = copy(lst)
+    for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
 
 
 def test_copy_on_nested_readonly_dict_still_list():
-    l = [1, [2, [3, [4]]]]
-    l = make_read_only(l)
-    copied_l = copy(l)
+    lst = [1, [2, [3, [4]]]]
+    lst = make_read_only(lst)
+    copied_l = copy(lst)
     with pytest.raises(SacredError):
         copied_l[1][1].append(5)
 
 
 def test_deepcopy_on_readonly_list():
-    l = [1, 2, 3, 4]
-    l = make_read_only(l)
-    l = make_read_only(l)
-    copied_l = deepcopy(l)
-    for v, v_copied in zip(l, copied_l):
+    lst = [1, 2, 3, 4]
+    lst = make_read_only(lst)
+    lst = make_read_only(lst)
+    copied_l = deepcopy(lst)
+    for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
 
 
 def test_deepcopy_on_nested_readonly_list():
-    l = [1, [2, [3, [4]]]]
-    l = make_read_only(l)
-    copied_l = deepcopy(l)
-    for v, v_copied in zip(l, copied_l):
+    lst = [1, [2, [3, [4]]]]
+    lst = make_read_only(lst)
+    copied_l = deepcopy(lst)
+    for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
 
 
 def test_deepcopy_on_nested_readonly_list_can_be_mutated():
-    l = [1, [2, [3, [4]]]]
-    l = make_read_only(l)
-    copied_l = deepcopy(l)
+    lst = [1, [2, [3, [4]]]]
+    lst = make_read_only(lst)
+    copied_l = deepcopy(lst)
     copied_l[1][1].append(5)
-    assert l[1][1] != copied_l[1][1]
+    assert lst[1][1] != copied_l[1][1]

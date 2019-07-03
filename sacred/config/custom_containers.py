@@ -288,8 +288,8 @@ class ReadOnlyList(ReadOnlyContainer, list):
         return [*self]
 
     def __deepcopy__(self, memo):
-        l = list(self)
-        return copy.deepcopy(l, memo=memo)
+        lst = list(self)
+        return copy.deepcopy(lst, memo=memo)
 
 
 def make_read_only(o, error_message=None):
