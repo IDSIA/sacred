@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+import copy
 
 import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
@@ -255,6 +256,13 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
             message = 'This ReadOnlyDict is read-only!'
         super().__init__(*args, message=message, **kwargs)
 
+    def __copy__(self):
+        return {**self}
+
+    def __deepcopy__(self, memo):
+        d = dict(self)
+        return copy.deepcopy(d, memo=memo)
+
 
 class ReadOnlyList(ReadOnlyContainer, list):
     """
@@ -275,6 +283,13 @@ class ReadOnlyList(ReadOnlyContainer, list):
         if message is None:
             message = 'This ReadOnlyList is read-only!'
         super().__init__(*iterable, message=message, **kwargs)
+
+    def __copy__(self):
+        return [*self]
+
+    def __deepcopy__(self, memo):
+        lst = list(self)
+        return copy.deepcopy(lst, memo=memo)
 
 
 def make_read_only(o, error_message=None):
