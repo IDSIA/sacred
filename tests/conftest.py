@@ -5,11 +5,12 @@ import os.path
 import re
 import shlex
 import sys
+import warnings
 from imp import reload
 
 from sacred.settings import SETTINGS
 
-EXAMPLES_PATH = os.path.abspath('examples')
+EXAMPLES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)
 
 
@@ -50,7 +51,11 @@ def pytest_generate_tests(metafunc):
         example_tests = []
         example_ids = []
         for example_name in sorted(examples):
-            example = __import__(example_name)
+            try:
+                example = __import__(example_name)
+            except ModuleNotFoundError:
+                warnings.warn('could not import {name}, skips during test.'.format(name=example_name))
+                continue
             calls_outs = get_calls_from_doc(example.__doc__)
             for i, (call, out) in enumerate(calls_outs):
                 example = reload(example)

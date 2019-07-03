@@ -48,11 +48,12 @@ setup(
         'wrapt>=1.0, <2.0',
         'py-cpuinfo>=4.0',
         'colorama>=0.4',
-        'packaging>=18.0'
+        'packaging>=18.0',
+        'pymongo>=3.8.0'
     ],
     tests_require=[
         'mock>=0.8, <3.0',
-        'pytest>=3.0.1, <4.0'],
+        'pytest==4.3.0'],
 
     classifiers=list(filter(None, classifiers.split('\n'))),
     description='Facilitates automated and reproducible experimental research',

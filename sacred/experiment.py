@@ -242,10 +242,10 @@ class Experiment(Ingredient):
         if not args['help'] and err:
             print(short_usage)
             print(err)
-            exit(1)
+            sys.exit(1)
 
         if self._handle_help(args, usage):
-            exit()
+            sys.exit()
 
         try:
             return self.run(cmd_name, config_updates, named_configs, info={},
@@ -277,7 +277,7 @@ class Experiment(Ingredient):
                     print(format_sacred_error(e, short_usage), file=sys.stderr)
                 else:
                     print_filtered_stacktrace()
-                exit(1)
+                sys.exit(1)
 
     def open_resource(self, filename, mode='r'):
         """Open a file and also save it as a resource.
