@@ -67,7 +67,7 @@ class FileStorageObserver(RunObserver):
                 try:
                     self._make_next_dir()
                 except FileExistsError:  # Catch race conditions
-                    if fail_count < 100:
+                    if fail_count < 10000:
                         fail_count += 1
                     else:  # expect that something else went wrong
                         raise
