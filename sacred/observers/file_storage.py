@@ -4,6 +4,9 @@
 import json
 import os
 import os.path
+from time import sleep
+from random import random
+from math import log10
 
 from shutil import copyfile
 
@@ -67,8 +70,12 @@ class FileStorageObserver(RunObserver):
                 try:
                     self._make_next_dir()
                 except FileExistsError:  # Catch race conditions
-                    if fail_count < 10000:
+                    if fail_count < 1000:
                         fail_count += 1
+                        # Random sleeps to break symmetry.
+                        # Logarithmic increase of expectation 0ms, 15ms, 24ms, ..., 150ms.
+                        # Final fail after average 2.1 minutes, maximum 4.3 minutes.
+                        sleep(random() * log10(fail_count) / 10)
                     else:  # expect that something else went wrong
                         raise
         else:
