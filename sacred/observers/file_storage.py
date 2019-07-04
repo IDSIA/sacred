@@ -73,7 +73,7 @@ class FileStorageObserver(RunObserver):
                     if fail_count < 1000:
                         fail_count += 1
                         # Random sleeps to break symmetry.
-                        # Logarithmic increase expectation 0ms, 15ms, ..., 150ms
+                        # Logarithmic increase expectation 0ms,15ms,...,150ms
                         # Final fail after average 2.1 minutes, maximum 4.3
                         sleep(random() * log10(fail_count) / 10)
                     else:  # expect that something else went wrong
