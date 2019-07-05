@@ -4,9 +4,6 @@
 import json
 import os
 import os.path
-from time import sleep
-from random import random
-from math import log10
 
 from shutil import copyfile
 
