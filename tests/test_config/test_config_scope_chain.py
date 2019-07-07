@@ -3,7 +3,7 @@
 
 
 import pytest
-from sacred.config import ConfigScope, chain_evaluate_config_scopes
+from sacred.config import ConfigScope, ConfigDict, chain_evaluate_config_scopes
 
 
 def test_chained_config_scopes_contain_combined_keys():
@@ -143,3 +143,35 @@ def test_empty_chain_contains_preset_and_fixed():
     assert set(final_cfg.keys()) == {'a', 'b'}
     assert final_cfg['a'] == 0
     assert final_cfg['b'] == 2
+
+
+def test_add_config_dict_sequential():
+    # https://github.com/IDSIA/sacred/issues/409
+    @ConfigScope
+    def cfg1():
+        dictnest2 = {
+            'key_1': 'value_1',
+            'key_2': 'value_2'
+        }
+    cfg1dict = ConfigDict(cfg1())
+
+    @ConfigScope
+    def cfg2():
+        dictnest2 = {
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }
+    cfg2dict = ConfigDict(cfg2())
+    final_config_scope, _ = chain_evaluate_config_scopes([cfg1, cfg2])
+    assert final_config_scope == {
+        'dictnest2': {
+            'key_1': 'value_1',
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }
+    }
+
+    final_config_dict, _ = chain_evaluate_config_scopes([cfg1dict, cfg2dict])
+    assert final_config_dict == final_config_scope

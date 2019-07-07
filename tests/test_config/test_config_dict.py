@@ -129,3 +129,30 @@ def test_fixed_subentry_of_preset():
     assert set(cfg['d'].keys()) == {'a', 'b'}
     assert cfg['d']['a'] == 10
     assert cfg['d']['b'] == 2
+
+
+def test_add_config_dict_sequential():
+    # https://github.com/IDSIA/sacred/issues/409
+
+    adict = ConfigDict(dict(
+        dictnest2 = {
+            'key_1': 'value_1',
+            'key_2': 'value_2'
+        }))
+
+    bdict = ConfigDict(dict(
+        dictnest2 = {
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }))
+
+    final_config = bdict(preset=adict())
+    assert final_config == {
+        'dictnest2': {
+            'key_1': 'value_1',
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }
+    }
