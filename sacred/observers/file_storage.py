@@ -53,10 +53,10 @@ class FileStorageObserver(RunObserver):
         dir_nrs = [int(d) for d in os.listdir(self.basedir)
                    if os.path.isdir(os.path.join(self.basedir, d)) and
                    d.isdigit()]
-        if len(dir_nrs) == 0:
-            return 0
-        else:
+        if dir_nrs:
             return max(dir_nrs)
+        else:
+            return 0
 
     def _make_dir(self, _id):
         new_dir = os.path.join(self.basedir, str(_id))
