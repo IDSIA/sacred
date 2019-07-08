@@ -126,10 +126,10 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypat
             obs.started_event(**sample_run)
 
     # Assume listdir doesn't show existing file (e.g. due to caching or delay of network storage)
-    assert os.listdir(basedir) == [_id]
+    assert os.listdir(str(basedir)) == [_id]
     with monkeypatch.context() as m:
         m.setattr('os.listdir', lambda __: [])
-        assert os.listdir(basedir) == []
+        assert os.listdir(str(basedir)) == []
         _id2 = obs.started_event(**sample_run)
         assert _id2 == '2'
 
