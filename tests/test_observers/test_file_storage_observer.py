@@ -94,7 +94,7 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypat
     basedir, obs = dir_obs
     sample_run['_id'] = None
     _id = obs.started_event(**sample_run)
-    assert _id is not None
+    assert _id == '1'
     run_dir = basedir.join(str(_id))
     assert run_dir.exists()
     assert run_dir.join('cout.txt').exists()
@@ -117,11 +117,21 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run, monkeypat
     def mkdir_raises_file_exists(name, mode=0o777):
         raise FileExistsError("File already exists: " + name)
 
+    # Assume some problem with the filesystem exists
+    #     therefore run dir creation should stop after some tries
     with monkeypatch.context() as m:
         m.setattr('os.mkdir', mkdir_raises_file_exists)
         with pytest.raises(FileExistsError):
             sample_run['_id'] = None
-            _id = obs.started_event(**sample_run)
+            obs.started_event(**sample_run)
+
+    # Assume listdir doesn't show existing file (e.g. due to caching or delay of network storage)
+    assert os.listdir(basedir) == [_id]
+    with monkeypatch.context() as m:
+        m.setattr('os.listdir', lambda __: [])
+        assert os.listdir(basedir) == []
+        _id2 = obs.started_event(**sample_run)
+        assert _id2 == '2'
 
 
 def test_fs_observer_started_event_stores_source(dir_obs, sample_run, tmpfile):
