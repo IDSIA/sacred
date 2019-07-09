@@ -367,3 +367,52 @@ def test_fails_on_config_write(ex):
 
     ex.run()
 
+
+def test_add_config_dict_chain(ex):
+    # https://github.com/IDSIA/sacred/issues/409
+
+    @ex.config
+    def config1():
+        """This is my demo configuration"""
+        dictnest_cap = {
+            'key_1': 'value_1',
+            'key_2': 'value_2'
+        }
+
+
+    @ex.config
+    def config2():
+        """This is my demo configuration"""
+        dictnest_cap = {
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }
+
+
+    adict = {
+        'dictnest_dict': {
+            'key_1': 'value_1',
+            'key_2': 'value_2'
+        }
+    }
+    ex.add_config(adict)
+
+    bdict = {
+        'dictnest_dict': {
+            'key_2': 'update_value_2',
+            'key_3': 'value3',
+            'key_4': 'value4'
+        }
+    }
+    ex.add_config(bdict)
+
+    @ex.automain
+    def run():
+        pass
+
+    final_config = ex.run().config
+    assert final_config['dictnest_cap'] == {
+        'key_1': 'value_1', 'key_2': 'update_value_2',
+        'key_3': 'value3', 'key_4': 'value4'}
+    assert final_config['dictnest_cap'] == final_config['dictnest_dict']
