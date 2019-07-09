@@ -133,7 +133,7 @@ def test_copy_on_readonly_dict():
     d = dict(a=1, b=2, c=3)
     d = make_read_only(d)
     copied_d = copy(d)
-    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
         assert k == k_copied
         assert v == v_copied
 
@@ -142,7 +142,7 @@ def test_copy_on_nested_readonly_dict():
     d = dict(a=1, b=dict(c=3))
     d = make_read_only(d)
     copied_d = copy(d)
-    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
         assert k == k_copied
         assert v == v_copied
 
@@ -159,7 +159,7 @@ def test_deepcopy_on_readonly_dict():
     d = dict(a=1, b=2, c=3)
     d = make_read_only(d)
     copied_d = deepcopy(d)
-    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
         assert k == k_copied
         assert v == v_copied
 
@@ -168,7 +168,7 @@ def test_deepcopy_on_nested_readonly_dict():
     d = dict(a=1, b=dict(c=3))
     d = make_read_only(d)
     copied_d = deepcopy(d)
-    for (k, v), (k_copied, v_copied) in zip(d.items(), copied_d.items()):
+    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
         assert k == k_copied
         assert v == v_copied
 
