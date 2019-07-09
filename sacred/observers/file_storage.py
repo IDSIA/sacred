@@ -49,11 +49,16 @@ class FileStorageObserver(RunObserver):
         self.cout = ""
         self.cout_write_cursor = 0
 
-    def _make_next_dir(self):
+    def _maximum_existing_run_id(self):
         dir_nrs = [int(d) for d in os.listdir(self.basedir)
                    if os.path.isdir(os.path.join(self.basedir, d)) and
                    d.isdigit()]
-        _id = max(dir_nrs + [0]) + 1
+        if dir_nrs:
+            return max(dir_nrs)
+        else:
+            return 0
+
+    def _make_dir(self, _id):
         new_dir = os.path.join(self.basedir, str(_id))
         os.mkdir(new_dir)
         self.dir = new_dir  # set only if mkdir is successful
@@ -63,12 +68,14 @@ class FileStorageObserver(RunObserver):
         self.dir = None
         if _id is None:
             fail_count = 0
+            _id = self._maximum_existing_run_id() + 1
             while self.dir is None:
                 try:
-                    self._make_next_dir()
+                    self._make_dir(_id)
                 except FileExistsError:  # Catch race conditions
-                    if fail_count < 100:
+                    if fail_count < 1000:
                         fail_count += 1
+                        _id += 1
                     else:  # expect that something else went wrong
                         raise
         else:
