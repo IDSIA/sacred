@@ -2,7 +2,8 @@
 # coding=utf-8
 
 from sacred.config.config_summary import ConfigSummary
-from sacred.config.utils import dogmatize, normalize_or_die, undogmatize
+from sacred.config.utils import (dogmatize, normalize_or_die, undogmatize,
+                                 recursive_fill_in)
 
 
 class ConfigDict(object):
@@ -12,8 +13,8 @@ class ConfigDict(object):
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         result = dogmatize(fixed or {})
-        result.update(preset)
-        result.update(self._conf)
+        recursive_fill_in(result, self._conf)
+        recursive_fill_in(result, preset or {})
         added = result.revelation()
         config_summary = ConfigSummary(added, result.modified,
                                        result.typechanges)
