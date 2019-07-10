@@ -369,7 +369,6 @@ def test_fails_on_config_write(ex):
 
 
 def test_add_config_dict_chain(ex):
-    # https://github.com/IDSIA/sacred/issues/409
 
     @ex.config
     def config1():
