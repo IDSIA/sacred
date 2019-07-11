@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+import collections
 import copy
+import sys
 
 import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
@@ -226,6 +228,12 @@ class DogmaticList(list):
         return set()
 
 
+def _passthrough(fn):
+    def f(self, *args, **kwargs):
+        return fn(self.container, *args, **kwargs)
+    return f
+
+
 class ReadOnlyContainer:
     def __init__(self, *args, message=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -237,37 +245,66 @@ class ReadOnlyContainer:
             filter_traceback='always'
         )
 
-
-class ReadOnlyDict(ReadOnlyContainer, dict):
+class ReadOnlyDict(collections.Mapping, ReadOnlyContainer):
     """
     A read-only variant of a `dict`
     """
-    # Overwrite all methods that can modify a dict
+    # Read-only
+    __contains__ = _passthrough(dict.__contains__)
+    __eq__ = _passthrough(dict.__eq__)
+    __getitem__ = _passthrough(dict.__getitem__)
+    __iter__ = _passthrough(dict.__iter__)
+    __len__ = _passthrough(dict.__len__)
+    get = _passthrough(dict.get)
+    keys = _passthrough(dict.keys)
+    values = _passthrough(dict.values)
+
+    if sys.version_info[0] >= 3:
+        items = _passthrough(dict.items)
+    else:
+        iterkeys = _passthrough(dict.iterkeys)
+        itervalues = _passthrough(dict.itervalues)
+        iteritems = _passthrough(dict.iteritems)
+
+    # Mutable
+    __delitem__ = ReadOnlyContainer._readonly
+    __setitem__ = ReadOnlyContainer._readonly
     clear = ReadOnlyContainer._readonly
     pop = ReadOnlyContainer._readonly
     popitem = ReadOnlyContainer._readonly
     setdefault = ReadOnlyContainer._readonly
     update = ReadOnlyContainer._readonly
-    __setitem__ = ReadOnlyContainer._readonly
-    __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *args, message=None, **kwargs):
-        if message is None:
-            message = 'This ReadOnlyDict is read-only!'
-        super().__init__(*args, message=message, **kwargs)
+    def __init__(self, *args, **kwargs):
+        # Python 2.7 compatibility
+        self.message = kwargs.pop('message', None) or \
+                       'This ReadOnlyDict is read-only!'
+
+        # Call dict init
+        self.container = dict(*args, **kwargs)
 
     def __copy__(self):
-        return {**self}
+        return {**self.container}
 
     def __deepcopy__(self, memo):
-        d = dict(self)
+        d = dict(self.container)
         return copy.deepcopy(d, memo=memo)
 
 
-class ReadOnlyList(ReadOnlyContainer, list):
+class ReadOnlyList(collections.Sequence, ReadOnlyContainer):
     """
     A read-only variant of a `list`
     """
+    # Read-only
+    __eq__ = _passthrough(list.__eq__)
+    __contains__ = _passthrough(list.__contains__)
+    __getitem__ = _passthrough(list.__getitem__)
+    __iter__ = _passthrough(list.__iter__)
+    __reversed__ = _passthrough(list.__reversed__)
+    __len__ = _passthrough(list.__len__)
+    index = _passthrough(list.index)
+    count = _passthrough(list.count)
+
     append = ReadOnlyContainer._readonly
     clear = ReadOnlyContainer._readonly
     extend = ReadOnlyContainer._readonly
@@ -279,16 +316,19 @@ class ReadOnlyList(ReadOnlyContainer, list):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, *iterable, message=None, **kwargs):
-        if message is None:
-            message = 'This ReadOnlyList is read-only!'
-        super().__init__(*iterable, message=message, **kwargs)
+    def __init__(self, *iterable, **kwargs):
+        # Python 2.7 compatibility
+        self.message = kwargs.pop('message', None) or \
+            'This ReadOnlyList is read-only!'
+
+        # Call list init
+        self.container = list(*iterable)
 
     def __copy__(self):
-        return [*self]
+        return [*self.container]
 
     def __deepcopy__(self, memo):
-        lst = list(self)
+        lst = list(self.container)
         return copy.deepcopy(lst, memo=memo)
 
 
