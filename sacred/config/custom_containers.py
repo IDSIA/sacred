@@ -245,6 +245,7 @@ class ReadOnlyContainer:
             filter_traceback='always'
         )
 
+
 class ReadOnlyDict(collections.Mapping, ReadOnlyContainer):
     """
     A read-only variant of a `dict`
@@ -278,7 +279,7 @@ class ReadOnlyDict(collections.Mapping, ReadOnlyContainer):
     def __init__(self, *args, **kwargs):
         # Python 2.7 compatibility
         self.message = kwargs.pop('message', None) or \
-                       'This ReadOnlyDict is read-only!'
+            'This ReadOnlyDict is read-only!'
 
         # Call dict init
         self.container = dict(*args, **kwargs)
