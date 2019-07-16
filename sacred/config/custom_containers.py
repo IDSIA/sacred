@@ -298,15 +298,15 @@ def make_read_only(o, error_message=None):
     a nested structure of `list`s, `dict`s and `tuple`s. Does not modify `o`
     but returns the converted structure.
     """
-    if isinstance(o, dict):
+    if type(o) == dict:
         return ReadOnlyDict(
             {k: make_read_only(v, error_message) for k, v in o.items()},
             message=error_message)
-    elif isinstance(o, list):
+    elif type(o) == list:
         return ReadOnlyList(
             [make_read_only(v, error_message) for v in o],
             message=error_message)
-    elif isinstance(o, tuple):
+    elif type(o) == tuple:
         return tuple(map(make_read_only, o))
     else:
         return o
