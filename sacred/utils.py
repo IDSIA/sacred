@@ -122,9 +122,9 @@ class ConfigError(SacredError):
                  filter_traceback='default', print_usage=False,
                  config=None):
         super().__init__(message,
-                                          print_traceback=print_traceback,
-                                          filter_traceback=filter_traceback,
-                                          print_usage=print_usage)
+                         print_traceback=print_traceback,
+                         filter_traceback=filter_traceback,
+                         print_usage=print_usage)
         self.print_conflicting_configs = print_conflicting_configs
 
         if isinstance(conflicting_configs, str):
@@ -522,12 +522,12 @@ def filtered_traceback_format(tb_exception, chain=True):
     if chain:
         if tb_exception.__cause__ is not None:
             yield from filtered_traceback_format(tb_exception.__cause__,
-                                                  chain=chain)
+                                                 chain=chain)
             yield tb._cause_message
         elif (tb_exception.__context__ is not None and
               not tb_exception.__suppress_context__):
             yield from filtered_traceback_format(tb_exception.__context__,
-                                                  chain=chain)
+                                                 chain=chain)
             yield tb._context_message
     yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
     current_tb = tb_exception.exc_traceback
