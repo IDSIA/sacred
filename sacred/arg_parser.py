@@ -134,7 +134,7 @@ def _format_arguments_usage(options):
                                                 subsequent_indent=' ' * 12)
             wrapped_description = "\n".join(wrapped_description).strip()
             argument_usage += "  {:8}  {}\n".format(op.arg,
-                                                      wrapped_description)
+                                                    wrapped_description)
     return argument_usage
 
 
