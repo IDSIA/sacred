@@ -66,7 +66,7 @@ class TimeoutInterrupt(SacredInterrupt):
 class SacredError(Exception):
     def __init__(self, message, print_traceback=True,
                  filter_traceback='default', print_usage=False):
-        super().__init__(message)
+        super(SacredError, self).__init__(message)
         self.print_traceback = print_traceback
         if filter_traceback not in ['always', 'default', 'never']:
             raise ValueError(
@@ -95,7 +95,7 @@ class CircularDependencyError(SacredError):
     def __init__(self, message='Circular dependency detected:',
                  ingredients=None, print_traceback=True,
                  filter_traceback='default', print_usage=False):
-        super().__init__(
+        super(CircularDependencyError, self).__init__(
             message,
             print_traceback=print_traceback,
             filter_traceback=filter_traceback,
@@ -108,7 +108,7 @@ class CircularDependencyError(SacredError):
         self.__circular_dependency_handled__ = False
 
     def __str__(self):
-        return (super().__str__() + '->'.join(
+        return (super(CircularDependencyError, self).__str__() + '->'.join(
             [i.path for i in reversed(self.__ingredients__)]))
 
 
@@ -121,7 +121,7 @@ class ConfigError(SacredError):
                  print_traceback=True,
                  filter_traceback='default', print_usage=False,
                  config=None):
-        super().__init__(message,
+        super(ConfigError, self).__init__(message,
                                           print_traceback=print_traceback,
                                           filter_traceback=filter_traceback,
                                           print_usage=print_usage)
@@ -154,7 +154,7 @@ class ConfigError(SacredError):
             raise e
 
     def __str__(self):
-        s = super().__str__()
+        s = super(ConfigError, self).__str__()
         if self.print_conflicting_configs:
             # Add a list formatted as below to the string s:
             #
@@ -195,7 +195,7 @@ class MissingConfigError(SacredError):
                  print_traceback=False, filter_traceback='default',
                  print_usage=True):
         message = '{} {}'.format(message, missing_configs)
-        super().__init__(
+        super(MissingConfigError, self).__init__(
             message, print_traceback=print_traceback,
             filter_traceback=filter_traceback, print_usage=print_usage
         )
@@ -210,7 +210,7 @@ class NamedConfigNotFoundError(SacredError):
                  filter_traceback='default', print_usage=False):
         message = '{} "{}". Available config values are: {}'.format(
             message, named_config, available_named_configs)
-        super().__init__(
+        super(NamedConfigNotFoundError, self).__init__(
             message,
             print_traceback=print_traceback,
             filter_traceback=filter_traceback,
@@ -230,7 +230,7 @@ class ConfigAddedError(ConfigError):
                  filter_traceback='default', print_usage=False,
                  print_suggestions=True,
                  config=None):
-        super().__init__(
+        super(ConfigAddedError, self).__init__(
             message,
             conflicting_configs=conflicting_configs,
             print_conflicting_configs=print_conflicting_configs,
@@ -243,7 +243,7 @@ class ConfigAddedError(ConfigError):
         self.print_suggestions = print_suggestions
 
     def __str__(self):
-        s = super().__str__()
+        s = super(ConfigAddedError, self).__str__()
         if self.print_suggestions:
             possible_keys = set(self.captured_args) - self.SPECIAL_ARGS
             if possible_keys:
@@ -259,7 +259,7 @@ class SignatureError(SacredError, TypeError):
     def __init__(self, message, print_traceback=True,
                  filter_traceback='always',
                  print_usage=False):
-        super().__init__(
+        super(SignatureError, self).__init__(
             message, print_traceback, filter_traceback, print_usage)
 
 
@@ -521,13 +521,15 @@ def format_sacred_error(e, short_usage):
 def filtered_traceback_format(tb_exception, chain=True):
     if chain:
         if tb_exception.__cause__ is not None:
-            yield from filtered_traceback_format(tb_exception.__cause__,
-                                                  chain=chain)
+            for line in filtered_traceback_format(tb_exception.__cause__,
+                                                  chain=chain):
+                yield line
             yield tb._cause_message
         elif (tb_exception.__context__ is not None and
               not tb_exception.__suppress_context__):
-            yield from filtered_traceback_format(tb_exception.__context__,
-                                                  chain=chain)
+            for line in filtered_traceback_format(tb_exception.__context__,
+                                                  chain=chain):
+                yield line
             yield tb._context_message
     yield 'Traceback (most recent calls WITHOUT Sacred internals):\n'
     current_tb = tb_exception.exc_traceback
@@ -537,9 +539,11 @@ def filtered_traceback_format(tb_exception, chain=True):
                                             limit=1,
                                             lookup_lines=True,
                                             capture_locals=False)
-            yield from stack.format()
+            for line in stack.format():
+                yield line
         current_tb = current_tb.tb_next
-    yield from tb_exception.format_exception_only()
+    for line in tb_exception.format_exception_only():
+        yield line
 
 
 def is_subdir(path, directory):
