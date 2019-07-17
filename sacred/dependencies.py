@@ -146,7 +146,7 @@ def get_commit_if_possible(filename):
 
 
 @functools.total_ordering
-class Source(object):
+class Source:
     def __init__(self, filename, digest, repo, commit, isdirty):
         self.filename = filename
         self.digest = digest
@@ -189,7 +189,7 @@ class Source(object):
 
 
 @functools.total_ordering
-class PackageDependency(object):
+class PackageDependency:
     modname_to_dist = {}
 
     def __init__(self, name, version):

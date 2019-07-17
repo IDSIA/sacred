@@ -120,7 +120,7 @@ def test_is_subdirectory(path, parent, expected):
 
 
 def test_get_inheritors():
-    class A(object):
+    class A:
         pass
 
     class B(A):
@@ -132,7 +132,7 @@ def test_get_inheritors():
     class D(A):
         pass
 
-    class E(object):
+    class E:
         pass
 
     assert get_inheritors(A) == {B, C, D}

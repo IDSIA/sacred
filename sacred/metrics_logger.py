@@ -6,7 +6,7 @@ import sacred.optional as opt
 from queue import Queue, Empty
 
 
-class MetricsLogger(object):
+class MetricsLogger:
     """MetricsLogger collects metrics measured during experiments.
 
     MetricsLogger is the (only) part of the Metrics API.

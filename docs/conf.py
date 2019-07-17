@@ -48,8 +48,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Sacred'
-copyright = u'2015, Klaus Greff'
+project = 'Sacred'
+copyright = '2015, Klaus Greff'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -213,8 +213,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'Sacred.tex', u'Sacred Documentation',
-     u'Klaus Greff', 'manual'),
+    ('index', 'Sacred.tex', 'Sacred Documentation',
+     'Klaus Greff', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -243,8 +243,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'sacred', u'Sacred Documentation',
-     [u'Klaus Greff'], 1)
+    ('index', 'sacred', 'Sacred Documentation',
+     ['Klaus Greff'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -257,8 +257,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'Sacred', u'Sacred Documentation',
-     u'Klaus Greff', 'Sacred', 'One line description of project.',
+    ('index', 'Sacred', 'Sacred Documentation',
+     'Klaus Greff', 'Sacred', 'One line description of project.',
      'Miscellaneous'),
 ]
 

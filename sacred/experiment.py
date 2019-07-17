@@ -74,7 +74,7 @@ class Experiment(Ingredient):
                 name = name[:-3]
             elif name.endswith('.pyc'):
                 name = name[:-4]
-        super(Experiment, self).__init__(path=name,
+        super().__init__(path=name,
                                          ingredients=ingredients,
                                          interactive=interactive,
                                          base_dir=base_dir,

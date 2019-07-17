@@ -25,7 +25,7 @@ def write_and_flush(*args):
     sys.stdout.flush()
 
 
-class ProgressMonitor(object):
+class ProgressMonitor:
     def __init__(self, count):
         self.count, self.progress = count, 0
 
