@@ -84,10 +84,10 @@ and install it yourself:
    | cd sacred
    | python setup.py install
 
-You might want to also install the ``numpy`` and the ``pymongo`` packages. They are
-optional dependencies but they offer some cool features:
+You might want to also install the ``numpy`` package. It is an
+optional dependency but it offers some cool features:
 
-    pip install numpy, pymongo
+    pip install numpy
 
 Tests
 -----
