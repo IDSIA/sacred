@@ -33,11 +33,10 @@ def gather_from_ingredients(wrapped, instance=None, args=None, kwargs=None):
     This function is necessary, because `Ingredient._gather` cannot directly be
     used as a decorator inside of `Ingredient`.
     """
-    for item in instance._gather(wrapped):
-        yield item
+    yield from instance._gather(wrapped)
 
 
-class Ingredient(object):
+class Ingredient:
     """
     Ingredients are reusable parts of experiments.
 
@@ -228,7 +227,7 @@ class Ingredient(object):
             return ConfigDict(cfg_or_file)
         elif isinstance(cfg_or_file, str):
             if not os.path.exists(cfg_or_file):
-                raise IOError('File not found {}'.format(cfg_or_file))
+                raise OSError('File not found {}'.format(cfg_or_file))
             abspath = os.path.abspath(cfg_or_file)
             return ConfigDict(load_config_file(abspath))
         else:
@@ -292,8 +291,7 @@ class Ingredient(object):
         example.
         """
         for ingredient, _ in self.traverse_ingredients():
-            for item in func(ingredient):
-                yield item
+            yield from func(ingredient)
 
     @gather_from_ingredients
     def gather_commands(self, ingredient):

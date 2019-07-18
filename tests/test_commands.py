@@ -19,7 +19,7 @@ def test_non_unicode_repr():
     p = pprint.PrettyPrinter()
     p.format = _non_unicode_repr
     # make sure there is no u' in the representation
-    assert p.pformat(u'HelloWorld') == "'HelloWorld'"
+    assert p.pformat('HelloWorld') == "'HelloWorld'"
 
 
 @pytest.fixture

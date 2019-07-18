@@ -20,7 +20,7 @@ from sacred.utils import (convert_to_nested_dict, create_basic_stream_logger,
 from sacred.settings import SETTINGS
 
 
-class Scaffold(object):
+class Scaffold:
     def __init__(self, config_scopes, subrunners, path, captured_functions,
                  commands, named_configs, config_hooks, generate_seed):
         self.config_scopes = config_scopes

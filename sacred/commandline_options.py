@@ -22,7 +22,7 @@ def with_metaclass(meta, *bases):
     class Metaclass(meta):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
-    return type.__new__(Metaclass, str('temporary_class'), (), {})
+    return type.__new__(Metaclass, 'temporary_class', (), {})
 
 
 def parse_mod_deps(depends_on):

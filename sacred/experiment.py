@@ -74,11 +74,11 @@ class Experiment(Ingredient):
                 name = name[:-3]
             elif name.endswith('.pyc'):
                 name = name[:-4]
-        super(Experiment, self).__init__(path=name,
-                                         ingredients=ingredients,
-                                         interactive=interactive,
-                                         base_dir=base_dir,
-                                         _caller_globals=caller_globals)
+        super().__init__(path=name,
+                         ingredients=ingredients,
+                         interactive=interactive,
+                         base_dir=base_dir,
+                         _caller_globals=caller_globals)
         self.default_command = None
         self.command(print_config, unobserved=True)
         self.command(print_dependencies, unobserved=True)

@@ -196,7 +196,7 @@ def test_add_config_file(ing):
 
 
 def test_add_config_file_nonexisting_raises(ing):
-    with pytest.raises(IOError):
+    with pytest.raises(OSError):
         ing.add_config("nonexistens.json")
 
 

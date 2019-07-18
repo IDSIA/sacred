@@ -105,7 +105,7 @@ def _format_options_usage(options):
                                             subsequent_indent=' ' * 32)
         wrapped_description = "\n".join(wrapped_description).strip()
 
-        options_usage += "  {0:28}  {1}\n".format(flag, wrapped_description)
+        options_usage += "  {:28}  {}\n".format(flag, wrapped_description)
     return options_usage
 
 
@@ -133,8 +133,8 @@ def _format_arguments_usage(options):
                                                 initial_indent=' ' * 12,
                                                 subsequent_indent=' ' * 12)
             wrapped_description = "\n".join(wrapped_description).strip()
-            argument_usage += "  {0:8}  {1}\n".format(op.arg,
-                                                      wrapped_description)
+            argument_usage += "  {:8}  {}\n".format(op.arg,
+                                                    wrapped_description)
     return argument_usage
 
 

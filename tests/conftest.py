@@ -11,7 +11,7 @@ from imp import reload
 from sacred.settings import SETTINGS
 
 EXAMPLES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
-BLOCK_START = re.compile('^\s\s+\$.*$', flags=re.MULTILINE)
+BLOCK_START = re.compile(r'^\s\s+\$.*$', flags=re.MULTILINE)
 
 
 def get_calls_from_doc(doc):
@@ -45,7 +45,7 @@ def pytest_generate_tests(metafunc):
     if 'example_test' in metafunc.fixturenames:
         examples = [os.path.splitext(f)[0] for f in os.listdir(EXAMPLES_PATH)
                     if os.path.isfile(os.path.join(EXAMPLES_PATH, f)) and
-                    f.endswith('.py') and f != '__init__.py' and re.match('^\d', f)]
+                    f.endswith('.py') and f != '__init__.py' and re.match(r'^\d', f)]
 
         sys.path.append(EXAMPLES_PATH)
         example_tests = []

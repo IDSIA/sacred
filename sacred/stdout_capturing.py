@@ -17,11 +17,11 @@ def flush():
     try:
         sys.stdout.flush()
         sys.stderr.flush()
-    except (AttributeError, ValueError, IOError):
+    except (AttributeError, ValueError, OSError):
         pass  # unsupported
     try:
         libc.fflush(None)
-    except (AttributeError, ValueError, IOError):
+    except (AttributeError, ValueError, OSError):
         pass  # unsupported
 
 
@@ -41,7 +41,7 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
     """A wrapper around stdout or stderr that duplicates all output to out."""
 
     def __init__(self, wrapped, out):
-        super(TeeingStreamProxy, self).__init__(wrapped)
+        super().__init__(wrapped)
         self._self_out = out
 
     def write(self, data):
@@ -53,7 +53,7 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
         self._self_out.flush()
 
 
-class CapturedStdout(object):
+class CapturedStdout:
     def __init__(self, buffer):
         self.buffer = buffer
         self.read_position = 0

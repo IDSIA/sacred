@@ -14,7 +14,7 @@ from sacred.utils import (SacredInterrupt, join_paths,
 from sacred.stdout_capturing import get_stdcapturer
 
 
-class Run(object):
+class Run:
     """Represent and manage a single run of an experiment."""
 
     def __init__(self, config, config_modifications, main_function, observers,
