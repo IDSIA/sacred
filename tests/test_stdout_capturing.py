@@ -31,6 +31,17 @@ def test_python_tee_output(capsys):
 @pytest.mark.skipif(sys.platform.startswith('win'),
                     reason="does not run on windows")
 def test_fd_tee_output(capsys):
+    # Get libc in a cross-platform way and use it to also flush the c stdio buffers
+    # credit to J.F. Sebastians SO answer from here:
+    # http://stackoverflow.com/a/22434262/1388435
+    import ctypes
+    from ctypes.util import find_library
+
+    try:
+        libc = ctypes.cdll.msvcrt  # Windows
+    except OSError:
+        libc = ctypes.cdll.LoadLibrary(find_library('c'))
+
     expected_lines = {
         "captured stdout",
         "captured stderr",
