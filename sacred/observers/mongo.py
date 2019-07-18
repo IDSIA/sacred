@@ -52,9 +52,6 @@ def force_bson_encodeable(obj):
 
 
 class MongoObserver(RunObserver):
-    import pymongo
-    import pymongo.errors
-    import gridfs
     COLLECTION_NAME_BLACKLIST = {'fs.files', 'fs.chunks', '_properties',
                                  'system.indexes', 'search_space',
                                  'search_spaces'}
