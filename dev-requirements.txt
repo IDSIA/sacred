@@ -13,8 +13,7 @@ numpy==1.16.2
 packaging>=18.0
 pandas==0.24.2
 pbr==1.10.0
-py-cpuinfo==4.0
-pymongo==3.4.0
+# tests/test_utils.py depends on that pytest version is exactly 4.3.0
 pytest==4.3.0
 python-dateutil==2.6.0
 pytz==2016.10
@@ -27,3 +26,6 @@ tinydb==3.2.1
 tinydb-serialization==1.0.3
 wrapt==1.10.8
 scikit-learn==0.20.3
+pymongo==3.8.0
+py-cpuinfo==4.0
+

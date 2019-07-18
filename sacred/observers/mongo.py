@@ -9,10 +9,6 @@ import sys
 import time
 from tempfile import NamedTemporaryFile
 
-import pymongo
-import pymongo.errors
-import gridfs
-
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
@@ -81,6 +77,8 @@ class MongoObserver(RunObserver):
         -------
         An instantiated MongoObserver.
         """
+        import pymongo
+        import gridfs
 
         if client is not None:
             if not isinstance(client, pymongo.MongoClient):
@@ -266,6 +264,8 @@ class MongoObserver(RunObserver):
                     .append({"name": key, "id": str(result.upserted_id)})
 
     def insert(self):
+        import pymongo.errors
+
         if self.overwrite:
             return self.save()
 
@@ -318,8 +318,7 @@ class MongoObserver(RunObserver):
                       "Most likely it is either the 'info' or the 'result'.",
                       file=sys.stderr)
 
-        if not os.path.exists(self.failure_dir):
-            os.makedirs(self.failure_dir)
+        os.makedirs(self.failure_dir, exist_ok=True)
         with NamedTemporaryFile(suffix='.pickle', delete=False,
                                 prefix='sacred_mongo_fail_{}_'.format(
                                     self.run_entry["_id"]
@@ -448,6 +447,7 @@ class QueueCompatibleMongoObserver(MongoObserver):
                 .append({"name": metric_name, "id": str(result.upserted_id)})
 
     def save(self):
+        import pymongo
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry})
@@ -456,6 +456,7 @@ class QueueCompatibleMongoObserver(MongoObserver):
                                 '(most likely in the info)')
 
     def final_save(self, attempts):
+        import pymongo
         try:
             self.runs.update_one({'_id': self.run_entry['_id']},
                                  {'$set': self.run_entry}, upsert=True)
