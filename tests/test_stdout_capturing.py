@@ -5,7 +5,6 @@ import os
 import sys
 import pytest
 from sacred.stdout_capturing import get_stdcapturer
-from sacred.optional import libc
 
 
 def test_python_tee_output(capsys):
