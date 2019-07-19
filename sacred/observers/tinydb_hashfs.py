@@ -59,12 +59,16 @@ def get_db_file_manager(root_dir):
     serialization_store.register_serializer(FileSerializer(fs), 'TinyFile')
 
     if opt.has_numpy:
-        serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
+        serialization_store.register_serializer(NdArraySerializer(),
+                                                'TinyArray')
     if opt.has_pandas:
-        serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
-        serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+        serialization_store.register_serializer(DataFrameSerializer(),
+                                                'TinyDataFrame')
+        serialization_store.register_serializer(SeriesSerializer(),
+                                                'TinySeries')
 
-    db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
+    db = TinyDB(os.path.join(root_dir, 'metadata.json'),
+                storage=serialization_store)
     return db, fs
 
 
