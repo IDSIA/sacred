@@ -272,8 +272,8 @@ def test_unicode_(func, expected):
 
 
 def test_unicode_special():
-    assert re.match("complex_function_name\(a=1, b=u?'fo', c=9\)",
-                    Signature(complex_function_name).__unicode__())
+    str_signature = "complex_function_name(a=5, b='fo', c=9)"
+    assert str_signature in Signature(complex_function_name).__unicode__()
 
 
 @pytest.mark.parametrize('name,func', zip(names, functions))
