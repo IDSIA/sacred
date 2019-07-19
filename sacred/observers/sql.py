@@ -35,28 +35,17 @@ class SqlObserver(RunObserver):
 
     def started_event(self, ex_info, command, host_info, start_time, config,
                       meta_info, _id):
-        Base.metadata.create_all(self.engine)
-        sql_exp = Experiment.get_or_create(ex_info, self.session)
-        sql_host = Host.get_or_create(host_info, self.session)
-        if _id is None:
-            i = self.session.query(Run).order_by(Run.id.desc()).first()
-            _id = 0 if i is None else i.id + 1
-
-        self.run = Run(run_id=str(_id),
-                       start_time=start_time,
-                       config=json.dumps(flatten(config)),
-                       command=command,
-                       priority=meta_info.get('priority', 0),
-                       comment=meta_info.get('comment', ''),
-                       experiment=sql_exp,
-                       host=sql_host,
-                       status='RUNNING')
-        self.session.add(self.run)
-        self.save()
-        return _id or self.run.run_id
+        return self._add_event(ex_info, command, host_info, config,
+                               meta_info, _id, 'RUNNING',
+                               start_time=start_time)
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
+        return self._add_event(ex_info, command, host_info, config,
+                               meta_info, _id, 'QUEUED')
+
+    def _add_event(self, ex_info, command, host_info, config,
+                   meta_info, _id, status, **kwargs):
 
         Base.metadata.create_all(self.engine)
         sql_exp = Experiment.get_or_create(ex_info, self.session)
@@ -72,7 +61,8 @@ class SqlObserver(RunObserver):
                        comment=meta_info.get('comment', ''),
                        experiment=sql_exp,
                        host=sql_host,
-                       status='QUEUED')
+                       status=status,
+                       **kwargs)
         self.session.add(self.run)
         self.save()
         return _id or self.run.run_id
