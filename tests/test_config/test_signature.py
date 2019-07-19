@@ -23,11 +23,6 @@ def complex_function_name(a=1, b='fo', c=9):
     return a, b, c
 
 
-# noinspection PyPep8Naming
-def FunCTIonWithCAPItals(a, b, c=3, **kwargs):
-    return a, b, c, kwargs
-
-
 def _name_with_underscore_(fo, bar, *baz):
     return fo, bar, baz
 
@@ -50,30 +45,30 @@ def onlykwrgs(**kwargs):
 
 renamed = old_name
 
-functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals,
+functions = [foo, bariza, complex_function_name,
              _name_with_underscore_, __double_underscore__, old_name, renamed]
 
-ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+ids = ['foo', 'bariza', 'complex_function_name',
        '_name_with_underscore_', '__double_underscore__', 'old_name',
        'renamed']
 
-names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+names = ['foo', 'bariza', 'complex_function_name',
          '_name_with_underscore_', '__double_underscore__', 'old_name',
          'old_name']
 
-arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'],
+arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'],
              ['fo', 'bar'], ['man', 'o'], ['verylongvariablename'],
              ['verylongvariablename']]
 
-vararg_names = [None, None, None, None, 'baz', 'men', None, None]
+vararg_names = [None, None, None, 'baz', 'men', None, None]
 
-kw_wc_names = [None, None, None, 'kwargs', None, 'oo', None, None]
+kw_wc_names = [None, None, None, None, 'oo', None, None]
 
-pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
+pos_arguments = [[], ['a', 'b', 'c'], [], ['fo', 'bar'],
                  ['man', 'o'], ['verylongvariablename'],
                  ['verylongvariablename']]
 
-kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {'c': 3}, {}, {}, {}, {}]
+kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {}, {}, {}, {}]
 
 
 class SomeClass(object):
@@ -172,22 +167,16 @@ def test_construct_arguments_with_varargs_doesnt_raise():
 
 def test_construct_arguments_with_kwargswildcard_doesnt_raise():
     kwargs = {'zimbabwe': 23}
-    Signature(FunCTIonWithCAPItals).construct_arguments(
-        [1, 2, 3], kwargs, {})
     Signature(__double_underscore__).construct_arguments([1, 2], kwargs, {})
 
 
 def test_construct_arguments_with_expected_kwargs_does_not_raise():
     s = Signature(complex_function_name)
     s.construct_arguments([], {'a': 4, 'b': 3, 'c': 2}, {})
-    s = Signature(FunCTIonWithCAPItals)
-    s.construct_arguments([1, 2], {'c': 5}, {})
 
 
 def test_construct_arguments_with_kwargs_for_posargs_does_not_raise():
     Signature(bariza).construct_arguments([], {'a': 4, 'b': 3, 'c': 2}, {})
-    s = Signature(FunCTIonWithCAPItals)
-    s.construct_arguments([], {'a': 4, 'b': 3, 'c': 2, 'd': 6}, {})
 
 
 def test_construct_arguments_with_duplicate_args_raises_typeerror():
@@ -200,10 +189,6 @@ def test_construct_arguments_with_duplicate_args_raises_typeerror():
         s = Signature(complex_function_name)
         s.construct_arguments([1], {'a': 4}, {})
     assert multiple_values.match(excinfo.value.args[0])
-    with pytest.raises(TypeError) as excinfo:
-        s = Signature(FunCTIonWithCAPItals)
-        s.construct_arguments([1, 2, 3], {'c': 6}, {})
-    assert multiple_values.match(excinfo.value.args[0])
 
 
 def test_construct_arguments_without_duplicates_passes():
@@ -212,9 +197,6 @@ def test_construct_arguments_without_duplicates_passes():
 
     s = Signature(complex_function_name)
     s.construct_arguments([1], {'b': 4}, {})
-
-    s = Signature(FunCTIonWithCAPItals)
-    s.construct_arguments([], {'a': 6, 'b': 6, 'c': 6}, {})
 
 
 def test_construct_arguments_without_options_returns_same_args_kwargs():
@@ -318,7 +300,6 @@ def test_construct_arguments_for_bound_method():
 @pytest.mark.parametrize('func,expected', [
     (foo, "foo()"),
     (bariza, "bariza(a, b, c)"),
-    (FunCTIonWithCAPItals, "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"),
     (_name_with_underscore_, "_name_with_underscore_(fo, bar, *baz)"),
     (__double_underscore__, "__double_underscore__(man, o, *men, **oo)"),
     (old_name, "old_name(verylongvariablename)"),
