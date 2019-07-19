@@ -155,7 +155,4 @@ def _get_cpu_by_proc_cpuinfo():
 
 
 def _get_cpu_by_pycpuinfo():
-    try:
-        return cpuinfo.get_cpu_info()['brand']
-    except:
-        return "Unknown"
+    return cpuinfo.get_cpu_info().get('brand', 'Unknown')
