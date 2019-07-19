@@ -23,25 +23,30 @@ def complex_function_name(a: int = 5, b: str = 'fo', c: float = 9):
     return a, b, c
 
 
+# noinspection PyPep8Naming
+def FunCTIonWithCAPItals(a, b, c=3, **kwargs):
+    return a, b, c, kwargs
+
+
 def kwonly_args(a, *, b, c=10):
     return b
 
 
-functions = [foo, bariza, complex_function_name, kwonly_args]
+functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals, kwonly_args]
 
-ids = ['foo', 'bariza', 'complex_function_name', 'kwonly_args']
+ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals', 'kwonly_args']
 
-names = ['foo', 'bariza', 'complex_function_name', 'kwonly_args']
+names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals', 'kwonly_args']
 
-arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]
+arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]
 
-vararg_names = [None, None, None, None]
+vararg_names = [None, None, None, None, None]
 
-kw_wc_names = [None, None, None, None]
+kw_wc_names = [None, None, None, 'kwargs', None]
 
-pos_arguments = [[], ['a', 'b', 'c'], [], ['a']]
+pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['a']]
 
-kwarg_list = [{}, {}, {'a': 5, 'b': 'fo', 'c': 9}, {'c': 10}]
+kwarg_list = [{}, {}, {'a': 5, 'b': 'fo', 'c': 9},  {'c': 3}, {'c': 10}]
 
 
 class SomeClass(object):
@@ -123,6 +128,25 @@ def test_construct_arguments_with_unexpected_args_raises_typeerror(func, args):
     assert unexpected.match(excinfo.value.args[0])
 
 
+def test_construct_arguments_with_kwargswildcard_doesnt_raise():
+    kwargs = {'zimbabwe': 23}
+    Signature(FunCTIonWithCAPItals).construct_arguments(
+        [1, 2, 3], kwargs, {})
+
+
+def test_construct_arguments_with_expected_kwargs_does_not_raise():
+    s = Signature(complex_function_name)
+    s.construct_arguments([], {'a': 4, 'b': 3, 'c': 2}, {})
+    s = Signature(FunCTIonWithCAPItals)
+    s.construct_arguments([1, 2], {'c': 5}, {})
+
+
+def test_construct_arguments_with_kwargs_for_posargs_does_not_raise():
+    Signature(bariza).construct_arguments([], {'a': 4, 'b': 3, 'c': 2}, {})
+    s = Signature(FunCTIonWithCAPItals)
+    s.construct_arguments([], {'a': 4, 'b': 3, 'c': 2, 'd': 6}, {})
+
+
 def test_construct_arguments_with_duplicate_args_raises_typeerror():
     multiple_values = re.compile(".*multiple values.*")
     with pytest.raises(TypeError) as excinfo:
@@ -133,6 +157,10 @@ def test_construct_arguments_with_duplicate_args_raises_typeerror():
         s = Signature(complex_function_name)
         s.construct_arguments([1], {'a': 4}, {})
     assert multiple_values.match(excinfo.value.args[0])
+    with pytest.raises(TypeError) as excinfo:
+        s = Signature(FunCTIonWithCAPItals)
+        s.construct_arguments([1, 2, 3], {'c': 6}, {})
+    assert multiple_values.match(excinfo.value.args[0])
 
 
 def test_construct_arguments_without_duplicates_passes():
@@ -141,6 +169,9 @@ def test_construct_arguments_without_duplicates_passes():
 
     s = Signature(complex_function_name)
     s.construct_arguments([1], {'b': 4}, {})
+
+    s = Signature(FunCTIonWithCAPItals)
+    s.construct_arguments([], {'a': 6, 'b': 6, 'c': 6}, {})
 
 
 def test_construct_arguments_without_options_returns_same_args_kwargs():
@@ -234,6 +265,7 @@ def test_construct_arguments_for_bound_method():
 @pytest.mark.parametrize('func,expected', [
     (foo, "foo()"),
     (bariza, "bariza(a, b, c)"),
+    (FunCTIonWithCAPItals, "FunCTIonWithCAPItals(a, b, c=3, **kwargs)")
 ])
 def test_unicode_(func, expected):
     assert Signature(func).__unicode__() == expected
