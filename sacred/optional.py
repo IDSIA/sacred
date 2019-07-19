@@ -3,6 +3,7 @@
 
 import importlib
 from sacred.utils import modules_exist
+from sacred.utils import get_package_version, parse_version
 
 
 def optional_import(*package_names):
@@ -11,6 +12,19 @@ def optional_import(*package_names):
         return True, packages[0]
     except ImportError:
         return False, None
+
+
+def get_tensorflow():
+    # Ensures backward and forward compatibility with TensorFlow 1 and 2.
+    if get_package_version('tensorflow') < parse_version('1.13.1'):
+        import warnings
+        warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
+                      "Use Tensorflow 1.13 or newer instead.",
+                      DeprecationWarning)
+        import tensorflow as tf
+    else:
+        import tensorflow.compat.v1 as tf
+    return tf
 
 
 # Get libc in a cross-platform way and use it to also flush the c stdio buffers

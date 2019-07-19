@@ -4,8 +4,7 @@
 import random
 
 import sacred.optional as opt
-from sacred.utils import (module_is_in_cache, get_package_version,
-                          parse_version)
+from sacred.utils import module_is_in_cache
 
 SEEDRANGE = (1, int(1e9))
 
@@ -30,15 +29,7 @@ def set_global_seed(seed):
     if opt.has_numpy:
         opt.np.random.seed(seed)
     if module_is_in_cache('tensorflow'):
-        # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-        if get_package_version('tensorflow') < parse_version('1.13.1'):
-            import warnings
-            warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
-                          "Use Tensorflow 1.13 or newer instead.",
-                          DeprecationWarning)
-            import tensorflow as tf
-        else:
-            import tensorflow.compat.v1 as tf
+        tf = opt.get_tensorflow()
         tf.set_random_seed(seed)
     if module_is_in_cache('torch'):
         import torch
