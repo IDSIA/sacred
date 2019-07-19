@@ -3,7 +3,7 @@ import pytest
 
 from sacred import Experiment
 from sacred.stflow import LogFileWriter
-from sacred.utils import get_package_version, parse_version
+import sacred.optional as opt
 
 
 @pytest.fixture
@@ -19,12 +19,7 @@ def tf():
     """
     from sacred.optional import has_tensorflow
     if has_tensorflow:
-        # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-        if get_package_version('tensorflow') < parse_version('1.13.1'):
-            import tensorflow as tf
-        else:
-            import tensorflow.compat.v1 as tf
-        return tf
+        return opt.get_tensorflow()
     else:
         # Let's define a mocked tensorflow
         class tensorflow:
