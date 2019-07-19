@@ -28,25 +28,57 @@ def FunCTIonWithCAPItals(a, b, c=3, **kwargs):
     return a, b, c, kwargs
 
 
+def _name_with_underscore_(fo, bar, *baz):
+    return fo, bar, baz
+
+
+def __double_underscore__(man, o, *men, **oo):
+    return man, o, men, oo
+
+
+def old_name(verylongvariablename):
+    return verylongvariablename
+
+
+def generic(*args, **kwargs):
+    return args, kwargs
+
+
+def onlykwrgs(**kwargs):
+    return kwargs
+
 def kwonly_args(a, *, b, c=10):
     return b
 
 
-functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals, kwonly_args]
+renamed = old_name
 
-ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals', 'kwonly_args']
+functions = [foo, bariza, complex_function_name, FunCTIonWithCAPItals,
+             _name_with_underscore_, __double_underscore__, old_name,
+             renamed, kwonly_args]
 
-names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals', 'kwonly_args']
+ids = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+       '_name_with_underscore_', '__double_underscore__', 'old_name',
+       'renamed','kwonly_args']
 
-arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]
+names = ['foo', 'bariza', 'complex_function_name', 'FunCTIonWithCAPItals',
+         '_name_with_underscore_', '__double_underscore__', 'old_name',
+         'old_name', 'kwonly_args']
 
-vararg_names = [None, None, None, None, None]
+arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c'],
+             ['fo', 'bar'], ['man', 'o'], ['verylongvariablename'],
+             ['verylongvariablename'], ['a', 'b', 'c']]
 
-kw_wc_names = [None, None, None, 'kwargs', None]
+vararg_names = [None, None, None, None, 'baz', 'men', None, None, None]
 
-pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['a']]
+kw_wc_names = [None, None, None, 'kwargs', None, 'oo', None, None, None]
 
-kwarg_list = [{}, {}, {'a': 5, 'b': 'fo', 'c': 9},  {'c': 3}, {'c': 10}]
+pos_arguments = [[], ['a', 'b', 'c'], [], ['a', 'b'], ['fo', 'bar'],
+                 ['man', 'o'], ['verylongvariablename'],
+                 ['verylongvariablename'], ['a']]
+
+kwarg_list = [{}, {}, {'a': 5, 'b': 'fo', 'c': 9},  {'c': 3},
+              {}, {}, {}, {}, {'c': 10}]
 
 
 class SomeClass(object):
@@ -104,10 +136,15 @@ def test_get_free_parameters():
     assert free == ['a', 'b']
     free = Signature(complex_function_name).get_free_parameters([], {})
     assert free == ['a', 'b', 'c']
+    free = Signature(_name_with_underscore_).get_free_parameters([], {})
+    assert free == ['fo', 'bar']
+    s = Signature(__double_underscore__)
+    assert s.get_free_parameters([1, 2, 3], {}) == []
 
 
 @pytest.mark.parametrize('function',
-                         [foo, bariza, complex_function_name])
+                         [foo, bariza, complex_function_name,
+                          _name_with_underscore_, old_name, renamed])
 def test_construct_arguments_with_unexpected_kwargs_raises_typeerror(function):
     kwargs = {'zimbabwe': 23}
     unexpected = re.compile(".*unexpected.*zimbabwe.*")
@@ -119,7 +156,9 @@ def test_construct_arguments_with_unexpected_kwargs_raises_typeerror(function):
 @pytest.mark.parametrize('func,args', [
     (foo, [1]),
     (bariza, [1, 2, 3, 4]),
-    (complex_function_name, [1, 2, 3, 4])
+    (complex_function_name, [1, 2, 3, 4]),
+    (old_name, [1, 2]),
+    (renamed, [1, 2])
 ])
 def test_construct_arguments_with_unexpected_args_raises_typeerror(func, args):
     unexpected = re.compile(".*unexpected.*")
@@ -130,8 +169,17 @@ def test_construct_arguments_with_unexpected_args_raises_typeerror(func, args):
 
 def test_construct_arguments_with_kwargswildcard_doesnt_raise():
     kwargs = {'zimbabwe': 23}
+    Signature(__double_underscore__).construct_arguments([1, 2], kwargs, {})
     Signature(FunCTIonWithCAPItals).construct_arguments(
         [1, 2, 3], kwargs, {})
+
+
+def test_construct_arguments_with_varargs_doesnt_raise():
+    Signature(generic).construct_arguments([1, 2, 3], {}, {})
+    Signature(__double_underscore__).construct_arguments(
+        [1, 2, 3, 4, 5], {}, {})
+    Signature(_name_with_underscore_).construct_arguments(
+        [1, 2, 3, 4], {}, {})
 
 
 def test_construct_arguments_with_expected_kwargs_does_not_raise():
@@ -190,6 +238,11 @@ def test_construct_arguments_without_options_returns_same_args_kwargs():
     assert args == [2]
     assert kwargs == {'c': 6, 'b': 7}
 
+    s = Signature(_name_with_underscore_)
+    args, kwargs = s.construct_arguments([], {'fo': 7, 'bar': 6}, {})
+    assert args == []
+    assert kwargs == {'fo': 7, 'bar': 6}
+
 
 def test_construct_arguments_completes_kwargs_from_options():
     s = Signature(bariza)
@@ -200,6 +253,11 @@ def test_construct_arguments_completes_kwargs_from_options():
     args, kwargs = s.construct_arguments([], {'c': 6, 'b': 7}, {'a': 1})
     assert args == []
     assert kwargs == {'a': 1, 'c': 6, 'b': 7}
+
+    s = Signature(_name_with_underscore_)
+    args, kwargs = s.construct_arguments([], {}, {'fo': 7, 'bar': 6})
+    assert args == []
+    assert kwargs == {'fo': 7, 'bar': 6}
 
 
 def test_construct_arguments_ignores_excess_options():
@@ -265,7 +323,13 @@ def test_construct_arguments_for_bound_method():
 @pytest.mark.parametrize('func,expected', [
     (foo, "foo()"),
     (bariza, "bariza(a, b, c)"),
-    (FunCTIonWithCAPItals, "FunCTIonWithCAPItals(a, b, c=3, **kwargs)")
+    (FunCTIonWithCAPItals, "FunCTIonWithCAPItals(a, b, c=3, **kwargs)"),
+    (_name_with_underscore_, "_name_with_underscore_(fo, bar, *baz)"),
+    (__double_underscore__, "__double_underscore__(man, o, *men, **oo)"),
+    (old_name, "old_name(verylongvariablename)"),
+    (renamed, "old_name(verylongvariablename)"),
+    (generic, "generic(*args, **kwargs)"),
+    (onlykwrgs, "onlykwrgs(**kwargs)")
 ])
 def test_unicode_(func, expected):
     assert Signature(func).__unicode__() == expected

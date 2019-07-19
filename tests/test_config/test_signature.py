@@ -23,52 +23,21 @@ def complex_function_name(a=1, b='fo', c=9):
     return a, b, c
 
 
-def _name_with_underscore_(fo, bar, *baz):
-    return fo, bar, baz
+functions = [foo, bariza, complex_function_name]
 
+ids = ['foo', 'bariza', 'complex_function_name']
 
-def __double_underscore__(man, o, *men, **oo):
-    return man, o, men, oo
+names = ['foo', 'bariza', 'complex_function_name']
 
+arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c']]
 
-def old_name(verylongvariablename):
-    return verylongvariablename
+vararg_names = [None, None, None]
 
+kw_wc_names = [None, None, None]
 
-def generic(*args, **kwargs):
-    return args, kwargs
+pos_arguments = [[], ['a', 'b', 'c'], []]
 
-
-def onlykwrgs(**kwargs):
-    return kwargs
-
-
-renamed = old_name
-
-functions = [foo, bariza, complex_function_name,
-             _name_with_underscore_, __double_underscore__, old_name, renamed]
-
-ids = ['foo', 'bariza', 'complex_function_name',
-       '_name_with_underscore_', '__double_underscore__', 'old_name',
-       'renamed']
-
-names = ['foo', 'bariza', 'complex_function_name',
-         '_name_with_underscore_', '__double_underscore__', 'old_name',
-         'old_name']
-
-arguments = [[], ['a', 'b', 'c'], ['a', 'b', 'c'],
-             ['fo', 'bar'], ['man', 'o'], ['verylongvariablename'],
-             ['verylongvariablename']]
-
-vararg_names = [None, None, None, 'baz', 'men', None, None]
-
-kw_wc_names = [None, None, None, None, 'oo', None, None]
-
-pos_arguments = [[], ['a', 'b', 'c'], [], ['fo', 'bar'],
-                 ['man', 'o'], ['verylongvariablename'],
-                 ['verylongvariablename']]
-
-kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}, {}, {}, {}, {}]
+kwarg_list = [{}, {}, {'a': 1, 'b': 'fo', 'c': 9}]
 
 
 class SomeClass(object):
@@ -126,15 +95,10 @@ def test_get_free_parameters():
     assert free == ['a', 'b']
     free = Signature(complex_function_name).get_free_parameters([], {})
     assert free == ['a', 'b', 'c']
-    free = Signature(_name_with_underscore_).get_free_parameters([], {})
-    assert free == ['fo', 'bar']
-    s = Signature(__double_underscore__)
-    assert s.get_free_parameters([1, 2, 3], {}) == []
 
 
 @pytest.mark.parametrize('function',
-                         [foo, bariza, complex_function_name,
-                          _name_with_underscore_, old_name, renamed])
+                         [foo, bariza, complex_function_name])
 def test_construct_arguments_with_unexpected_kwargs_raises_typeerror(function):
     kwargs = {'zimbabwe': 23}
     unexpected = re.compile(".*unexpected.*zimbabwe.*")
@@ -146,28 +110,13 @@ def test_construct_arguments_with_unexpected_kwargs_raises_typeerror(function):
 @pytest.mark.parametrize('func,args', [
     (foo, [1]),
     (bariza, [1, 2, 3, 4]),
-    (complex_function_name, [1, 2, 3, 4]),
-    (old_name, [1, 2]),
-    (renamed, [1, 2])
+    (complex_function_name, [1, 2, 3, 4])
 ])
 def test_construct_arguments_with_unexpected_args_raises_typeerror(func, args):
     unexpected = re.compile(".*unexpected.*")
     with pytest.raises(TypeError) as excinfo:
         Signature(func).construct_arguments(args, {}, {})
     assert unexpected.match(excinfo.value.args[0])
-
-
-def test_construct_arguments_with_varargs_doesnt_raise():
-    Signature(generic).construct_arguments([1, 2, 3], {}, {})
-    Signature(__double_underscore__).construct_arguments(
-        [1, 2, 3, 4, 5], {}, {})
-    Signature(_name_with_underscore_).construct_arguments(
-        [1, 2, 3, 4], {}, {})
-
-
-def test_construct_arguments_with_kwargswildcard_doesnt_raise():
-    kwargs = {'zimbabwe': 23}
-    Signature(__double_underscore__).construct_arguments([1, 2], kwargs, {})
 
 
 def test_construct_arguments_with_expected_kwargs_does_not_raise():
@@ -215,11 +164,6 @@ def test_construct_arguments_without_options_returns_same_args_kwargs():
     assert args == [2]
     assert kwargs == {'c': 6, 'b': 7}
 
-    s = Signature(_name_with_underscore_)
-    args, kwargs = s.construct_arguments([], {'fo': 7, 'bar': 6}, {})
-    assert args == []
-    assert kwargs == {'fo': 7, 'bar': 6}
-
 
 def test_construct_arguments_completes_kwargs_from_options():
     s = Signature(bariza)
@@ -230,11 +174,6 @@ def test_construct_arguments_completes_kwargs_from_options():
     args, kwargs = s.construct_arguments([], {'c': 6, 'b': 7}, {'a': 1})
     assert args == []
     assert kwargs == {'a': 1, 'c': 6, 'b': 7}
-
-    s = Signature(_name_with_underscore_)
-    args, kwargs = s.construct_arguments([], {}, {'fo': 7, 'bar': 6})
-    assert args == []
-    assert kwargs == {'fo': 7, 'bar': 6}
 
 
 def test_construct_arguments_ignores_excess_options():
@@ -299,13 +238,7 @@ def test_construct_arguments_for_bound_method():
 
 @pytest.mark.parametrize('func,expected', [
     (foo, "foo()"),
-    (bariza, "bariza(a, b, c)"),
-    (_name_with_underscore_, "_name_with_underscore_(fo, bar, *baz)"),
-    (__double_underscore__, "__double_underscore__(man, o, *men, **oo)"),
-    (old_name, "old_name(verylongvariablename)"),
-    (renamed, "old_name(verylongvariablename)"),
-    (generic, "generic(*args, **kwargs)"),
-    (onlykwrgs, "onlykwrgs(**kwargs)")
+    (bariza, "bariza(a, b, c)")
 ])
 def test_unicode_(func, expected):
     assert Signature(func).__unicode__() == expected
