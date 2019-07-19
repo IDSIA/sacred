@@ -1,39 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from sacred.observers.base import RunObserver
+from sacred.observers.base import RunObserver, td_format
 from sacred.config.config_files import load_config_file
 import logging
 
 
 DEFAULT_TELEGRAM_PRIORITY = 10
-
-
-# http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
-def td_format(td_object):
-    seconds = int(td_object.total_seconds())
-    if seconds == 0:
-        return "less than a second"
-
-    periods = [
-        ('year', 60 * 60 * 24 * 365),
-        ('month', 60 * 60 * 24 * 30),
-        ('day', 60 * 60 * 24),
-        ('hour', 60 * 60),
-        ('minute', 60),
-        ('second', 1)
-    ]
-
-    strings = []
-    for period_name, period_seconds in periods:
-        if seconds >= period_seconds:
-            period_value, seconds = divmod(seconds, period_seconds)
-            if period_value == 1:
-                strings.append("%s %s" % (period_value, period_name))
-            else:
-                strings.append("%s %ss" % (period_value, period_name))
-
-    return ", ".join(strings)
 
 
 class TelegramObserver(RunObserver):
