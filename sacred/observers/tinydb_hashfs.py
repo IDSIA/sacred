@@ -49,6 +49,25 @@ class BufferedReaderWrapper(BufferedReader):
         return BufferedReaderWrapper(f)
 
 
+def get_db_file_manager(root_dir):
+    fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
+                width=2, algorithm='md5')
+
+    # Setup Serialisation object for non list/dict objects
+    serialization_store = SerializationMiddleware()
+    serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
+    serialization_store.register_serializer(FileSerializer(fs), 'TinyFile')
+
+    if opt.has_numpy:
+        serialization_store.register_serializer(NdArraySerializer(), 'TinyArray')
+    if opt.has_pandas:
+        serialization_store.register_serializer(DataFrameSerializer(), 'TinyDataFrame')
+        serialization_store.register_serializer(SeriesSerializer(), 'TinySeries')
+
+    db = TinyDB(os.path.join(root_dir, 'metadata.json'), storage=serialization_store)
+    return db, fs
+
+
 class TinyDbObserver(RunObserver):
 
     VERSION = "TinyDbObserver-{}".format(__version__)
@@ -60,28 +79,7 @@ class TinyDbObserver(RunObserver):
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
 
-        fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
-                    width=2, algorithm='md5')
-
-        # Setup Serialisation object for non list/dict objects
-        serialization_store = SerializationMiddleware()
-        serialization_store.register_serializer(DateTimeSerializer(),
-                                                'TinyDate')
-        serialization_store.register_serializer(FileSerializer(fs),
-                                                'TinyFile')
-
-        if opt.has_numpy:
-            serialization_store.register_serializer(NdArraySerializer(),
-                                                    'TinyArray')
-        if opt.has_pandas:
-            serialization_store.register_serializer(DataFrameSerializer(),
-                                                    'TinyDataFrame')
-            serialization_store.register_serializer(SeriesSerializer(),
-                                                    'TinySeries')
-
-        db = TinyDB(os.path.join(root_dir, 'metadata.json'),
-                    storage=serialization_store)
-
+        db, fs = get_db_file_manager(root_dir)
         return TinyDbObserver(db, fs, overwrite=overwrite, root=root_dir)
 
     def __init__(self, db, fs, overwrite=None, root=None):
@@ -237,26 +235,7 @@ class TinyDbReader(object):
         if not os.path.exists(root_dir):
             raise IOError('Path does not exist: %s' % path)
 
-        fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
-                    width=2, algorithm='md5')
-
-        # Setup Serialisation for non list/dict objects
-        serialization_store = SerializationMiddleware()
-        serialization_store.register_serializer(DateTimeSerializer(),
-                                                'TinyDate')
-        serialization_store.register_serializer(FileSerializer(fs),
-                                                'TinyFile')
-        if opt.has_numpy:
-            serialization_store.register_serializer(NdArraySerializer(),
-                                                    'TinyArray')
-        if opt.has_pandas:
-            serialization_store.register_serializer(DataFrameSerializer(),
-                                                    'TinyDataFrame')
-            serialization_store.register_serializer(SeriesSerializer(),
-                                                    'TinySeries')
-
-        db = TinyDB(os.path.join(root_dir, 'metadata.json'),
-                    storage=serialization_store)
+        db, fs = get_db_file_manager(root_dir)
 
         self.db = db
         self.runs = db.table('runs')
