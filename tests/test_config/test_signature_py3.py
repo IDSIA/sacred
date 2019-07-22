@@ -335,6 +335,11 @@ def test_unicode_(func, expected):
     assert Signature(func).__unicode__() == expected
 
 
+def test_unicode_special():
+    str_signature = "complex_function_name(a=5, b='fo', c=9)"
+    assert str_signature in Signature(complex_function_name).__unicode__()
+
+
 @pytest.mark.parametrize('name,func', zip(names, functions))
 def test_repr_(name, func):
     regex = "<Signature at 0x[0-9a-fA-F]+ for '%s'>"
