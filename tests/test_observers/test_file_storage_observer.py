@@ -413,3 +413,11 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     accuracy = metrics["training.accuracy"]
     assert accuracy["steps"] == [10, 20, 30]
     assert accuracy["values"] == [100, 200, 300]
+
+
+def test_observer_equality(tmpdir):
+    observer_1 = FileStorageObserver.create(tmpdir / 'a')
+    observer_2 = FileStorageObserver.create(tmpdir / 'b')
+    observer_3 = FileStorageObserver.create(tmpdir / 'a')
+    assert observer_1 == observer_3
+    assert observer_1 != observer_2

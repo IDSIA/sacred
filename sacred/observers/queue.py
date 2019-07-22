@@ -108,6 +108,3 @@ class QueueObserver(RunObserver):
 
     def __eq__(self, other):
         return self._covered_observer == other
-
-    def __ne__(self, other):
-        return not self._covered_observer == other
