@@ -416,8 +416,8 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
 
 
 def test_observer_equality(tmpdir):
-    observer_1 = FileStorageObserver.create(tmpdir / 'a')
-    observer_2 = FileStorageObserver.create(tmpdir / 'b')
-    observer_3 = FileStorageObserver.create(tmpdir / 'a')
+    observer_1 = FileStorageObserver.create(str(tmpdir / 'a'))
+    observer_2 = FileStorageObserver.create(str(tmpdir / 'b'))
+    observer_3 = FileStorageObserver.create(str(tmpdir / 'a'))
     assert observer_1 == observer_3
     assert observer_1 != observer_2
