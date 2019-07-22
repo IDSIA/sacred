@@ -14,17 +14,37 @@ def optional_import(*package_names):
         return False, None
 
 
-def get_tensorflow():
+def get_tensorflow(allow_mock=False):
     # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-    if get_package_version('tensorflow') < parse_version('1.13.1'):
-        import warnings
-        warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
-                      "Use Tensorflow 1.13 or newer instead.",
-                      DeprecationWarning)
-        import tensorflow as tf
+    if has_tensorflow:
+        if get_package_version('tensorflow') < parse_version('1.13.1'):
+            import warnings
+            warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
+                          "Use Tensorflow 1.13 or newer instead.",
+                          DeprecationWarning)
+            import tensorflow
+        else:
+            import tensorflow.compat.v1 as tensorflow
     else:
-        import tensorflow.compat.v1 as tf
-    return tf
+        # Let's define a mocked tensorflow
+        class tensorflow:
+            class summary:
+                class FileWriter:
+                    def __init__(self, logdir, graph):
+                        self.logdir = logdir
+                        self.graph = graph
+                        print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
+
+            class Session:
+                def __init__(self):
+                    self.graph = None
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    pass
+    return tensorflow
 
 
 # Get libc in a cross-platform way and use it to also flush the c stdio buffers

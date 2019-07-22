@@ -17,33 +17,11 @@ def tf():
     Creates a simplified tensorflow interface if necessary,
     so `tensorflow` is not required during the tests.
     """
-    from sacred.optional import has_tensorflow
-    if has_tensorflow:
-        return opt.get_tensorflow()
-    else:
-        # Let's define a mocked tensorflow
-        class tensorflow:
-            class summary:
-                class FileWriter:
-                    def __init__(self, logdir, graph):
-                        self.logdir = logdir
-                        self.graph = graph
-                        print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
 
-            class Session:
-                def __init__(self):
-                    self.graph = None
-
-                def __enter__(self):
-                    return self
-
-                def __exit__(self, exc_type, exc_val, exc_tb):
-                    pass
-
-        # Set stflow to use the mock as the test
-        import sacred.stflow.method_interception
-        sacred.stflow.method_interception.tf = tensorflow
-        return tensorflow
+    tensorflow = opt.get_tensorflow(allow_mock=True)
+    import sacred.stflow.method_interception
+    sacred.stflow.method_interception.tf = tensorflow
+    return tensorflow
 
 
 def test_log_file_writer(ex, tf):
