@@ -348,9 +348,6 @@ class MongoObserver(RunObserver):
             return self.runs == other.runs
         return False
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 
 class MongoDbOption(CommandLineOption):
     """Add a MongoDB Observer to the experiment."""

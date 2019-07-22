@@ -253,9 +253,6 @@ class FileStorageObserver(RunObserver):
             return self.basedir == other.basedir
         return False
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 
 class FileStorageOption(CommandLineOption):
     """Add a file-storage observer to the experiment."""

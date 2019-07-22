@@ -208,9 +208,6 @@ class TinyDbObserver(RunObserver):
             return self.runs.all() == other.runs.all()
         return False
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
