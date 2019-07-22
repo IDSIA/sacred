@@ -25,7 +25,8 @@ def get_tensorflow(allow_mock=False):
             import tensorflow
         else:
             import tensorflow.compat.v1 as tensorflow
-    else:
+        return tensorflow
+    elif allow_mock:
         # Let's define a mocked tensorflow
         class tensorflow:
             class summary:
@@ -33,7 +34,8 @@ def get_tensorflow(allow_mock=False):
                     def __init__(self, logdir, graph):
                         self.logdir = logdir
                         self.graph = graph
-                        print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
+                        print(f'Mocked FileWriter got '
+                              f'logdir={logdir}, graph={graph}')
 
             class Session:
                 def __init__(self):
@@ -44,7 +46,10 @@ def get_tensorflow(allow_mock=False):
 
                 def __exit__(self, exc_type, exc_val, exc_tb):
                     pass
-    return tensorflow
+
+        return tensorflow
+    else:
+        return None
 
 
 # Get libc in a cross-platform way and use it to also flush the c stdio buffers

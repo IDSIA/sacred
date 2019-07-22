@@ -3,10 +3,7 @@ from .internal import ContextMethodDecorator
 import sacred.optional as opt
 
 
-if opt.has_tensorflow:
-    tf = opt.get_tensorflow()
-else:
-    tf = None
+tf = opt.get_tensorflow()
 
 
 class LogFileWriter(ContextDecorator, ContextMethodDecorator):
