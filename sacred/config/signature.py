@@ -83,7 +83,7 @@ class Signature(object):
         self._assert_no_missing_args(args, kwargs, bound)
         return args, kwargs
 
-    def __unicode__(self):
+    def __str__(self):
         pos_args = self.positional_args
         varg = ["*" + self.vararg_name] if self.vararg_name else []
         kwargs = ["{}={}".format(n, v.__repr__())

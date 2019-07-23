@@ -332,12 +332,12 @@ def test_construct_arguments_for_bound_method():
     (onlykwrgs, "onlykwrgs(**kwargs)")
 ])
 def test_unicode_(func, expected):
-    assert Signature(func).__unicode__() == expected
+    assert str(Signature(func)) == expected
 
 
 def test_unicode_special():
     str_signature = "complex_function_name(a=5, b='fo', c=9)"
-    assert str_signature in Signature(complex_function_name).__unicode__()
+    assert str_signature in str(Signature(complex_function_name))
 
 
 @pytest.mark.parametrize('name,func', zip(names, functions))
