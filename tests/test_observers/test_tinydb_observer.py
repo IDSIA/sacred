@@ -21,33 +21,15 @@ from sacred.observers.tinydb_hashfs import (TinyDbObserver, TinyDbOption,
                                             BufferedReaderWrapper)
 from sacred import optional as opt
 from sacred.experiment import Experiment
+from .dummy_exp import T1, T2, sample_run
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+
+sample_run = pytest.fixture()(sample_run)
 
 
 @pytest.fixture()
 def tinydb_obs(tmpdir):
     return TinyDbObserver.create(path=tmpdir.strpath)
-
-
-@pytest.fixture()
-def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'doc': '',
-           'base_dir': os.path.join(os.path.dirname(__file__), '..', '..')}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    meta_info = {'comment': 'test run'}
-    return {
-        '_id': 'FEDCBA9876543210',
-        'ex_info': exp,
-        'command': command,
-        'host_info': host,
-        'start_time': T1,
-        'config': config,
-        'meta_info': meta_info,
-    }
 
 
 def test_tinydb_observer_creates_missing_directories(tmpdir):

@@ -17,39 +17,7 @@ from tinydb import Query
 
 from sacred.dependencies import get_digest
 from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbReader
-
-
-# Utilities and fixtures
-def sample_run():
-
-    T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-
-    exp = {
-        'name': 'test_exp',
-        'sources': [],
-        'doc': '',
-        'base_dir': os.path.join(os.path.dirname(__file__), '..', '..'),
-        'dependencies': ['sacred==0.7b0']
-    }
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    meta_info = {'comment': 'test run'}
-    sample_run = {
-        '_id': 'FED235DA13',
-        'ex_info': exp,
-        'command': command,
-        'host_info': host,
-        'start_time': T1,
-        'config': config,
-        'meta_info': meta_info,
-    }
-
-    filename = 'setup.py'
-    md5 = get_digest(filename)
-    sample_run['ex_info']['sources'] = [[filename, md5]]
-
-    return sample_run
+from .dummy_exp import sample_run
 
 
 def run_test_experiment(exp_name, exp_id, root_dir):

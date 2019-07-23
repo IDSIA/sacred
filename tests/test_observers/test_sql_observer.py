@@ -15,8 +15,10 @@ sqlalchemy = pytest.importorskip("sqlalchemy")
 from sacred.observers.sql import (SqlObserver, Host, Experiment, Run, Source,
                                   Resource)
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
+from .dummy_exp import T2, sample_run
+
+
+sample_run = pytest.fixture()(sample_run)
 
 
 @pytest.fixture
@@ -46,26 +48,6 @@ def session(engine):
 @pytest.fixture
 def sql_obs(session, engine):
     return SqlObserver(engine, session)
-
-
-@pytest.fixture
-def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'dependencies': [],
-           'base_dir': '/tmp'}
-    host = {'hostname': 'test_host', 'cpu': 'Intel', 'os': ['Linux', 'Ubuntu'],
-            'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    meta_info = {'comment': 'test run'}
-    return {
-        '_id': 'FEDCBA9876543210',
-        'ex_info': exp,
-        'command': command,
-        'host_info': host,
-        'start_time': T1,
-        'config': config,
-        'meta_info': meta_info,
-    }
 
 
 @pytest.fixture
