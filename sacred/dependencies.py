@@ -260,7 +260,7 @@ class PackageDependency:
 
 def convert_path_to_module_parts(path):
     """Convert path to a python file into list of module names."""
-    module_parts = pathlib.Path(path).parts
+    module_parts = list(pathlib.Path(path).parts)
     if module_parts[-1] in ['__init__.py', '__init__.pyc']:
         # remove trailing __init__.py
         module_parts = module_parts[:-1]
