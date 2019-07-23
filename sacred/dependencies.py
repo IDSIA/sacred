@@ -6,6 +6,7 @@ import hashlib
 import os.path
 import re
 import sys
+import pathlib
 
 import pkg_resources
 
@@ -257,47 +258,9 @@ class PackageDependency:
         return PackageDependency(name, version)
 
 
-def splitall(path):
-    """Split a path into a list of directory names (and optionally a filename).
-
-    Parameters
-    ----------
-    path: str
-        The path (absolute or relative).
-
-    Returns
-    -------
-    allparts: list[str]
-        List of directory names (and optionally a filename)
-
-    Example
-    -------
-    "foo/bar/baz.py" => ["foo", "bar", "baz.py"]
-    "/absolute/path.py" => ["/", "absolute", "baz.py"]
-
-    Notes
-    -----
-    Credit to Trent Mick. Taken from
-    https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
-    """
-    allparts = []
-    while True:
-        parts = os.path.split(path)
-        if parts[0] == path:  # sentinel for absolute paths
-            allparts.insert(0, parts[0])
-            break
-        elif parts[1] == path:  # sentinel for relative paths
-            allparts.insert(0, parts[1])
-            break
-        else:
-            path = parts[0]
-            allparts.insert(0, parts[1])
-    return allparts
-
-
 def convert_path_to_module_parts(path):
     """Convert path to a python file into list of module names."""
-    module_parts = splitall(path)
+    module_parts = pathlib.Path(path).parts
     if module_parts[-1] in ['__init__.py', '__init__.pyc']:
         # remove trailing __init__.py
         module_parts = module_parts[:-1]
