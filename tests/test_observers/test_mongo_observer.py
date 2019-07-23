@@ -17,7 +17,7 @@ from .failing_mongo_mock import FailingMongoClient
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
-from .dummy_exp import T1, T2, sample_run
+from .dummy_exp import T1, T2, T3, sample_run
 
 sample_run = pytest.fixture()(sample_run)
 
