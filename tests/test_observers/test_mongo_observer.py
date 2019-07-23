@@ -17,9 +17,9 @@ from .failing_mongo_mock import FailingMongoClient
 from sacred.dependencies import get_digest
 from sacred.observers.mongo import (MongoObserver, force_bson_encodeable)
 
-T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
-T2 = datetime.datetime(1999, 5, 5, 5, 5, 5)
-T3 = datetime.datetime(1999, 5, 5, 5, 10, 5)
+from .dummy_exp import T1, T2, sample_run
+
+sample_run = pytest.fixture()(sample_run)
 
 
 def test_create_should_raise_error_on_non_pymongo_client():
@@ -53,18 +53,6 @@ def failing_mongo_observer():
     metrics = db.metrics
     fs = mock.MagicMock()
     return MongoObserver(runs, fs, metrics_collection=metrics)
-
-
-@pytest.fixture()
-def sample_run():
-    exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
-    host = {'hostname': 'test_host', 'cpu_count': 1, 'python_version': '3.4'}
-    config = {'config': 'True', 'foo': 'bar', 'answer': 42}
-    command = 'run'
-    meta_info = {'comment': 'test run'}
-    return {'_id': 'FEDCBA9876543210', 'ex_info': exp, 'command': command,
-            'host_info': host, 'start_time': T1, 'config': config,
-            'meta_info': meta_info, }
 
 
 def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
