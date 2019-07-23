@@ -241,7 +241,7 @@ def test_construct_arguments_for_bound_method():
     (bariza, "bariza(a, b, c)")
 ])
 def test_unicode_(func, expected):
-    assert Signature(func).__unicode__() == expected
+    assert str(Signature(func)) == expected
 
 
 @pytest.mark.parametrize('name,func', zip(names, functions))
