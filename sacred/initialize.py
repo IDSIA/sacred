@@ -419,7 +419,8 @@ def create_run(experiment, command_name, config_updates=None,
     run = Run(config, config_modifications, main_function,
               copy(experiment.observers), root_logger, run_logger,
               experiment_info, host_info, pre_runs, post_runs,
-              experiment.captured_out_filter)
+              experiment.captured_out_filter, sorted_ingredients,
+              experiment.nest_ingredients)
 
     if hasattr(main_function, 'unobserved'):
         run.unobserved = main_function.unobserved

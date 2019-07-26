@@ -12,6 +12,7 @@ from sacred.randomness import set_global_seed
 from sacred.utils import (SacredInterrupt, join_paths,
                           IntervalTimer)
 from sacred.stdout_capturing import get_stdcapturer
+from sacred.observers import FileStorageObserver
 
 
 class Run:
@@ -19,7 +20,8 @@ class Run:
 
     def __init__(self, config, config_modifications, main_function, observers,
                  root_logger, run_logger, experiment_info, host_info,
-                 pre_run_hooks, post_run_hooks, captured_out_filter=None):
+                 pre_run_hooks, post_run_hooks, captured_out_filter=None,
+                 sorted_ingredients=None, nest_ingredients=False):
 
         self._id = None
         """The ID of this run as assigned by the first observer"""
@@ -101,6 +103,10 @@ class Run:
 
         self.capture_mode = None
         """Determines the way the stdout/stderr are captured"""
+
+        self.sorted_ingredients = sorted_ingredients
+
+        self.nest_ingredients = nest_ingredients
 
         self._heartbeat = None
         self._failed_observers = []
@@ -326,6 +332,12 @@ class Run:
                 )
                 if self._id is None:
                     self._id = _id
+                if observer.__class__.__name__ == 'FileStorageObserver' and self.nest_ingredients:
+                    for ingredient in self.sorted_ingredients:
+                        ingredient_observer_dir = os.path.join(observer.dir,  ingredient.path)
+                        new_observer = FileStorageObserver.create(ingredient_observer_dir)
+                        ingredient.observers.append(new_observer)
+
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
         if self._id is None:

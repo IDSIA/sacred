@@ -36,7 +36,7 @@ class Experiment(Ingredient):
     """
 
     def __init__(self, name=None, ingredients=(), interactive=False,
-                 base_dir=None):
+                 base_dir=None, nest_ingredients=False):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -87,6 +87,7 @@ class Experiment(Ingredient):
         self.observers = []
         self.current_run = None
         self.captured_out_filter = None
+        self.nest_ingredients = nest_ingredients
         """Filter function to be applied to captured output of a run"""
         self.option_hooks = []
 
@@ -444,6 +445,7 @@ class Experiment(Ingredient):
                          force=options.get(ForceOption.get_flag(), False),
                          log_level=options.get(LoglevelOption.get_flag(),
                                                None))
+
         if info is not None:
             run.info.update(info)
 
