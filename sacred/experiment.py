@@ -333,6 +333,7 @@ class Experiment(Ingredient):
             filename,
             name=None,
             metadata=None,
+            recursive=False,
             content_type=None,
     ):
         """Add a file as an artifact.
@@ -359,7 +360,7 @@ class Experiment(Ingredient):
             This only has an effect when using the MongoObserver.
         """
         assert self.current_run is not None, "Can only be called during a run."
-        self.current_run.add_artifact(filename, name, metadata, content_type)
+        self.current_run.add_artifact(filename, name, recursive, metadata, content_type)
 
     @property
     def info(self):
