@@ -16,9 +16,28 @@ from sacred.observers.base import RunObserver
 from sacred import optional as opt
 from sacred.serializer import flatten
 import re
+import socket
 
 DEFAULT_S3_PRIORITY = 20
 
+def _is_valid_bucket(bucket_name):
+    if len(bucket_name) < 3 or len(bucket_name) > 63:
+        return False
+    if '..' in bucket_name or '.-' in bucket_name or '-.' in bucket_name:
+        return False
+    for char in bucket_name:
+        if char.isdigit():
+            continue
+        if char.islower():
+            continue
+        if char == '-':
+            continue
+        return False
+    try:
+        socket.inet_aton(bucket_name)
+    except:
+        # congrats, you're a valid bucket name
+        return True
 
 class S3FileObserver(RunObserver):
     VERSION = 'S3FileObserver-0.1.0'
@@ -33,6 +52,8 @@ class S3FileObserver(RunObserver):
 
     def __init__(self, bucket, basedir, resource_dir, source_dir,
                  priority=DEFAULT_S3_PRIORITY):
+        if not _is_valid_bucket(bucket):
+            raise ValueError("Your chosen bucket name does not follow AWS rules. Consult here to see the requirements: https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html")
         self.basedir = basedir
         self.bucket = bucket
         self.resource_dir = resource_dir
@@ -74,7 +95,7 @@ class S3FileObserver(RunObserver):
 
     def _determine_run_dir(self, _id):
         bucket_path_subdirs = self._list_s3_subdirs()
-        if bucket_path_subdirs is None:
+        if bucket_path_subdirs is None or len(bucket_path_subdirs) == 0:
             self._create_bucket()
             max_run_id = 0
         else:
@@ -157,7 +178,7 @@ class S3FileObserver(RunObserver):
         return store_path, md5sum
 
     def put_data(self, key, binary_data):
-        self.s3.Object(self.bucket, key).put(binary_data)
+        self.s3.Object(self.bucket, key).put(Body=binary_data)
 
     def save_json(self, obj, filename):
         key = os.path.join(self.run_dir, filename)
@@ -167,6 +188,7 @@ class S3FileObserver(RunObserver):
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
         key = os.path.join(self.run_dir, target_name)
+        ##import pdb; pdb.set_trace()
         self.put_data(key, open(filename, 'rb'))
 
     def save_directory(self, source_dir, target_name):
