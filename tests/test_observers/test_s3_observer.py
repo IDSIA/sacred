@@ -2,15 +2,11 @@
 # coding=utf-8
 
 import datetime
-import hashlib
 import os
-import tempfile
-from copy import copy
 import pytest
 import json
 
 from sacred.observers import S3FileObserver
-from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 import boto3
 from botocore.exceptions import ClientError
@@ -79,9 +75,11 @@ def _key_exists(bucket_name, key):
             return False
     return True
 
+
 def _get_file_data(bucket_name, key):
     s3 = boto3.resource('s3')
     return s3.Object(bucket_name, key).get()['Body'].read()
+
 
 def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
     observer = dir_obs
@@ -106,6 +104,7 @@ def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
         "status": "RUNNING"
     }
     _delete_bucket(BUCKET)
+
 
 def test_fs_observer_started_event_increments_run_id(dir_obs, sample_run):
     observer = dir_obs
