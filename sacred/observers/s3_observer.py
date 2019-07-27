@@ -80,7 +80,7 @@ class S3FileObserver(RunObserver):
             else:
                 raise ClientError(er.response['Error']['Code'])
 
-        subdir_match = f'{prefix}\/(.*)\/'
+        subdir_match = '{prefix}\/(.*)\/'.format(prefix=prefix)
         distinct_subdirs = set([re.match(subdir_match, key).groups()[0] for key in all_keys])
         return list(distinct_subdirs)
 
