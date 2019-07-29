@@ -88,7 +88,7 @@ class S3FileObserver(RunObserver):
 
     def _create_bucket(self):
         session = boto3.session.Session()
-        current_region = session.region_name
+        current_region = session.region_name or 'us-west-2'
         bucket_response = self.s3.create_bucket(
             Bucket=self.bucket,
             CreateBucketConfiguration={
