@@ -49,6 +49,7 @@ setup(
         'py-cpuinfo>=4.0',
         'colorama>=0.4',
         'packaging>=18.0',
+        'boto3>=1.9.0'
     ],
     tests_require=[
         'mock>=0.8, <3.0',

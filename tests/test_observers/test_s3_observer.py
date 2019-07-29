@@ -99,11 +99,13 @@ def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
                        key=os.path.join(run_dir, 'config.json'))
     assert _key_exists(bucket_name=BUCKET,
                        key=os.path.join(run_dir, 'run.json'))
-    config = _get_file_data(bucket_name=BUCKET, key=os.path.join(run_dir, 'config.json'))
+    config = _get_file_data(bucket_name=BUCKET,
+                            key=os.path.join(run_dir, 'config.json'))
 
-    assert json.loads(config) == sample_run['config']
-    run = _get_file_data(bucket_name=BUCKET, key=os.path.join(run_dir, 'run.json'))
-    assert json.loads(run) == {
+    assert json.loads(config.decode('utf-8')) == sample_run['config']
+    run = _get_file_data(bucket_name=BUCKET,
+                         key=os.path.join(run_dir, 'run.json'))
+    assert json.loads(run.decode('utf-8')) == {
         'experiment': sample_run['ex_info'],
         'command': sample_run['command'],
         'host': sample_run['host_info'],
