@@ -1,6 +1,8 @@
 language: python
 sudo: false
 dist: xenial
+before_install:
+  - sudo rm -f /etc/boto.cfg
 install:
   - pip install tox
 matrix:

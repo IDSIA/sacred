@@ -19,9 +19,6 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 BUCKET = 'pytest-s3-observer-bucket'
 BASEDIR = 'some-tests'
 
-# how long does mock_s3 have memory for? If it's only a single test, that's bad
-
-
 @pytest.fixture()
 def sample_run():
     exp = {'name': 'test_exp', 'sources': [], 'doc': '', 'base_dir': '/tmp'}
