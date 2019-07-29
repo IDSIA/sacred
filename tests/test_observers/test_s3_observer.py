@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+from moto import mock_s3
+
 import datetime
 import os
 import pytest
@@ -16,6 +18,9 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 BUCKET = 'pytest-s3-observer-bucket'
 BASEDIR = 'some-tests'
+
+# how long does mock_s3 have memory for? If it's only a single test, that's bad
+
 
 @pytest.fixture()
 def sample_run():
@@ -35,7 +40,7 @@ def sample_run():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def dir_obs():
     return S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
 
@@ -50,12 +55,14 @@ Test failing gracefully if you pass in a disallowed S3 bucket name
 Is it possible to set up a test with and without a valid credentials file? 
     I guess you can save ~/.aws/config and ~/.aws/credentials
 """
+
 def _delete_bucket(bucket_name):
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucket_name)
     for key in bucket.objects.all():
         key.delete()
     bucket.delete()
+
 
 def _bucket_exists(bucket_name):
     s3 = boto3.resource('s3')
@@ -65,6 +72,7 @@ def _bucket_exists(bucket_name):
         if e.response['Error']['Code'] == '404':
             return False
     return True
+
 
 def _key_exists(bucket_name, key):
     s3 = boto3.resource('s3')
@@ -81,13 +89,19 @@ def _get_file_data(bucket_name, key):
     return s3.Object(bucket_name, key).get()['Body'].read()
 
 
+@mock_s3
 def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
     observer = dir_obs
     sample_run['_id'] = None
     _id = observer.started_event(**sample_run)
     run_dir = os.path.join(BASEDIR, str(_id))
-
-    assert _key_exists(bucket_name=BUCKET, key=os.path.join(run_dir, 'cout.txt'))
+    assert _bucket_exists(bucket_name=BUCKET)
+    assert _key_exists(bucket_name=BUCKET,
+                       key=os.path.join(run_dir, 'cout.txt'))
+    assert _key_exists(bucket_name=BUCKET,
+                       key=os.path.join(run_dir, 'config.json'))
+    assert _key_exists(bucket_name=BUCKET,
+                       key=os.path.join(run_dir, 'run.json'))
     config = _get_file_data(bucket_name=BUCKET, key=os.path.join(run_dir, 'config.json'))
 
     assert json.loads(config) == sample_run['config']
@@ -103,13 +117,12 @@ def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
         "artifacts": [],
         "status": "RUNNING"
     }
-    _delete_bucket(BUCKET)
 
 
+@mock_s3
 def test_fs_observer_started_event_increments_run_id(dir_obs, sample_run):
     observer = dir_obs
     sample_run['_id'] = None
     _id = observer.started_event(**sample_run)
     _id2 = observer.started_event(**sample_run)
     assert _id + 1 == _id2
-    _delete_bucket(BUCKET)

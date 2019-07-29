@@ -8,17 +8,15 @@ import os.path
 import boto3
 from botocore.errorfactory import ClientError
 
-from shutil import copyfile
-
 from sacred.commandline_options import CommandLineOption
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
-from sacred import optional as opt
 from sacred.serializer import flatten
 import re
 import socket
 
 DEFAULT_S3_PRIORITY = 20
+
 
 def _is_valid_bucket(bucket_name):
     if len(bucket_name) < 3 or len(bucket_name) > 63:
@@ -39,21 +37,24 @@ def _is_valid_bucket(bucket_name):
         # congrats, you're a valid bucket name
         return True
 
+
 class S3FileObserver(RunObserver):
     VERSION = 'S3FileObserver-0.1.0'
 
     @classmethod
-    def create(cls, bucket, basedir, resource_dir=None, source_dir=None, priority=DEFAULT_S3_PRIORITY):
+    def create(cls, bucket, basedir, resource_dir=None, source_dir=None,
+               priority=DEFAULT_S3_PRIORITY):
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
         source_dir = source_dir or os.path.join(basedir, '_sources')
 
         return cls(bucket, basedir, resource_dir, source_dir, priority)
 
-
     def __init__(self, bucket, basedir, resource_dir, source_dir,
                  priority=DEFAULT_S3_PRIORITY):
         if not _is_valid_bucket(bucket):
-            raise ValueError("Your chosen bucket name does not follow AWS rules. Consult here to see the requirements: https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html")
+            raise ValueError("Your chosen bucket name does not follow AWS "
+                             "bucket naming rules")
+
         self.basedir = basedir
         self.bucket = bucket
         self.resource_dir = resource_dir
@@ -80,8 +81,9 @@ class S3FileObserver(RunObserver):
             else:
                 raise ClientError(er.response['Error']['Code'])
 
-        subdir_match = '{prefix}\/(.*)\/'.format(prefix=prefix)
-        distinct_subdirs = set([re.match(subdir_match, key).groups()[0] for key in all_keys])
+        subdir_match = r'{prefix}\/(.*)\/'.format(prefix=prefix)
+        distinct_subdirs = set([re.match(subdir_match, key).groups()[0] for
+                                key in all_keys])
         return list(distinct_subdirs)
 
     def _create_bucket(self):
@@ -99,7 +101,8 @@ class S3FileObserver(RunObserver):
             self._create_bucket()
             max_run_id = 0
         else:
-            max_run_id = max([int(d) for d in bucket_path_subdirs if d.isdigit()])
+            max_run_id = max([int(d) for d in bucket_path_subdirs
+                              if d.isdigit()])
 
         self.dir = None
         if _id is None:
@@ -188,11 +191,11 @@ class S3FileObserver(RunObserver):
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
         key = os.path.join(self.run_dir, target_name)
-        ##import pdb; pdb.set_trace()
         self.put_data(key, open(filename, 'rb'))
 
     def save_directory(self, source_dir, target_name):
-        # Stolen from: https://github.com/boto/boto3/issues/358#issuecomment-346093506
+        # Stolen from:
+        # https://github.com/boto/boto3/issues/358#issuecomment-346093506
         target_name = target_name or os.path.basename(source_dir)
         all_files = []
         for root, dirs, files in os.walk(source_dir):
@@ -200,16 +203,16 @@ class S3FileObserver(RunObserver):
         s3_resource = boto3.resource('s3')
 
         for filename in all_files:
+            file_location = os.path.join(self.run_dir, target_name,
+                                         os.path.relpath(filename, source_dir))
             s3_resource.Object(self.bucket,
-                               os.path.join(self.run_dir, target_name, os.path.relpath(filename, source_dir))) \
-                .put(Body=open(filename, 'rb'))
+                               file_location).put(Body=open(filename, 'rb'))
 
     def save_cout(self):
         binary_data = self.cout[self.cout_write_cursor:].encode("utf-8")
         key = os.path.join(self.run_dir, 'cout.txt')
         self.put_data(key, binary_data)
         self.cout_write_cursor = len(self.cout)
-
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
@@ -262,8 +265,8 @@ class S3FileObserver(RunObserver):
 
             if metric_name not in self.saved_metrics:
                 self.saved_metrics[metric_name] = {"values": [],
-                                              "steps": [],
-                                              "timestamps": []}
+                                                   "steps": [],
+                                                   "timestamps": []}
 
             self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
             self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]

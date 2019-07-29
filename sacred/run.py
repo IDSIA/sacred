@@ -188,7 +188,8 @@ class Run:
         """
         filename = os.path.abspath(filename)
         name = os.path.basename(filename) if name is None else name
-        self._emit_artifact_added(name, filename, recursive, metadata, content_type)
+        self._emit_artifact_added(name, filename, recursive,
+                                  metadata, content_type)
 
     def __call__(self, *args):
         r"""Start this run.
@@ -386,7 +387,8 @@ class Run:
         for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
-    def _emit_artifact_added(self, name, filename, recursive, metadata, content_type):
+    def _emit_artifact_added(self, name, filename, recursive, metadata,
+                             content_type):
         for observer in self.observers:
             if recursive:
                 self._safe_call(observer, 'artifact_directory_event',
