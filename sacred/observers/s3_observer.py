@@ -39,8 +39,6 @@ def _is_valid_bucket(bucket_name):
 
 
 class S3FileObserver(RunObserver):
-    ## TODO (possibly): make S3FileObserver inherit from FSO to avoid
-    ## duplicating code. But this might be even messier?
     VERSION = 'S3FileObserver-0.1.0'
 
     @classmethod
@@ -99,7 +97,6 @@ class S3FileObserver(RunObserver):
         for key in all_keys:
             match_obj = re.match(subdir_match, key)
             if match_obj is None:
-                import pdb; pdb.set_trace()
                 continue
             else:
                 subdirs.append(match_obj.groups()[0])
@@ -125,7 +122,7 @@ class S3FileObserver(RunObserver):
                 max_run_id = 0
             else:
                 integer_directories = [int(d) for d in bucket_path_subdirs
-                                  if d.isdigit()]
+                                       if d.isdigit()]
                 if len(integer_directories) == 0:
                     max_run_id = 0
                 else:
@@ -242,8 +239,6 @@ class S3FileObserver(RunObserver):
         self.put_data(key, binary_data)
         self.cout_write_cursor = len(self.cout)
 
-
-    ## same as FSO
     def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
         self.run_entry['heartbeat'] = beat_time.isoformat()
@@ -309,8 +304,8 @@ class S3FileObserver(RunObserver):
 
     def __eq__(self, other):
         if isinstance(other, S3FileObserver):
-            return (self.bucket == other.bucket
-                    and self.basedir == other.basedir)
+            return (self.bucket == other.bucket and
+                    self.basedir == other.basedir)
         return False
 
 
