@@ -385,8 +385,7 @@ class Run:
         for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
-    def _emit_artifact_added(self, name, filename, metadata,
-                             content_type):
+    def _emit_artifact_added(self, name, filename, metadata, content_type):
         for observer in self.observers:
             self._safe_call(observer, 'artifact_event',
                             name=name,
