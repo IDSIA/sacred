@@ -160,7 +160,6 @@ class Run:
             self,
             filename,
             name=None,
-            recursive=False,
             metadata=None,
             content_type=None,
     ):
@@ -188,8 +187,7 @@ class Run:
         """
         filename = os.path.abspath(filename)
         name = os.path.basename(filename) if name is None else name
-        self._emit_artifact_added(name, filename, recursive,
-                                  metadata, content_type)
+        self._emit_artifact_added(name, filename, metadata, content_type)
 
     def __call__(self, *args):
         r"""Start this run.
@@ -387,19 +385,14 @@ class Run:
         for observer in self.observers:
             self._safe_call(observer, 'resource_event', filename=filename)
 
-    def _emit_artifact_added(self, name, filename, recursive, metadata,
+    def _emit_artifact_added(self, name, filename, metadata,
                              content_type):
         for observer in self.observers:
-            if recursive:
-                self._safe_call(observer, 'artifact_directory_event',
-                                name=name,
-                                filename=filename)
-            else:
-                self._safe_call(observer, 'artifact_event',
-                                name=name,
-                                filename=filename,
-                                metadata=metadata,
-                                content_type=content_type)
+            self._safe_call(observer, 'artifact_event',
+                            name=name,
+                            filename=filename,
+                            metadata=metadata,
+                            content_type=content_type)
 
     def _safe_call(self, obs, method, **kwargs):
         if obs not in self._failed_observers and hasattr(obs, method):

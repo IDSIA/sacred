@@ -19,6 +19,8 @@ DEFAULT_S3_PRIORITY = 20
 
 
 def _is_valid_bucket(bucket_name):
+    # See https://docs.aws.amazon.com/awscloudtrail/latest/userguide/
+    # cloudtrail-s3-bucket-naming-requirements.html
     if len(bucket_name) < 3 or len(bucket_name) > 63:
         return False
     if '..' in bucket_name or '.-' in bucket_name or '-.' in bucket_name:
@@ -32,9 +34,9 @@ def _is_valid_bucket(bucket_name):
             continue
         return False
     try:
+        # If a name is a valid IP address, it cannot be a bucket name
         socket.inet_aton(bucket_name)
     except socket.error:
-        # congrats, you're a valid bucket name
         return True
 
 
@@ -57,6 +59,8 @@ class S3FileObserver(RunObserver):
 
         self.basedir = basedir
         self.bucket = bucket
+        # Keeping the convention of referring to locations in S3 as `dir`
+        # because that is a useful mental model and there isn't a better word
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.priority = priority
@@ -70,14 +74,11 @@ class S3FileObserver(RunObserver):
         self.saved_metrics = {}
 
     def _objects_exist_in_dir(self, prefix):
-        try:
-            bucket = self.s3.Bucket(self.bucket)
-            all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
-        except ClientError as er:
-            if er.response['Error']['Code'] == 'NoSuchBucket':
-                return None
-            else:
-                raise ClientError(er.response['Error']['Code'])
+        # This should be run after you've confirmed the bucket
+        # exists, and will error out if it does not exist
+
+        bucket = self.s3.Bucket(self.bucket)
+        all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
         return len(all_keys) > 0
 
     def _list_s3_subdirs(self, prefix=None):
@@ -114,7 +115,9 @@ class S3FileObserver(RunObserver):
 
     def _determine_run_dir(self, _id):
         if _id is None:
+            # Get all existing subdirectories under s3://bucket/basedir/
             bucket_path_subdirs = self._list_s3_subdirs()
+            # _list_s3_subdirs returns None when the bucket doesn't exist
             if bucket_path_subdirs is None:
                 self._create_bucket()
 
@@ -126,6 +129,8 @@ class S3FileObserver(RunObserver):
                 if len(integer_directories) == 0:
                     max_run_id = 0
                 else:
+                    # If there are directories under basedir that aren't
+                    # run directories, ignore those
                     max_run_id = max(integer_directories)
 
             _id = max_run_id + 1
@@ -275,11 +280,6 @@ class S3FileObserver(RunObserver):
     def artifact_event(self, name, filename, metadata=None, content_type=None):
         self.save_file(filename, name)
         self.run_entry['artifacts'].append(name)
-        self.save_json(self.run_entry, 'run.json')
-
-    def artifact_directory_event(self, name, filename):
-        self.save_directory(filename, name)
-        self.run_entry['artifacts'].append(name + "/")
         self.save_json(self.run_entry, 'run.json')
 
     def log_metrics(self, metrics_by_name, info):
