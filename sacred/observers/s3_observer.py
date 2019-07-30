@@ -33,12 +33,14 @@ def _is_valid_bucket(bucket_name):
         return False
     try:
         socket.inet_aton(bucket_name)
-    except:
+    except socket.error:
         # congrats, you're a valid bucket name
         return True
 
 
 class S3FileObserver(RunObserver):
+    ## TODO (possibly): make S3FileObserver inherit from FSO to avoid
+    ## duplicating code. But this might be even messier?
     VERSION = 'S3FileObserver-0.1.0'
 
     @classmethod
@@ -69,6 +71,17 @@ class S3FileObserver(RunObserver):
         self.s3 = boto3.resource('s3')
         self.saved_metrics = {}
 
+    def _objects_exist_in_dir(self, prefix):
+        try:
+            bucket = self.s3.Bucket(self.bucket)
+            all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
+        except ClientError as er:
+            if er.response['Error']['Code'] == 'NoSuchBucket':
+                return None
+            else:
+                raise ClientError(er.response['Error']['Code'])
+        return len(all_keys) > 0
+
     def _list_s3_subdirs(self, prefix=None):
         if prefix is None:
             prefix = self.basedir
@@ -82,8 +95,15 @@ class S3FileObserver(RunObserver):
                 raise ClientError(er.response['Error']['Code'])
 
         subdir_match = r'{prefix}\/(.*)\/'.format(prefix=prefix)
-        distinct_subdirs = set([re.match(subdir_match, key).groups()[0] for
-                                key in all_keys])
+        subdirs = []
+        for key in all_keys:
+            match_obj = re.match(subdir_match, key)
+            if match_obj is None:
+                import pdb; pdb.set_trace()
+                continue
+            else:
+                subdirs.append(match_obj.groups()[0])
+        distinct_subdirs = set(subdirs)
         return list(distinct_subdirs)
 
     def _create_bucket(self):
@@ -96,19 +116,26 @@ class S3FileObserver(RunObserver):
         return bucket_response
 
     def _determine_run_dir(self, _id):
-        bucket_path_subdirs = self._list_s3_subdirs()
-        if bucket_path_subdirs is None or len(bucket_path_subdirs) == 0:
-            self._create_bucket()
-            max_run_id = 0
-        else:
-            max_run_id = max([int(d) for d in bucket_path_subdirs
-                              if d.isdigit()])
-
-        self.dir = None
         if _id is None:
+            bucket_path_subdirs = self._list_s3_subdirs()
+            if bucket_path_subdirs is None:
+                self._create_bucket()
+
+            if bucket_path_subdirs is None or len(bucket_path_subdirs) == 0:
+                max_run_id = 0
+            else:
+                integer_directories = [int(d) for d in bucket_path_subdirs
+                                  if d.isdigit()]
+                if len(integer_directories) == 0:
+                    max_run_id = 0
+                else:
+                    max_run_id = max(integer_directories)
+
             _id = max_run_id + 1
 
-        self.run_dir = os.path.join(self.basedir, str(_id))
+        self.dir = os.path.join(self.basedir, str(_id))
+        if self._objects_exist_in_dir(self.dir):
+            raise FileExistsError(f"S3 dir at {self.dir} already exists")
         return _id
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
@@ -184,13 +211,13 @@ class S3FileObserver(RunObserver):
         self.s3.Object(self.bucket, key).put(Body=binary_data)
 
     def save_json(self, obj, filename):
-        key = os.path.join(self.run_dir, filename)
+        key = os.path.join(self.dir, filename)
         self.put_data(key, json.dumps(flatten(obj),
                                       sort_keys=True, indent=2))
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        key = os.path.join(self.run_dir, target_name)
+        key = os.path.join(self.dir, target_name)
         self.put_data(key, open(filename, 'rb'))
 
     def save_directory(self, source_dir, target_name):
@@ -203,17 +230,19 @@ class S3FileObserver(RunObserver):
         s3_resource = boto3.resource('s3')
 
         for filename in all_files:
-            file_location = os.path.join(self.run_dir, target_name,
+            file_location = os.path.join(self.dir, target_name,
                                          os.path.relpath(filename, source_dir))
             s3_resource.Object(self.bucket,
                                file_location).put(Body=open(filename, 'rb'))
 
     def save_cout(self):
         binary_data = self.cout[self.cout_write_cursor:].encode("utf-8")
-        key = os.path.join(self.run_dir, 'cout.txt')
+        key = os.path.join(self.dir, 'cout.txt')
         self.put_data(key, binary_data)
         self.cout_write_cursor = len(self.cout)
 
+
+    ## same as FSO
     def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
         self.run_entry['heartbeat'] = beat_time.isoformat()
@@ -271,8 +300,6 @@ class S3FileObserver(RunObserver):
             self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
             self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
 
-            # Manually convert them to avoid passing a datetime dtype handler
-            # when we're trying to convert into json.
             timestamps_norm = [ts.isoformat()
                                for ts in metric_ptr["timestamps"]]
             self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
@@ -281,7 +308,8 @@ class S3FileObserver(RunObserver):
 
     def __eq__(self, other):
         if isinstance(other, S3FileObserver):
-            return self.basedir == other.basedir
+            return (self.bucket == other.bucket
+                    and self.basedir == other.basedir)
         return False
 
 
@@ -294,4 +322,11 @@ class S3StorageOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        run.observers.append(S3FileObserver.create(args))
+        match_obj = re.match(r's3:\/\/([^\/]*)\/(.*)', args)
+        if match_obj is None or len(match_obj.groups()) != 2:
+            raise ValueError("Valid bucket specification not found. "
+                             "Enter bucket and directory path like: "
+                             "s3://<bucket>/path/to/exp")
+        bucket, basedir = match_obj.groups()
+        run.observers.append(S3FileObserver.create(bucket=bucket,
+                                                   basedir=basedir))

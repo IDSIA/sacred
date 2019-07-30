@@ -27,7 +27,7 @@ def sample_run():
     command = 'run'
     meta_info = {'comment': 'test run'}
     return {
-        '_id': 'FEDCBA9876543210',
+        '_id': None,
         'ex_info': exp,
         'command': command,
         'host_info': host,
@@ -38,27 +38,8 @@ def sample_run():
 
 
 @pytest.fixture
-def dir_obs():
+def observer():
     return S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
-
-
-"""
-Test that reusing the same bucket name doesn't recreate the bucket, 
-        but instead reuses it (check if both _ids went to the same bucket) 
-Test failing gracefully if you pass in a disallowed S3 bucket name 
-
-
-
-Is it possible to set up a test with and without a valid credentials file? 
-    I guess you can save ~/.aws/config and ~/.aws/credentials
-"""
-
-def _delete_bucket(bucket_name):
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(bucket_name)
-    for key in bucket.objects.all():
-        key.delete()
-    bucket.delete()
 
 
 def _bucket_exists(bucket_name):
@@ -87,9 +68,7 @@ def _get_file_data(bucket_name, key):
 
 
 @mock_s3
-def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
-    observer = dir_obs
-    sample_run['_id'] = None
+def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     _id = observer.started_event(**sample_run)
     run_dir = os.path.join(BASEDIR, str(_id))
     assert _bucket_exists(bucket_name=BUCKET)
@@ -119,9 +98,30 @@ def test_fs_observer_started_event_creates_bucket(dir_obs, sample_run):
 
 
 @mock_s3
-def test_fs_observer_started_event_increments_run_id(dir_obs, sample_run):
-    observer = dir_obs
-    sample_run['_id'] = None
+def test_fs_observer_started_event_increments_run_id(observer, sample_run):
     _id = observer.started_event(**sample_run)
     _id2 = observer.started_event(**sample_run)
     assert _id + 1 == _id2
+
+
+def test_s3_observer_equality():
+    obs_one = S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
+    obs_two = S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
+    different_basedir = S3FileObserver.create(bucket=BUCKET,
+                                              basedir="another/dir")
+    assert obs_one == obs_two
+    assert obs_one != different_basedir
+
+
+@mock_s3
+def test_raises_error_on_duplicate_id_directory(observer, sample_run):
+    observer.started_event(**sample_run)
+    sample_run['_id'] = 1
+    with pytest.raises(FileExistsError):
+        observer.started_event(**sample_run)
+
+
+def test_raises_error_on_invalid_bucket_name():
+    with pytest.raises(ValueError):
+        _ = S3FileObserver.create(bucket="this_bucket_is_invalid",
+                                  basedir=BASEDIR)
