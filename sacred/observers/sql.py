@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from threading import Lock
+import warnings
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -17,14 +18,7 @@ DEFAULT_SQL_PRIORITY = 40
 
 # ############################# Observer #################################### #
 
-class SqlObserver(RunObserver):
-    @classmethod
-    def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
-        engine = sa.create_engine(url, echo=echo)
-        session_factory = sessionmaker(bind=engine)
-        # make session thread-local to avoid problems with sqlite (see #275)
-        session = scoped_session(session_factory)
-        return cls(engine, session, priority)
+class SqlObserverBase(RunObserver):
 
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
@@ -110,11 +104,27 @@ class SqlObserver(RunObserver):
         return run.to_json()
 
     def __eq__(self, other):
-        if isinstance(other, SqlObserver):
+        if isinstance(other, SqlObserverBase):
             # fixme: this will probably fail to detect two equivalent engines
             return (self.engine == other.engine and
                     self.session == other.session)
         return False
+
+
+class SqlObserver(SqlObserverBase):
+    @classmethod
+    def create(cls, *args, **kwargs):
+        warnings.warn("Use of the create method is depreciated. Please use"
+                      "SqlObserver(...) instead of SqlObserver.create(...).",
+                      DeprecationWarning)
+        return cls(*args, **kwargs)
+
+    def __init__(self, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
+        engine = sa.create_engine(url, echo=echo)
+        session_factory = sessionmaker(bind=engine)
+        # make session thread-local to avoid problems with sqlite (see #275)
+        session = scoped_session(session_factory)
+        super().__init__(engine, session, priority)
 
 
 # ######################## Commandline Option ############################### #
