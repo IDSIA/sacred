@@ -621,7 +621,7 @@ def module_exists(modname):
     try:
         return pkgutil.find_loader(modname) is not None
     except ImportError:
-        # TODO: Temporary fix for tf 1.14.0. 
+        # TODO: Temporary fix for tf 1.14.0.
         # Should be removed once fixed in tf.
         return True
 
