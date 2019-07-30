@@ -16,8 +16,6 @@ def optional_import(*package_names):
 
 def get_tensorflow():
     # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-    print("VERSION " + str(get_package_version('tensorflow')))
-    print(f"bool {get_package_version('tensorflow') < parse_version('1.13.1')}")
     if get_package_version('tensorflow') < parse_version('1.13.1'):
         import warnings
         warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
