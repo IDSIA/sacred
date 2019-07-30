@@ -9,6 +9,8 @@ import pytest
 import json
 
 from sacred.observers import S3FileObserver
+import tempfile
+import hashlib
 
 import boto3
 from botocore.exceptions import ClientError
@@ -18,6 +20,7 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 BUCKET = 'pytest-s3-observer-bucket'
 BASEDIR = 'some-tests'
+
 
 @pytest.fixture()
 def sample_run():
@@ -40,6 +43,27 @@ def sample_run():
 @pytest.fixture
 def observer():
     return S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
+
+
+@pytest.fixture
+def tmpfile():
+    # NOTE: instead of using a with block and delete=True we are creating and
+    # manually deleting the file, such that we can close it before running the
+    # tests. This is necessary since on Windows we can not open the same file
+    # twice, so for the FileStorageObserver to read it, we need to close it.
+    f = tempfile.NamedTemporaryFile(suffix='.py', delete=False)
+
+    f.content = 'import sacred\n'
+    f.write(f.content.encode())
+    f.flush()
+    f.seek(0)
+    f.md5sum = hashlib.md5(f.read()).hexdigest()
+
+    f.close()
+
+    yield f
+
+    os.remove(f.name)
 
 
 def _bucket_exists(bucket_name):
@@ -121,7 +145,85 @@ def test_raises_error_on_duplicate_id_directory(observer, sample_run):
         observer.started_event(**sample_run)
 
 
+@mock_s3
+def test_completed_event_updates_run_json(observer, sample_run):
+    observer.started_event(**sample_run)
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'RUNNING'
+    observer.completed_event(T2, 'success!')
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'COMPLETED'
+
+
+@mock_s3
+def test_interrupted_event_updates_run_json(observer, sample_run):
+    observer.started_event(**sample_run)
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'RUNNING'
+    observer.interrupted_event(T2, 'SERVER_EXPLODED')
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'SERVER_EXPLODED'
+
+
+@mock_s3
+def test_failed_event_updates_run_json(observer, sample_run):
+    observer.started_event(**sample_run)
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'RUNNING'
+    observer.failed_event(T2, 'Everything imaginable went wrong')
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'FAILED'
+
+
+@mock_s3
+def test_queued_event_updates_run_json(observer, sample_run):
+    del sample_run['start_time']
+    sample_run['queue_time'] = T2
+    observer.queued_event(**sample_run)
+    run = json.loads(_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'run.json'))
+                     .decode('utf-8'))
+    assert run['status'] == 'QUEUED'
+
+
+@mock_s3
+def test_artifact_event_works(observer, sample_run, tmpfile):
+    observer.started_event(**sample_run)
+    observer.artifact_event('test_artifact.py', tmpfile.name)
+
+    assert _key_exists(bucket_name=BUCKET,
+                       key=os.path.join(observer.dir, 'test_artifact.py'))
+    artifact_data = (_get_file_data(bucket_name=BUCKET,
+                                    key=os.path.join(observer.dir,
+                                                     'test_artifact.py'))
+                     .decode('utf-8'))
+    assert artifact_data == tmpfile.content
+
+
 def test_raises_error_on_invalid_bucket_name():
     with pytest.raises(ValueError):
         _ = S3FileObserver.create(bucket="this_bucket_is_invalid",
+                                  basedir=BASEDIR)
+
+    with pytest.raises(ValueError):
+        _ = S3FileObserver.create(bucket="hi",
                                   basedir=BASEDIR)
