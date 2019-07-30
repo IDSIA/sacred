@@ -135,7 +135,8 @@ class S3FileObserver(RunObserver):
 
         self.dir = os.path.join(self.basedir, str(_id))
         if self._objects_exist_in_dir(self.dir):
-            raise FileExistsError(f"S3 dir at {self.dir} already exists")
+            raise FileExistsError(
+                "S3 dir at {} already exists".format(self.dir))
         return _id
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
