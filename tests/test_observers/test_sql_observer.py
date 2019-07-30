@@ -12,9 +12,8 @@ from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
 
-from sacred.observers.sql import (SqlObserver, SqlObserverBase, Host,
-                                  Experiment, Run, Source,
-                                  Resource)
+from sacred.observers.sql import (SqlObserverBase, Host, Experiment, Run,
+                                  Source, Resource)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
