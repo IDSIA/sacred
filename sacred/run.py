@@ -452,4 +452,4 @@ class Run:
         # The same as Experiment.log_scalar (if something changes,
         # update the docstring too!)
 
-        return self._metrics.log_scalar_metric(metric_name, value, step)
+        self._metrics.log_scalar_metric(metric_name, value, step)
