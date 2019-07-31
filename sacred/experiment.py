@@ -6,6 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
+from typing import Iterator, Optional
 
 from docopt import docopt, printable_usage
 
@@ -19,7 +20,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
-    SacredError, format_sacred_error
+    SacredError, format_sacred_error, PathType
 
 __all__ = ('Experiment',)
 
@@ -35,8 +36,10 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name=None, ingredients=(), interactive=False,
-                 base_dir=None):
+    def __init__(self, name: Optional[str] = None,
+                 ingredients: Iterator[Ingredient] = (),
+                 interactive: bool = False,
+                 base_dir: Optional[PathType] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
