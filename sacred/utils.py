@@ -15,6 +15,8 @@ import threading
 import traceback as tb
 from functools import partial
 from packaging import version
+from typing import Union
+from pathlib import Path
 
 import wrapt
 
@@ -27,7 +29,8 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
            "print_filtered_stacktrace", "is_subdir",
            "optional_kwargs_decorator", "get_inheritors",
-           "apply_backspaces_and_linefeeds", "rel_path", "IntervalTimer"]
+           "apply_backspaces_and_linefeeds", "rel_path", "IntervalTimer",
+           "PathType"]
 
 NO_LOGGER = logging.getLogger('ignore')
 NO_LOGGER.disabled = 1
@@ -35,6 +38,8 @@ NO_LOGGER.disabled = 1
 PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
+
+PathType = Union[str, bytes, Path]
 
 
 class ObserverError(Exception):
