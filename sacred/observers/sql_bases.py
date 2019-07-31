@@ -9,7 +9,9 @@ from sqlalchemy.orm import sessionmaker
 from sacred.dependencies import get_digest
 from sacred.serializer import restore
 
+
 Base = declarative_base()
+
 
 class Source(Base):
     __tablename__ = 'source'
@@ -36,6 +38,7 @@ class Source(Base):
         return {'filename': self.filename,
                 'md5sum': self.md5sum}
 
+
 class Dependency(Base):
     __tablename__ = 'dependency'
 
@@ -55,6 +58,7 @@ class Dependency(Base):
     def to_json(self):
         return "{}=={}".format(self.name, self.version)
 
+
 class Artifact(Base):
     __tablename__ = 'artifact'
 
@@ -73,6 +77,7 @@ class Artifact(Base):
     def to_json(self):
         return {'_id': self.artifact_id,
                 'filename': self.filename}
+
 
 class Resource(Base):
     __tablename__ = 'resource'
@@ -95,6 +100,7 @@ class Resource(Base):
     def to_json(self):
         return {'filename': self.filename,
                 'md5sum': self.md5sum}
+
 
 class Host(Base):
     __tablename__ = 'host'
@@ -124,6 +130,7 @@ class Host(Base):
                 'os': [self.os, self.os_info],
                 'python_version': self.python_version}
 
+
 experiment_source_association = sa.Table(
     'experiments_sources', Base.metadata,
     sa.Column('experiment_id', sa.Integer,
@@ -138,6 +145,7 @@ experiment_dependency_association = sa.Table(
     sa.Column('dependency_id', sa.Integer,
               sa.ForeignKey('dependency.dependency_id'))
 )
+
 
 class Experiment(Base):
     __tablename__ = 'experiment'
@@ -187,6 +195,7 @@ run_resource_association = sa.Table(
     sa.Column('resource_id', sa.Integer,
               sa.ForeignKey('resource.resource_id'))
 )
+
 
 class Run(Base):
     __tablename__ = 'run'
