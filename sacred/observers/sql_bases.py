@@ -4,7 +4,6 @@ import os
 
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
 from sacred.dependencies import get_digest
 from sacred.serializer import restore
@@ -188,6 +187,7 @@ class Experiment(Base):
                 'base_dir': self.base_dir,
                 'sources': [s.to_json() for s in self.sources],
                 'dependencies': [d.to_json() for d in self.dependencies]}
+
 
 run_resource_association = sa.Table(
     'runs_resources', Base.metadata,
