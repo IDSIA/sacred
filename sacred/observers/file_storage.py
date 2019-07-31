@@ -3,7 +3,7 @@
 
 import json
 import os
-import os.path
+from pathlib import Path
 
 from shutil import copyfile
 
@@ -23,15 +23,17 @@ class FileStorageObserver(RunObserver):
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
                template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
-        resource_dir = resource_dir or os.path.join(basedir, '_resources')
-        source_dir = source_dir or os.path.join(basedir, '_sources')
+        basedir = Path(basedir)
+        resource_dir = resource_dir or basedir / '_resources'
+        source_dir = source_dir or basedir / '_sources'
         if template is not None:
-            if not os.path.exists(template):
+            template = Path(template)
+            if not template.exists():
                 raise FileNotFoundError("Couldn't find template file '{}'"
                                         .format(template))
         else:
-            template = os.path.join(basedir, 'template.html')
-            if not os.path.exists(template):
+            template = basedir / 'template.html'
+            if not template.exists():
                 template = None
         return cls(basedir, resource_dir, source_dir, template, priority)
 
@@ -51,7 +53,7 @@ class FileStorageObserver(RunObserver):
 
     def _maximum_existing_run_id(self):
         dir_nrs = [int(d) for d in os.listdir(self.basedir)
-                   if os.path.isdir(os.path.join(self.basedir, d)) and
+                   if (self.basedir / d).is_dir() and
                    d.isdigit()]
         if dir_nrs:
             return max(dir_nrs)
@@ -59,12 +61,12 @@ class FileStorageObserver(RunObserver):
             return 0
 
     def _make_dir(self, _id):
-        new_dir = os.path.join(self.basedir, str(_id))
-        os.mkdir(new_dir)
+        new_dir = self.basedir / str(_id)
+        new_dir.mkdir()
         self.dir = new_dir  # set only if mkdir is successful
 
     def _make_run_dir(self, _id):
-        os.makedirs(self.basedir, exist_ok=True)
+        os.makedirs(str(self.basedir), exist_ok=True)
         self.dir = None
         if _id is None:
             fail_count = 0
@@ -79,8 +81,8 @@ class FileStorageObserver(RunObserver):
                     else:  # expect that something else went wrong
                         raise
         else:
-            self.dir = os.path.join(self.basedir, str(_id))
-            os.mkdir(self.dir)
+            self.dir = self.basedir / str(_id)
+            self.dir.mkdir()
 
     def queued_event(self, ex_info, command, host_info, queue_time, config,
                      meta_info, _id):
@@ -102,16 +104,16 @@ class FileStorageObserver(RunObserver):
         for s, m in ex_info['sources']:
             self.save_file(s)
 
-        return os.path.relpath(self.dir, self.basedir) if _id is None else _id
+        return self.dir.relative_to(self.basedir) if _id is None else _id
 
     def save_sources(self, ex_info):
-        base_dir = ex_info['base_dir']
+        base_dir = Path(ex_info['base_dir'])
         source_info = []
         for s, m in ex_info['sources']:
-            abspath = os.path.join(base_dir, s)
+            abspath = base_dir / s
             store_path, md5sum = self.find_or_save(abspath, self.source_dir)
             # assert m == md5sum
-            source_info.append([s, os.path.relpath(store_path, self.basedir)])
+            source_info.append([s, store_path.relative_to(self.basedir)])
         return source_info
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -140,28 +142,29 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.config, 'config.json')
         self.save_cout()
 
-        return os.path.relpath(self.dir, self.basedir) if _id is None else _id
+        return self.dir.relative_to(self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir):
-        os.makedirs(store_dir, exist_ok=True)
-        source_name, ext = os.path.splitext(os.path.basename(filename))
+        os.makedirs(str(store_dir), exist_ok=True)
+        ext = filename.suffix
+        source_name = filename.parent / filename.name
         md5sum = get_digest(filename)
         store_name = source_name + '_' + md5sum + ext
-        store_path = os.path.join(store_dir, store_name)
-        if not os.path.exists(store_path):
+        store_path = store_dir / store_name
+        if not store_path.exists():
             copyfile(filename, store_path)
         return store_path, md5sum
 
     def save_json(self, obj, filename):
-        with open(os.path.join(self.dir, filename), 'w') as f:
+        with (self.dir / filename).open('w') as f:
             json.dump(flatten(obj), f, sort_keys=True, indent=2)
 
     def save_file(self, filename, target_name=None):
-        target_name = target_name or os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, target_name))
+        target_name = target_name or filename.name
+        copyfile(filename, self.dir / target_name)
 
     def save_cout(self):
-        with open(os.path.join(self.dir, 'cout.txt'), 'ab') as f:
+        with (self.dir / 'cout.txt').open('ab') as f:
             f.write(self.cout[self.cout_write_cursor:].encode("utf-8"))
             self.cout_write_cursor = len(self.cout)
 
@@ -174,8 +177,8 @@ class FileStorageObserver(RunObserver):
                                      info=self.info,
                                      cout=self.cout,
                                      savedir=self.dir)
-            _, ext = os.path.splitext(self.template)
-            with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
+            ext = self.template.suffix
+            with (self.dir / 'report' + ext).open('w') as f:
                 f.write(report)
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
@@ -223,8 +226,8 @@ class FileStorageObserver(RunObserver):
         """Store new measurements into metrics.json.
         """
         try:
-            metrics_path = os.path.join(self.dir, "metrics.json")
-            with open(metrics_path, 'r') as f:
+            metrics_path = self.dir / "metrics.json"
+            with metrics_path.open('r') as f:
                 saved_metrics = json.load(f)
         except IOError:
             # We haven't recorded anything yet. Start Collecting.
