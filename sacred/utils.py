@@ -16,6 +16,7 @@ import traceback as tb
 from functools import partial
 from packaging import version
 from typing import Union
+from pathlib import Path
 
 import wrapt
 
@@ -38,7 +39,7 @@ PATHCHANGE = object()
 
 PYTHON_IDENTIFIER = re.compile("^[a-zA-Z_][_a-zA-Z0-9]*$")
 
-PathType = Union[str, bytes, os.PathLike]
+PathType = Union[str, bytes, Path]
 
 
 class ObserverError(Exception):
