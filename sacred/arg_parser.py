@@ -12,15 +12,12 @@ import ast
 from collections import OrderedDict
 import textwrap
 import inspect
+from shlex import quote
 
 from sacred.serializer import restore
 from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
 
-try:
-    from shlex import quote as cmd_quote
-except ImportError:
-    from pipes import quote as cmd_quote
 
 __all__ = ('get_config_updates', 'format_usage')
 
@@ -190,7 +187,7 @@ def format_usage(program_name, description, commands=None, options=()):
 
     """
     usage = USAGE_TEMPLATE.format(
-        program_name=cmd_quote(program_name),
+        program_name=quote(program_name),
         description=description.strip() if description else '',
         options=_format_options_usage(options),
         arguments=_format_arguments_usage(options),
