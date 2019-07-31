@@ -4,6 +4,7 @@
 import json
 import os
 import os.path
+from pathlib import Path
 
 from shutil import copyfile
 
@@ -23,23 +24,24 @@ class FileStorageObserver(RunObserver):
     @classmethod
     def create(cls, basedir, resource_dir=None, source_dir=None,
                template=None, priority=DEFAULT_FILE_STORAGE_PRIORITY):
-        resource_dir = resource_dir or os.path.join(basedir, '_resources')
-        source_dir = source_dir or os.path.join(basedir, '_sources')
+        basedir = Path(basedir)
+        resource_dir = resource_dir or basedir / '_resources'
+        source_dir = source_dir or basedir / '_sources'
         if template is not None:
             if not os.path.exists(template):
                 raise FileNotFoundError("Couldn't find template file '{}'"
                                         .format(template))
         else:
-            template = os.path.join(basedir, 'template.html')
-            if not os.path.exists(template):
+            template = basedir / 'template.html'
+            if not template.exists():
                 template = None
         return cls(basedir, resource_dir, source_dir, template, priority)
 
     def __init__(self, basedir, resource_dir, source_dir, template,
                  priority=DEFAULT_FILE_STORAGE_PRIORITY):
-        self.basedir = basedir
-        self.resource_dir = resource_dir
-        self.source_dir = source_dir
+        self.basedir = str(basedir)
+        self.resource_dir = str(resource_dir)
+        self.source_dir = str(source_dir)
         self.template = template
         self.priority = priority
         self.dir = None
