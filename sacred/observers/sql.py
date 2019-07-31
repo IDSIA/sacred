@@ -18,7 +18,7 @@ DEFAULT_SQL_PRIORITY = 40
 
 # ############################# Observer #################################### #
 
-class SqlObserverBase(RunObserver):
+class PlainSQLObserver(RunObserver):
 
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
@@ -104,14 +104,14 @@ class SqlObserverBase(RunObserver):
         return run.to_json()
 
     def __eq__(self, other):
-        if isinstance(other, SqlObserverBase):
+        if isinstance(other, PlainSQLObserver):
             # fixme: this will probably fail to detect two equivalent engines
             return (self.engine == other.engine and
                     self.session == other.session)
         return False
 
 
-class SqlObserver(SqlObserverBase):
+class SqlObserver(PlainSQLObserver):
     @classmethod
     def create(cls, *args, **kwargs):
         warnings.warn("Use of the create method is depreciated. Please use"

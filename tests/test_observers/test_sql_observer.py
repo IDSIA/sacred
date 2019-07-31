@@ -12,7 +12,7 @@ from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
 
-from sacred.observers.sql import (SqlObserverBase, Host, Experiment, Run,
+from sacred.observers.sql import (PlainSQLObserver, Host, Experiment, Run,
                                   Source, Resource)
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -45,7 +45,7 @@ def session(engine):
 
 @pytest.fixture
 def sql_obs(session, engine):
-    return SqlObserverBase(engine, session)
+    return PlainSQLObserver(engine, session)
 
 
 @pytest.fixture
@@ -226,7 +226,7 @@ def test_fs_observer_resource_event(sql_obs, sample_run, session, tmpfile):
 
 
 def test_fs_observer_doesnt_duplicate_sources(sql_obs, sample_run, session, tmpfile):
-    sql_obs2 = SqlObserverBase(sql_obs.engine, session)
+    sql_obs2 = PlainSQLObserver(sql_obs.engine, session)
     sample_run['_id'] = None
     sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
 
@@ -238,7 +238,7 @@ def test_fs_observer_doesnt_duplicate_sources(sql_obs, sample_run, session, tmpf
 
 
 def test_fs_observer_doesnt_duplicate_resources(sql_obs, sample_run, session, tmpfile):
-    sql_obs2 = SqlObserverBase(sql_obs.engine, session)
+    sql_obs2 = PlainSQLObserver(sql_obs.engine, session)
     sample_run['_id'] = None
     sample_run['ex_info']['sources'] = [[tmpfile.name, tmpfile.md5sum]]
 
@@ -253,7 +253,7 @@ def test_fs_observer_doesnt_duplicate_resources(sql_obs, sample_run, session, tm
 
 
 def test_sql_observer_equality(sql_obs, engine, session):
-    sql_obs2 = SqlObserverBase(engine, session)
+    sql_obs2 = PlainSQLObserver(engine, session)
     assert sql_obs == sql_obs2
 
     assert not sql_obs != sql_obs2
