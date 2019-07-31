@@ -4,7 +4,7 @@
 import inspect
 import os.path
 from sacred.utils import PathType
-from typing import Iterator, Optional
+from typing import Sequence, Optional
 
 from collections import OrderedDict
 
@@ -50,7 +50,7 @@ class Ingredient:
     """
 
     def __init__(self, path: PathType,
-                 ingredients: Iterator['Ingredient'] = (),
+                 ingredients: Sequence['Ingredient'] = (),
                  interactive: bool = False,
                  _caller_globals: Optional[dict] = None,
                  base_dir: Optional[PathType] = None):

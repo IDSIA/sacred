@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Iterator, Optional
+from typing import Sequence, Optional
 
 from docopt import docopt, printable_usage
 
@@ -37,7 +37,7 @@ class Experiment(Ingredient):
     """
 
     def __init__(self, name: Optional[str] = None,
-                 ingredients: Iterator[Ingredient] = (),
+                 ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
                  base_dir: Optional[PathType] = None):
         """
