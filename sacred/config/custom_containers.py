@@ -6,72 +6,10 @@ import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
 
 
-class FallbackDict(dict):
-    """Dictionary that defaults to a fallback dict for missing keys."""
-
-    def __init__(self, fallback, **kwargs):
-        super(FallbackDict, self).__init__(**kwargs)
-        self.fallback = fallback
-
-    def __getitem__(self, item):
-        if dict.__contains__(self, item):
-            return dict.__getitem__(self, item)
-        else:
-            return self.fallback[item]
-
-    def __contains__(self, item):
-        return dict.__contains__(self, item) or (item in self.fallback)
-
-    def get(self, k, d=None):
-        if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)
-        else:
-            return self.fallback.get(k, d)
-
-    def items(self):
-        raise NotImplementedError()
-
-    def iteritems(self):
-        raise NotImplementedError()
-
-    def iterkeys(self):
-        raise NotImplementedError()
-
-    def itervalues(self):
-        raise NotImplementedError()
-
-    def keys(self):
-        raise NotImplementedError()
-
-    def pop(self, k, d=None):
-        raise NotImplementedError()
-
-    def popitem(self):
-        raise NotImplementedError()
-
-    def setdefault(self, k, d=None):
-        raise NotImplementedError()
-
-    def update(self, e=None, **f):
-        raise NotImplementedError()
-
-    def values(self):
-        raise NotImplementedError()
-
-    def viewitems(self):
-        raise NotImplementedError()
-
-    def viewkeys(self):
-        raise NotImplementedError()
-
-    def viewvalues(self):
-        raise NotImplementedError()
-
-    def __iter__(self):
-        raise NotImplementedError()
-
-    def __len__(self):
-        raise NotImplementedError()
+def fallback_dict(fallback, **kwargs):
+    fallback_copy = fallback.copy()
+    fallback_copy.update(dict(**kwargs))
+    return fallback_copy
 
 
 class DogmaticDict(dict):
