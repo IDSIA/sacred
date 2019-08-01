@@ -8,7 +8,7 @@ from sacred.utils import join_paths, SacredError
 
 def fallback_dict(fallback, **kwargs):
     fallback_copy = fallback.copy()
-    fallback_copy.update(dict(**kwargs))
+    fallback_copy.update(kwargs)
     return fallback_copy
 
 
