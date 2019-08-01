@@ -5,7 +5,7 @@ import time
 from datetime import timedelta
 
 import wrapt
-from sacred.config.custom_containers import FallbackDict
+from sacred.config.custom_containers import fallback_dict
 from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
 from sacred.utils import ConfigError
@@ -26,7 +26,7 @@ def create_captured_function(function, prefix=None):
 
 @wrapt.decorator
 def captured_function(wrapped, instance, args, kwargs):
-    options = FallbackDict(
+    options = fallback_dict(
         wrapped.config,
         _config=wrapped.config,
         _log=wrapped.logger,

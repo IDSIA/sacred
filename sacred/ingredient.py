@@ -3,6 +3,8 @@
 
 import inspect
 import os.path
+from sacred.utils import PathType
+from typing import Sequence, Optional
 
 from collections import OrderedDict
 
@@ -47,8 +49,11 @@ class Ingredient:
     Ingredients can themselves use ingredients.
     """
 
-    def __init__(self, path, ingredients=(), interactive=False,
-                 _caller_globals=None, base_dir=None):
+    def __init__(self, path: PathType,
+                 ingredients: Sequence['Ingredient'] = (),
+                 interactive: bool = False,
+                 _caller_globals: Optional[dict] = None,
+                 base_dir: Optional[PathType] = None):
         self.path = path
         self.config_hooks = []
         self.configurations = []

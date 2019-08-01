@@ -6,6 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
+from typing import Sequence, Optional
 
 from docopt import docopt, printable_usage
 
@@ -19,7 +20,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
-    SacredError, format_sacred_error
+    SacredError, format_sacred_error, PathType
 
 __all__ = ('Experiment',)
 
@@ -35,8 +36,10 @@ class Experiment(Ingredient):
     things in any experiment-file.
     """
 
-    def __init__(self, name=None, ingredients=(), interactive=False,
-                 base_dir=None):
+    def __init__(self, name: Optional[str] = None,
+                 ingredients: Sequence[Ingredient] = (),
+                 interactive: bool = False,
+                 base_dir: Optional[PathType] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -178,8 +181,12 @@ class Experiment(Ingredient):
         short_usage = printable_usage(long_usage)
         return short_usage, long_usage, internal_usage
 
-    def run(self, command_name=None, config_updates=None, named_configs=(),
-            info=None, meta_info=None, options=None):
+    def run(self, command_name: Optional[str] = None,
+            config_updates: Optional[dict] = None,
+            named_configs: Sequence[str] = (),
+            info: Optional[dict] = None,
+            meta_info: Optional[dict] = None,
+            options: Optional[dict] = None):
         """
         Run the main function of the experiment or a given command.
 
@@ -279,7 +286,7 @@ class Experiment(Ingredient):
                     print_filtered_stacktrace()
                 sys.exit(1)
 
-    def open_resource(self, filename, mode='r'):
+    def open_resource(self, filename: PathType, mode: str = 'r'):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -295,7 +302,7 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        filename: str
+        filename: str or Path
             name of the file that should be opened
         mode : str
             mode that file will be open
@@ -309,7 +316,7 @@ class Experiment(Ingredient):
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename, mode)
 
-    def add_resource(self, filename):
+    def add_resource(self, filename: PathType):
         """Add a file as a resource.
 
         In Sacred terminology a resource is a file that the experiment needed
@@ -330,10 +337,10 @@ class Experiment(Ingredient):
 
     def add_artifact(
             self,
-            filename,
-            name=None,
-            metadata=None,
-            content_type=None,
+            filename: PathType,
+            name: Optional[str] = None,
+            metadata: Optional[dict] = None,
+            content_type: Optional[str] = None,
     ):
         """Add a file as an artifact.
 
@@ -376,7 +383,9 @@ class Experiment(Ingredient):
         """
         return self.current_run.info
 
-    def log_scalar(self, name, value, step=None):
+    def log_scalar(self, name: str,
+                   value: float,
+                   step: Optional[int] = None):
         """
         Add a new measurement.
 
@@ -392,7 +401,7 @@ class Experiment(Ingredient):
         """
         # Method added in change https://github.com/chovanecm/sacred/issues/4
         # The same as Run.log_scalar
-        return self.current_run.log_scalar(name, value, step)
+        self.current_run.log_scalar(name, value, step)
 
     def _gather(self, func):
         """

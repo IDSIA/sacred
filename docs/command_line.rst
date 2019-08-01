@@ -672,7 +672,7 @@ and ``arg_description`` class variables:
 
 .. code-block:: python
 
-    from sacred.commandline_option import CommandLineOption
+    from sacred.commandline_options import CommandLineOption
 
     class ImprovedFlag(CommandLineOption):
     """ This is my even better personal flag """

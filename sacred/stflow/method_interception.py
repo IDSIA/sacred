@@ -1,4 +1,4 @@
-from .contextlibbackport import ContextDecorator
+from contextlib import ContextDecorator
 from .internal import ContextMethodDecorator
 import sacred.optional as opt
 
