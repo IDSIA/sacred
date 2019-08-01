@@ -12,7 +12,7 @@ from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
 
-from sacred.observers.sql import PlainSqlObserver
+from sacred.observers.sql import PlainSQLObserver
 from sacred.observers.sql_bases import Host, Experiment, Run, Source, Resource
 
 
