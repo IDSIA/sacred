@@ -1,15 +1,43 @@
-from tinydb import TinyDB, Query
-from tinydb.queries import QueryImpl
+import datetime as dt
+import json
+import os
+from io import BufferedReader, FileIO
+
 from hashfs import HashFS
+from tinydb import TinyDB
 from tinydb_serialization import Serializer, SerializationMiddleware
 
 import sacred.optional as opt
-
 
 # Set data type values for abstract properties in Serializers
 series_type = opt.pandas.Series if opt.has_pandas else None
 dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
 ndarray_type = opt.np.ndarray if opt.has_numpy else None
+
+
+class BufferedReaderWrapper(BufferedReader):
+    """Custom wrapper to allow for copying of file handle.
+
+    tinydb_serialisation currently does a deepcopy on all the content of the
+    dictionary before serialisation. By default, file handles are not
+    copiable so this wrapper is necessary to create a duplicate of the
+    file handle passes in.
+
+    Note that the file passed in will therefor remain open as the copy is the
+    one that gets closed.
+    """
+
+    def __init__(self, f_obj):
+        f_obj = FileIO(f_obj.name)
+        super(BufferedReaderWrapper, self).__init__(f_obj)
+
+    def __copy__(self):
+        f = open(self.name, self.mode)
+        return BufferedReaderWrapper(f)
+
+    def __deepcopy__(self, memo):
+        f = open(self.name, self.mode)
+        return BufferedReaderWrapper(f)
 
 
 class DateTimeSerializer(Serializer):
@@ -68,3 +96,26 @@ class FileSerializer(Serializer):
         file_reader = BufferedReaderWrapper(file_reader)
         file_reader.hash = id_
         return file_reader
+
+
+def get_db_file_manager(root_dir):
+    fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
+                width=2, algorithm='md5')
+
+    # Setup Serialisation object for non list/dict objects
+    serialization_store = SerializationMiddleware()
+    serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
+    serialization_store.register_serializer(FileSerializer(fs), 'TinyFile')
+
+    if opt.has_numpy:
+        serialization_store.register_serializer(NdArraySerializer(),
+                                                'TinyArray')
+    if opt.has_pandas:
+        serialization_store.register_serializer(DataFrameSerializer(),
+                                                'TinyDataFrame')
+        serialization_store.register_serializer(SeriesSerializer(),
+                                                'TinySeries')
+
+    db = TinyDB(os.path.join(root_dir, 'metadata.json'),
+                storage=serialization_store)
+    return db, fs
