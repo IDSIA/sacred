@@ -47,7 +47,7 @@ class FileStorageObserver(RunObserver):
         self.basedir = str(basedir)
         self.resource_dir = resource_dir
         self.source_dir = source_dir
-        self.template = template if template is None else str(template)
+        self.template = template
         self.priority = priority
         self.dir = None
         self.run_entry = None
@@ -181,7 +181,7 @@ class FileStorageObserver(RunObserver):
                                      info=self.info,
                                      cout=self.cout,
                                      savedir=self.dir)
-            _, ext = os.path.splitext(self.template)
+            ext = self.template.suffix
             with open(os.path.join(self.dir, 'report' + ext), 'w') as f:
                 f.write(report)
 
