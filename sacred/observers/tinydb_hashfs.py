@@ -154,9 +154,6 @@ class TinyDbObserver(RunObserver):
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
 
-    __depends_on__ = ['tinydb', 'hashfs',
-                      'tinydb_serialization#tinydb-serialization']
-
     arg = 'BASEDIR'
 
     @classmethod
