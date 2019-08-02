@@ -17,8 +17,9 @@ from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
-from sacred.observers.tinydb_hashfs import (TinyDbObserver, TinyDbOption, 
-                                            BufferedReaderWrapper)
+from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption
+from sacred.observers.tinydb_hashfs_bases import BufferedReaderWrapper
+
 from sacred import optional as opt
 from sacred.experiment import Experiment
 
@@ -307,7 +308,7 @@ def test_custom_bufferreaderwrapper(tmpdir):
 
 @pytest.mark.skipif(not opt.has_numpy, reason='needs numpy')
 def test_serialisation_of_numpy_ndarray(tmpdir):
-    from sacred.observers.tinydb_hashfs import NdArraySerializer
+    from sacred.observers.tinydb_hashfs_bases import NdArraySerializer
     from tinydb_serialization import SerializationMiddleware
     import numpy as np
 
@@ -339,8 +340,8 @@ def test_serialisation_of_numpy_ndarray(tmpdir):
 
 @pytest.mark.skipif(not opt.has_pandas, reason='needs pandas')
 def test_serialisation_of_pandas_dataframe(tmpdir):
-    from sacred.observers.tinydb_hashfs import (DataFrameSerializer,
-                                                SeriesSerializer)
+    from sacred.observers.tinydb_hashfs_bases import DataFrameSerializer
+    from sacred.observers.tinydb_hashfs_bases import SeriesSerializer
     from tinydb_serialization import SerializationMiddleware
 
     import numpy as np
