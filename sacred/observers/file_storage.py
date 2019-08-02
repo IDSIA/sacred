@@ -118,7 +118,7 @@ class FileStorageObserver(RunObserver):
             abspath = os.path.join(base_dir, s)
             store_path, md5sum = self.find_or_save(abspath, self.source_dir)
             # assert m == md5sum
-            relative_source = store_path.relative_to(self.basedir)
+            relative_source = os.path.relpath(str(store_path), self.basedir)
             source_info.append([s, relative_source])
         return source_info
 
