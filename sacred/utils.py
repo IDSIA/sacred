@@ -27,7 +27,7 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
            "iter_prefixes", "join_paths", "is_prefix",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
-           "print_filtered_stacktrace", "is_subdir",
+           "print_filtered_stacktrace",
            "optional_kwargs_decorator", "get_inheritors",
            "apply_backspaces_and_linefeeds", "rel_path", "IntervalTimer",
            "PathType"]

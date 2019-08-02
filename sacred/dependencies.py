@@ -12,7 +12,7 @@ import pkg_resources
 
 import sacred.optional as opt
 from sacred import SETTINGS
-from sacred.utils import is_subdir, iter_prefixes
+from sacred.utils import iter_prefixes
 
 MB = 1048576
 MODULE_BLACKLIST = set(sys.builtin_module_names)
