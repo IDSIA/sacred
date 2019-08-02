@@ -6,7 +6,6 @@ import contextlib
 import importlib
 import inspect
 import logging
-import os.path
 import pkgutil
 import re
 import shlex
