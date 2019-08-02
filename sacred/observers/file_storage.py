@@ -45,8 +45,8 @@ class FileStorageObserver(RunObserver):
     def __init__(self, basedir, resource_dir, source_dir, template,
                  priority=DEFAULT_FILE_STORAGE_PRIORITY):
         self.basedir = str(basedir)
-        self.resource_dir = str(resource_dir)
-        self.source_dir = str(source_dir)
+        self.resource_dir = resource_dir
+        self.source_dir = source_dir
         self.template = template if template is None else str(template)
         self.priority = priority
         self.dir = None
@@ -149,14 +149,14 @@ class FileStorageObserver(RunObserver):
 
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
-    def find_or_save(self, filename, store_dir):
-        os.makedirs(store_dir, exist_ok=True)
+    def find_or_save(self, filename, store_dir: Path):
+        os.makedirs(str(store_dir), exist_ok=True)
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + '_' + md5sum + ext
-        store_path = os.path.join(store_dir, store_name)
-        if not os.path.exists(store_path):
-            copyfile(filename, store_path)
+        store_path = store_dir / store_name
+        if not store_path.exists():
+            copyfile(filename, str(store_path))
         return store_path, md5sum
 
     def save_json(self, obj, filename):
