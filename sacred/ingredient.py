@@ -25,19 +25,6 @@ def collect_repositories(sources):
             for s in sources if s.repo]
 
 
-@wrapt.decorator
-def gather_from_ingredients(wrapped, instance=None, args=None, kwargs=None):
-    """
-    Decorator that calls `_gather` on the instance the wrapped function is
-    bound to (should be an `Ingredient`) and yields from the returned
-    generator.
-
-    This function is necessary, because `Ingredient._gather` cannot directly be
-    used as a decorator inside of `Ingredient`.
-    """
-    yield from instance._gather(wrapped)
-
-
 class Ingredient:
     """
     Ingredients are reusable parts of experiments.
@@ -298,8 +285,7 @@ class Ingredient:
         for ingredient, _ in self.traverse_ingredients():
             yield from func(ingredient)
 
-    @gather_from_ingredients
-    def gather_commands(self, ingredient):
+    def gather_commands(self):
         """Collect all commands from this ingredient and its sub-ingredients.
 
         Yields
@@ -309,11 +295,11 @@ class Ingredient:
         cmd: function
             The corresponding captured function.
         """
-        for command_name, command in ingredient.commands.items():
-            yield join_paths(ingredient.path, command_name), command
+        for ingredient, _ in self.traverse_ingredients():
+            for command_name, command in ingredient.commands.items():
+                yield join_paths(ingredient.path, command_name), command
 
-    @gather_from_ingredients
-    def gather_named_configs(self, ingredient):
+    def gather_named_configs(self):
         """Collect all named configs from this ingredient and its
         sub-ingredients.
 
@@ -324,8 +310,9 @@ class Ingredient:
         config: ConfigScope or ConfigDict or basestring
             The corresponding named config.
         """
-        for config_name, config in ingredient.named_configs.items():
-            yield join_paths(ingredient.path, config_name), config
+        for ingredient, _ in self.traverse_ingredients():
+            for config_name, config in ingredient.named_configs.items():
+                yield join_paths(ingredient.path, config_name), config
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
