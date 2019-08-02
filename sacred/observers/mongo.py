@@ -352,8 +352,6 @@ class MongoObserver(RunObserver):
 class MongoDbOption(CommandLineOption):
     """Add a MongoDB Observer to the experiment."""
 
-    __depends_on__ = 'pymongo'
-
     arg = 'DB'
     arg_description = "Database specification. Can be " \
                       "[host:port:]db_name[.collection[:id]][!priority]"
