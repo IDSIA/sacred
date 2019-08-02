@@ -4,7 +4,7 @@
 import pytest
 
 from sacred.utils import (PATHCHANGE, convert_to_nested_dict,
-                          get_by_dotted_path, is_prefix, is_subdir,
+                          get_by_dotted_path, is_prefix,
                           iter_path_splits, iter_prefixes, iterate_flattened,
                           iterate_flattened_separately, join_paths,
                           recursive_update, set_by_dotted_path, get_inheritors,
@@ -99,24 +99,6 @@ def test_convert_to_nested_dict_nested():
     dotted_dict = {'a.b': {'foo.bar': 8}, 'a.b.foo.baz': 7}
     assert convert_to_nested_dict(dotted_dict) == \
         {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}
-
-
-@pytest.mark.parametrize('path,parent,expected', [
-    ('/var/test2', '/var/test', False),
-    ('/var/test', '/var/test2', False),
-    ('var/test2', 'var/test', False),
-    ('var/test', 'var/test2', False),
-    ('/var/test/sub', '/var/test', True),
-    ('/var/test', '/var/test/sub', False),
-    ('var/test/sub', 'var/test', True),
-    ('var/test', 'var/test', True),
-    ('var/test', 'var/test/fake_sub/..', True),
-    ('var/test/sub/sub2/sub3/../..', 'var/test', True),
-    ('var/test/sub', 'var/test/fake_sub/..', True),
-    ('var/test', 'var/test/sub', False)
-])
-def test_is_subdirectory(path, parent, expected):
-    assert is_subdir(path, parent) == expected
 
 
 def test_get_inheritors():
