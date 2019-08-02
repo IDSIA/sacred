@@ -20,7 +20,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
-    SacredError, format_sacred_error, PathType, join_paths
+    SacredError, format_sacred_error, PathType
 
 __all__ = ('Experiment',)
 
