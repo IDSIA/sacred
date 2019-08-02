@@ -547,13 +547,6 @@ def filtered_traceback_format(tb_exception, chain=True):
     yield from tb_exception.format_exception_only()
 
 
-def is_subdir(path, directory):
-    path = os.path.abspath(os.path.realpath(path)) + os.sep
-    directory = os.path.abspath(os.path.realpath(directory)) + os.sep
-
-    return path.startswith(directory)
-
-
 # noinspection PyUnusedLocal
 @wrapt.decorator
 def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
