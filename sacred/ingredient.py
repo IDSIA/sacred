@@ -8,8 +8,6 @@ from typing import Sequence, Optional
 
 from collections import OrderedDict
 
-import wrapt
-
 from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
                            load_config_file)
 from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
