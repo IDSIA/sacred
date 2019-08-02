@@ -10,13 +10,9 @@ from xml.etree import ElementTree
 
 import cpuinfo
 
-from sacred.utils import optional_kwargs_decorator
 from sacred.settings import SETTINGS
 
-__all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
-
-host_info_gatherers = {}
-"""Global dict of functions that are used to collect the host information."""
+__all__ = ('get_host_info',)
 
 
 class IgnoreHostInfo(Exception):
@@ -42,53 +38,20 @@ def get_host_info():
     return host_info
 
 
-@optional_kwargs_decorator
-def host_info_getter(func, name=None):
-    """
-    The decorated function is added to the process of collecting the host_info.
-
-    This just adds the decorated function to the global
-    ``sacred.host_info.host_info_gatherers`` dictionary.
-    The functions from that dictionary are used when collecting the host info
-    using :py:func:`~sacred.host_info.get_host_info`.
-
-    Parameters
-    ----------
-    func : callable
-        A function that can be called without arguments and returns some
-        json-serializable information.
-    name : str, optional
-        The name of the corresponding entry in host_info.
-        Defaults to the name of the function.
-
-    Returns
-    -------
-    The function itself.
-
-    """
-    name = name or func.__name__
-    host_info_gatherers[name] = func
-    return func
-
-
 # #################### Default Host Information ###############################
 
-@host_info_getter(name='hostname')
 def _hostname():
     return platform.node()
 
 
-@host_info_getter(name='os')
 def _os():
     return [platform.system(), platform.platform()]
 
 
-@host_info_getter(name='python_version')
 def _python_version():
     return platform.python_version()
 
 
-@host_info_getter(name='cpu')
 def _cpu():
     if platform.system() == "Windows":
         return _get_cpu_by_pycpuinfo()
@@ -102,7 +65,6 @@ def _cpu():
         return _get_cpu_by_pycpuinfo()
 
 
-@host_info_getter(name='gpus')
 def _gpus():
     if not SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
         return
@@ -130,11 +92,18 @@ def _gpus():
     return gpu_info
 
 
-@host_info_getter(name='ENV')
 def _environment():
     keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
 
+
+host_info_gatherers = {'hostname': _hostname,
+                       'os': _os,
+                       'python_version': _python_version,
+                       'cpu': _cpu,
+                       'gpus': _gpus,
+                       'ENV': _environment}
+"""Global dict of functions that are used to collect the host information."""
 
 # ################### Get CPU Information ###############################
 
