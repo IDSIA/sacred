@@ -118,7 +118,7 @@ class FileStorageObserver(RunObserver):
             abspath = os.path.join(base_dir, s)
             store_path, md5sum = self.find_or_save(abspath, self.source_dir)
             # assert m == md5sum
-            source_info.append([s, os.path.relpath(store_path, self.basedir)])
+            source_info.append([s, os.path.relpath(str(store_path), self.basedir)])
         return source_info
 
     def started_event(self, ex_info, command, host_info, start_time, config,
@@ -218,7 +218,7 @@ class FileStorageObserver(RunObserver):
 
     def resource_event(self, filename):
         store_path, md5sum = self.find_or_save(filename, self.resource_dir)
-        self.run_entry['resources'].append([filename, store_path])
+        self.run_entry['resources'].append([filename, str(store_path)])
         self.save_json(self.run_entry, 'run.json')
 
     def artifact_event(self, name, filename, metadata=None, content_type=None):
