@@ -270,6 +270,13 @@ def convert_path_to_module_parts(path):
     return module_parts
 
 
+def resolve_not_strict(path):
+    """Backport of the strict flag in Path.resolve()"""
+    if sys.version_info < (3, 6):
+        return Path(os.path.abspath(os.path.realpath(path)))
+    else:
+        return Path(path).resolve()
+
 def is_local_source(filename, modname, experiment_path):
     """Check if a module comes from the given experiment path.
 
@@ -294,8 +301,8 @@ def is_local_source(filename, modname, experiment_path):
         True if the module was imported locally from (a subdir of) the
         experiment_path, and False otherwise.
     """
-    filename = Path(filename).resolve()
-    experiment_path = Path(experiment_path).resolve()
+    filename = resolve_not_strict(filename)
+    experiment_path = resolve_not_strict(experiment_path)
     if experiment_path not in filename.parents:
         return False
     rel_path = filename.relative_to(experiment_path)
