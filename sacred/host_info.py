@@ -19,25 +19,6 @@ class IgnoreHostInfo(Exception):
     """Used by host_info_getters to signal that this cannot be gathered."""
 
 
-def get_host_info():
-    """Collect some information about the machine this experiment runs on.
-
-    Returns
-    -------
-    dict
-        A dictionary with information about the CPU, the OS and the
-        Python version of this machine.
-
-    """
-    host_info = {}
-    for k, v in host_info_gatherers.items():
-        try:
-            host_info[k] = v()
-        except IgnoreHostInfo:
-            pass
-    return host_info
-
-
 # #################### Default Host Information ###############################
 
 def _hostname():
@@ -97,13 +78,30 @@ def _environment():
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
 
 
-host_info_gatherers = {'hostname': _hostname,
-                       'os': _os,
-                       'python_version': _python_version,
-                       'cpu': _cpu,
-                       'gpus': _gpus,
-                       'ENV': _environment}
-"""Global dict of functions that are used to collect the host information."""
+def get_host_info():
+    """Collect some information about the machine this experiment runs on.
+
+    Returns
+    -------
+    dict
+        A dictionary with information about the CPU, the OS and the
+        Python version of this machine.
+
+    """
+    host_info_gatherers = [('hostname', _hostname),
+                           ('os', _os),
+                           ('python_version', _python_version),
+                           ('cpu', _cpu),
+                           ('gpus', _gpus),
+                           ('ENV', _environment)]
+    host_info = {}
+    for k, v in host_info_gatherers:
+        try:
+            host_info[k] = v()
+        except IgnoreHostInfo:
+            pass
+    return host_info
+
 
 # ################### Get CPU Information ###############################
 
