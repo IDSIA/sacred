@@ -20,7 +20,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
-    SacredError, format_sacred_error, PathType
+    SacredError, format_sacred_error, PathType, join_paths
 
 __all__ = ('Experiment',)
 
@@ -403,17 +403,43 @@ class Experiment(Ingredient):
         # The same as Run.log_scalar
         self.current_run.log_scalar(name, value, step)
 
-    def _gather(self, func):
-        """
-        Removes the experiment's path (prefix) from the names of the gathered
-        items. This means that, for example, 'experiment.print_config' becomes
-        'print_config'.
+    def gather_commands(self, ingredient):
+        """Collect all commands from this ingredient and its sub-ingredients.
+
+        Yields
+        ------
+        cmd_name: str
+            The full (dotted) name of the command.
+        cmd: function
+            The corresponding captured function.
         """
         for ingredient, _ in self.traverse_ingredients():
-            for name, item in func(ingredient):
+            for command_name, command in ingredient.commands.items():
+                name = join_paths(ingredient.path, command_name)
+                if ingredient == self:
+                    # Removes the experiment's path (prefix) from the names
+                    # of the gathered items. This means that, for example,
+                    # 'experiment.print_config' becomes 'print_config'.
+                    name = name[len(self.path) + 1:]
+                yield name, command
+
+    def gather_named_configs(self):
+        """Collect all named configs from this ingredient and its
+        sub-ingredients.
+
+        Yields
+        ------
+        config_name: str
+            The full (dotted) name of the named config.
+        config: ConfigScope or ConfigDict or basestring
+            The corresponding named config.
+        """
+        for ingredient, _ in self.traverse_ingredients():
+            for config_name, config in ingredient.named_configs.items():
+                name = join_paths(ingredient.path, config_name)
                 if ingredient == self:
                     name = name[len(self.path) + 1:]
-                yield name, item
+                yield name, config
 
     def get_default_options(self):
         """Get a dictionary of default options as used with run.

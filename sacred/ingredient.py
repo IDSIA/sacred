@@ -272,7 +272,7 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def gather_commands(self):
+    def gather_commands(self, ingredient):
         """Collect all commands from this ingredient and its sub-ingredients.
 
         Yields
