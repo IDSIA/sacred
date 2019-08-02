@@ -272,19 +272,6 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def _gather(self, func):
-        """
-        Function needed and used by gathering functions through the decorator
-        `gather_from_ingredients` in `Ingredient`. Don't use this function by
-        itself outside of the decorator!
-
-        By overwriting this function you can filter what is visible when
-        gathering something (e.g. commands). See `Experiment._gather` for an
-        example.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            yield from func(ingredient)
-
     def gather_commands(self):
         """Collect all commands from this ingredient and its sub-ingredients.
 
