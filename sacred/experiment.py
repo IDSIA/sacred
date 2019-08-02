@@ -403,43 +403,13 @@ class Experiment(Ingredient):
         # The same as Run.log_scalar
         self.current_run.log_scalar(name, value, step)
 
-    def gather_commands(self, ingredient):
-        """Collect all commands from this ingredient and its sub-ingredients.
-
-        Yields
-        ------
-        cmd_name: str
-            The full (dotted) name of the command.
-        cmd: function
-            The corresponding captured function.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            for command_name, command in ingredient.commands.items():
-                name = join_paths(ingredient.path, command_name)
-                if ingredient == self:
-                    # Removes the experiment's path (prefix) from the names
-                    # of the gathered items. This means that, for example,
-                    # 'experiment.print_config' becomes 'print_config'.
-                    name = name[len(self.path) + 1:]
-                yield name, command
-
-    def gather_named_configs(self):
-        """Collect all named configs from this ingredient and its
-        sub-ingredients.
-
-        Yields
-        ------
-        config_name: str
-            The full (dotted) name of the named config.
-        config: ConfigScope or ConfigDict or basestring
-            The corresponding named config.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            for config_name, config in ingredient.named_configs.items():
-                name = join_paths(ingredient.path, config_name)
-                if ingredient == self:
-                    name = name[len(self.path) + 1:]
-                yield name, config
+    def post_process_name(self, name, ingredient):
+        if ingredient == self:
+            # Removes the experiment's path (prefix) from the names
+            # of the gathered items. This means that, for example,
+            # 'experiment.print_config' becomes 'print_config'.
+            return name[len(self.path) + 1:]
+        return name
 
     def get_default_options(self):
         """Get a dictionary of default options as used with run.

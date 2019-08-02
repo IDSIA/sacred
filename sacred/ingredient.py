@@ -272,7 +272,11 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def gather_commands(self, ingredient):
+    def post_process_name(self, name, ingredient):
+        """ Can be overridden to change the command name."""
+        return name
+
+    def gather_commands(self):
         """Collect all commands from this ingredient and its sub-ingredients.
 
         Yields
@@ -284,7 +288,9 @@ class Ingredient:
         """
         for ingredient, _ in self.traverse_ingredients():
             for command_name, command in ingredient.commands.items():
-                yield join_paths(ingredient.path, command_name), command
+                cmd_name = join_paths(ingredient.path, command_name)
+                cmd_name = self.post_process_name(cmd_name, ingredient)
+                yield cmd_name, command
 
     def gather_named_configs(self):
         """Collect all named configs from this ingredient and its
@@ -299,7 +305,9 @@ class Ingredient:
         """
         for ingredient, _ in self.traverse_ingredients():
             for config_name, config in ingredient.named_configs.items():
-                yield join_paths(ingredient.path, config_name), config
+                config_name = join_paths(ingredient.path, config_name)
+                config_name = self.post_process_name(config_name, ingredient)
+                yield config_name, config
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
