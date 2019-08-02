@@ -277,6 +277,7 @@ def resolve_not_strict(path):
     else:
         return Path(path).resolve()
 
+
 def is_local_source(filename, modname, experiment_path):
     """Check if a module comes from the given experiment path.
 
