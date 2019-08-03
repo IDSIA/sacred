@@ -7,7 +7,7 @@ from sacred.utils import iter_prefixes, join_paths
 class ConfigSummary(dict):
     def __init__(self, added=(), modified=(), typechanged=(),
                  ignored_fallbacks=(), docs=()):
-        super(ConfigSummary, self).__init__()
+        super().__init__()
         self.added = set(added)
         self.modified = set(modified)  # TODO: test for this member
         self.typechanged = dict(typechanged)

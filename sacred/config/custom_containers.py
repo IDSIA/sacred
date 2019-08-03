@@ -14,7 +14,7 @@ def fallback_dict(fallback, **kwargs):
 
 class DogmaticDict(dict):
     def __init__(self, fixed=None, fallback=None):
-        super(DogmaticDict, self).__init__()
+        super().__init__()
         self.typechanges = {}
         self.fallback_writes = []
         self.modified = set()
