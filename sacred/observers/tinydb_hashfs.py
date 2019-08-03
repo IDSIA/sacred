@@ -167,7 +167,7 @@ class TinyDbOption(CommandLineOption):
         return args
 
 
-class TinyDbReader(object):
+class TinyDbReader:
 
     def __init__(self, path):
         from .tinydb_hashfs_bases import get_db_file_manager

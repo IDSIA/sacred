@@ -12,7 +12,7 @@ from sacred.serializer import flatten, restore
 __all__ = ('load_config_file', 'save_config_file')
 
 
-class Handler(object):
+class Handler:
     def __init__(self, load, dump, mode):
         self.load = load
         self.dump = dump

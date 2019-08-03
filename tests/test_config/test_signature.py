@@ -81,7 +81,7 @@ kwarg_list = [{}, {}, {'a': 5, 'b': 'fo', 'c': 9},  {'c': 3},
               {}, {}, {}, {}, {'c': 10}]
 
 
-class SomeClass(object):
+class SomeClass:
     def bla(self, a, b, c):
         return a, b, c
 
