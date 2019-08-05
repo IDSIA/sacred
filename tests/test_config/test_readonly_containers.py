@@ -1,8 +1,7 @@
 import pytest
 from copy import copy, deepcopy
 
-from sacred.config.custom_containers import (make_read_only, ReadOnlyList,
-                                             ReadOnlyDict, )
+from sacred.config.custom_containers import make_read_only, ReadOnlyDict
 from sacred.utils import SacredError
 
 
@@ -44,44 +43,7 @@ def _check_read_only_dict(d):
 
 
 def _check_read_only_list(lst):
-    assert isinstance(lst, ReadOnlyList)
-
-    raises_list = pytest.raises(
-        SacredError, match='This ReadOnlyList is read-only!')
-
-    if len(lst):
-        with raises_list:
-            del lst[0]
-
-        with raises_list:
-            lst[0] = 42
-
-        with raises_list:
-            lst.pop(0)
-
-    with raises_list:
-        lst.pop()
-
-    with raises_list:
-        lst.clear()
-
-    with raises_list:
-        lst.append(42)
-
-    with raises_list:
-        lst.extend([1, 2, 3, 4])
-
-    with raises_list:
-        lst.insert(0, 0)
-
-    with raises_list:
-        lst.remove(1)
-
-    with raises_list:
-        lst.sort()
-
-    with raises_list:
-        lst.reverse()
+    assert isinstance(lst, tuple)
 
 
 def test_readonly_dict():
@@ -202,7 +164,7 @@ def test_copy_on_nested_readonly_dict_still_list():
     lst = [1, [2, [3, [4]]]]
     lst = make_read_only(lst)
     copied_l = copy(lst)
-    with pytest.raises(SacredError):
+    with pytest.raises(AttributeError):
         copied_l[1][1].append(5)
 
 
@@ -221,11 +183,3 @@ def test_deepcopy_on_nested_readonly_list():
     copied_l = deepcopy(lst)
     for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
-
-
-def test_deepcopy_on_nested_readonly_list_can_be_mutated():
-    lst = [1, [2, [3, [4]]]]
-    lst = make_read_only(lst)
-    copied_l = deepcopy(lst)
-    copied_l[1][1].append(5)
-    assert lst[1][1] != copied_l[1][1]
