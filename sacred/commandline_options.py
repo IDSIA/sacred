@@ -12,10 +12,10 @@ import warnings
 from sacred.commands import print_config
 from sacred.settings import SETTINGS
 from sacred.utils import convert_camel_case_to_snake_case
-from sacred.observers.file_storage import FileStorageOption
-from sacred.observers.mongo import MongoDbOption
-from sacred.observers.sql import SqlOption
-from sacred.observers.tinydb_hashfs import TinyDbOption
+from sacred.observers import file_storage
+from sacred.observers import mongo
+from sacred.observers import sql
+from sacred.observers import tinydb_hashfs
 
 
 class CommandLineOption:
@@ -122,10 +122,10 @@ def gather_command_line_options(filter_disabled=None):
                        PrintConfigOption,
                        NameOption,
                        CaptureOption,
-                       FileStorageOption,
-                       MongoDbOption,
-                       SqlOption,
-                       TinyDbOption]
+                       file_storage.FileStorageOption,
+                       mongo.MongoDbOption,
+                       sql.SqlOption,
+                       tinydb_hashfs.TinyDbOption]
 
     if filter_disabled is None:
         filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
