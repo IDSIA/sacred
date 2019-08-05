@@ -101,25 +101,6 @@ def test_convert_to_nested_dict_nested():
         {'a': {'b': {'foo': {'bar': 8, 'baz': 7}}}}
 
 
-def test_get_inheritors():
-    class A:
-        pass
-
-    class B(A):
-        pass
-
-    class C(B):
-        pass
-
-    class D(A):
-        pass
-
-    class E:
-        pass
-
-    assert get_inheritors(A) == {B, C, D}
-
-
 @pytest.mark.parametrize('name,expected', [
     ('CamelCase', 'camel_case'),
     ('snake_case', 'snake_case'),

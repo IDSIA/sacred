@@ -556,19 +556,6 @@ def optional_kwargs_decorator(wrapped, instance=None, args=None, kwargs=None):
         return partial(wrapped, **kwargs)
 
 
-def get_inheritors(cls):
-    """Get a set of all classes that inherit from the given class."""
-    subclasses = set()
-    work = [cls]
-    while work:
-        parent = work.pop()
-        for child in parent.__subclasses__():
-            if child not in subclasses:
-                subclasses.add(child)
-                work.append(child)
-    return subclasses
-
-
 # Credit to Zarathustra and epost from stackoverflow
 # Taken from http://stackoverflow.com/a/1176023/1388435
 def convert_camel_case_to_snake_case(name):
