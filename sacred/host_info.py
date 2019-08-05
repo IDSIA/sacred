@@ -31,7 +31,7 @@ def check_additional_gatherers(additional_gatherers: dict):
             raise KeyError(error_msg)
 
 
-def get_host_info(additional_gatherers: dict):
+def get_host_info(additional_gatherers: dict = None):
     """Collect some information about the machine this experiment runs on.
 
     Returns
@@ -41,6 +41,7 @@ def get_host_info(additional_gatherers: dict):
         Python version of this machine.
 
     """
+    additional_gatherers = additional_gatherers or {}
     all_host_info_gatherers = {**host_info_gatherers, **additional_gatherers}
     host_info = {}
     for k, v in all_host_info_gatherers.items():

@@ -415,3 +415,18 @@ def test_add_config_dict_chain(ex):
         'key_1': 'value_1', 'key_2': 'update_value_2',
         'key_3': 'value3', 'key_4': 'value4'}
     assert final_config['dictnest_cap'] == final_config['dictnest_dict']
+
+
+def test_additional_gatherers():
+    def get_hello():
+        return 'hello world'
+
+    experiment = Experiment('ator3000',
+                            additional_gatherers={'hello': get_hello})
+
+    @experiment.main
+    def foo():
+        pass
+
+    experiment.run()
+    assert experiment.current_run.host_info['hello'] == 'hello world'
