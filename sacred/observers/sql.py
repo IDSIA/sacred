@@ -123,10 +123,11 @@ class SqlObserver(RunObserver):
 class SqlOption(CommandLineOption):
     """Add a SQL Observer to the experiment."""
 
-    arg = 'DB_URL'
-    arg_description = \
-        "The typical form is: dialect://username:password@host:port/database"
+    def __init__(self):
+        super().__init__(arg='DB_URL',
+                         arg_description="The typical form is: "
+                                         "dialect://username:password@host"
+                                         ":port/database")
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         run.observers.append(SqlObserver.create(args))

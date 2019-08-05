@@ -352,48 +352,49 @@ class MongoObserver(RunObserver):
 class MongoDbOption(CommandLineOption):
     """Add a MongoDB Observer to the experiment."""
 
-    arg = 'DB'
-    arg_description = "Database specification. Can be " \
-                      "[host:port:]db_name[.collection[:id]][!priority]"
+    def __init__(self):
+        run_id_pattern = r"(?P<overwrite>\d{1,12})"
+        port1_pattern = r"(?P<port1>\d{1,5})"
+        port2_pattern = r"(?P<port2>\d{1,5})"
+        priority_pattern = r"(?P<priority>-?\d+)?"
+        db_name_pattern = r"(?P<db_name>[_A-Za-z]" \
+                          r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+        coll_name_pattern = r"(?P<collection>[_A-Za-z]" \
+                            r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+        hostname1_pattern = r"(?P<host1>" \
+                            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+                            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
+                            r"[0-9A-Za-z])?)*)"
+        hostname2_pattern = r"(?P<host2>" \
+                            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
+                            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
+                            r"[0-9A-Za-z])?)*)"
 
-    RUN_ID_PATTERN = r"(?P<overwrite>\d{1,12})"
-    PORT1_PATTERN = r"(?P<port1>\d{1,5})"
-    PORT2_PATTERN = r"(?P<port2>\d{1,5})"
-    PRIORITY_PATTERN = r"(?P<priority>-?\d+)?"
-    DB_NAME_PATTERN = r"(?P<db_name>[_A-Za-z]" \
-                      r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
-    COLL_NAME_PATTERN = r"(?P<collection>[_A-Za-z]" \
-                        r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
-    HOSTNAME1_PATTERN = r"(?P<host1>" \
-                        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
-                        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
-                        r"[0-9A-Za-z])?)*)"
-    HOSTNAME2_PATTERN = r"(?P<host2>" \
-                        r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
-                        r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
-                        r"[0-9A-Za-z])?)*)"
+        host_only = r"^(?:{host}:{port})$".format(host=hostname1_pattern,
+                                                  port=port1_pattern)
+        full = r"^(?:{host}:{port}:)?{db}(?:\.{collection}(?::{rid})?)?" \
+               r"(?:!{priority})?$".format(host=hostname2_pattern,
+                                           port=port2_pattern,
+                                           db=db_name_pattern,
+                                           collection=coll_name_pattern,
+                                           rid=run_id_pattern,
+                                           priority=priority_pattern)
 
-    HOST_ONLY = r"^(?:{host}:{port})$".format(host=HOSTNAME1_PATTERN,
-                                              port=PORT1_PATTERN)
-    FULL = r"^(?:{host}:{port}:)?{db}(?:\.{collection}(?::{rid})?)?" \
-           r"(?:!{priority})?$".format(host=HOSTNAME2_PATTERN,
-                                       port=PORT2_PATTERN,
-                                       db=DB_NAME_PATTERN,
-                                       collection=COLL_NAME_PATTERN,
-                                       rid=RUN_ID_PATTERN,
-                                       priority=PRIORITY_PATTERN)
+        self.pattern = r"{host_only}|{full}".format(host_only=host_only,
+                                                    full=full)
+        super().__init__(
+            arg='DB',
+            arg_description="Database specification. Can be "
+                            "[host:port:]db_name"
+                            "[.collection[:id]][!priority]")
 
-    PATTERN = r"{host_only}|{full}".format(host_only=HOST_ONLY, full=FULL)
-
-    @classmethod
-    def apply(cls, args, run):
-        kwargs = cls.parse_mongo_db_arg(args)
+    def apply(self, args, run):
+        kwargs = self.parse_mongo_db_arg(args)
         mongo = MongoObserver.create(**kwargs)
         run.observers.append(mongo)
 
-    @classmethod
-    def parse_mongo_db_arg(cls, mongo_db):
-        g = re.match(cls.PATTERN, mongo_db).groupdict()
+    def parse_mongo_db_arg(self, mongo_db):
+        g = re.match(self.pattern, mongo_db).groupdict()
         if g is None:
             raise ValueError('mongo_db argument must have the form "db_name" '
                              'or "host:port[:db_name]" but was {}'

@@ -154,16 +154,15 @@ class TinyDbObserver(RunObserver):
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
 
-    arg = 'BASEDIR'
+    def __init__(self):
+        super().__init__(arg='BASEDIR')
 
-    @classmethod
-    def apply(cls, args, run):
-        location = cls.parse_tinydb_arg(args)
+    def apply(self, args, run):
+        location = self.parse_tinydb_arg(args)
         tinydb_obs = TinyDbObserver.create(path=location)
         run.observers.append(tinydb_obs)
 
-    @classmethod
-    def parse_tinydb_arg(cls, args):
+    def parse_tinydb_arg(self, args):
         return args
 
 

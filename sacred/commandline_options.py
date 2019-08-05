@@ -33,34 +33,35 @@ class CommandLineOption:
     if the packages are not available.
     """
 
-    _enabled = True
+    def __init__(self, enabled=True, short_flag=None,
+                 arg=None, arg_description=None):
+        """"
+        short_flag
+        The (one-letter) short form (defaults to first letter of flag)
+        arg
+        Name of the argument (optional)
+        arg_description
+        Description of the argument (optional)
+        """
+        self.enabled = enabled
+        self.short_flag = short_flag
+        self.arg = arg
+        self.arg_description = arg_description
 
-    short_flag = None
-    """ The (one-letter) short form (defaults to first letter of flag) """
-
-    arg = None
-    """ Name of the argument (optional) """
-
-    arg_description = None
-    """ Description of the argument (optional) """
-
-    @classmethod
-    def get_flag(cls):
+    def get_flag(self):
         # Get the flag name from the class name
-        flag = cls.__name__
+        flag = self.__class__.__name__
         if flag.endswith("Option"):
             flag = flag[:-6]
         return '--' + convert_camel_case_to_snake_case(flag)
 
-    @classmethod
-    def get_short_flag(cls):
-        if cls.short_flag is None:
-            return '-' + cls.get_flag()[2]
+    def get_short_flag(self):
+        if self.short_flag is None:
+            return '-' + self.get_flag()[2]
         else:
-            return '-' + cls.short_flag
+            return '-' + self.short_flag
 
-    @classmethod
-    def get_flags(cls):
+    def get_flags(self):
         """
         Return the short and the long version of this option.
 
@@ -78,10 +79,9 @@ class CommandLineOption:
             tuple of short-flag, and long-flag
 
         """
-        return cls.get_short_flag(), cls.get_flag()
+        return self.get_short_flag(), self.get_flag()
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """
         Modify the current Run base on this command-line option.
 
@@ -105,9 +105,9 @@ def gather_command_line_options(filter_disabled=None):
     """Get a sorted list of all CommandLineOption subclasses."""
     if filter_disabled is None:
         filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-    options = [opt for opt in get_inheritors(CommandLineOption)
+    options = [opt() for opt in get_inheritors(CommandLineOption)
                if not filter_disabled or opt._enabled]
-    return sorted(options, key=lambda opt: opt.__name__)
+    return sorted(options, key=lambda opt: opt.__class__.__name__)
 
 
 class HelpOption(CommandLineOption):
@@ -121,8 +121,7 @@ class DebugOption(CommandLineOption):
     Also enables usage with ipython --pdb.
     """
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Set this run to debug mode."""
         run.debug = True
 
@@ -130,22 +129,24 @@ class DebugOption(CommandLineOption):
 class PDBOption(CommandLineOption):
     """Automatically enter post-mortem debugging with pdb on failure."""
 
-    short_flag = 'D'
+    def __init__(self):
+        super().__init__(short_flag='D')
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         run.pdb = True
 
 
 class LoglevelOption(CommandLineOption):
     """Adjust the loglevel."""
 
-    arg = 'LEVEL'
-    arg_description = 'Loglevel either as 0 - 50 or as string: DEBUG(10), ' \
-                      'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'
+    def __init__(self):
+        super().__init__(
+            arg='LEVEL',
+            arg_description='Loglevel either as 0 - 50 or as string: '
+                            'DEBUG(10), INFO(20), WARNING(30), '
+                            'ERROR(40), CRITICAL(50)')
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Adjust the loglevel of the root-logger of this run."""
         # TODO: sacred.initialize.create_run already takes care of this
 
@@ -159,11 +160,12 @@ class LoglevelOption(CommandLineOption):
 class CommentOption(CommandLineOption):
     """Adds a message to the run."""
 
-    arg = 'COMMENT'
-    arg_description = 'A comment that should be stored along with the run.'
+    def __init__(self):
+        super().__init__(arg='COMMENT',
+                         arg_description='A comment that should be stored '
+                                         'along with the run.')
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Add a comment to this run."""
         run.meta_info['comment'] = args
 
@@ -171,11 +173,12 @@ class CommentOption(CommandLineOption):
 class BeatIntervalOption(CommandLineOption):
     """Control the rate of heartbeat events."""
 
-    arg = 'BEAT_INTERVAL'
-    arg_description = "Time between two heartbeat events measured in seconds."
+    def __init__(self):
+        super().__init__(arg='BEAT_INTERVAL',
+                         arg_description="Time between two heartbeat "
+                                         "events measured in seconds.")
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Set the heart-beat interval for this run."""
         run.beat_interval = float(args)
 
@@ -183,8 +186,7 @@ class BeatIntervalOption(CommandLineOption):
 class UnobservedOption(CommandLineOption):
     """Ignore all observers for this run."""
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Set this run to unobserved mode."""
         run.unobserved = True
 
@@ -192,8 +194,7 @@ class UnobservedOption(CommandLineOption):
 class QueueOption(CommandLineOption):
     """Only queue this run, do not start it."""
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Set this run to queue only mode."""
         run.queue_only = True
 
@@ -201,8 +202,7 @@ class QueueOption(CommandLineOption):
 class ForceOption(CommandLineOption):
     """Disable warnings about suspicious changes for this run."""
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Set this run to not warn about suspicous changes."""
         run.force = True
 
@@ -210,12 +210,13 @@ class ForceOption(CommandLineOption):
 class PriorityOption(CommandLineOption):
     """Sets the priority for a queued up experiment."""
 
-    short_flag = 'P'
-    arg = 'PRIORITY'
-    arg_description = 'The (numeric) priority for this run.'
+    def __init__(self):
+        super().__init__(
+            short_flag='P',
+            arg='PRIORITY',
+            arg_description='The (numeric) priority for this run.')
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         """Add priority info for this run."""
         try:
             priority = float(args)
@@ -228,8 +229,7 @@ class PriorityOption(CommandLineOption):
 class EnforceCleanOption(CommandLineOption):
     """Fail if any version control repository is dirty."""
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         try:
             import git  # NOQA
         except ImportError:
@@ -252,8 +252,7 @@ class EnforceCleanOption(CommandLineOption):
 class PrintConfigOption(CommandLineOption):
     """Always print the configuration first."""
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         print_config(run)
         print('-' * 79)
 
@@ -261,11 +260,11 @@ class PrintConfigOption(CommandLineOption):
 class NameOption(CommandLineOption):
     """Set the name for this run."""
 
-    arg = 'NAME'
-    arg_description = 'Name for this run.'
+    def __init__(self):
+        super().__init__(arg='NAME',
+                         arg_description='Name for this run.')
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         run.experiment_info['name'] = args
         run.run_logger = run.root_logger.getChild(args)
 
@@ -273,10 +272,11 @@ class NameOption(CommandLineOption):
 class CaptureOption(CommandLineOption):
     """Control the way stdout and stderr are captured."""
 
-    short_flag = 'C'
-    arg = 'CAPTURE_MODE'
-    arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
+    def __init__(self):
+        super().__init__(short_flag = 'C',
+                         arg='CAPTURE_MODE',
+                         arg_description="stdout/stderr capture mode. "
+                                         "One of [no, sys, fd]")
 
-    @classmethod
-    def apply(cls, args, run):
+    def apply(self, args, run):
         run.capture_mode = args
