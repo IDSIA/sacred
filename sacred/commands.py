@@ -183,15 +183,7 @@ def _format_entry(indent, entry):
     elif isinstance(entry, ConfigEntry):
         pre = indent + entry.key + " = "
         entry_str = PRINTER.pformat(entry.value)
-
-        def add_multi_line_indent(entry_str, indent):
-            line_break_idx = entry_str.find('\n') + 1
-            if not line_break_idx:
-                return entry_str
-            return entry_str[:line_break_idx] + indent + \
-                add_multi_line_indent(entry_str[line_break_idx:], indent)
-
-        assign = pre + add_multi_line_indent(entry_str, ' ' * len(pre))
+        assign = pre + entry_str.replace('\n', '\n' + ' ' * len(pre))
     else:  # isinstance(entry, PathEntry):
         assign = indent + entry.key + ":"
     if entry.doc:
