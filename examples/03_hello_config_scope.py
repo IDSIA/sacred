@@ -46,10 +46,6 @@ ex = Experiment('hello_cs')  # here we name the experiment explicitly
 def cfg(_log):
     # The recipient of the greeting
     recipient = "world"
-    other = [{
-        'a': [1, 2, 3, 4, 5, 6]
-
-    }, {'b': 7}, {'c': 'huditarnto'}, {'d': 989}, {'e': 'f', 'g': 7}]
 
     # The message used for greeting
     message = "Hello {}!".format(recipient)
