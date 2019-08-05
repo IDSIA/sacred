@@ -450,8 +450,8 @@ class Experiment(Ingredient):
 
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
-                         force=options.get(ForceOption.get_flag(), False),
-                         log_level=options.get(LoglevelOption.get_flag(),
+                         force=options.get(ForceOption().get_flag(), False),
+                         log_level=options.get(LoglevelOption().get_flag(),
                                                None))
         if info is not None:
             run.info.update(info)
