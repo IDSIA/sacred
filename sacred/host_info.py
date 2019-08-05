@@ -77,7 +77,7 @@ def host_info_getter(func, name=None):
 
     """
     warnings.warn('The host_info_getter is deprecated. '
-                  'Please use the `other_info_getters` argument'
+                  'Please use the `additional_gatherers` argument'
                   ' in the Experiment constructor.', DeprecationWarning)
     name = name or func.__name__
     host_info_gatherers[name] = func
