@@ -377,7 +377,7 @@ def test_serialisation_of_pandas_dataframe(tmpdir):
 
 
 def test_parse_tinydb_arg():
-    assert TinyDbOption.parse_tinydb_arg('foo') == 'foo'
+    assert TinyDbOption().parse_tinydb_arg('foo') == 'foo'
 
 
 def test_parse_tinydboption_apply(tmpdir):
@@ -385,5 +385,5 @@ def test_parse_tinydboption_apply(tmpdir):
     exp = Experiment()
     args = os.path.join(tmpdir.strpath)
 
-    TinyDbOption.apply(args, exp)
+    TinyDbOption().apply(args, exp)
     assert type(exp.observers[0]) == TinyDbObserver
