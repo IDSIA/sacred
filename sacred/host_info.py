@@ -7,6 +7,7 @@ import platform
 import re
 import subprocess
 from xml.etree import ElementTree
+import warnings
 
 import cpuinfo
 
@@ -15,15 +16,22 @@ from sacred.settings import SETTINGS
 
 __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
 
-host_info_gatherers = {}
-"""Global dict of functions that are used to collect the host information."""
-
 
 class IgnoreHostInfo(Exception):
     """Used by host_info_getters to signal that this cannot be gathered."""
 
 
-def get_host_info():
+def check_additional_gatherers(additional_gatherers: dict):
+    for key in additional_gatherers:
+        if key in host_info_gatherers:
+            error_msg = (
+                'Key {} used in `additional_gatherers` already exists in for '
+                'a default gatherer function. Do not use the following keys: '
+                '{}').format([additional_gatherers.keys()])
+            raise KeyError(error_msg)
+
+
+def get_host_info(additional_gatherers: dict):
     """Collect some information about the machine this experiment runs on.
 
     Returns
@@ -33,8 +41,9 @@ def get_host_info():
         Python version of this machine.
 
     """
+    all_host_info_gatherers = {**host_info_gatherers, **additional_gatherers}
     host_info = {}
-    for k, v in host_info_gatherers.items():
+    for k, v in all_host_info_gatherers.items():
         try:
             host_info[k] = v()
         except IgnoreHostInfo:
@@ -66,6 +75,9 @@ def host_info_getter(func, name=None):
     The function itself.
 
     """
+    warnings.warn('The host_info_getter is deprecated. '
+                  'Please use the `other_info_getters` argument'
+                  ' in the Experiment constructor.', DeprecationWarning)
     name = name or func.__name__
     host_info_gatherers[name] = func
     return func
@@ -73,22 +85,18 @@ def host_info_getter(func, name=None):
 
 # #################### Default Host Information ###############################
 
-@host_info_getter(name='hostname')
 def _hostname():
     return platform.node()
 
 
-@host_info_getter(name='os')
 def _os():
     return [platform.system(), platform.platform()]
 
 
-@host_info_getter(name='python_version')
 def _python_version():
     return platform.python_version()
 
 
-@host_info_getter(name='cpu')
 def _cpu():
     if platform.system() == "Windows":
         return _get_cpu_by_pycpuinfo()
@@ -102,7 +110,6 @@ def _cpu():
         return _get_cpu_by_pycpuinfo()
 
 
-@host_info_getter(name='gpus')
 def _gpus():
     if not SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
         return
@@ -130,11 +137,18 @@ def _gpus():
     return gpu_info
 
 
-@host_info_getter(name='ENV')
 def _environment():
     keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
 
+
+# Global dict of functions that are used to collect the host information.
+host_info_gatherers = {'hostname': _hostname,
+                       'os': _os,
+                       'python_version': _python_version,
+                       'cpu': _cpu,
+                       'gpus': _gpus,
+                       'ENV': _environment}
 
 # ################### Get CPU Information ###############################
 

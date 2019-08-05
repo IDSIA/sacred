@@ -411,7 +411,7 @@ def create_run(experiment, command_name, config_updates=None,
     # ----------------------------------------------------
 
     experiment_info = experiment.get_experiment_info()
-    host_info = get_host_info()
+    host_info = get_host_info(experiment.additional_gatherers)
     main_function = get_command(scaffolding, command_name)
     pre_runs = [pr for ing in sorted_ingredients for pr in ing.pre_run_hooks]
     post_runs = [pr for ing in sorted_ingredients for pr in ing.post_run_hooks]

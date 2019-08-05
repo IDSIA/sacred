@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Dict, Callable
 
 from docopt import docopt, printable_usage
 
@@ -19,6 +19,7 @@ from sacred.commands import (help_for_command, print_config,
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.host_info import check_additional_gatherers
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
     SacredError, format_sacred_error, PathType
 
@@ -39,7 +40,8 @@ class Experiment(Ingredient):
     def __init__(self, name: Optional[str] = None,
                  ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
-                 base_dir: Optional[PathType] = None):
+                 base_dir: Optional[PathType] = None,
+                 additional_gatherers: Dict[str, Callable] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -62,7 +64,13 @@ class Experiment(Ingredient):
             Optional full path to the base directory of this experiment. This
             will set the scope for automatic source file discovery.
 
+        additional_gatherers : Dict[str, Callable], optional
+            Optional dictionary containing as keys the names of the pieces of
+            info you want to collect, and as values the functions collecting
+            those pieces of information.
         """
+        self.additional_gatherers = additional_gatherers or {}
+        check_additional_gatherers(self.additional_gatherers)
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
