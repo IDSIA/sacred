@@ -13,15 +13,13 @@ def fallback_dict(fallback, **kwargs):
 
 
 class DogmaticDict(dict):
-    def __init__(self, fixed=None, fallback=None):
+    def __init__(self, fixed=None):
         super().__init__()
         self.typechanges = {}
         self.fallback_writes = []
         self.modified = set()
         self.fixed = fixed or {}
         self._fallback = {}
-        if fallback:
-            self.fallback = fallback
 
     @property
     def fallback(self):
