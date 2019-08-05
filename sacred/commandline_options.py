@@ -36,12 +36,14 @@ class CommandLineOption:
     def __init__(self, enabled=True, short_flag=None,
                  arg=None, arg_description=None):
         """"
-        short_flag
-        The (one-letter) short form (defaults to first letter of flag)
-        arg
-        Name of the argument (optional)
-        arg_description
-        Description of the argument (optional)
+        Parameters
+        ----------
+        short_flag : str
+            The (one-letter) short form (defaults to first letter of flag)
+        arg :  str
+            Name of the argument
+        arg_description : str
+            Description of the argument
         """
         self.enabled = enabled
         self.short_flag = short_flag
@@ -98,7 +100,7 @@ class CommandLineOption:
             The current run to be modified
 
         """
-        pass
+        raise NotImplementedError
 
 
 def gather_command_line_options(filter_disabled=None):
