@@ -275,7 +275,7 @@ class CaptureOption(CommandLineOption):
     """Control the way stdout and stderr are captured."""
 
     def __init__(self):
-        super().__init__(short_flag = 'C',
+        super().__init__(short_flag='C',
                          arg='CAPTURE_MODE',
                          arg_description="stdout/stderr capture mode. "
                                          "One of [no, sys, fd]")

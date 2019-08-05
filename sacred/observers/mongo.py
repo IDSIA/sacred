@@ -361,14 +361,16 @@ class MongoDbOption(CommandLineOption):
                           r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
         coll_name_pattern = r"(?P<collection>[_A-Za-z]" \
                             r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
-        hostname1_pattern = r"(?P<host1>" \
-                            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
-                            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
-                            r"[0-9A-Za-z])?)*)"
-        hostname2_pattern = r"(?P<host2>" \
-                            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?" \
-                            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}" \
-                            r"[0-9A-Za-z])?)*)"
+        hostname1_pattern = (
+            r"(?P<host1>"
+            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
+            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
+            r"[0-9A-Za-z])?)*)")
+        hostname2_pattern = (
+            r"(?P<host2>"
+            r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
+            r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
+            r"[0-9A-Za-z])?)*)")
 
         host_only = r"^(?:{host}:{port})$".format(host=hostname1_pattern,
                                                   port=port1_pattern)
