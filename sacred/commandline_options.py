@@ -10,12 +10,7 @@ Some further options that add observers to the run are defined alongside those.
 import warnings
 
 from sacred.commands import print_config
-from sacred.settings import SETTINGS
 from sacred.utils import convert_camel_case_to_snake_case
-from sacred.observers import file_storage
-from sacred.observers import mongo
-from sacred.observers import sql
-from sacred.observers import tinydb_hashfs
 
 
 class CommandLineOption:
@@ -103,35 +98,6 @@ class CommandLineOption:
 
         """
         pass
-
-
-def gather_command_line_options(filter_disabled=None):
-    """Get a sorted list of all CommandLineOption subclasses."""
-
-    default_options = [HelpOption,
-                       DebugOption,
-                       PDBOption,
-                       LoglevelOption,
-                       CommentOption,
-                       BeatIntervalOption,
-                       UnobservedOption,
-                       QueueOption,
-                       ForceOption,
-                       PriorityOption,
-                       EnforceCleanOption,
-                       PrintConfigOption,
-                       NameOption,
-                       CaptureOption,
-                       file_storage.FileStorageOption,
-                       mongo.MongoDbOption,
-                       sql.SqlOption,
-                       tinydb_hashfs.TinyDbOption]
-
-    if filter_disabled is None:
-        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-    options = [opt for opt in default_options
-               if not filter_disabled or opt._enabled]
-    return sorted(options, key=lambda opt: opt.__name__)
 
 
 class HelpOption(CommandLineOption):

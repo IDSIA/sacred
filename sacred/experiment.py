@@ -11,8 +11,8 @@ from typing import Sequence, Optional
 from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
-from sacred.commandline_options import (
-    ForceOption, gather_command_line_options, LoglevelOption)
+from sacred import commandline_options
+from sacred.commandline_options import ForceOption, LoglevelOption
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config,
                              print_named_configs)
@@ -21,6 +21,8 @@ from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
     SacredError, format_sacred_error, PathType
+from sacred.observers import sql, mongo, tinydb_hashfs, file_storage
+from sacred.settings import SETTINGS
 
 __all__ = ('Experiment',)
 
@@ -491,3 +493,32 @@ class Experiment(Ingredient):
                 print(help_for_command(commands[args['COMMAND']]))
                 return True
         return False
+
+
+def gather_command_line_options(filter_disabled=None):
+    """Get a sorted list of all CommandLineOption subclasses."""
+
+    default_options = [commandline_options.HelpOption,
+                       commandline_options.DebugOption,
+                       commandline_options.PDBOption,
+                       commandline_options.LoglevelOption,
+                       commandline_options.CommentOption,
+                       commandline_options.BeatIntervalOption,
+                       commandline_options.UnobservedOption,
+                       commandline_options.QueueOption,
+                       commandline_options.ForceOption,
+                       commandline_options.PriorityOption,
+                       commandline_options.EnforceCleanOption,
+                       commandline_options.PrintConfigOption,
+                       commandline_options.NameOption,
+                       commandline_options.CaptureOption,
+                       file_storage.FileStorageOption,
+                       mongo.MongoDbOption,
+                       sql.SqlOption,
+                       tinydb_hashfs.TinyDbOption]
+
+    if filter_disabled is None:
+        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
+    options = [opt for opt in default_options
+               if not filter_disabled or opt._enabled]
+    return sorted(options, key=lambda opt: opt.__name__)

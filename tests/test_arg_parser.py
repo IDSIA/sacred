@@ -7,7 +7,7 @@ import shlex
 from docopt import docopt
 
 from sacred.arg_parser import (_convert_value, get_config_updates, format_usage)
-from sacred.commandline_options import gather_command_line_options
+from sacred.experiment import gather_command_line_options
 
 
 @pytest.mark.parametrize("argv,expected", [
