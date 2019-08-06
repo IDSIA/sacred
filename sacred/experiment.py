@@ -465,8 +465,9 @@ class Experiment(Ingredient):
         if meta_info:
             run.meta_info.update(meta_info)
 
-        options = gather_command_line_options() + self.additional_cli_options
-        for option in options:
+        options_list = (gather_command_line_options()
+                        + self.additional_cli_options)
+        for option in options_list:
             option_value = options.get(option.get_flag(), False)
             if option_value:
                 option.apply(option_value, run)
