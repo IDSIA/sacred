@@ -17,6 +17,7 @@ from shlex import quote
 from sacred.serializer import restore
 from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
+from sacred.commandline_options import CLIOption
 
 
 __all__ = ('get_config_updates', 'format_usage')
@@ -96,7 +97,11 @@ def _format_options_usage(options):
         else:
             flag = "{short} {long}".format(short=short, long=long)
 
-        wrapped_description = textwrap.wrap(inspect.cleandoc(op.__doc__),
+        if isinstance(op, CLIOption):
+            doc = op.arg_description
+        else:
+            doc = inspect.cleandoc(op.__doc__)
+        wrapped_description = textwrap.wrap(doc,
                                             width=79,
                                             initial_indent=' ' * 32,
                                             subsequent_indent=' ' * 32)

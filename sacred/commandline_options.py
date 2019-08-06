@@ -8,10 +8,55 @@ Some further options that add observers to the run are defined alongside those.
 """
 
 import warnings
+from typing import Callable
+import inspect
 
+from sacred.run import Run
 from sacred.commands import print_config
 from sacred.settings import SETTINGS
 from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+
+
+CLIFunction = Callable[[str, Run], None]
+
+
+class CLIOption:
+    def __init__(self,
+                 apply_function: CLIFunction,
+                 short_flag: str,
+                 long_flag: str):
+        self.apply_function = apply_function
+        self.short_flag = short_flag
+        self.arg = long_flag
+        self.arg_description = inspect.getdoc(apply_function)
+
+    def __call__(self, *args, **kwargs):
+        return self.apply_function(*args, **kwargs)
+
+    def get_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.arg
+
+    def get_short_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag
+
+    def get_flags(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag, self.arg
+
+    def apply(self, args, run):
+        """Legacy function. Should be removed at some point."""
+        return self.apply_function(args, run)
+
+    def get_name(self):
+        return self.apply_function.__name__
+
+
+def cli_option(short_flag: str, long_flag: str):
+    def wrapper(f: CLIFunction):
+        return CLIOption(f, short_flag, long_flag)
+    return wrapper
 
 
 class CommandLineOption:
@@ -101,71 +146,71 @@ class CommandLineOption:
         pass
 
 
+def get_name(option):
+    if isinstance(option, CLIOption):
+        return option.get_name()
+    else:
+        return option.__name__
+
+
 def gather_command_line_options(filter_disabled=None):
     """Get a sorted list of all CommandLineOption subclasses."""
     if filter_disabled is None:
         filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-    options = [opt for opt in get_inheritors(CommandLineOption)
-               if not filter_disabled or opt._enabled]
-    return sorted(options, key=lambda opt: opt.__name__)
+
+    options = []
+    for opt in get_inheritors(CommandLineOption):
+        warnings.warn('Subclassing `CommandLineOption` is deprecated. Please '
+                      'use the `sacred.cli_option` decorator or the '
+                      '`sacred.CLIOption` class instead.')
+        if filter_disabled and not opt._enabled:
+            continue
+        options.append(opt)
+
+    options += [debug_option,
+                pdb_option,
+                log_level_option,
+                comment_option]
+
+    return sorted(options, key=get_name)
 
 
 class HelpOption(CommandLineOption):
     """Print this help message and exit."""
 
 
-class DebugOption(CommandLineOption):
+@cli_option('-d', '--debug')
+def debug_option(args, run):
     """
+    Set this run to debug mode.
     Suppress warnings about missing observers and don't filter the stacktrace.
-
     Also enables usage with ipython --pdb.
     """
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to debug mode."""
-        run.debug = True
+    run.debug = True
 
 
-class PDBOption(CommandLineOption):
+@cli_option('-D', '--pdb')
+def pdb_option(args, run):
     """Automatically enter post-mortem debugging with pdb on failure."""
-
-    short_flag = 'D'
-
-    @classmethod
-    def apply(cls, args, run):
-        run.pdb = True
+    run.pdb = True
 
 
-class LoglevelOption(CommandLineOption):
-    """Adjust the loglevel."""
+@cli_option('-l', '--LEVEL')
+def log_level_option(args, run):
+    """Adjust the loglevel of the root-logger of this run."""
+    # TODO: sacred.initialize.create_run already takes care of this
 
-    arg = 'LEVEL'
-    arg_description = 'Loglevel either as 0 - 50 or as string: DEBUG(10), ' \
-                      'INFO(20), WARNING(30), ERROR(40), CRITICAL(50)'
-
-    @classmethod
-    def apply(cls, args, run):
-        """Adjust the loglevel of the root-logger of this run."""
-        # TODO: sacred.initialize.create_run already takes care of this
-
-        try:
-            lvl = int(args)
-        except ValueError:
-            lvl = args
-        run.root_logger.setLevel(lvl)
+    try:
+        lvl = int(args)
+    except ValueError:
+        lvl = args
+    run.root_logger.setLevel(lvl)
 
 
-class CommentOption(CommandLineOption):
-    """Adds a message to the run."""
-
-    arg = 'COMMENT'
-    arg_description = 'A comment that should be stored along with the run.'
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add a comment to this run."""
-        run.meta_info['comment'] = args
+@cli_option('-c', '--COMMENT')
+def comment_option(args, run):
+    """A comment that should be stored along with the run."""
+    run.meta_info['comment'] = args
 
 
 class BeatIntervalOption(CommandLineOption):

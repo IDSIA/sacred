@@ -12,7 +12,7 @@ from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
-    ForceOption, gather_command_line_options, LoglevelOption)
+    ForceOption, gather_command_line_options, log_level_option, CLIOption)
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config,
                              print_named_configs)
@@ -39,7 +39,8 @@ class Experiment(Ingredient):
     def __init__(self, name: Optional[str] = None,
                  ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
-                 base_dir: Optional[PathType] = None):
+                 base_dir: Optional[PathType] = None,
+                 additional_cli_options: Sequence[CLIOption] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -63,6 +64,7 @@ class Experiment(Ingredient):
             will set the scope for automatic source file discovery.
 
         """
+        self.additional_cli_options = additional_cli_options or []
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
@@ -173,6 +175,7 @@ class Experiment(Ingredient):
                                        self.base_dir)
         commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
+        options += self.additional_cli_options
         long_usage = format_usage(program_name, self.doc, commands, options)
         # internal usage is a workaround because docopt cannot handle spaces
         # in program names. So for parsing we use 'dummy' as the program name.
@@ -451,7 +454,7 @@ class Experiment(Ingredient):
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
                          force=options.get(ForceOption.get_flag(), False),
-                         log_level=options.get(LoglevelOption.get_flag(),
+                         log_level=options.get(log_level_option.get_flag(),
                                                None))
         if info is not None:
             run.info.update(info)
@@ -462,7 +465,8 @@ class Experiment(Ingredient):
         if meta_info:
             run.meta_info.update(meta_info)
 
-        for option in gather_command_line_options():
+        options = gather_command_line_options() + self.additional_cli_options
+        for option in options:
             option_value = options.get(option.get_flag(), False)
             if option_value:
                 option.apply(option_value, run)
