@@ -66,8 +66,8 @@ class Experiment(Ingredient):
 
         additional_host_info : optional
             Optional dictionary containing as keys the names of the pieces of
-            host info you want to collect, and as values the functions collecting
-            those pieces of information.
+            host info you want to collect, and as
+            values the functions collecting those pieces of information.
         """
         self.additional_host_info = additional_host_info or {}
         check_additional_host_info(self.additional_host_info)
