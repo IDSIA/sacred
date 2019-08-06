@@ -66,7 +66,7 @@ class Experiment(Ingredient):
 
         additional_gatherers : Dict[str, Callable], optional
             Optional dictionary containing as keys the names of the pieces of
-            info you want to collect, and as values the functions collecting
+            host info you want to collect, and as values the functions collecting
             those pieces of information.
         """
         self.additional_host_info = additional_host_info or {}
