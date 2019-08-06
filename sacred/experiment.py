@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Sequence, Optional, Dict, Callable
+from typing import Sequence, Optional, Dict, Callable, Any
 
 from docopt import docopt, printable_usage
 
@@ -41,7 +41,7 @@ class Experiment(Ingredient):
                  ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
                  base_dir: Optional[PathType] = None,
-                 additional_host_info: Dict[str, Callable[[], str]] = None):
+                 additional_host_info: Dict[str, Callable[[], Any]] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -64,7 +64,7 @@ class Experiment(Ingredient):
             Optional full path to the base directory of this experiment. This
             will set the scope for automatic source file discovery.
 
-        additional_gatherers : Dict[str, Callable], optional
+        additional_host_info : optional
             Optional dictionary containing as keys the names of the pieces of
             host info you want to collect, and as values the functions collecting
             those pieces of information.
