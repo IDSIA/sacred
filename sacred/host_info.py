@@ -25,8 +25,8 @@ def check_additional_host_info(additional_host_info: dict):
     for key in additional_host_info:
         if key in host_info_gatherers:
             error_msg = (
-                'Key {} used in `additional_gatherers` already exists in for '
-                'a default gatherer function. Do not use the following keys: '
+                'Key {} used in `additional_host_info` already exists as a '
+                'default gatherer function. Do not use the following keys: '
                 '{}').format([host_info_gatherers.keys()])
             raise KeyError(error_msg)
 

@@ -422,7 +422,7 @@ def test_additional_gatherers():
         return 'hello world'
 
     experiment = Experiment('ator3000',
-                            additional_gatherers={'hello': get_hello})
+                            additional_host_info={'hello': get_hello})
 
     @experiment.main
     def foo():

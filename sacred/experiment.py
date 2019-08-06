@@ -41,7 +41,7 @@ class Experiment(Ingredient):
                  ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
                  base_dir: Optional[PathType] = None,
-                 additional_host_info: Dict[str, Callable] = None):
+                 additional_host_info: Dict[str, Callable[[], str]] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
