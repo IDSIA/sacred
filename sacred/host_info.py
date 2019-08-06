@@ -21,17 +21,17 @@ class IgnoreHostInfo(Exception):
     """Used by host_info_getters to signal that this cannot be gathered."""
 
 
-def check_additional_gatherers(additional_gatherers: dict):
-    for key in additional_gatherers:
+def check_additional_host_info(additional_host_info: dict):
+    for key in additional_host_info:
         if key in host_info_gatherers:
             error_msg = (
                 'Key {} used in `additional_gatherers` already exists in for '
                 'a default gatherer function. Do not use the following keys: '
-                '{}').format([additional_gatherers.keys()])
+                '{}').format([host_info_gatherers.keys()])
             raise KeyError(error_msg)
 
 
-def get_host_info(additional_gatherers: dict = None):
+def get_host_info(additional_host_info: dict = None):
     """Collect some information about the machine this experiment runs on.
 
     Returns
@@ -41,8 +41,8 @@ def get_host_info(additional_gatherers: dict = None):
         Python version of this machine.
 
     """
-    additional_gatherers = additional_gatherers or {}
-    all_host_info_gatherers = {**host_info_gatherers, **additional_gatherers}
+    additional_host_info = additional_host_info or {}
+    all_host_info_gatherers = {**host_info_gatherers, **additional_host_info}
     host_info = {}
     for k, v in all_host_info_gatherers.items():
         try:
@@ -77,7 +77,7 @@ def host_info_getter(func, name=None):
 
     """
     warnings.warn('The host_info_getter is deprecated. '
-                  'Please use the `additional_gatherers` argument'
+                  'Please use the `additional_host_info` argument'
                   ' in the Experiment constructor.', DeprecationWarning)
     name = name or func.__name__
     host_info_gatherers[name] = func
