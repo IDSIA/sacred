@@ -24,18 +24,23 @@ class CLIOption:
     def __init__(self,
                  apply_function: CLIFunction,
                  short_flag: str,
-                 long_flag: str):
+                 long_flag: str,
+                 is_flag: bool):
         self.apply_function = apply_function
         self.short_flag = short_flag
-        self.arg = long_flag
-        self.arg_description = inspect.getdoc(apply_function)
+        self.long_flag = long_flag
+        self.is_flag = is_flag
+
+        # trick for backward compatibility:
+        self.arg = None if is_flag else 'VALUE'
+        self.arg_description = None if is_flag else ''
 
     def __call__(self, *args, **kwargs):
         return self.apply_function(*args, **kwargs)
 
     def get_flag(self):
         """Legacy function. Should be removed at some point."""
-        return self.arg
+        return self.long_flag
 
     def get_short_flag(self):
         """Legacy function. Should be removed at some point."""
@@ -43,7 +48,7 @@ class CLIOption:
 
     def get_flags(self):
         """Legacy function. Should be removed at some point."""
-        return self.short_flag, self.arg
+        return self.short_flag, self.long_flag
 
     def apply(self, args, run):
         """Legacy function. Should be removed at some point."""
@@ -52,10 +57,13 @@ class CLIOption:
     def get_name(self):
         return self.apply_function.__name__
 
+    def get_description(self):
+        return inspect.getdoc(self.apply_function)
 
-def cli_option(short_flag: str, long_flag: str):
+
+def cli_option(short_flag: str, long_flag: str, is_flag=False):
     def wrapper(f: CLIFunction):
-        return CLIOption(f, short_flag, long_flag)
+        return CLIOption(f, short_flag, long_flag, is_flag)
     return wrapper
 
 
@@ -168,9 +176,7 @@ def gather_command_line_options(filter_disabled=None):
         options.append(opt)
 
     options += [debug_option,
-                pdb_option,
-                log_level_option,
-                comment_option]
+                loglevel_option]
 
     return sorted(options, key=get_name)
 
@@ -179,7 +185,7 @@ class HelpOption(CommandLineOption):
     """Print this help message and exit."""
 
 
-@cli_option('-d', '--debug')
+@cli_option('-d', '--debug', is_flag=True)
 def debug_option(args, run):
     """
     Set this run to debug mode.
@@ -189,15 +195,22 @@ def debug_option(args, run):
     run.debug = True
 
 
-@cli_option('-D', '--pdb')
-def pdb_option(args, run):
+class PDBOption(CommandLineOption):
     """Automatically enter post-mortem debugging with pdb on failure."""
-    run.pdb = True
+
+    short_flag = 'D'
+
+    @classmethod
+    def apply(cls, args, run):
+        run.pdb = True
 
 
-@cli_option('-l', '--LEVEL')
-def log_level_option(args, run):
-    """Adjust the loglevel of the root-logger of this run."""
+@cli_option('-l', '--loglevel')
+def loglevel_option(args, run):
+    """
+    Loglevel either as 0 - 50 or as string: DEBUG(10),
+    INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
+    """
     # TODO: sacred.initialize.create_run already takes care of this
 
     try:
@@ -207,10 +220,16 @@ def log_level_option(args, run):
     run.root_logger.setLevel(lvl)
 
 
-@cli_option('-c', '--COMMENT')
-def comment_option(args, run):
-    """A comment that should be stored along with the run."""
-    run.meta_info['comment'] = args
+class CommentOption(CommandLineOption):
+    """Adds a message to the run."""
+
+    arg = 'COMMENT'
+    arg_description = 'A comment that should be stored along with the run.'
+
+    @classmethod
+    def apply(cls, args, run):
+        """Add a comment to this run."""
+        run.meta_info['comment'] = args
 
 
 class BeatIntervalOption(CommandLineOption):

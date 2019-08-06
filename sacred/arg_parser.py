@@ -98,8 +98,9 @@ def _format_options_usage(options):
             flag = "{short} {long}".format(short=short, long=long)
 
         if isinstance(op, CLIOption):
-            doc = op.arg_description
+            doc = op.get_description()
         else:
+            # legacy
             doc = inspect.cleandoc(op.__doc__)
         wrapped_description = textwrap.wrap(doc,
                                             width=79,

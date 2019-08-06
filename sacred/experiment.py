@@ -12,7 +12,7 @@ from docopt import docopt, printable_usage
 
 from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
-    ForceOption, gather_command_line_options, log_level_option, CLIOption)
+    ForceOption, gather_command_line_options, loglevel_option, CLIOption)
 from sacred.commands import (help_for_command, print_config,
                              print_dependencies, save_config,
                              print_named_configs)
@@ -454,7 +454,7 @@ class Experiment(Ingredient):
         run = create_run(self, command_name, config_updates,
                          named_configs=named_configs,
                          force=options.get(ForceOption.get_flag(), False),
-                         log_level=options.get(log_level_option.get_flag(),
+                         log_level=options.get(loglevel_option.get_flag(),
                                                None))
         if info is not None:
             run.info.update(info)
