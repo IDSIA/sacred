@@ -415,4 +415,3 @@ def test_add_config_dict_chain(ex):
         'key_1': 'value_1', 'key_2': 'update_value_2',
         'key_3': 'value3', 'key_4': 'value4'}
     assert final_config['dictnest_cap'] == final_config['dictnest_dict']
-
