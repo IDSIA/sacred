@@ -80,8 +80,10 @@ def normalize_or_die(obj):
             assert_is_valid_key(key)
             res[key] = normalize_or_die(value)
         return res
-    elif isinstance(obj, (list, tuple)):
+    elif isinstance(obj, list):
         return list([normalize_or_die(value) for value in obj])
+    elif isinstance(obj, tuple):
+        return tuple([normalize_or_die(value) for value in obj])
     return normalize_numpy(obj)
 
 
