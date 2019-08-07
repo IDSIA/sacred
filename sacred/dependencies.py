@@ -6,13 +6,13 @@ import hashlib
 import os.path
 import re
 import sys
-import pathlib
+from pathlib import Path
 
 import pkg_resources
 
 import sacred.optional as opt
 from sacred import SETTINGS
-from sacred.utils import is_subdir, iter_prefixes
+from sacred.utils import iter_prefixes
 
 MB = 1048576
 MODULE_BLACKLIST = set(sys.builtin_module_names)
@@ -260,7 +260,7 @@ class PackageDependency:
 
 def convert_path_to_module_parts(path):
     """Convert path to a python file into list of module names."""
-    module_parts = list(pathlib.Path(path).parts)
+    module_parts = list(path.parts)
     if module_parts[-1] in ['__init__.py', '__init__.pyc']:
         # remove trailing __init__.py
         module_parts = module_parts[:-1]
@@ -294,9 +294,11 @@ def is_local_source(filename, modname, experiment_path):
         True if the module was imported locally from (a subdir of) the
         experiment_path, and False otherwise.
     """
-    if not is_subdir(filename, experiment_path):
+    filename = Path(os.path.abspath(os.path.realpath(filename)))
+    experiment_path = Path(os.path.abspath(os.path.realpath(experiment_path)))
+    if experiment_path not in filename.parents:
         return False
-    rel_path = os.path.relpath(filename, experiment_path)
+    rel_path = filename.relative_to(experiment_path)
     path_parts = convert_path_to_module_parts(rel_path)
 
     mod_parts = modname.split('.')
@@ -304,7 +306,7 @@ def is_local_source(filename, modname, experiment_path):
         return True
     if len(path_parts) > len(mod_parts):
         return False
-    abs_path_parts = convert_path_to_module_parts(os.path.abspath(filename))
+    abs_path_parts = convert_path_to_module_parts(filename)
     return all([p == m for p, m in zip(reversed(abs_path_parts),
                                        reversed(mod_parts))])
 

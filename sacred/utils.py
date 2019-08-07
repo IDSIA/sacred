@@ -6,7 +6,6 @@ import contextlib
 import importlib
 import inspect
 import logging
-import os.path
 import pkgutil
 import re
 import shlex
@@ -27,7 +26,7 @@ __all__ = ["NO_LOGGER", "PYTHON_IDENTIFIER", "CircularDependencyError",
            "set_by_dotted_path", "get_by_dotted_path", "iter_path_splits",
            "iter_prefixes", "join_paths", "is_prefix",
            "convert_to_nested_dict", "convert_camel_case_to_snake_case",
-           "print_filtered_stacktrace", "is_subdir",
+           "print_filtered_stacktrace",
            "optional_kwargs_decorator", "get_inheritors",
            "apply_backspaces_and_linefeeds", "rel_path", "IntervalTimer",
            "PathType"]
@@ -545,13 +544,6 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from stack.format()
         current_tb = current_tb.tb_next
     yield from tb_exception.format_exception_only()
-
-
-def is_subdir(path, directory):
-    path = os.path.abspath(os.path.realpath(path)) + os.sep
-    directory = os.path.abspath(os.path.realpath(directory)) + os.sep
-
-    return path.startswith(directory)
 
 
 # noinspection PyUnusedLocal

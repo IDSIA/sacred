@@ -6,7 +6,7 @@ import pymongo.errors
 class FailingMongoClient(mongomock.MongoClient):
     def __init__(self, max_calls_before_failure=2,
                  exception_to_raise=pymongo.errors.AutoReconnect, **kwargs):
-        super(FailingMongoClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
         self.exception_to_raise = exception_to_raise
         self._exception_to_raise = exception_to_raise
@@ -25,7 +25,7 @@ class FailingMongoClient(mongomock.MongoClient):
 class FailingDatabase(mongomock.Database):
     def __init__(self, max_calls_before_failure, exception_to_raise=None,
                  **kwargs):
-        super(FailingDatabase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
         self._exception_to_raise = exception_to_raise
 
@@ -42,7 +42,7 @@ class FailingDatabase(mongomock.Database):
 
 class FailingCollection(mongomock.Collection):
     def __init__(self, max_calls_before_failure, exception_to_raise, **kwargs):
-        super(FailingCollection, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure
         self._exception_to_raise = exception_to_raise
         self._calls = 0
@@ -52,20 +52,20 @@ class FailingCollection(mongomock.Collection):
         if self._calls > self._max_calls_before_failure:
             raise pymongo.errors.ConnectionFailure
         else:
-            return super(FailingCollection, self).insert_one(document)
+            return super().insert_one(document)
 
     def update_one(self, filter, update, upsert=False):
         self._calls += 1
         if self._calls > self._max_calls_before_failure:
             raise pymongo.errors.ConnectionFailure
         else:
-            return super(FailingCollection, self).update_one(filter, update,
+            return super().update_one(filter, update,
                                                              upsert)
 
 
 class ReconnectingMongoClient(FailingMongoClient):
     def __init__(self, max_calls_before_reconnect, **kwargs):
-        super(ReconnectingMongoClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
     def get_database(self, name, codec_options=None, read_preference=None,
@@ -82,7 +82,7 @@ class ReconnectingMongoClient(FailingMongoClient):
 
 class ReconnectingDatabase(FailingDatabase):
     def __init__(self, max_calls_before_reconnect, **kwargs):
-        super(ReconnectingDatabase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
     def get_collection(self, name, codec_options=None, read_preference=None,
@@ -99,7 +99,7 @@ class ReconnectingDatabase(FailingDatabase):
 
 class ReconnectingCollection(FailingCollection):
     def __init__(self, max_calls_before_reconnect, **kwargs):
-        super(ReconnectingCollection, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
     def insert_one(self, document):

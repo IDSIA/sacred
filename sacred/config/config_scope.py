@@ -14,9 +14,8 @@ from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
 
 
-class ConfigScope(object):
+class ConfigScope:
     def __init__(self, func):
-        super(ConfigScope, self).__init__()
         self.args, vararg_name, kw_wildcard, _, kwargs = get_argspec(func)
         assert vararg_name is None, \
             "*args not allowed for ConfigScope functions"

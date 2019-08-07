@@ -35,7 +35,7 @@ def get_argspec(f):
     return args, vararg_name, kw_wildcard_name, pos_args, kwargs
 
 
-class Signature(object):
+class Signature:
     """
     Extracts and stores information about the signature of a function.
 

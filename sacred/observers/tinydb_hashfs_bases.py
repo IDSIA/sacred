@@ -29,7 +29,7 @@ class BufferedReaderWrapper(BufferedReader):
 
     def __init__(self, f_obj):
         f_obj = FileIO(f_obj.name)
-        super(BufferedReaderWrapper, self).__init__(f_obj)
+        super().__init__(f_obj)
 
     def __copy__(self):
         f = open(self.name, self.mode)
