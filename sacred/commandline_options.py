@@ -7,63 +7,14 @@ It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
 
+import warnings
+
 from sacred.commands import print_config
 from sacred.settings import SETTINGS
-from sacred.utils import (convert_camel_case_to_snake_case, get_inheritors,
-                          module_exists)
+from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
 
 
-# from six.with_metaclass
-def with_metaclass(meta, *bases):
-    """Create a base class with a metaclass."""
-    # This requires a bit of explanation: the basic idea is to make a dummy
-    # metaclass for one level of class instantiation that replaces itself with
-    # the actual metaclass.
-    class Metaclass(meta):
-        def __new__(cls, name, this_bases, d):
-            return meta(name, bases, d)
-    return type.__new__(Metaclass, 'temporary_class', (), {})
-
-
-def parse_mod_deps(depends_on):
-    if not isinstance(depends_on, (list, tuple)):
-        depends_on = [depends_on]
-    module_names = []
-    package_names = []
-    for d in depends_on:
-        mod, _, pkg = d.partition('#')
-        module_names.append(mod)
-        package_names.append(pkg or mod)
-    return module_names, package_names
-
-
-class CheckDependencies(type):
-    """Modifies the CommandLineOption if a specified dependency is not met."""
-    def __init__(cls, what, bases=None, dict_=None):  # noqa
-        if '__depends_on__' in dict_:
-            mod_names, package_names = parse_mod_deps(dict_['__depends_on__'])
-            mods_exist = [module_exists(m) for m in mod_names]
-
-            if not all(mods_exist):
-                missing_pkgs = [p for p, x in zip(package_names, mods_exist)
-                                if not x]
-                if len(missing_pkgs) > 1:
-                    error_msg = '{} depends on missing [{}] packages.'.format(
-                        cls.__name__, ", ".join(missing_pkgs))
-                else:
-                    error_msg = '{} depends on missing "{}" package.'.format(
-                        cls.__name__, missing_pkgs[0])
-
-                def _apply(cls, args, run):
-                    raise ImportError(error_msg)
-                cls.__doc__ = '( ' + error_msg + ')'
-                cls.apply = classmethod(_apply)
-                cls._enabled = False
-
-        type.__init__(cls, what, bases, dict_)
-
-
-class CommandLineOption(with_metaclass(CheckDependencies, object)):
+class CommandLineOption:
     """
     Base class for all command-line options.
 
@@ -77,14 +28,9 @@ class CommandLineOption(with_metaclass(CheckDependencies, object)):
     value of the argument (if applicable) and the current run. You can modify
     the run object in any way.
 
-    If the command line option depends on one or more installed packages, this
-    should be specified as the `__depends_on__` attribute.
-    It can be either a string with the name of the module, or a list/tuple of
-    such names.
-    If the module name (import name) differs from the name of the package, the
-    latter can be specified using a '#' to improve the description and error
-    message.
-    For example `__depends_on__ = 'git#GitPython'`.
+    If the command line option depends on one or more installed packages, those
+    should be imported in the `apply` method to get a proper ImportError
+    if the packages are not available.
     """
 
     _enabled = True
@@ -282,10 +228,14 @@ class PriorityOption(CommandLineOption):
 class EnforceCleanOption(CommandLineOption):
     """Fail if any version control repository is dirty."""
 
-    __depends_on__ = 'git#GitPython'
-
     @classmethod
     def apply(cls, args, run):
+        try:
+            import git  # NOQA
+        except ImportError:
+            warnings.warn('GitPython must be installed to use the '
+                          '--enforce-clean option.')
+            raise
         repos = run.experiment_info['repositories']
         if not repos:
             raise RuntimeError('No version control detected. '

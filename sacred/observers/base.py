@@ -4,7 +4,7 @@
 __all__ = ('RunObserver', 'td_format')
 
 
-class RunObserver(object):
+class RunObserver:
     """Defines the interface for all run observers."""
 
     priority = 0

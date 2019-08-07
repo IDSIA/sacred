@@ -132,7 +132,6 @@ class SqlObserver(PlainSQLObserver):
 
 class SqlOption(CommandLineOption):
     """Add a SQL Observer to the experiment."""
-    __depends_on__ = 'sqlalchemy'
 
     arg = 'DB_URL'
     arg_description = \

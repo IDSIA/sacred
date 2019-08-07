@@ -5,71 +5,13 @@ from __future__ import (division, print_function, unicode_literals,
                         absolute_import)
 
 import os
-import datetime as dt
-import json
-import uuid
 import textwrap
+import uuid
 from collections import OrderedDict
 
-from io import BufferedReader, FileIO
-
 from sacred.__about__ import __version__
-from sacred.observers import RunObserver
 from sacred.commandline_options import CommandLineOption
-import sacred.optional as opt
-
-# Set data type values for abstract properties in Serializers
-series_type = opt.pandas.Series if opt.has_pandas else None
-dataframe_type = opt.pandas.DataFrame if opt.has_pandas else None
-ndarray_type = opt.np.ndarray if opt.has_numpy else None
-
-
-class BufferedReaderWrapper(BufferedReader):
-    """Custom wrapper to allow for copying of file handle.
-
-    tinydb_serialisation currently does a deepcopy on all the content of the
-    dictionary before serialisation. By default, file handles are not
-    copiable so this wrapper is necessary to create a duplicate of the
-    file handle passes in.
-
-    Note that the file passed in will therefor remain open as the copy is the
-    one that gets closed.
-    """
-
-    def __init__(self, f_obj):
-        f_obj = FileIO(f_obj.name)
-        super(BufferedReaderWrapper, self).__init__(f_obj)
-
-    def __copy__(self):
-        f = open(self.name, self.mode)
-        return BufferedReaderWrapper(f)
-
-    def __deepcopy__(self, memo):
-        f = open(self.name, self.mode)
-        return BufferedReaderWrapper(f)
-
-
-def get_db_file_manager(root_dir):
-    fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
-                width=2, algorithm='md5')
-
-    # Setup Serialisation object for non list/dict objects
-    serialization_store = SerializationMiddleware()
-    serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
-    serialization_store.register_serializer(FileSerializer(fs), 'TinyFile')
-
-    if opt.has_numpy:
-        serialization_store.register_serializer(NdArraySerializer(),
-                                                'TinyArray')
-    if opt.has_pandas:
-        serialization_store.register_serializer(DataFrameSerializer(),
-                                                'TinyDataFrame')
-        serialization_store.register_serializer(SeriesSerializer(),
-                                                'TinySeries')
-
-    db = TinyDB(os.path.join(root_dir, 'metadata.json'),
-                storage=serialization_store)
-    return db, fs
+from sacred.observers import RunObserver
 
 
 class TinyDbObserver(RunObserver):
@@ -78,7 +20,7 @@ class TinyDbObserver(RunObserver):
 
     @staticmethod
     def create(path='./runs_db', overwrite=None):
-
+        from .tinydb_hashfs_bases import get_db_file_manager
         root_dir = os.path.abspath(path)
         if not os.path.exists(root_dir):
             os.makedirs(root_dir)
@@ -104,7 +46,7 @@ class TinyDbObserver(RunObserver):
             self.db_run_id = db_run_id
 
     def save_sources(self, ex_info):
-
+        from .tinydb_hashfs_bases import BufferedReaderWrapper
         source_info = []
         for source_name, md5 in ex_info['sources']:
 
@@ -184,7 +126,7 @@ class TinyDbObserver(RunObserver):
         self.save()
 
     def resource_event(self, filename):
-
+        from .tinydb_hashfs_bases import BufferedReaderWrapper
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, 'rb'))
         resource = [filename, id_, handle]
@@ -194,7 +136,7 @@ class TinyDbObserver(RunObserver):
             self.save()
 
     def artifact_event(self, name, filename, metadata=None, content_type=None):
-
+        from .tinydb_hashfs_bases import BufferedReaderWrapper
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, 'rb'))
         artifact = [name, filename, id_, handle]
@@ -212,9 +154,6 @@ class TinyDbObserver(RunObserver):
 class TinyDbOption(CommandLineOption):
     """Add a TinyDB Observer to the experiment."""
 
-    __depends_on__ = ['tinydb', 'hashfs',
-                      'tinydb_serialization#tinydb-serialization']
-
     arg = 'BASEDIR'
 
     @classmethod
@@ -228,10 +167,10 @@ class TinyDbOption(CommandLineOption):
         return args
 
 
-class TinyDbReader(object):
+class TinyDbReader:
 
     def __init__(self, path):
-
+        from .tinydb_hashfs_bases import get_db_file_manager
         root_dir = os.path.abspath(path)
         if not os.path.exists(root_dir):
             raise IOError('Path does not exist: %s' % path)
@@ -367,6 +306,8 @@ Outputs:
 
     def fetch_metadata(self, exp_name=None, query=None, indices=None):
         """Return all metadata for matching experiment name, index or query."""
+        from tinydb import Query
+        from tinydb.queries import QueryImpl
         if exp_name or query:
             if query:
                 assert type(query), QueryImpl
@@ -422,63 +363,3 @@ Outputs:
         formatted_text = '\n'.join(formatted_lines)
 
         return formatted_text
-
-
-if opt.has_tinydb:  # noqa
-    from tinydb import TinyDB, Query
-    from tinydb.queries import QueryImpl
-    from hashfs import HashFS
-    from tinydb_serialization import Serializer, SerializationMiddleware
-
-    class DateTimeSerializer(Serializer):
-        OBJ_CLASS = dt.datetime  # The class this serializer handles
-
-        def encode(self, obj):
-            return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
-
-        def decode(self, s):
-            return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
-
-    class NdArraySerializer(Serializer):
-        OBJ_CLASS = ndarray_type
-
-        def encode(self, obj):
-            return json.dumps(obj.tolist(), check_circular=True)
-
-        def decode(self, s):
-            return opt.np.array(json.loads(s))
-
-    class DataFrameSerializer(Serializer):
-        OBJ_CLASS = dataframe_type
-
-        def encode(self, obj):
-            return obj.to_json()
-
-        def decode(self, s):
-            return opt.pandas.read_json(s)
-
-    class SeriesSerializer(Serializer):
-        OBJ_CLASS = series_type
-
-        def encode(self, obj):
-            return obj.to_json()
-
-        def decode(self, s):
-            return opt.pandas.read_json(s, typ='series')
-
-    class FileSerializer(Serializer):
-        OBJ_CLASS = BufferedReaderWrapper
-
-        def __init__(self, fs):
-            self.fs = fs
-
-        def encode(self, obj):
-            address = self.fs.put(obj)
-            return json.dumps(address.id)
-
-        def decode(self, s):
-            id_ = json.loads(s)
-            file_reader = self.fs.open(id_)
-            file_reader = BufferedReaderWrapper(file_reader)
-            file_reader.hash = id_
-            return file_reader
