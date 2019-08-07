@@ -18,7 +18,7 @@ class SqlObserver(RunObserver):
     @classmethod
     def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         warnings.warn('SqlObserver.create() is deprecated in favor of'
-                      'SqlObserver().')
+                      'SqlObserver().', DeprecationWarning)
         return cls(url, echo, priority)
 
     def __init__(self, url=None, echo=False, priority=DEFAULT_SQL_PRIORITY,
