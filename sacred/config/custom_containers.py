@@ -304,7 +304,7 @@ SIMPLIFY_TYPE = {
     int: int,
     str: str,
     list: list,
-    tuple: list,
+    tuple: tuple,
     dict: dict,
     DogmaticDict: dict,
     DogmaticList: list,
