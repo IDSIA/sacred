@@ -583,7 +583,7 @@ To add a SqlObserver from python code do:
 
     from sacred.observers import SqlObserver
 
-    ex.observers.append(SqlObserver.create('sqlite:///foo.db'))
+    ex.observers.append(SqlObserver('sqlite:///foo.db'))
 
 
 Schema
