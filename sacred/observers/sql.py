@@ -21,16 +21,17 @@ class SqlObserver(RunObserver):
                       'SqlObserver().')
         return cls(url, echo=echo, priority=priority)
 
-    def __init__(self, url=None, *, echo=False, engine=None, session=None,
-                 priority=DEFAULT_SQL_PRIORITY):
+    def __init__(self, url=None, echo=False, priority=DEFAULT_SQL_PRIORITY,
+                 mock_args=None):
         from sqlalchemy.orm import sessionmaker, scoped_session
         import sqlalchemy as sa
         # make session thread-local to avoid problems with sqlite (see #275)
-        self.engine = engine or sa.create_engine(url, echo=echo)
-        if session is None:
+        if mock_args is None:
+            self.engine = sa.create_engine(url, echo=echo)
             self.session = scoped_session(sessionmaker(bind=self.engine))
         else:
-            self.session = session
+            self.engine = mock_args['engine']
+            self.session = mock_args['session']
         self.priority = priority
         self.run = None
         self.lock = Lock()
