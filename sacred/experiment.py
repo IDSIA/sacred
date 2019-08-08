@@ -520,9 +520,8 @@ class Experiment(Ingredient):
     def _check_command(self, cmd_name):
         commands = dict(self.gather_commands())
         if cmd_name is not None and cmd_name not in commands:
-            return (
-                'Error: Command "{}" not found. Available commands are: '
-                "{}".format(cmd_name, ", ".join(commands.keys()))
+            return 'Error: Command "{}" not found. Available commands are: ' "{}".format(
+                cmd_name, ", ".join(commands.keys())
             )
 
         if cmd_name is None:

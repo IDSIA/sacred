@@ -83,9 +83,11 @@ class Ingredient:
         mainfile_dir = os.path.dirname(_caller_globals.get("__file__", "."))
         self.base_dir = os.path.abspath(base_dir or mainfile_dir)
         self.doc = _caller_globals.get("__doc__", "")
-        self.mainfile, self.sources, self.dependencies = gather_sources_and_dependencies(
-            _caller_globals, self.base_dir
-        )
+        (
+            self.mainfile,
+            self.sources,
+            self.dependencies,
+        ) = gather_sources_and_dependencies(_caller_globals, self.base_dir)
         if self.mainfile is None and not interactive:
             raise RuntimeError(
                 "Defining an experiment in interactive mode! "
