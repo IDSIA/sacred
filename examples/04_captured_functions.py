@@ -21,7 +21,7 @@ When run, this example will output the following::
 
 from sacred import Experiment
 
-ex = Experiment('captured_functions')
+ex = Experiment("captured_functions")
 
 
 @ex.config
@@ -32,12 +32,12 @@ def cfg():
 # Captured functions have access to all the configuration parameters
 @ex.capture
 def foo(message):
-    print(message.format('foo'))
+    print(message.format("foo"))
 
 
 @ex.capture
 def bar(message):
-    print(message.format('bar'))
+    print(message.format("bar"))
 
 
 @ex.automain
@@ -45,4 +45,4 @@ def main():
     foo()  # Notice that we do not pass message here
     bar()  # or here
     # But we can if we feel like it...
-    foo('Overriding the default message for {}.')
+    foo("Overriding the default message for {}.")

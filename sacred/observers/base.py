@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-__all__ = ('RunObserver', 'td_format')
+__all__ = ("RunObserver", "td_format")
 
 
 class RunObserver:
@@ -9,12 +9,14 @@ class RunObserver:
 
     priority = 0
 
-    def queued_event(self, ex_info, command, host_info, queue_time, config,
-                     meta_info, _id):
+    def queued_event(
+        self, ex_info, command, host_info, queue_time, config, meta_info, _id
+    ):
         pass
 
-    def started_event(self, ex_info, command, host_info, start_time, config,
-                      meta_info, _id):
+    def started_event(
+        self, ex_info, command, host_info, start_time, config, meta_info, _id
+    ):
         pass
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
@@ -43,12 +45,12 @@ def td_format(td_object):
         return "less than a second"
 
     periods = [
-        ('year', 60 * 60 * 24 * 365),
-        ('month', 60 * 60 * 24 * 30),
-        ('day', 60 * 60 * 24),
-        ('hour', 60 * 60),
-        ('minute', 60),
-        ('second', 1)
+        ("year", 60 * 60 * 24 * 365),
+        ("month", 60 * 60 * 24 * 30),
+        ("day", 60 * 60 * 24),
+        ("hour", 60 * 60),
+        ("minute", 60),
+        ("second", 1),
     ]
 
     strings = []

@@ -10,6 +10,13 @@ from sacred.observers.slack import SlackObserver
 from sacred.observers.telegram_obs import TelegramObserver
 
 
-__all__ = ('FileStorageObserver', 'RunObserver', 'MongoObserver',
-           'SqlObserver', 'TinyDbObserver', 'TinyDbReader',
-           'SlackObserver', 'TelegramObserver')
+__all__ = (
+    "FileStorageObserver",
+    "RunObserver",
+    "MongoObserver",
+    "SqlObserver",
+    "TinyDbObserver",
+    "TinyDbReader",
+    "SlackObserver",
+    "TelegramObserver",
+)

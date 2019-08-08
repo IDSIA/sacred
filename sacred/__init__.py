@@ -14,6 +14,15 @@ from sacred import observers
 from sacred.host_info import host_info_getter, host_info_gatherer
 
 
-__all__ = ('Experiment', 'Ingredient', 'observers', 'host_info_getter',
-           '__version__', '__author__', '__author_email__', '__url__',
-           'SETTINGS', 'host_info_gatherer')
+__all__ = (
+    "Experiment",
+    "Ingredient",
+    "observers",
+    "host_info_getter",
+    "__version__",
+    "__author__",
+    "__author_email__",
+    "__url__",
+    "SETTINGS",
+    "host_info_gatherer",
+)

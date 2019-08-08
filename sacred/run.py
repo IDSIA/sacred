@@ -9,22 +9,32 @@ import traceback as tb
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
-from sacred.utils import (SacredInterrupt, join_paths,
-                          IntervalTimer)
+from sacred.utils import SacredInterrupt, join_paths, IntervalTimer
 from sacred.stdout_capturing import get_stdcapturer
 
 
 class Run:
     """Represent and manage a single run of an experiment."""
 
-    def __init__(self, config, config_modifications, main_function, observers,
-                 root_logger, run_logger, experiment_info, host_info,
-                 pre_run_hooks, post_run_hooks, captured_out_filter=None):
+    def __init__(
+        self,
+        config,
+        config_modifications,
+        main_function,
+        observers,
+        root_logger,
+        run_logger,
+        experiment_info,
+        host_info,
+        pre_run_hooks,
+        post_run_hooks,
+        captured_out_filter=None,
+    ):
 
         self._id = None
         """The ID of this run as assigned by the first observer"""
 
-        self.captured_out = ''
+        self.captured_out = ""
         """Captured stdout and stderr"""
 
         self.config = config
@@ -108,7 +118,7 @@ class Run:
 
         self._metrics = metrics_logger.MetricsLogger()
 
-    def open_resource(self, filename, mode='r'):
+    def open_resource(self, filename, mode="r"):
         """Open a file and also save it as a resource.
 
         Opens a file, reports it to the observers as a resource, and returns
@@ -156,13 +166,7 @@ class Run:
         filename = os.path.abspath(filename)
         self._emit_resource_added(filename)
 
-    def add_artifact(
-            self,
-            filename,
-            name=None,
-            metadata=None,
-            content_type=None,
-    ):
+    def add_artifact(self, filename, name=None, metadata=None, content_type=None):
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
@@ -203,8 +207,10 @@ class Run:
 
         """
         if self.start_time is not None:
-            raise RuntimeError('A run can only be started once. '
-                               '(Last start was {})'.format(self.start_time))
+            raise RuntimeError(
+                "A run can only be started once. "
+                "(Last start was {})".format(self.start_time)
+            )
 
         if self.unobserved:
             self.observers = []
@@ -212,7 +218,7 @@ class Run:
             self.observers = sorted(self.observers, key=lambda x: -x.priority)
 
         self.warn_if_unobserved()
-        set_global_seed(self.config['seed'])
+        set_global_seed(self.config["seed"])
 
         if self.capture_mode is None and not self.observers:
             capture_mode = "no"
@@ -232,15 +238,15 @@ class Run:
                 self.result = self.main_function(*args)
                 self._execute_post_run_hooks()
                 if self.result is not None:
-                    self.run_logger.info('Result: {}'.format(self.result))
+                    self.run_logger.info("Result: {}".format(self.result))
                 elapsed_time = self._stop_time()
-                self.run_logger.info('Completed after %s', elapsed_time)
+                self.run_logger.info("Completed after %s", elapsed_time)
                 self._get_captured_output()
             self._stop_heartbeat()
             self._emit_completed(self.result)
         except (SacredInterrupt, KeyboardInterrupt) as e:
             self._stop_heartbeat()
-            status = getattr(e, 'STATUS', 'INTERRUPTED')
+            status = getattr(e, "STATUS", "INTERRUPTED")
             self._emit_interrupted(status)
             raise
         except BaseException:
@@ -258,7 +264,7 @@ class Run:
             return
         text = self._output_file.get()
         if isinstance(text, bytes):
-            text = text.decode('utf-8', 'replace')
+            text = text.decode("utf-8", "replace")
         if self.captured_out:
             text = self.captured_out + text
         if self.captured_out_filter is not None:
@@ -266,28 +272,30 @@ class Run:
         self.captured_out = text
 
     def _start_heartbeat(self):
-        self.run_logger.debug('Starting Heartbeat')
+        self.run_logger.debug("Starting Heartbeat")
         if self.beat_interval > 0:
             self._stop_heartbeat_event, self._heartbeat = IntervalTimer.create(
-                self._emit_heartbeat, self.beat_interval)
+                self._emit_heartbeat, self.beat_interval
+            )
             self._heartbeat.start()
 
     def _stop_heartbeat(self):
-        self.run_logger.debug('Stopping Heartbeat')
+        self.run_logger.debug("Stopping Heartbeat")
         # only stop if heartbeat was started
         if self._heartbeat is not None:
             self._stop_heartbeat_event.set()
             self._heartbeat.join(timeout=2)
 
     def _emit_queued(self):
-        self.status = 'QUEUED'
+        self.status = "QUEUED"
         queue_time = datetime.datetime.utcnow()
-        self.meta_info['queue_time'] = queue_time
-        command = join_paths(self.main_function.prefix,
-                             self.main_function.signature.name)
+        self.meta_info["queue_time"] = queue_time
+        command = join_paths(
+            self.main_function.prefix, self.main_function.signature.name
+        )
         self.run_logger.info("Queuing-up command '%s'", command)
         for observer in self.observers:
-            if hasattr(observer, 'queued_event'):
+            if hasattr(observer, "queued_event"):
                 _id = observer.queued_event(
                     ex_info=self.experiment_info,
                     command=command,
@@ -295,7 +303,7 @@ class Run:
                     queue_time=queue_time,
                     config=self.config,
                     meta_info=self.meta_info,
-                    _id=self._id
+                    _id=self._id,
                 )
                 if self._id is None:
                     self._id = _id
@@ -303,18 +311,19 @@ class Run:
                 # the experiment SHOULD fail if any of the observers fails
 
         if self._id is None:
-            self.run_logger.info('Queued')
+            self.run_logger.info("Queued")
         else:
             self.run_logger.info('Queued-up run with ID "{}"'.format(self._id))
 
     def _emit_started(self):
-        self.status = 'RUNNING'
+        self.status = "RUNNING"
         self.start_time = datetime.datetime.utcnow()
-        command = join_paths(self.main_function.prefix,
-                             self.main_function.signature.name)
+        command = join_paths(
+            self.main_function.prefix, self.main_function.signature.name
+        )
         self.run_logger.info("Running command '%s'", command)
         for observer in self.observers:
-            if hasattr(observer, 'started_event'):
+            if hasattr(observer, "started_event"):
                 _id = observer.started_event(
                     ex_info=self.experiment_info,
                     command=command,
@@ -322,14 +331,14 @@ class Run:
                     start_time=self.start_time,
                     config=self.config,
                     meta_info=self.meta_info,
-                    _id=self._id
+                    _id=self._id,
                 )
                 if self._id is None:
                     self._id = _id
                 # do not catch any exceptions on startup:
                 # the experiment SHOULD fail if any of the observers fails
         if self._id is None:
-            self.run_logger.info('Started')
+            self.run_logger.info("Started")
         else:
             self.run_logger.info('Started run with ID "{}"'.format(self._id))
 
@@ -340,58 +349,71 @@ class Run:
         logged_metrics = self._metrics.get_last_metrics()
         metrics_by_name = linearize_metrics(logged_metrics)
         for observer in self.observers:
-            self._safe_call(observer, 'log_metrics',
-                            metrics_by_name=metrics_by_name,
-                            info=self.info)
-            self._safe_call(observer, 'heartbeat_event',
-                            info=self.info,
-                            captured_out=self.captured_out,
-                            beat_time=beat_time,
-                            result=self.result)
+            self._safe_call(
+                observer, "log_metrics", metrics_by_name=metrics_by_name, info=self.info
+            )
+            self._safe_call(
+                observer,
+                "heartbeat_event",
+                info=self.info,
+                captured_out=self.captured_out,
+                beat_time=beat_time,
+                result=self.result,
+            )
 
     def _stop_time(self):
         self.stop_time = datetime.datetime.utcnow()
         elapsed_time = datetime.timedelta(
-            seconds=round((self.stop_time - self.start_time).total_seconds()))
+            seconds=round((self.stop_time - self.start_time).total_seconds())
+        )
         return elapsed_time
 
     def _emit_completed(self, result):
-        self.status = 'COMPLETED'
+        self.status = "COMPLETED"
         for observer in self.observers:
-            self._final_call(observer, 'completed_event',
-                             stop_time=self.stop_time,
-                             result=result)
+            self._final_call(
+                observer, "completed_event", stop_time=self.stop_time, result=result
+            )
 
     def _emit_interrupted(self, status):
         self.status = status
         elapsed_time = self._stop_time()
         self.run_logger.warning("Aborted after %s!", elapsed_time)
         for observer in self.observers:
-            self._final_call(observer, 'interrupted_event',
-                             interrupt_time=self.stop_time,
-                             status=status)
+            self._final_call(
+                observer,
+                "interrupted_event",
+                interrupt_time=self.stop_time,
+                status=status,
+            )
 
     def _emit_failed(self, exc_type, exc_value, trace):
-        self.status = 'FAILED'
+        self.status = "FAILED"
         elapsed_time = self._stop_time()
         self.run_logger.error("Failed after %s!", elapsed_time)
         self.fail_trace = tb.format_exception(exc_type, exc_value, trace)
         for observer in self.observers:
-            self._final_call(observer, 'failed_event',
-                             fail_time=self.stop_time,
-                             fail_trace=self.fail_trace)
+            self._final_call(
+                observer,
+                "failed_event",
+                fail_time=self.stop_time,
+                fail_trace=self.fail_trace,
+            )
 
     def _emit_resource_added(self, filename):
         for observer in self.observers:
-            self._safe_call(observer, 'resource_event', filename=filename)
+            self._safe_call(observer, "resource_event", filename=filename)
 
     def _emit_artifact_added(self, name, filename, metadata, content_type):
         for observer in self.observers:
-            self._safe_call(observer, 'artifact_event',
-                            name=name,
-                            filename=filename,
-                            metadata=metadata,
-                            content_type=content_type)
+            self._safe_call(
+                observer,
+                "artifact_event",
+                name=name,
+                filename=filename,
+                metadata=metadata,
+                content_type=content_type,
+            )
 
     def _safe_call(self, obs, method, **kwargs):
         if obs not in self._failed_observers and hasattr(obs, method):
@@ -399,8 +421,9 @@ class Run:
                 getattr(obs, method)(**kwargs)
             except Exception as e:
                 self._failed_observers.append(obs)
-                self.run_logger.warning("An error ocurred in the '{}' "
-                                        "observer: {}".format(obs, e))
+                self.run_logger.warning(
+                    "An error ocurred in the '{}' " "observer: {}".format(obs, e)
+                )
 
     def _final_call(self, observer, method, **kwargs):
         if hasattr(observer, method):
@@ -415,12 +438,14 @@ class Run:
     def _wait_for_observers(self):
         """Block until all observers finished processing."""
         for observer in self.observers:
-            self._safe_call(observer, 'join')
+            self._safe_call(observer, "join")
 
     def _warn_about_failed_observers(self):
         for observer in self._failed_observers:
-            self.run_logger.warning("The observer '{}' failed at some point "
-                                    "during the run.".format(observer))
+            self.run_logger.warning(
+                "The observer '{}' failed at some point "
+                "during the run.".format(observer)
+            )
 
     def _execute_pre_run_hooks(self):
         for pr in self.pre_run_hooks:
