@@ -2,13 +2,17 @@ import mongomock
 import pymongo
 import pymongo.errors
 
+# fmt: off
+# TODO: This file contains trailing commas after **kwargs,
+# which is incompatible with the py35 formatting of black
+# right now. Remove once py35 is dropped.
 
 class FailingMongoClient(mongomock.MongoClient):
     def __init__(
         self,
         max_calls_before_failure=2,
         exception_to_raise=pymongo.errors.AutoReconnect,
-        **kwargs,
+        **kwargs
     ):
         super().__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure

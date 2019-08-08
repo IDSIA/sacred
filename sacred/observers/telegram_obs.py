@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+# fmt: off
+# TODO: This file contains trailing commas after **kwargs,
+# which is incompatible with the py35 formatting of black
+# right now. Remove once py35 is dropped.
 from sacred.observers.base import RunObserver, td_format
 from sacred.config.config_files import load_config_file
 import logging
@@ -80,7 +83,7 @@ class TelegramObserver(RunObserver):
         chat_id,
         silent_completion=False,
         priority=DEFAULT_TELEGRAM_PRIORITY,
-        **kwargs,
+        **kwargs
     ):
         self.silent_completion = silent_completion
         self.chat_id = chat_id
