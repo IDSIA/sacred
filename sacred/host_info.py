@@ -17,8 +17,9 @@ from sacred.settings import SETTINGS
 
 __all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
 
+# Legacy global dict of functions that are used
+# to collect the host information.
 host_info_gatherers = {}
-"""Global dict of functions that are used to collect the host information."""
 
 
 class IgnoreHostInfo(Exception):
@@ -44,12 +45,13 @@ def host_info_gatherer(name):
 
 
 def check_additional_host_info(additional_host_info: List[HostInfoGetter]):
+    names_taken = [x.name for x in _host_info_gatherers_list]
     for getter in additional_host_info:
-        if getter.name in host_info_gatherers:
+        if getter.name in names_taken:
             error_msg = (
                 'Key {} used in `additional_host_info` already exists as a '
                 'default gatherer function. Do not use the following keys: '
-                '{}').format(getter.name, [host_info_gatherers.keys()])
+                '{}').format(getter.name, names_taken)
             raise KeyError(error_msg)
 
 
@@ -64,6 +66,8 @@ def get_host_info(additional_host_info: List[HostInfoGetter] = None):
 
     """
     additional_host_info = additional_host_info or []
+    # can't use += because we don't want to modify the mutable argument.
+    additional_host_info = additional_host_info + _host_info_gatherers_list
     all_host_info_gatherers = host_info_gatherers.copy()
     for getter in additional_host_info:
         all_host_info_gatherers[getter.name] = getter
@@ -173,12 +177,12 @@ def _environment():
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
 
 
-default_host_info = [_hostname,
-                     _os,
-                     _python_version,
-                     _cpu,
-                     _gpus,
-                     _environment]
+_host_info_gatherers_list = [_hostname,
+                             _os,
+                             _python_version,
+                             _cpu,
+                             _gpus,
+                             _environment]
 
 # ################### Get CPU Information ###############################
 
