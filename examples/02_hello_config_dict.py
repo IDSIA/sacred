@@ -29,9 +29,7 @@ from sacred import Experiment
 ex = Experiment()
 
 # We add message to the configuration of the experiment here
-ex.add_config({
-    "message": "Hello world!"
-})
+ex.add_config({"message": "Hello world!"})
 # Equivalent:
 # ex.add_config(
 #     message="Hello world!"

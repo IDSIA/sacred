@@ -12,7 +12,7 @@ __all__ = ("__version__", "__author__", "__author_email__", "__url__")
 
 __version__ = "0.7.5"
 
-__author__ = 'Klaus Greff'
-__author_email__ = 'klaus.greff@startmail.com'
+__author__ = "Klaus Greff"
+__author_email__ = "klaus.greff@startmail.com"
 
 __url__ = "https://github.com/IDSIA/sacred"

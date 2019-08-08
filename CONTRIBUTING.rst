@@ -66,22 +66,27 @@ local development.
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
+4. Create your development environment and install the pre-commit hooks
+    $ # Activate your environment
+    $ pip install -r dev-requirements.txt
+    $ pre-commit install
+
 Now you can make your changes locally.
 
-4. When you're done making changes, check that your changes pass style and unit
+5. When you're done making changes, check that your changes pass style and unit
    tests, including testing other Python versions with tox::
 
     $ tox
 
 To get tox, just pip install it.
 
-5. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-6. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
 
 .. _Fork: https://github.com/IDSIA/sacred/fork
 

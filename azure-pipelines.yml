@@ -63,6 +63,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-16.04'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'flake8'
+      Linux black:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'black'
       Linux coverage:
         IMAGE_NAME: 'ubuntu-16.04'
         PYTHON_VERSION: '3.7'

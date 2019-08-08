@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|unix_build| |windows_build| |coverage| |code_quality|
+|unix_build| |windows_build| |coverage| |code_quality| |black|
 
 
 
@@ -250,5 +250,6 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
-
-
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/ambv/black
+    :alt: Code style: black
