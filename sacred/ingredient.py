@@ -10,19 +10,29 @@ from collections import OrderedDict
 
 import wrapt
 
-from sacred.config import (ConfigDict, ConfigScope, create_captured_function,
-                           load_config_file)
-from sacred.dependencies import (PEP440_VERSION_PATTERN, PackageDependency,
-                                 Source, gather_sources_and_dependencies)
-from sacred.utils import (CircularDependencyError, optional_kwargs_decorator,
-                          join_paths)
+from sacred.config import (
+    ConfigDict,
+    ConfigScope,
+    create_captured_function,
+    load_config_file,
+)
+from sacred.dependencies import (
+    PEP440_VERSION_PATTERN,
+    PackageDependency,
+    Source,
+    gather_sources_and_dependencies,
+)
+from sacred.utils import CircularDependencyError, optional_kwargs_decorator, join_paths
 
-__all__ = ('Ingredient',)
+__all__ = ("Ingredient",)
 
 
 def collect_repositories(sources):
-    return [{'url': s.repo, 'commit': s.commit, 'dirty': s.is_dirty}
-            for s in sources if s.repo]
+    return [
+        {"url": s.repo, "commit": s.commit, "dirty": s.is_dirty}
+        for s in sources
+        if s.repo
+    ]
 
 
 @wrapt.decorator
@@ -49,11 +59,14 @@ class Ingredient:
     Ingredients can themselves use ingredients.
     """
 
-    def __init__(self, path: PathType,
-                 ingredients: Sequence['Ingredient'] = (),
-                 interactive: bool = False,
-                 _caller_globals: Optional[dict] = None,
-                 base_dir: Optional[PathType] = None):
+    def __init__(
+        self,
+        path: PathType,
+        ingredients: Sequence["Ingredient"] = (),
+        interactive: bool = False,
+        _caller_globals: Optional[dict] = None,
+        base_dir: Optional[PathType] = None,
+    ):
         self.path = path
         self.config_hooks = []
         self.configurations = []
@@ -67,16 +80,21 @@ class Ingredient:
         self.commands = OrderedDict()
         # capture some context information
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
-        mainfile_dir = os.path.dirname(_caller_globals.get('__file__', '.'))
+        mainfile_dir = os.path.dirname(_caller_globals.get("__file__", "."))
         self.base_dir = os.path.abspath(base_dir or mainfile_dir)
-        self.doc = _caller_globals.get('__doc__', "")
-        self.mainfile, self.sources, self.dependencies = \
-            gather_sources_and_dependencies(_caller_globals, self.base_dir)
+        self.doc = _caller_globals.get("__doc__", "")
+        (
+            self.mainfile,
+            self.sources,
+            self.dependencies,
+        ) = gather_sources_and_dependencies(_caller_globals, self.base_dir)
         if self.mainfile is None and not interactive:
-            raise RuntimeError("Defining an experiment in interactive mode! "
-                               "The sourcecode cannot be stored and the "
-                               "experiment won't be reproducible. If you still"
-                               " want to run it pass interactive=True")
+            raise RuntimeError(
+                "Defining an experiment in interactive mode! "
+                "The sourcecode cannot be stored and the "
+                "experiment won't be reproducible. If you still"
+                " want to run it pass interactive=True"
+            )
 
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
@@ -183,11 +201,17 @@ class Ingredient:
         ingredient.
         """
         argspec = inspect.getfullargspec(func)
-        args = ['config', 'command_name', 'logger']
-        if not (argspec.args == args and argspec.varargs is None and
-                not argspec.kwonlyargs and argspec.defaults is None):
-            raise ValueError('Wrong signature for config_hook. Expected: '
-                             '(config, command_name, logger)')
+        args = ["config", "command_name", "logger"]
+        if not (
+            argspec.args == args
+            and argspec.varargs is None
+            and not argspec.kwonlyargs
+            and argspec.defaults is None
+        ):
+            raise ValueError(
+                "Wrong signature for config_hook. Expected: "
+                "(config, command_name, logger)"
+            )
         self.config_hooks.append(func)
         return self.config_hooks[-1]
 
@@ -210,20 +234,19 @@ class Ingredient:
         :param kw_conf: Configuration entries to be added to this
                         ingredient/experiment.
         """
-        self.configurations.append(self._create_config_dict(cfg_or_file,
-                                                            kw_conf))
+        self.configurations.append(self._create_config_dict(cfg_or_file, kw_conf))
 
     def _add_named_config(self, name, conf):
         if name in self.named_configs:
-            raise KeyError('Configuration name "{}" already in use!'
-                           .format(name))
+            raise KeyError('Configuration name "{}" already in use!'.format(name))
         self.named_configs[name] = conf
 
     @staticmethod
     def _create_config_dict(cfg_or_file, kw_conf):
         if cfg_or_file is not None and kw_conf:
-            raise ValueError("cannot combine keyword config with "
-                             "positional argument")
+            raise ValueError(
+                "cannot combine keyword config with " "positional argument"
+            )
         if cfg_or_file is None:
             if not kw_conf:
                 raise ValueError("attempted to add empty config")
@@ -232,12 +255,11 @@ class Ingredient:
             return ConfigDict(cfg_or_file)
         elif isinstance(cfg_or_file, str):
             if not os.path.exists(cfg_or_file):
-                raise OSError('File not found {}'.format(cfg_or_file))
+                raise OSError("File not found {}".format(cfg_or_file))
             abspath = os.path.abspath(cfg_or_file)
             return ConfigDict(load_config_file(abspath))
         else:
-            raise TypeError("Invalid argument type {}"
-                            .format(type(cfg_or_file)))
+            raise TypeError("Invalid argument type {}".format(type(cfg_or_file)))
 
     def add_named_config(self, name, cfg_or_file=None, **kw_conf):
         """
@@ -260,8 +282,7 @@ class Ingredient:
         :param kw_conf: Configuration entries to be added to this
                         ingredient/experiment.
         """
-        self._add_named_config(name, self._create_config_dict(cfg_or_file,
-                                                              kw_conf))
+        self._add_named_config(name, self._create_config_dict(cfg_or_file, kw_conf))
 
     def add_source_file(self, filename):
         """
@@ -347,8 +368,7 @@ class Ingredient:
         for dep in dependencies:
             dep.fill_missing_version()
 
-        mainfile = (self.mainfile.to_json(self.base_dir)[0]
-                    if self.mainfile else None)
+        mainfile = self.mainfile.to_json(self.base_dir)[0] if self.mainfile else None
 
         def name_lower(d):
             return d.name.lower()
@@ -357,10 +377,9 @@ class Ingredient:
             name=self.path,
             base_dir=self.base_dir,
             sources=[s.to_json(self.base_dir) for s in sorted(sources)],
-            dependencies=[d.to_json()
-                          for d in sorted(dependencies, key=name_lower)],
+            dependencies=[d.to_json() for d in sorted(dependencies, key=name_lower)],
             repositories=collect_repositories(sources),
-            mainfile=mainfile
+            mainfile=mainfile,
         )
 
     def traverse_ingredients(self):

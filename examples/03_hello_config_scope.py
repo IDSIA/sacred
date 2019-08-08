@@ -37,7 +37,7 @@ recipient we can also just modify that::
 
 from sacred import Experiment
 
-ex = Experiment('hello_cs')  # here we name the experiment explicitly
+ex = Experiment("hello_cs")  # here we name the experiment explicitly
 
 
 # A ConfigScope is a function like this decorated with @ex.config

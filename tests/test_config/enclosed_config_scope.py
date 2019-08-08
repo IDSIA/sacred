@@ -2,7 +2,6 @@
 # coding=utf-8
 
 
-
 from sacred.config.config_scope import ConfigScope
 
 SIX = 6

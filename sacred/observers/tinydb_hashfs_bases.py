@@ -44,10 +44,10 @@ class DateTimeSerializer(Serializer):
     OBJ_CLASS = dt.datetime  # The class this serializer handles
 
     def encode(self, obj):
-        return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        return obj.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     def decode(self, s):
-        return dt.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
+        return dt.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
 
 
 class NdArraySerializer(Serializer):
@@ -77,7 +77,7 @@ class SeriesSerializer(Serializer):
         return obj.to_json()
 
     def decode(self, s):
-        return opt.pandas.read_json(s, typ='series')
+        return opt.pandas.read_json(s, typ="series")
 
 
 class FileSerializer(Serializer):
@@ -99,23 +99,18 @@ class FileSerializer(Serializer):
 
 
 def get_db_file_manager(root_dir):
-    fs = HashFS(os.path.join(root_dir, 'hashfs'), depth=3,
-                width=2, algorithm='md5')
+    fs = HashFS(os.path.join(root_dir, "hashfs"), depth=3, width=2, algorithm="md5")
 
     # Setup Serialisation object for non list/dict objects
     serialization_store = SerializationMiddleware()
-    serialization_store.register_serializer(DateTimeSerializer(), 'TinyDate')
-    serialization_store.register_serializer(FileSerializer(fs), 'TinyFile')
+    serialization_store.register_serializer(DateTimeSerializer(), "TinyDate")
+    serialization_store.register_serializer(FileSerializer(fs), "TinyFile")
 
     if opt.has_numpy:
-        serialization_store.register_serializer(NdArraySerializer(),
-                                                'TinyArray')
+        serialization_store.register_serializer(NdArraySerializer(), "TinyArray")
     if opt.has_pandas:
-        serialization_store.register_serializer(DataFrameSerializer(),
-                                                'TinyDataFrame')
-        serialization_store.register_serializer(SeriesSerializer(),
-                                                'TinySeries')
+        serialization_store.register_serializer(DataFrameSerializer(), "TinyDataFrame")
+        serialization_store.register_serializer(SeriesSerializer(), "TinySeries")
 
-    db = TinyDB(os.path.join(root_dir, 'metadata.json'),
-                storage=serialization_store)
+    db = TinyDB(os.path.join(root_dir, "metadata.json"), storage=serialization_store)
     return db, fs

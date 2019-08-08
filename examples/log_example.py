@@ -5,16 +5,16 @@
 import logging
 from sacred import Experiment
 
-ex = Experiment('log_example')
+ex = Experiment("log_example")
 
 # set up a custom logger
-logger = logging.getLogger('mylogger')
+logger = logging.getLogger("mylogger")
 logger.handlers = []
 ch = logging.StreamHandler()
 formatter = logging.Formatter('[%(levelname).1s] %(name)s >> "%(message)s"')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-logger.setLevel('INFO')
+logger.setLevel("INFO")
 
 # attach it to the experiment
 ex.logger = logger
@@ -38,7 +38,7 @@ def transmogrify(got_gizmo, number, _log):
 
 @ex.automain
 def main(number, _log):
-    _log.info('Attempting to transmogrify %d...', number)
+    _log.info("Attempting to transmogrify %d...", number)
     result = transmogrify()
-    _log.info('Transmogrification complete: %d', result)
+    _log.info("Transmogrification complete: %d", result)
     return result

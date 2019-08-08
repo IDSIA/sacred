@@ -132,11 +132,11 @@ def test_empty_revelation():
 
 
 def test_nested_dict_revelation():
-    d1 = DogmaticDict({'a': 7, 'b': 12})
-    d2 = DogmaticDict({'c': 7})
+    d1 = DogmaticDict({"a": 7, "b": 12})
+    d2 = DogmaticDict({"c": 7})
     l = DogmaticList([d1, 2, d2])
-#    assert l.revelation() == {'0.a', '0.b', '2.c'}
+    #    assert l.revelation() == {'0.a', '0.b', '2.c'}
     l.revelation()
-    assert 'a' in l[0]
-    assert 'b' in l[0]
-    assert 'c' in l[2]
+    assert "a" in l[0]
+    assert "b" in l[0]
+    assert "c" in l[2]
