@@ -258,67 +258,65 @@ def test_fixed_subentry_of_preset():
     assert cfg["d"]["b"] == 2
 
 
-@pytest.mark.parametrize(
-    "line,indent,expected",
-    [
-        ("    a=5", "    ", "a=5"),
-        ("  a=5", "    ", "a=5"),
-        ("a=5", "    ", "a=5"),
-        ("    a=5", "  ", "  a=5"),
-        ("    a=5", "", "    a=5"),
-        ("    a=5", "\t", "    a=5"),
-        ("  a=5", "      ", "a=5"),
-        ("    a=5", "  \t", "  a=5"),
-    ],
-)
+# fmt: off
+@pytest.mark.parametrize("line,indent,expected", [
+    ('    a=5', '    ', 'a=5'),
+    ('  a=5',   '    ', 'a=5'),
+    ('a=5',     '    ', 'a=5'),
+    ('    a=5', '  ',   '  a=5'),
+    ('    a=5', '',     '    a=5'),
+    ('    a=5', '\t',   '    a=5'),
+    ('  a=5', '      ', 'a=5'),
+    ('    a=5', '  \t', '  a=5')
+])
 def test_dedent_line(line, indent, expected):
     assert dedent_line(line, indent) == expected
 
 
-@pytest.mark.parametrize(
-    "line,expected",
-    [
-        ("", True),
-        ("  ", True),
-        ("\n", True),
-        ("    \n", True),
-        ("  \t \n", True),
-        ("#comment", True),
-        ("   #comment", True),
-        ("  a=5 # not comment", False),
-        ("a=5", False),
-        ('"""', False),
-        ("'''", False),
-    ],
-)
+@pytest.mark.parametrize("line,expected", [
+    ('', True),
+    ('  ', True),
+    ('\n', True),
+    ('    \n', True),
+    ('  \t \n', True),
+    ('#comment', True),
+    ('   #comment', True),
+    ('  a=5 # not comment', False),
+    ('a=5', False),
+    ('"""', False),
+    ("'''", False)
+
+])
 def test_is_empty_or_comment(line, expected):
     assert is_empty_or_comment(line) == expected
 
 
-def evil_indentation_func(a, b, c, d):
-    # Lets do the most evil things with indentation
-    # 1
+def evil_indentation_func(a,
+                                    b,
+c, d):
+# Lets do the most evil things with indentation
+  # 1
     # 2
-    # ran
-    """ and also in the docstring
+     # ran
+        """ and also in the docstring
              atrne
     uiaeue
 utdr
     """
-    alpha = 0.1
-    d = ("even", "more", "evilness")
-    wat = """ multi
+        alpha = 0.1
+        d = ('even', 'more',
+    'evilness')
+        wat = """ multi
     line
 strings
     """
-    # another comment
-    # this one is ok
+# another comment
+        # this one is ok
     # madness
-    foo = 12
+        foo=12
 
-    def subfunc():
-        return 23
-
+        def subfunc():
+            return 23
 
 body = '''# Lets do the most evil things with indentation
   # 1
@@ -369,6 +367,7 @@ foo=12
 def subfunc():
     return 23
 '''
+# fmt: on
 
 
 def test_dedent_body():
