@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# fmt: off
-# TODO: This file contains trailing commas after **kwargs,
-# which is incompatible with the py35 formatting of black
-# right now. Remove once py35 is dropped.
+
 import mimetypes
 import os.path
 import pickle
@@ -571,7 +568,7 @@ class QueuedMongoObserver(QueueObserver):
                 overwrite=overwrite,
                 priority=priority,
                 client=client,
-                **kwargs
+                **kwargs,
             ),
             interval=interval,
             retry_interval=retry_interval,
