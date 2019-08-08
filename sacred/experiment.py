@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Sequence, Optional, Dict, Callable, Any
+from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
@@ -19,7 +19,7 @@ from sacred.commands import (help_for_command, print_config,
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
-from sacred.host_info import check_additional_host_info
+from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import print_filtered_stacktrace, ensure_wellformed_argv, \
     SacredError, format_sacred_error, PathType
 
@@ -41,7 +41,7 @@ class Experiment(Ingredient):
                  ingredients: Sequence[Ingredient] = (),
                  interactive: bool = False,
                  base_dir: Optional[PathType] = None,
-                 additional_host_info: Dict[str, Callable[[], Any]] = None):
+                 additional_host_info: List[HostInfoGetter] = None):
         """
         Create a new experiment with the given name and optional ingredients.
 
@@ -69,7 +69,7 @@ class Experiment(Ingredient):
             host info you want to collect, and as
             values the functions collecting those pieces of information.
         """
-        self.additional_host_info = additional_host_info or {}
+        self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
