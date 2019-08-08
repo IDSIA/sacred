@@ -14,8 +14,7 @@ from sacred.utils import ConfigError
 def create_captured_function(function, prefix=None):
     sig = Signature(function)
     function.signature = sig
-    function.uses_randomness = ("_seed" in sig.arguments or
-                                "_rnd" in sig.arguments)
+    function.uses_randomness = "_seed" in sig.arguments or "_rnd" in sig.arguments
     function.logger = None
     function.config = {}
     function.rnd = None
@@ -27,18 +26,14 @@ def create_captured_function(function, prefix=None):
 @wrapt.decorator
 def captured_function(wrapped, instance, args, kwargs):
     options = fallback_dict(
-        wrapped.config,
-        _config=wrapped.config,
-        _log=wrapped.logger,
-        _run=wrapped.run
+        wrapped.config, _config=wrapped.config, _log=wrapped.logger, _run=wrapped.run
     )
     if wrapped.uses_randomness:  # only generate _seed and _rnd if needed
-        options['_seed'] = get_seed(wrapped.rnd)
-        options['_rnd'] = create_rnd(options['_seed'])
+        options["_seed"] = get_seed(wrapped.rnd)
+        options["_rnd"] = create_rnd(options["_seed"])
 
-    bound = (instance is not None)
-    args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options,
-                                                         bound)
+    bound = instance is not None
+    args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options, bound)
     if wrapped.logger is not None:
         wrapped.logger.debug("Started")
         start_time = time.time()

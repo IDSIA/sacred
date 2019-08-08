@@ -9,25 +9,19 @@ import pytest
 
 from sacred.config.config_files import HANDLER_BY_EXT, load_config_file
 
-data = {
-    'foo': 42,
-    'baz': [1, 0.2, 'bar', True, {
-        'some_number': -12,
-        'simon': 'hugo'
-    }]
-}
+data = {"foo": 42, "baz": [1, 0.2, "bar", True, {"some_number": -12, "simon": "hugo"}]}
 
 
-@pytest.mark.parametrize('handler', HANDLER_BY_EXT.values())
+@pytest.mark.parametrize("handler", HANDLER_BY_EXT.values())
 def test_save_and_load(handler):
-    with tempfile.TemporaryFile('w+' + handler.mode) as f:
+    with tempfile.TemporaryFile("w+" + handler.mode) as f:
         handler.dump(data, f)
         f.seek(0)  # simulates closing and reopening
         d = handler.load(f)
         assert d == data
 
 
-@pytest.mark.parametrize('ext, handler', HANDLER_BY_EXT.items())
+@pytest.mark.parametrize("ext, handler", HANDLER_BY_EXT.items())
 def test_load_config_file(ext, handler):
     handle, f_name = tempfile.mkstemp(suffix=ext)
     f = os.fdopen(handle, "w" + handler.mode)
@@ -39,7 +33,7 @@ def test_load_config_file(ext, handler):
 
 
 def test_load_config_file_exception_msg_invalid_ext():
-    handle, f_name = tempfile.mkstemp(suffix='.invalid')
+    handle, f_name = tempfile.mkstemp(suffix=".invalid")
     f = os.fdopen(handle, "w")  # necessary for windows
     f.close()
     try:

@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|unix_build| |windows_build| |coverage| |code_quality|
+|build| |coverage| |code_quality| |black|
 
 
 
@@ -234,13 +234,9 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: http://dx.doi.org/10.5281/zenodo.16386
     :alt: DOI for this release
 
-.. |unix_build| image:: https://img.shields.io/travis/IDSIA/sacred.svg?branch=master&style=flat&label=unix%20build
-    :target: https://travis-ci.org/IDSIA/sacred
-    :alt: Travis-CI Status
-
-.. |windows_build| image:: https://img.shields.io/appveyor/ci/qwlouse/sacred.svg?style=flat&label=windows%20build
-    :target: https://ci.appveyor.com/project/Qwlouse/sacred
-    :alt: appveyor-CI Status
+.. |build| image:: https://dev.azure.com/qwlouse/Sacred%20CI/_apis/build/status/IDSIA.sacred?branchName=master
+    :target: https://dev.azure.com/qwlouse/Sacred%20CI/_build/latest?definitionId=1&branchName=master
+    :alt: Azure CI status
 
 .. |coverage| image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
     :target: https://coveralls.io/r/IDSIA/sacred
@@ -250,5 +246,6 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
-
-
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/ambv/black
+    :alt: Code style: black

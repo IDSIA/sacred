@@ -13,7 +13,7 @@ import time
 from sacred import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds
 
-ex = Experiment('progress')
+ex = Experiment("progress")
 
 # try commenting out the line below to see the difference in captured output
 ex.captured_out_filter = apply_backspaces_and_linefeeds
@@ -31,11 +31,11 @@ class ProgressMonitor:
 
     def show(self, n=1):
         self.progress += n
-        text = 'Completed {}/{} tasks'.format(self.progress, self.count)
-        write_and_flush('\b' * 80, '\r', text)
+        text = "Completed {}/{} tasks".format(self.progress, self.count)
+        write_and_flush("\b" * 80, "\r", text)
 
     def done(self):
-        write_and_flush('\n')
+        write_and_flush("\n")
 
 
 def progress(items):
@@ -52,7 +52,7 @@ def main():
         time.sleep(0.05)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run = ex.run_commandline()
-    print('=' * 80)
-    print('Captured output: ', repr(run.captured_out))
+    print("=" * 80)
+    print("Captured output: ", repr(run.captured_out))

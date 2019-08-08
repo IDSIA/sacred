@@ -21,19 +21,21 @@ CLIFunction = Callable[[str, Run], None]
 
 
 class CLIOption:
-    def __init__(self,
-                 apply_function: CLIFunction,
-                 short_flag: str,
-                 long_flag: str,
-                 is_flag: bool):
+    def __init__(
+        self,
+        apply_function: CLIFunction,
+        short_flag: str,
+        long_flag: str,
+        is_flag: bool,
+    ):
         self.apply_function = apply_function
         self.short_flag = short_flag
         self.long_flag = long_flag
         self.is_flag = is_flag
 
         # trick for backward compatibility:
-        self.arg = None if is_flag else 'VALUE'
-        self.arg_description = None if is_flag else ''
+        self.arg = None if is_flag else "VALUE"
+        self.arg_description = None if is_flag else ""
 
     def __call__(self, *args, **kwargs):
         return self.apply_function(*args, **kwargs)
@@ -64,6 +66,7 @@ class CLIOption:
 def cli_option(short_flag: str, long_flag: str, is_flag=False):
     def wrapper(f: CLIFunction):
         return CLIOption(f, short_flag, long_flag, is_flag)
+
     return wrapper
 
 
@@ -103,14 +106,14 @@ class CommandLineOption:
         flag = cls.__name__
         if flag.endswith("Option"):
             flag = flag[:-6]
-        return '--' + convert_camel_case_to_snake_case(flag)
+        return "--" + convert_camel_case_to_snake_case(flag)
 
     @classmethod
     def get_short_flag(cls):
         if cls.short_flag is None:
-            return '-' + cls.get_flag()[2]
+            return "-" + cls.get_flag()[2]
         else:
-            return '-' + cls.short_flag
+            return "-" + cls.short_flag
 
     @classmethod
     def get_flags(cls):
@@ -168,15 +171,16 @@ def gather_command_line_options(filter_disabled=None):
 
     options = []
     for opt in get_inheritors(CommandLineOption):
-        warnings.warn('Subclassing `CommandLineOption` is deprecated. Please '
-                      'use the `sacred.cli_option` decorator or the '
-                      '`sacred.CLIOption` class instead.')
+        warnings.warn(
+            "Subclassing `CommandLineOption` is deprecated. Please "
+            "use the `sacred.cli_option` decorator or the "
+            "`sacred.CLIOption` class instead."
+        )
         if filter_disabled and not opt._enabled:
             continue
         options.append(opt)
 
-    options += [debug_option,
-                loglevel_option]
+    options += [debug_option, loglevel_option]
 
     return sorted(options, key=get_name)
 
@@ -185,7 +189,7 @@ class HelpOption(CommandLineOption):
     """Print this help message and exit."""
 
 
-@cli_option('-d', '--debug', is_flag=True)
+@cli_option("-d", "--debug", is_flag=True)
 def debug_option(args, run):
     """
     Set this run to debug mode.
@@ -198,14 +202,14 @@ def debug_option(args, run):
 class PDBOption(CommandLineOption):
     """Automatically enter post-mortem debugging with pdb on failure."""
 
-    short_flag = 'D'
+    short_flag = "D"
 
     @classmethod
     def apply(cls, args, run):
         run.pdb = True
 
 
-@cli_option('-l', '--loglevel')
+@cli_option("-l", "--loglevel")
 def loglevel_option(args, run):
     """
     Loglevel either as 0 - 50 or as string: DEBUG(10),
@@ -223,19 +227,19 @@ def loglevel_option(args, run):
 class CommentOption(CommandLineOption):
     """Adds a message to the run."""
 
-    arg = 'COMMENT'
-    arg_description = 'A comment that should be stored along with the run.'
+    arg = "COMMENT"
+    arg_description = "A comment that should be stored along with the run."
 
     @classmethod
     def apply(cls, args, run):
         """Add a comment to this run."""
-        run.meta_info['comment'] = args
+        run.meta_info["comment"] = args
 
 
 class BeatIntervalOption(CommandLineOption):
     """Control the rate of heartbeat events."""
 
-    arg = 'BEAT_INTERVAL'
+    arg = "BEAT_INTERVAL"
     arg_description = "Time between two heartbeat events measured in seconds."
 
     @classmethod
@@ -274,9 +278,9 @@ class ForceOption(CommandLineOption):
 class PriorityOption(CommandLineOption):
     """Sets the priority for a queued up experiment."""
 
-    short_flag = 'P'
-    arg = 'PRIORITY'
-    arg_description = 'The (numeric) priority for this run.'
+    short_flag = "P"
+    arg = "PRIORITY"
+    arg_description = "The (numeric) priority for this run."
 
     @classmethod
     def apply(cls, args, run):
@@ -284,9 +288,10 @@ class PriorityOption(CommandLineOption):
         try:
             priority = float(args)
         except ValueError:
-            raise ValueError("The PRIORITY argument must be a number! "
-                             "(but was '{}')".format(args))
-        run.meta_info['priority'] = priority
+            raise ValueError(
+                "The PRIORITY argument must be a number! " "(but was '{}')".format(args)
+            )
+        run.meta_info["priority"] = priority
 
 
 class EnforceCleanOption(CommandLineOption):
@@ -297,20 +302,25 @@ class EnforceCleanOption(CommandLineOption):
         try:
             import git  # NOQA
         except ImportError:
-            warnings.warn('GitPython must be installed to use the '
-                          '--enforce-clean option.')
+            warnings.warn(
+                "GitPython must be installed to use the " "--enforce-clean option."
+            )
             raise
-        repos = run.experiment_info['repositories']
+        repos = run.experiment_info["repositories"]
         if not repos:
-            raise RuntimeError('No version control detected. '
-                               'Cannot enforce clean repository.\n'
-                               'Make sure that your sources under VCS and the '
-                               'corresponding python package is installed.')
+            raise RuntimeError(
+                "No version control detected. "
+                "Cannot enforce clean repository.\n"
+                "Make sure that your sources under VCS and the "
+                "corresponding python package is installed."
+            )
         else:
             for repo in repos:
-                if repo['dirty']:
-                    raise RuntimeError('EnforceClean: Uncommited changes in '
-                                       'the "{}" repository.'.format(repo))
+                if repo["dirty"]:
+                    raise RuntimeError(
+                        "EnforceClean: Uncommited changes in "
+                        'the "{}" repository.'.format(repo)
+                    )
 
 
 class PrintConfigOption(CommandLineOption):
@@ -319,26 +329,26 @@ class PrintConfigOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         print_config(run)
-        print('-' * 79)
+        print("-" * 79)
 
 
 class NameOption(CommandLineOption):
     """Set the name for this run."""
 
-    arg = 'NAME'
-    arg_description = 'Name for this run.'
+    arg = "NAME"
+    arg_description = "Name for this run."
 
     @classmethod
     def apply(cls, args, run):
-        run.experiment_info['name'] = args
+        run.experiment_info["name"] = args
         run.run_logger = run.root_logger.getChild(args)
 
 
 class CaptureOption(CommandLineOption):
     """Control the way stdout and stderr are captured."""
 
-    short_flag = 'C'
-    arg = 'CAPTURE_MODE'
+    short_flag = "C"
+    arg = "CAPTURE_MODE"
     arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
 
     @classmethod
