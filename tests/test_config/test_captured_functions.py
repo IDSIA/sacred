@@ -14,8 +14,8 @@ def test_create_captured_function():
 
     cf = create_captured_function(foo)
 
-    assert cf.__name__ == 'foo'
-    assert cf.__doc__ == 'my docstring'
+    assert cf.__name__ == "foo"
+    assert cf.__doc__ == "my docstring"
     assert cf.prefix is None
     assert cf.config == {}
     assert not cf.uses_randomness
@@ -28,12 +28,12 @@ def test_call_captured_function():
 
     cf = create_captured_function(foo)
     cf.logger = mock.MagicMock()
-    cf.config = {'a': 11, 'b': 12, 'd': 14}
+    cf.config = {"a": 11, "b": 12, "d": 14}
 
     assert cf(21, c=23, f=26) == (21, 12, 23, 14, 5, 26)
-    cf.logger.debug.assert_has_calls([
-        mock.call("Started"),
-        mock.call("Finished after %s.", datetime.timedelta(0))])
+    cf.logger.debug.assert_has_calls(
+        [mock.call("Started"), mock.call("Finished after %s.", datetime.timedelta(0))]
+    )
 
 
 def test_captured_function_randomness():
@@ -72,7 +72,7 @@ def test_captured_function_magic_config_argument():
 
     cf = create_captured_function(foo)
     cf.logger = mock.MagicMock()
-    cf.config = {'a': 2, 'b': 2}
+    cf.config = {"a": 2, "b": 2}
 
     assert cf() == cf.config
 
@@ -97,6 +97,6 @@ def test_captured_function_call_doesnt_modify_kwargs():
     cf.logger = mock.MagicMock()
     cf.run = mock.MagicMock()
 
-    d = {'a': 7}
+    d = {"a": 7}
     assert cf(**d) == 7
-    assert d == {'a': 7}
+    assert d == {"a": 7}

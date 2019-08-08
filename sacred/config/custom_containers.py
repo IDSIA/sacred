@@ -96,7 +96,7 @@ class DogmaticDict(dict):
 
     def update(self, iterable=None, **kwargs):
         if iterable is not None:
-            if hasattr(iterable, 'keys'):
+            if hasattr(iterable, "keys"):
                 for key in iterable:
                     self[key] = iterable[key]
             else:
@@ -152,7 +152,7 @@ class DogmaticList(list):
         pass
 
     def pop(self, index=None):
-        raise TypeError('Cannot pop from DogmaticList')
+        raise TypeError("Cannot pop from DogmaticList")
 
     def remove(self, value):
         pass
@@ -167,19 +167,17 @@ class DogmaticList(list):
 class ReadOnlyContainer:
     def __init__(self, *args, message=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.message = message or 'This container is read-only!'
+        self.message = message or "This container is read-only!"
 
     def _readonly(self, *args, **kwargs):
-        raise SacredError(
-            self.message,
-            filter_traceback='always'
-        )
+        raise SacredError(self.message, filter_traceback="always")
 
 
 class ReadOnlyDict(ReadOnlyContainer, dict):
     """
     A read-only variant of a `dict`
     """
+
     # Overwrite all methods that can modify a dict
     clear = ReadOnlyContainer._readonly
     pop = ReadOnlyContainer._readonly
@@ -191,7 +189,7 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
 
     def __init__(self, *args, message=None, **kwargs):
         if message is None:
-            message = 'This ReadOnlyDict is read-only!'
+            message = "This ReadOnlyDict is read-only!"
         super().__init__(*args, message=message, **kwargs)
 
     def __copy__(self):
@@ -206,6 +204,7 @@ class ReadOnlyList(ReadOnlyContainer, list):
     """
     A read-only variant of a `list`
     """
+
     append = ReadOnlyContainer._readonly
     clear = ReadOnlyContainer._readonly
     extend = ReadOnlyContainer._readonly
@@ -219,7 +218,7 @@ class ReadOnlyList(ReadOnlyContainer, list):
 
     def __init__(self, *iterable, message=None, **kwargs):
         if message is None:
-            message = 'This ReadOnlyList is read-only!'
+            message = "This ReadOnlyList is read-only!"
         super().__init__(*iterable, message=message, **kwargs)
 
     def __copy__(self):
@@ -239,11 +238,12 @@ def make_read_only(o, error_message=None):
     if type(o) == dict:
         return ReadOnlyDict(
             {k: make_read_only(v, error_message) for k, v in o.items()},
-            message=error_message)
+            message=error_message,
+        )
     elif type(o) == list:
         return ReadOnlyList(
-            [make_read_only(v, error_message) for v in o],
-            message=error_message)
+            [make_read_only(v, error_message) for v in o], message=error_message
+        )
     elif type(o) == tuple:
         return tuple(map(make_read_only, o))
     else:
@@ -267,13 +267,24 @@ SIMPLIFY_TYPE = {
 # datatypes to the corresponding python datatype
 if opt.has_numpy:
     from sacred.optional import np
-    NP_FLOATS = ['float', 'float16', 'float32', 'float64', 'float128']
+
+    NP_FLOATS = ["float", "float16", "float32", "float64", "float128"]
     for npf in NP_FLOATS:
         if hasattr(np, npf):
             SIMPLIFY_TYPE[getattr(np, npf)] = float
 
-    NP_INTS = ['int', 'int8', 'int16', 'int32', 'int64',
-               'uint', 'uint8', 'uint16', 'uint32', 'uint64']
+    NP_INTS = [
+        "int",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "uint",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+    ]
     for npi in NP_INTS:
         if hasattr(np, npi):
             SIMPLIFY_TYPE[getattr(np, npi)] = int

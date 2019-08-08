@@ -1,16 +1,14 @@
 import pytest
 from copy import copy, deepcopy
 
-from sacred.config.custom_containers import (make_read_only, ReadOnlyList,
-                                             ReadOnlyDict, )
+from sacred.config.custom_containers import make_read_only, ReadOnlyList, ReadOnlyDict
 from sacred.utils import SacredError
 
 
 def _check_read_only_dict(d):
     assert isinstance(d, ReadOnlyDict)
 
-    raises_dict = pytest.raises(
-        SacredError, match='This ReadOnlyDict is read-only!')
+    raises_dict = pytest.raises(SacredError, match="This ReadOnlyDict is read-only!")
 
     if len(d) > 0:
         # Test removal of entries and overwrite an already present entry
@@ -27,27 +25,26 @@ def _check_read_only_dict(d):
 
     # Test direct writes
     with raises_dict:
-        d['abcdefg'] = 42
+        d["abcdefg"] = 42
 
     # Test other functions that modify the dict
     with raises_dict:
         d.clear()
 
     with raises_dict:
-        d.update({'abcdefg': 42})
+        d.update({"abcdefg": 42})
 
     with raises_dict:
         d.popitem()
 
     with raises_dict:
-        d.setdefault('a', 0)
+        d.setdefault("a", 0)
 
 
 def _check_read_only_list(lst):
     assert isinstance(lst, ReadOnlyList)
 
-    raises_list = pytest.raises(
-        SacredError, match='This ReadOnlyList is read-only!')
+    raises_list = pytest.raises(SacredError, match="This ReadOnlyList is read-only!")
 
     if len(lst):
         with raises_list:
@@ -94,7 +91,7 @@ def test_nested_readonly_dict():
     d = dict(a=1, b=dict(c=3))
     d = make_read_only(d)
     _check_read_only_dict(d)
-    _check_read_only_dict(d['b'])
+    _check_read_only_dict(d["b"])
 
 
 def test_readonly_list():
@@ -133,7 +130,9 @@ def test_copy_on_readonly_dict():
     d = dict(a=1, b=2, c=3)
     d = make_read_only(d)
     copied_d = copy(d)
-    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
+    for (k, v), (k_copied, v_copied) in zip(
+        sorted(d.items()), sorted(copied_d.items())
+    ):
         assert k == k_copied
         assert v == v_copied
 
@@ -142,7 +141,9 @@ def test_copy_on_nested_readonly_dict():
     d = dict(a=1, b=dict(c=3))
     d = make_read_only(d)
     copied_d = copy(d)
-    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
+    for (k, v), (k_copied, v_copied) in zip(
+        sorted(d.items()), sorted(copied_d.items())
+    ):
         assert k == k_copied
         assert v == v_copied
 
@@ -159,7 +160,9 @@ def test_deepcopy_on_readonly_dict():
     d = dict(a=1, b=2, c=3)
     d = make_read_only(d)
     copied_d = deepcopy(d)
-    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
+    for (k, v), (k_copied, v_copied) in zip(
+        sorted(d.items()), sorted(copied_d.items())
+    ):
         assert k == k_copied
         assert v == v_copied
 
@@ -168,7 +171,9 @@ def test_deepcopy_on_nested_readonly_dict():
     d = dict(a=1, b=dict(c=3))
     d = make_read_only(d)
     copied_d = deepcopy(d)
-    for (k, v), (k_copied, v_copied) in zip(sorted(d.items()), sorted(copied_d.items())):
+    for (k, v), (k_copied, v_copied) in zip(
+        sorted(d.items()), sorted(copied_d.items())
+    ):
         assert k == k_copied
         assert v == v_copied
 
