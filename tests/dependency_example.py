@@ -17,4 +17,5 @@ from tests.foo import bar, mock_extension
 def some_func():
     pass
 
+
 ignore_this = 17

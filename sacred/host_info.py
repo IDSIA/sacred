@@ -13,7 +13,7 @@ import cpuinfo
 from sacred.utils import optional_kwargs_decorator
 from sacred.settings import SETTINGS
 
-__all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
+__all__ = ("host_info_gatherers", "get_host_info", "host_info_getter")
 
 host_info_gatherers = {}
 """Global dict of functions that are used to collect the host information."""
@@ -73,22 +73,23 @@ def host_info_getter(func, name=None):
 
 # #################### Default Host Information ###############################
 
-@host_info_getter(name='hostname')
+
+@host_info_getter(name="hostname")
 def _hostname():
     return platform.node()
 
 
-@host_info_getter(name='os')
+@host_info_getter(name="os")
 def _os():
     return [platform.system(), platform.platform()]
 
 
-@host_info_getter(name='python_version')
+@host_info_getter(name="python_version")
 def _python_version():
     return platform.python_version()
 
 
-@host_info_getter(name='cpu')
+@host_info_getter(name="cpu")
 def _cpu():
     if platform.system() == "Windows":
         return _get_cpu_by_pycpuinfo()
@@ -102,35 +103,35 @@ def _cpu():
         return _get_cpu_by_pycpuinfo()
 
 
-@host_info_getter(name='gpus')
+@host_info_getter(name="gpus")
 def _gpus():
     if not SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
         return
 
     try:
-        xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
+        xml = subprocess.check_output(["nvidia-smi", "-q", "-x"]).decode()
     except (FileNotFoundError, OSError, subprocess.CalledProcessError):
         raise IgnoreHostInfo()
 
-    gpu_info = {'gpus': []}
+    gpu_info = {"gpus": []}
     for child in ElementTree.fromstring(xml):
-        if child.tag == 'driver_version':
-            gpu_info['driver_version'] = child.text
-        if child.tag != 'gpu':
+        if child.tag == "driver_version":
+            gpu_info["driver_version"] = child.text
+        if child.tag != "gpu":
             continue
         gpu = {
-            'model': child.find('product_name').text,
-            'total_memory': int(child.find('fb_memory_usage').find('total')
-                                .text.split()[0]),
-            'persistence_mode': (child.find('persistence_mode').text ==
-                                 'Enabled')
+            "model": child.find("product_name").text,
+            "total_memory": int(
+                child.find("fb_memory_usage").find("total").text.split()[0]
+            ),
+            "persistence_mode": (child.find("persistence_mode").text == "Enabled"),
         }
-        gpu_info['gpus'].append(gpu)
+        gpu_info["gpus"].append(gpu)
 
     return gpu_info
 
 
-@host_info_getter(name='ENV')
+@host_info_getter(name="ENV")
 def _environment():
     keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
@@ -140,7 +141,7 @@ def _environment():
 
 
 def _get_cpu_by_sysctl():
-    os.environ['PATH'] += ':/usr/sbin'
+    os.environ["PATH"] += ":/usr/sbin"
     command = ["sysctl", "-n", "machdep.cpu.brand_string"]
     return subprocess.check_output(command).decode().strip()
 
@@ -155,4 +156,4 @@ def _get_cpu_by_proc_cpuinfo():
 
 
 def _get_cpu_by_pycpuinfo():
-    return cpuinfo.get_cpu_info().get('brand', 'Unknown')
+    return cpuinfo.get_cpu_info().get("brand", "Unknown")

@@ -45,9 +45,8 @@ class MetricsLogger:
         if step is None:
             step = self._metric_step_counter.get(metric_name, -1) + 1
         self._logged_metrics.put(
-            ScalarMetricLogEntry(metric_name, step,
-                                 datetime.datetime.utcnow(),
-                                 value))
+            ScalarMetricLogEntry(metric_name, step, datetime.datetime.utcnow(), value)
+        )
         self._metric_step_counter[metric_name] = step
 
     def get_last_metrics(self):
@@ -65,7 +64,7 @@ class MetricsLogger:
         return messages
 
 
-class ScalarMetricLogEntry():
+class ScalarMetricLogEntry:
     """Container for measurements of scalar metrics.
 
     There is exactly one ScalarMetricLogEntry per logged scalar metric value.
@@ -98,12 +97,9 @@ def linearize_metrics(logged_metrics):
                 "steps": [],
                 "values": [],
                 "timestamps": [],
-                "name": metric_entry.name
+                "name": metric_entry.name,
             }
-        metrics_by_name[metric_entry.name]["steps"] \
-            .append(metric_entry.step)
-        metrics_by_name[metric_entry.name]["values"] \
-            .append(metric_entry.value)
-        metrics_by_name[metric_entry.name]["timestamps"] \
-            .append(metric_entry.timestamp)
+        metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
+        metrics_by_name[metric_entry.name]["values"].append(metric_entry.value)
+        metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
     return metrics_by_name
