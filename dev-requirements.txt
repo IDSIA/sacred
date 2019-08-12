@@ -9,7 +9,7 @@ MarkupSafe==0.23
 mock==2.0.0
 mongomock==3.7.0
 munch==2.0.4
-neptune>=0.3.5
+neptune-client>=0.3.5
 numpy==1.16.2
 packaging>=18.0
 pandas==0.24.2
