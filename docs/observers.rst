@@ -696,12 +696,12 @@ To set the bot's profile photo and description, use @BotFather's commands ``/set
 Note that ``/setuserpic`` requires a *minimum* picture size.
 
 Neptune Observer
-=================
+================
 Neptune observer sends all the experiment metadata to the Neptune app.
 It requires the `Neptune <https://neptune.ml/>`_ package to be installed.
 
 Adding a Neptune Observer
---------------------
+-------------------------
 
 NeptuneObserver can only be added from the Python code.
 You simply need to initialize it with your project name and (optionally) api token.
