@@ -1,7 +1,9 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 import collections
 import os
 
-import neptune
 from sacred.dependencies import get_digest
 from sacred.observers import RunObserver
 
@@ -17,6 +19,7 @@ class NeptuneObserver(RunObserver):
         project_name(str): project name in Neptune app
         api_token(str): Neptune API token. If it is kept in the NEPTUNE_API_TOKEN environment
            variable leave None here.
+        base_dir(str): base directory from which you run your code.
         source_extensions(list(str)): list of extensions that Neptune should treat as source files
            extensions and send.
 
@@ -31,7 +34,7 @@ class NeptuneObserver(RunObserver):
 
         Add Neptune observer::
 
-            from neptunecontrib.monitoring.sacred_integration import NeptuneObserver
+            from neptunecontrib.monitoring.sacred import NeptuneObserver
             ex.observers.append(NeptuneObserver(api_token='YOUR_LONG_API_TOKEN',
                                                 project_name='USER_NAME/PROJECT_NAME'))
 
@@ -58,6 +61,8 @@ class NeptuneObserver(RunObserver):
     """
 
     def __init__(self, project_name, api_token=None, base_dir='.', source_extensions=None):
+        import neptune
+
         neptune.init(project_qualified_name=project_name, api_token=api_token)
         self.resources = {}
         self.base_dir = base_dir
