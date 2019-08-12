@@ -712,10 +712,12 @@ You simply need to initialize it with your project name and (optionally) api tok
     ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
                                         project_name='USER_NAME/PROJECT_NAME'))
 
-.. warning:: Always keep your API token secret - it is like password to the application.
-That is why it is better not to pass your token inside the code but instead
-set it in the environment variable "NEPTUNE_API_TOKEN". To make things simple you can put
-"export NEPTUNE_API_TOKEN='YOUR_LONG_API_TOKEN'" line to your ``~/.bashrc`` or ``~/.bash_profile`` files.
+.. warning::
+
+    Always keep your API token secret - it is like password to the application.
+    It is recommended to pass your token via environment variable `NEPTUNE_API_TOKEN`.
+    To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
+    line to your `~/.bashrc` or `~/.bash_profile` files.
 
 Events
 ======
