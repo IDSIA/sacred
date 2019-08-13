@@ -60,7 +60,9 @@ class NeptuneObserver(RunObserver):
         Go to the app and see the experiment. For example, https://ui.neptune.ml/jakub-czakon/examples/e/EX-263
     """
 
-    def __init__(self, project_name, api_token=None, base_dir='.', source_extensions=None):
+    def __init__(
+        self, project_name, api_token=None, base_dir=".", source_extensions=None
+    ):
         import neptune
 
         neptune.init(project_qualified_name=project_name, api_token=api_token)
@@ -69,23 +71,30 @@ class NeptuneObserver(RunObserver):
         if source_extensions:
             self.source_extensions = source_extensions
         else:
-            self.source_extensions = ['.py', '.R', '.cpp', '.yaml', '.yml']
+            self.source_extensions = [".py", ".R", ".cpp", ".yaml", ".yml"]
 
-    def started_event(self, ex_info, command, host_info, start_time, config, meta_info, _id):
+    def started_event(
+        self, ex_info, command, host_info, start_time, config, meta_info, _id
+    ):
 
-        neptune.create_experiment(name=ex_info['name'],
-                                  params=_flatten_dict(config),
-                                  upload_source_files=_get_filepaths(dirpath=self.base_dir,
-                                                                     extensions=self.source_extensions),
-                                  properties={'mainfile': ex_info['mainfile'],
-                                              'dependencies': str(ex_info['dependencies']),
-                                              'sacred_id': str(_id),
-                                              **_str_dict_values(host_info),
-                                              **_str_dict_values(_flatten_dict(meta_info))})
+        neptune.create_experiment(
+            name=ex_info["name"],
+            params=_flatten_dict(config),
+            upload_source_files=_get_filepaths(
+                dirpath=self.base_dir, extensions=self.source_extensions
+            ),
+            properties={
+                "mainfile": ex_info["mainfile"],
+                "dependencies": str(ex_info["dependencies"]),
+                "sacred_id": str(_id),
+                **_str_dict_values(host_info),
+                **_str_dict_values(_flatten_dict(meta_info)),
+            },
+        )
 
     def completed_event(self, stop_time, result):
         if result:
-            neptune.log_metric('result', result)
+            neptune.log_metric("result", result)
         neptune.stop()
 
     def interrupted_event(self, interrupt_time, status):
@@ -103,8 +112,8 @@ class NeptuneObserver(RunObserver):
             self.resources[filename] = new_prefix
             md5 = get_digest(filename)
 
-            neptune.set_property('{}data_path'.format(new_prefix), filename)
-            neptune.set_property('{}data_version'.format(new_prefix), md5)
+            neptune.set_property("{}data_path".format(new_prefix), filename)
+            neptune.set_property("{}data_version".format(new_prefix), md5)
 
     def log_metrics(self, metrics_by_name, info):
         for metric_name, metric_ptr in metrics_by_name.items():
@@ -114,10 +123,12 @@ class NeptuneObserver(RunObserver):
     def _create_new_prefix(self):
         existing_prefixes = self.resources.values()
         if existing_prefixes:
-            prefix_ids = [int(prefix.replace('resource', '')) for prefix in existing_prefixes]
-            new_prefix = 'resource{}'.format(max(prefix_ids) + 1)
+            prefix_ids = [
+                int(prefix.replace("resource", "")) for prefix in existing_prefixes
+            ]
+            new_prefix = "resource{}".format(max(prefix_ids) + 1)
         else:
-            new_prefix = 'resource0'
+            new_prefix = "resource0"
         return new_prefix
 
 
@@ -130,7 +141,7 @@ def _get_filepaths(dirpath, extensions):
     return files
 
 
-def _flatten_dict(d, parent_key='', sep='_'):
+def _flatten_dict(d, parent_key="", sep="_"):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
