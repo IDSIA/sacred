@@ -4,7 +4,6 @@
 import collections
 import os
 
-import neptune
 from sacred.dependencies import get_digest
 from sacred.observers import RunObserver
 
@@ -62,6 +61,8 @@ class NeptuneObserver(RunObserver):
     """
 
     def __init__(self, project_name, api_token=None, base_dir='.', source_extensions=None):
+        import neptune
+
         neptune.init(project_qualified_name=project_name, api_token=api_token)
         self.resources = {}
         self.base_dir = base_dir
