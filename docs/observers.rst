@@ -720,7 +720,7 @@ You simply need to initialize it with your project name and (optionally) api tok
 .. warning::
 
     Always keep your API token secret - it is like password to the application.
-    It is recommended to pass your token via environment variable `NEPTUNE_API_TOKEN`.
+    It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
     To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
     line to your `~/.bashrc` or `~/.bash_profile` files.
 
