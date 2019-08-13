@@ -16,7 +16,6 @@ DEFAULT_SQL_PRIORITY = 40
 
 
 class PlainSQLObserver(RunObserver):
-
     def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
         self.session = session
@@ -130,14 +129,17 @@ class PlainSQLObserver(RunObserver):
 class SqlObserver(PlainSQLObserver):
     @classmethod
     def create(cls, *args, **kwargs):
-        warnings.warn("Use of the create method is depreciated. Please use"
-                      "SqlObserver(...) instead of SqlObserver.create(...).",
-                      DeprecationWarning)
+        warnings.warn(
+            "Use of the create method is depreciated. Please use"
+            "SqlObserver(...) instead of SqlObserver.create(...).",
+            DeprecationWarning,
+        )
         return cls(*args, **kwargs)
 
     def __init__(self, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         from sqlalchemy.orm import sessionmaker, scoped_session
         import sqlalchemy as sa
+
         engine = sa.create_engine(url, echo=echo)
         session_factory = sessionmaker(bind=engine)
         # make session thread-local to avoid problems with sqlite (see #275)
