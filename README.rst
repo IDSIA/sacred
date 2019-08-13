@@ -146,7 +146,7 @@ MongoDB.
 .. image:: docs/images/neptune-compare.png
 .. image:: docs/images/neptune-collaboration.png
 
-Neptune is a web service that let's you visualize, organize and compare your experiment runs.
+Neptune is a web service that lets you visualize, organize and compare your experiment runs.
 Once things are logged to Neptune you can share it with others, add comments and even access objects via
 experiment API:
 
