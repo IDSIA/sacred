@@ -60,10 +60,6 @@ Observers
     :members:
     :undoc-members:
 
-.. autoclass:: sacred.observers.NeptuneObserver
-    :members:
-    :undoc-members:
-
 Host Info
 =========
 
