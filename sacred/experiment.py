@@ -438,17 +438,13 @@ class Experiment(Ingredient):
         # The same as Run.log_scalar
         self.current_run.log_scalar(name, value, step)
 
-    def _gather(self, func):
-        """
-        Removes the experiment's path (prefix) from the names of the gathered
-        items. This means that, for example, 'experiment.print_config' becomes
-        'print_config'.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            for name, item in func(ingredient):
-                if ingredient == self:
-                    name = name[len(self.path) + 1 :]
-                yield name, item
+    def post_process_name(self, name, ingredient):
+        if ingredient == self:
+            # Removes the experiment's path (prefix) from the names
+            # of the gathered items. This means that, for example,
+            # 'experiment.print_config' becomes 'print_config'.
+            return name[len(self.path) + 1 :]
+        return name
 
     def get_default_options(self):
         """Get a dictionary of default options as used with run.

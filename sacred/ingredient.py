@@ -8,8 +8,6 @@ from typing import Sequence, Optional
 
 from collections import OrderedDict
 
-import wrapt
-
 from sacred.config import (
     ConfigDict,
     ConfigScope,
@@ -33,19 +31,6 @@ def collect_repositories(sources):
         for s in sources
         if s.repo
     ]
-
-
-@wrapt.decorator
-def gather_from_ingredients(wrapped, instance=None, args=None, kwargs=None):
-    """
-    Decorator that calls `_gather` on the instance the wrapped function is
-    bound to (should be an `Ingredient`) and yields from the returned
-    generator.
-
-    This function is necessary, because `Ingredient._gather` cannot directly be
-    used as a decorator inside of `Ingredient`.
-    """
-    yield from instance._gather(wrapped)
 
 
 class Ingredient:
@@ -306,21 +291,11 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def _gather(self, func):
-        """
-        Function needed and used by gathering functions through the decorator
-        `gather_from_ingredients` in `Ingredient`. Don't use this function by
-        itself outside of the decorator!
+    def post_process_name(self, name, ingredient):
+        """ Can be overridden to change the command name."""
+        return name
 
-        By overwriting this function you can filter what is visible when
-        gathering something (e.g. commands). See `Experiment._gather` for an
-        example.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            yield from func(ingredient)
-
-    @gather_from_ingredients
-    def gather_commands(self, ingredient):
+    def gather_commands(self):
         """Collect all commands from this ingredient and its sub-ingredients.
 
         Yields
@@ -330,11 +305,13 @@ class Ingredient:
         cmd: function
             The corresponding captured function.
         """
-        for command_name, command in ingredient.commands.items():
-            yield join_paths(ingredient.path, command_name), command
+        for ingredient, _ in self.traverse_ingredients():
+            for command_name, command in ingredient.commands.items():
+                cmd_name = join_paths(ingredient.path, command_name)
+                cmd_name = self.post_process_name(cmd_name, ingredient)
+                yield cmd_name, command
 
-    @gather_from_ingredients
-    def gather_named_configs(self, ingredient):
+    def gather_named_configs(self):
         """Collect all named configs from this ingredient and its
         sub-ingredients.
 
@@ -345,8 +322,11 @@ class Ingredient:
         config: ConfigScope or ConfigDict or basestring
             The corresponding named config.
         """
-        for config_name, config in ingredient.named_configs.items():
-            yield join_paths(ingredient.path, config_name), config
+        for ingredient, _ in self.traverse_ingredients():
+            for config_name, config in ingredient.named_configs.items():
+                config_name = join_paths(ingredient.path, config_name)
+                config_name = self.post_process_name(config_name, ingredient)
+                yield config_name, config
 
     def get_experiment_info(self):
         """Get a dictionary with information about this experiment.
