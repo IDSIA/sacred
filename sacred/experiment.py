@@ -55,7 +55,7 @@ class Experiment(Ingredient):
         ingredients: Sequence[Ingredient] = (),
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
-        additional_cli_options: Sequence[CLIOption] = None,
+        additional_cli_options: Optional[Sequence[CLIOption]] = None,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
