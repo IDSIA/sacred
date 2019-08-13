@@ -1,7 +1,7 @@
 import functools
 
 
-class ContextMethodDecorator():
+class ContextMethodDecorator:
     """A helper ContextManager decorating a method with a custom function."""
 
     def __init__(self, classx, method_name, decorator_func):
@@ -31,17 +31,16 @@ class ContextMethodDecorator():
     def __enter__(self):
 
         self.original_method = getattr(self.classx, self.method_name)
-        if not hasattr(self.original_method,
-                       "sacred_patched%s" % self.__class__.__name__):
+        if not hasattr(
+            self.original_method, "sacred_patched%s" % self.__class__.__name__
+        ):
+
             @functools.wraps(self.original_method)
             def decorated(instance, *args, **kwargs):
-                return self.decorator_func(instance,
-                                           self.original_method, args,
-                                           kwargs)
+                return self.decorator_func(instance, self.original_method, args, kwargs)
 
             setattr(self.classx, self.method_name, decorated)
-            setattr(decorated,
-                    "sacred_patched%s" % self.__class__.__name__, True)
+            setattr(decorated, "sacred_patched%s" % self.__class__.__name__, True)
             self.patched_by_me = True
 
     def __exit__(self, type, value, traceback):

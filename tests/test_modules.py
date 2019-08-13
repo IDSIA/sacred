@@ -11,12 +11,12 @@ def test_ingredient_config():
     @m.config
     def cfg():
         a = 5
-        b = 'foo'
+        b = "foo"
 
     assert len(m.configurations) == 1
     cfg = m.configurations[0]
     assert isinstance(cfg, ConfigScope)
-    assert cfg() == {'a': 5, 'b': 'foo'}
+    assert cfg() == {"a": 5, "b": "foo"}
 
 
 def test_ingredient_captured_functions():
@@ -34,20 +34,21 @@ def test_ingredient_captured_functions():
 def test_ingredient_command():
     m = Ingredient("somemod")
 
-    m.add_config(a=42, b='foo{}')
+    m.add_config(a=42, b="foo{}")
 
     @m.command
     def transmogrify(a, b):
         return b.format(a)
 
-    assert 'transmogrify' in m.commands
-    assert m.commands['transmogrify'] == transmogrify
-    ex = Experiment('foo', ingredients=[m])
+    assert "transmogrify" in m.commands
+    assert m.commands["transmogrify"] == transmogrify
+    ex = Experiment("foo", ingredients=[m])
 
-    assert ex.run('somemod.transmogrify').result == 'foo42'
+    assert ex.run("somemod.transmogrify").result == "foo42"
 
 
 # ############# Experiment ####################################################
+
 
 def test_experiment_run():
     ex = Experiment("some_experiment")
@@ -65,7 +66,7 @@ def test_experiment_run_access_subingredient():
     @somemod.config
     def cfg():
         a = 5
-        b = 'foo'
+        b = "foo"
 
     ex = Experiment("some_experiment", ingredients=[somemod])
 
@@ -74,8 +75,8 @@ def test_experiment_run_access_subingredient():
         return somemod
 
     r = ex.run().result
-    assert r['a'] == 5
-    assert r['b'] == 'foo'
+    assert r["a"] == 5
+    assert r["b"] == "foo"
 
 
 def test_experiment_run_subingredient_function():
@@ -84,7 +85,7 @@ def test_experiment_run_subingredient_function():
     @somemod.config
     def cfg():
         a = 5
-        b = 'foo'
+        b = "foo"
 
     @somemod.capture
     def get_answer(b):
@@ -96,7 +97,7 @@ def test_experiment_run_subingredient_function():
     def main():
         return get_answer()
 
-    assert ex.run().result == 'foo'
+    assert ex.run().result == "foo"
 
 
 def test_experiment_named_config_subingredient():
@@ -123,17 +124,17 @@ def test_experiment_named_config_subingredient():
     @ex.named_config
     def ncfg():
         a = 2
-        somemod = {'a': 25}
+        somemod = {"a": 25}
 
     @ex.main
     def main(a):
         return a, get_answer()
 
     assert ex.run().result == (1, 15)
-    assert ex.run(named_configs=['somemod.nsubcfg']).result == (1, 16)
-    assert ex.run(named_configs=['ncfg']).result == (2, 25)
-    assert ex.run(named_configs=['ncfg', 'somemod.nsubcfg']).result == (2, 16)
-    assert ex.run(named_configs=['somemod.nsubcfg', 'ncfg']).result == (2, 25)
+    assert ex.run(named_configs=["somemod.nsubcfg"]).result == (1, 16)
+    assert ex.run(named_configs=["ncfg"]).result == (2, 25)
+    assert ex.run(named_configs=["ncfg", "somemod.nsubcfg"]).result == (2, 16)
+    assert ex.run(named_configs=["somemod.nsubcfg", "ncfg"]).result == (2, 25)
 
 
 def test_experiment_named_config_subingredient_overwrite():
@@ -147,17 +148,17 @@ def test_experiment_named_config_subingredient_overwrite():
 
     @ex.named_config
     def ncfg():
-        somemod = {'a': 1}
+        somemod = {"a": 1}
 
     @ex.main
     def main():
         return get_answer()
 
-    assert ex.run(named_configs=['ncfg']).result == 1
-    assert ex.run(config_updates={'somemod': {'a': 2}}).result == 2
-    assert ex.run(named_configs=['ncfg'],
-                  config_updates={'somemod': {'a': 2}}
-                  ).result == 2
+    assert ex.run(named_configs=["ncfg"]).result == 1
+    assert ex.run(config_updates={"somemod": {"a": 2}}).result == 2
+    assert (
+        ex.run(named_configs=["ncfg"], config_updates={"somemod": {"a": 2}}).result == 2
+    )
 
 
 def test_experiment_double_named_config():
@@ -166,39 +167,33 @@ def test_experiment_double_named_config():
     @ex.config
     def config():
         a = 0
-        d = {
-            'e': 0,
-            'f': 0
-        }
+        d = {"e": 0, "f": 0}
 
     @ex.named_config
     def A():
         a = 2
-        d = {
-            'e': 2,
-            'f': 2
-        }
+        d = {"e": 2, "f": 2}
 
     @ex.named_config
     def B():
-        d = {'f': -1}
+        d = {"f": -1}
 
     @ex.main
     def run(a, d):
-        return a, d['e'], d['f']
+        return a, d["e"], d["f"]
 
     assert ex.run().result == (0, 0, 0)
-    assert ex.run(named_configs=['A']).result == (2, 2, 2)
-    assert ex.run(named_configs=['B']).result == (0, 0, -1)
-    assert ex.run(named_configs=['A', 'B']).result == (2, 2, -1)
-    assert ex.run(named_configs=['B', 'A']).result == (2, 2, 2)
+    assert ex.run(named_configs=["A"]).result == (2, 2, 2)
+    assert ex.run(named_configs=["B"]).result == (0, 0, -1)
+    assert ex.run(named_configs=["A", "B"]).result == (2, 2, -1)
+    assert ex.run(named_configs=["B", "A"]).result == (2, 2, 2)
 
 
 def test_double_nested_config():
-    sub_sub_ing = Ingredient('sub_sub_ing')
-    sub_ing = Ingredient('sub_ing', [sub_sub_ing])
-    ing = Ingredient('ing', [sub_ing])
-    ex = Experiment('ex', [ing])
+    sub_sub_ing = Ingredient("sub_sub_ing")
+    sub_ing = Ingredient("sub_ing", [sub_sub_ing])
+    ing = Ingredient("ing", [sub_ing])
+    ex = Experiment("ex", [ing])
 
     @ex.config
     def config():
@@ -219,33 +214,28 @@ def test_double_nested_config():
 
     @sub_sub_ing.capture
     def sub_sub_ing_main(_config):
-        assert _config == {
-            'd': 3
-        }, _config
+        assert _config == {"d": 3}, _config
 
     @sub_ing.capture
     def sub_ing_main(_config):
-        assert _config == {
-            'c': 2,
-            'sub_sub_ing': {'d': 3}
-        }, _config
+        assert _config == {"c": 2, "sub_sub_ing": {"d": 3}}, _config
 
     @ing.capture
     def ing_main(_config):
         assert _config == {
-            'b': 1,
-            'sub_sub_ing': {'d': 3},
-            'sub_ing': {'c': 2}
+            "b": 1,
+            "sub_sub_ing": {"d": 3},
+            "sub_ing": {"c": 2},
         }, _config
 
     @ex.main
     def main(_config):
         assert _config == {
-            'a': 1,
-            'sub_sub_ing': {'d': 3},
-            'sub_ing': {'c': 2},
-            'ing': {'b': 1},
-            'seed': 42
+            "a": 1,
+            "sub_sub_ing": {"d": 3},
+            "sub_ing": {"c": 2},
+            "ing": {"b": 1},
+            "seed": 42,
         }, _config
 
         ing_main()

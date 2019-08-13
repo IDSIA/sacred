@@ -17,24 +17,26 @@ def test_log_scalar_metric_with_run(ex):
     END = 100
     STEP_SIZE = 5
     messages = {}
+
     @ex.main
     def main_function(_run):
         # First, make sure the queue is empty:
         assert len(ex.current_run._metrics.get_last_metrics()) == 0
         for i in range(START, END, STEP_SIZE):
-            val = i*i
+            val = i * i
             _run.log_scalar("training.loss", val, i)
         messages["messages"] = ex.current_run._metrics.get_last_metrics()
         """Calling get_last_metrics clears the metrics logger internal queue.
         If we don't call it here, it would be called during Sacred heartbeat 
         event after the run finishes, and the data we want to test would 
         be lost."""
+
     ex.run()
     assert ex.current_run is not None
     messages = messages["messages"]
-    assert len(messages) == (END - START)/STEP_SIZE
-    for i in range(len(messages)-1):
-        assert messages[i].step < messages[i+1].step
+    assert len(messages) == (END - START) / STEP_SIZE
+    for i in range(len(messages) - 1):
+        assert messages[i].step < messages[i + 1].step
         assert messages[i].step == START + i * STEP_SIZE
         assert messages[i].timestamp <= messages[i + 1].timestamp
 
@@ -44,36 +46,40 @@ def test_log_scalar_metric_with_ex(ex):
     START = 10
     END = 100
     STEP_SIZE = 5
+
     @ex.main
     def main_function(_run):
         for i in range(START, END, STEP_SIZE):
-            val = i*i
+            val = i * i
             ex.log_scalar("training.loss", val, i)
         messages["messages"] = ex.current_run._metrics.get_last_metrics()
+
     ex.run()
     assert ex.current_run is not None
     messages = messages["messages"]
     assert len(messages) == (END - START) / STEP_SIZE
-    for i in range(len(messages)-1):
-        assert messages[i].step < messages[i+1].step
+    for i in range(len(messages) - 1):
+        assert messages[i].step < messages[i + 1].step
         assert messages[i].step == START + i * STEP_SIZE
         assert messages[i].timestamp <= messages[i + 1].timestamp
 
 
 def test_log_scalar_metric_with_implicit_step(ex):
     messages = {}
+
     @ex.main
     def main_function(_run):
         for i in range(10):
-            val = i*i
+            val = i * i
             ex.log_scalar("training.loss", val)
         messages["messages"] = ex.current_run._metrics.get_last_metrics()
+
     ex.run()
     assert ex.current_run is not None
     messages = messages["messages"]
     assert len(messages) == 10
-    for i in range(len(messages)-1):
-        assert messages[i].step < messages[i+1].step
+    for i in range(len(messages) - 1):
+        assert messages[i].step < messages[i + 1].step
         assert messages[i].step == i
         assert messages[i].timestamp <= messages[i + 1].timestamp
 
@@ -84,10 +90,11 @@ def test_log_scalar_metrics_with_implicit_step(ex):
     @ex.main
     def main_function(_run):
         for i in range(10):
-            val = i*i
+            val = i * i
             ex.log_scalar("training.loss", val)
             ex.log_scalar("training.accuracy", val + 1)
         messages["messages"] = ex.current_run._metrics.get_last_metrics()
+
     ex.run()
     assert ex.current_run is not None
     messages = messages["messages"]
@@ -108,12 +115,14 @@ def test_log_scalar_metrics_with_implicit_step(ex):
 
 
 def test_linearize_metrics():
-    entries = [ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 100),
-               ScalarMetricLogEntry("training.accuracy", 5, datetime.datetime.utcnow(), 50),
-               ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 200),
-               ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
-               ScalarMetricLogEntry("training.accuracy", 15, datetime.datetime.utcnow(), 150),
-               ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300)]
+    entries = [
+        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 5, datetime.datetime.utcnow(), 50),
+        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 200),
+        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
+        ScalarMetricLogEntry("training.accuracy", 15, datetime.datetime.utcnow(), 150),
+        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+    ]
     linearized = linearize_metrics(entries)
     assert type(linearized) == dict
     assert len(linearized.keys()) == 2
