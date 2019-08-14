@@ -26,5 +26,5 @@ __all__ = (
     "__url__",
     "SETTINGS",
     "host_info_gatherer",
-    "cli_option"
+    "cli_option",
 )

@@ -180,7 +180,7 @@ def gather_command_line_options(filter_disabled=None):
             continue
         options.append(opt)
 
-    options += [debug_option, loglevel_option]
+    options += DEFAULT_COMMAND_LINE_OPTIONS
 
     return sorted(options, key=get_name)
 
@@ -354,3 +354,6 @@ class CaptureOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.capture_mode = args
+
+
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
