@@ -75,7 +75,7 @@ class MongoObserver(RunObserver):
         priority=DEFAULT_MONGO_PRIORITY,
         client=None,
         failure_dir=None,
-        **kwargs,
+        **kwargs
     ):
         """Factory method for MongoObserver.
 
@@ -558,7 +558,7 @@ class QueuedMongoObserver(QueueObserver):
         overwrite=None,
         priority=DEFAULT_MONGO_PRIORITY,
         client=None,
-        **kwargs,
+        **kwargs
     ):
         return cls(
             QueueCompatibleMongoObserver.create(

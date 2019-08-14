@@ -436,6 +436,7 @@ def get_commit_if_possible(filename):
 
 @functools.total_ordering
 class Source:
+
     def __init__(self, filename):
         if not filename or not os.path.exists(filename):
             raise ValueError('invalid filename or file not found "{}"'.format(filename))
