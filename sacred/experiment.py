@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
@@ -27,6 +27,7 @@ from sacred.commands import (
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
     print_filtered_stacktrace,
     ensure_wellformed_argv,
@@ -55,6 +56,7 @@ class Experiment(Ingredient):
         ingredients: Sequence[Ingredient] = (),
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
+        additional_host_info: List[HostInfoGetter] = None,
         additional_cli_options: Optional[Sequence[CLIOption]] = None,
     ):
         """
@@ -79,7 +81,13 @@ class Experiment(Ingredient):
             Optional full path to the base directory of this experiment. This
             will set the scope for automatic source file discovery.
 
+        additional_host_info : optional
+            Optional dictionary containing as keys the names of the pieces of
+            host info you want to collect, and as
+            values the functions collecting those pieces of information.
         """
+        self.additional_host_info = additional_host_info or []
+        check_additional_host_info(self.additional_host_info)
         self.additional_cli_options = additional_cli_options or []
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
@@ -442,17 +450,13 @@ class Experiment(Ingredient):
         # The same as Run.log_scalar
         self.current_run.log_scalar(name, value, step)
 
-    def _gather(self, func):
-        """
-        Removes the experiment's path (prefix) from the names of the gathered
-        items. This means that, for example, 'experiment.print_config' becomes
-        'print_config'.
-        """
-        for ingredient, _ in self.traverse_ingredients():
-            for name, item in func(ingredient):
-                if ingredient == self:
-                    name = name[len(self.path) + 1 :]
-                yield name, item
+    def post_process_name(self, name, ingredient):
+        if ingredient == self:
+            # Removes the experiment's path (prefix) from the names
+            # of the gathered items. This means that, for example,
+            # 'experiment.print_config' becomes 'print_config'.
+            return name[len(self.path) + 1 :]
+        return name
 
     def get_default_options(self):
         """Get a dictionary of default options as used with run.

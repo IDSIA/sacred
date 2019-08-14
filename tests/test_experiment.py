@@ -9,6 +9,7 @@ from mock import patch
 import pytest
 import sys
 
+from sacred import host_info_gatherer
 from sacred.experiment import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError, SacredError
 
@@ -406,3 +407,18 @@ def test_add_config_dict_chain(ex):
         "key_4": "value4",
     }
     assert final_config["dictnest_cap"] == final_config["dictnest_dict"]
+
+
+def test_additional_gatherers():
+    @host_info_gatherer("hello")
+    def get_hello():
+        return "hello world"
+
+    experiment = Experiment("ator3000", additional_host_info=[get_hello])
+
+    @experiment.main
+    def foo():
+        pass
+
+    experiment.run()
+    assert experiment.current_run.host_info["hello"] == "hello world"

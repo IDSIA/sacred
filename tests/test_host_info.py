@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+import pytest
+
 from sacred.host_info import get_host_info, host_info_getter, host_info_gatherers
 
 
@@ -39,5 +41,19 @@ def test_host_info_decorator_with_name():
         assert "greeting" not in host_info_gatherers
         assert host_info_gatherers["foo"] == greeting
         assert get_host_info()["foo"] == "hello"
+    finally:
+        del host_info_gatherers["foo"]
+
+
+def test_host_info_decorator_depreciation_warning():
+    try:
+        assert "foo" not in host_info_gatherers
+
+        with pytest.warns(DeprecationWarning):
+
+            @host_info_getter(name="foo")
+            def greeting():
+                return "hello"
+
     finally:
         del host_info_gatherers["foo"]
