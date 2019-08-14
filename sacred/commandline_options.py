@@ -173,8 +173,8 @@ def gather_command_line_options(filter_disabled=None):
     for opt in get_inheritors(CommandLineOption):
         warnings.warn(
             "Subclassing `CommandLineOption` is deprecated. Please "
-            "use the `sacred.cli_option` decorator or the "
-            "`sacred.CLIOption` class instead."
+            "use the `sacred.cli_option` decorator and pass the function "
+            "to the Experiment constructor."
         )
         if filter_disabled and not opt._enabled:
             continue
