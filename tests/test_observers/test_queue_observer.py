@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from sacred.observers.queue import QueueObserver
+from sacred import Experiment
 import mock
 import pytest
 
@@ -63,3 +64,47 @@ def test_log_metrics(queue_observer):
         "info",
     )
     assert queue_observer._covered_observer.method_calls[2][2] == {}
+
+
+def test_run_waits_for_running_queue_observer():
+
+    queue_observer_with_long_interval = QueueObserver(
+        mock.MagicMock(), interval=1, retry_interval=0.01
+    )
+
+    ex = Experiment("ator3000")
+    ex.observers.append(queue_observer_with_long_interval)
+
+    @ex.main
+    def main():
+        print("do nothing")
+
+    ex.run()
+    assert (
+        queue_observer_with_long_interval._covered_observer.method_calls[-1][0]
+        == "completed_event"
+    )
+
+
+def test_run_waits_for_running_queue_observer_after_failure():
+
+    queue_observer_with_long_interval = QueueObserver(
+        mock.MagicMock(), interval=1, retry_interval=0.01
+    )
+
+    ex = Experiment("ator3000")
+    ex.observers.append(queue_observer_with_long_interval)
+
+    @ex.main
+    def main():
+        raise Exception("fatal error")
+
+    try:
+        ex.run()
+    except:
+        pass
+
+    assert (
+        queue_observer_with_long_interval._covered_observer.method_calls[-1][0]
+        == "failed_event"
+    )

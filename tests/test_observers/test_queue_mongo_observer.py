@@ -118,7 +118,6 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
     mongo_obs.started_event(**sample_run)
 
     mongo_obs.completed_event(stop_time=T2, result=42)
-    mongo_obs.join()
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -130,7 +129,6 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
 def test_mongo_observer_interrupted_event_updates_run(mongo_obs, sample_run):
     mongo_obs.started_event(**sample_run)
     mongo_obs.interrupted_event(interrupt_time=T2, status="INTERRUPTED")
-    mongo_obs.join()
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()
@@ -143,7 +141,6 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
 
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2, fail_trace=fail_trace)
-    mongo_obs.join()
 
     assert mongo_obs.runs.count() == 1
     db_run = mongo_obs.runs.find_one()

@@ -256,6 +256,7 @@ class Run:
             raise
         finally:
             self._warn_about_failed_observers()
+            self._wait_for_observers()
 
         return self.result
 
