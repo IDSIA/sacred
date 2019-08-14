@@ -437,17 +437,22 @@ def get_commit_if_possible(filename):
 @functools.total_ordering
 class Source:
     def __init__(self, filename):
-        if not filename or not os.path.exists(filename):
-            raise ValueError('invalid filename or file not found "{}"'.format(filename))
-
-        main_file = get_py_file_if_possible(os.path.abspath(filename))
+        filename = Source.check_filename(filename)
+        main_file = get_py_file_if_possible(filename)
         repo, commit, is_dirty = get_commit_if_possible(main_file)
+
         self.filename = main_file
         self.digest = get_digest(main_file)
         self.repo = repo
         self.commit = commit
         self.is_dirty = is_dirty
 
+    @staticmethod
+    def check_filename(filename):
+        if not filename or not os.path.exists(filename):
+            raise ValueError('invalid filename or file not found "{}"'.format(filename))
+        return os.path.abspath(filename)
+        
     def to_json(self, base_dir=None):
         if base_dir:
             return os.path.relpath(self.filename, base_dir), self.digest
