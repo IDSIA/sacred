@@ -70,24 +70,24 @@ def test_source_get_digest():
 
 def test_source_create_empty():
     with pytest.raises(ValueError):
-        Source.create("")
+        Source("")
 
 
 def test_source_create_non_existing():
     with pytest.raises(ValueError):
-        Source.create("doesnotexist.py")
+        Source("doesnotexist.py")
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Weird win bug")
 def test_source_create_py():
-    s = Source.create(EXAMPLE_SOURCE)
+    s = Source(EXAMPLE_SOURCE)
     assert s.filename == os.path.abspath(EXAMPLE_SOURCE)
     assert s.digest == EXAMPLE_DIGEST
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Weird win bug")
 def test_source_to_json():
-    s = Source.create(EXAMPLE_SOURCE)
+    s = Source(EXAMPLE_SOURCE)
     assert s.to_json() == (os.path.abspath(EXAMPLE_SOURCE), EXAMPLE_DIGEST)
 
 
@@ -100,7 +100,7 @@ def test_get_py_file_if_possible_with_pyc_file():
 
 
 def test_source_repr():
-    s = Source.create(EXAMPLE_SOURCE)
+    s = Source(EXAMPLE_SOURCE)
     assert repr(s) == "<Source: {}>".format(os.path.abspath(EXAMPLE_SOURCE))
 
 
@@ -173,12 +173,12 @@ def test_gather_sources_and_dependencies():
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
-    assert main == Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py"))
+    assert main == Source(os.path.join(TEST_DIRECTORY, "dependency_example.py"))
     expected_sources = {
-        Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
+        Source(os.path.join(TEST_DIRECTORY, "__init__.py")),
+        Source(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
+        Source(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
+        Source(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
     }
     assert sources == expected_sources
 
@@ -202,15 +202,15 @@ def test_custom_base_dir():
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
-    assert main == Source.create(
+    assert main == Source(
         os.path.join(TEST_DIRECTORY, "basedir", "my_experiment.py")
     )
     expected_sources = {
-        Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "basedir", "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "basedir", "my_experiment.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
+        Source(os.path.join(TEST_DIRECTORY, "__init__.py")),
+        Source(os.path.join(TEST_DIRECTORY, "basedir", "__init__.py")),
+        Source(os.path.join(TEST_DIRECTORY, "basedir", "my_experiment.py")),
+        Source(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
+        Source(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
     }
     assert sources == expected_sources
 

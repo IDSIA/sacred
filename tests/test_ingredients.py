@@ -22,7 +22,7 @@ def ing():
 def test_create_ingredient(ing):
     assert ing.path == "tickle"
     assert ing.doc == __doc__
-    assert Source.create(__file__) in ing.sources
+    assert Source(__file__) in ing.sources
 
 
 def test_capture_function(ing):
@@ -215,7 +215,7 @@ def test_add_source_file(ing):
     f.write("print('Hello World')")
     f.close()
     ing.add_source_file(f_name)
-    assert Source.create(f_name) in ing.sources
+    assert Source(f_name) in ing.sources
     os.remove(f_name)
 
 

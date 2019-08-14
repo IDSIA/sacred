@@ -276,7 +276,7 @@ class Ingredient:
         :param filename: filename of the source to be added as dependency
         :type filename: str
         """
-        self.sources.add(Source.create(filename))
+        self.sources.add(Source(filename))
 
     def add_package_dependency(self, package_name, version):
         """

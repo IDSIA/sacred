@@ -436,21 +436,18 @@ def get_commit_if_possible(filename):
 
 @functools.total_ordering
 class Source:
-    def __init__(self, filename, digest, repo, commit, isdirty):
-        self.filename = filename
-        self.digest = digest
-        self.repo = repo
-        self.commit = commit
-        self.is_dirty = isdirty
 
-    @staticmethod
-    def create(filename):
+    def __init__(self, filename):
         if not filename or not os.path.exists(filename):
             raise ValueError('invalid filename or file not found "{}"'.format(filename))
 
         main_file = get_py_file_if_possible(os.path.abspath(filename))
         repo, commit, is_dirty = get_commit_if_possible(main_file)
-        return Source(main_file, get_digest(main_file), repo, commit, is_dirty)
+        self.filename = main_file
+        self.digest = get_digest(main_file)
+        self.repo = repo
+        self.commit = commit
+        self.is_dirty = is_dirty
 
     def to_json(self, base_dir=None):
         if base_dir:
@@ -601,7 +598,7 @@ def get_main_file(globs):
         experiment_path = os.path.abspath(os.path.curdir)
         main = None
     else:
-        main = Source.create(globs.get("__file__"))
+        main = Source(globs.get("__file__"))
         experiment_path = os.path.dirname(main.filename)
     return experiment_path, main
 
@@ -654,7 +651,7 @@ def get_sources_from_modules(module_iterator, base_path):
 
         filename = os.path.abspath(mod.__file__)
         if filename not in sources and is_local_source(filename, modname, base_path):
-            s = Source.create(filename)
+            s = Source(filename)
             sources.add(s)
     return sources
 
@@ -688,7 +685,7 @@ def get_sources_from_imported_modules(globs, base_path):
 
 
 def get_sources_from_local_dir(globs, base_path):
-    return {Source.create(filename) for filename in iterate_all_python_files(base_path)}
+    return {Source(filename) for filename in iterate_all_python_files(base_path)}
 
 
 def get_dependencies_from_sys_modules(globs, base_path):
