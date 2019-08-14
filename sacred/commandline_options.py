@@ -60,7 +60,7 @@ class CLIOption:
         return self.apply_function.__name__
 
     def get_description(self):
-        return inspect.getdoc(self.apply_function)
+        return inspect.getdoc(self.apply_function) or ""
 
 
 def cli_option(short_flag: str, long_flag: str, is_flag=False):
