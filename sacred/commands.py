@@ -5,7 +5,6 @@
 import pprint
 import pydoc
 import re
-import os
 from collections import namedtuple, OrderedDict
 
 from colorama import Fore, Style
