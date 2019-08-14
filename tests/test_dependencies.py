@@ -202,9 +202,7 @@ def test_custom_base_dir():
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
-    assert main == Source(
-        os.path.join(TEST_DIRECTORY, "basedir", "my_experiment.py")
-    )
+    assert main == Source(os.path.join(TEST_DIRECTORY, "basedir", "my_experiment.py"))
     expected_sources = {
         Source(os.path.join(TEST_DIRECTORY, "__init__.py")),
         Source(os.path.join(TEST_DIRECTORY, "basedir", "__init__.py")),
