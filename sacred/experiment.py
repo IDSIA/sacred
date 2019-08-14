@@ -6,7 +6,7 @@ import inspect
 import os.path
 import sys
 from collections import OrderedDict
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
@@ -26,6 +26,7 @@ from sacred.commands import (
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
     print_filtered_stacktrace,
     ensure_wellformed_argv,
@@ -54,6 +55,7 @@ class Experiment(Ingredient):
         ingredients: Sequence[Ingredient] = (),
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
+        additional_host_info: List[HostInfoGetter] = None,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
@@ -77,7 +79,13 @@ class Experiment(Ingredient):
             Optional full path to the base directory of this experiment. This
             will set the scope for automatic source file discovery.
 
+        additional_host_info : optional
+            Optional dictionary containing as keys the names of the pieces of
+            host info you want to collect, and as
+            values the functions collecting those pieces of information.
         """
+        self.additional_host_info = additional_host_info or []
+        check_additional_host_info(self.additional_host_info)
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
