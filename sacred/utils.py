@@ -31,7 +31,6 @@ __all__ = [
     "iterate_flattened_separately",
     "set_by_dotted_path",
     "get_by_dotted_path",
-    "iter_path_splits",
     "iter_prefixes",
     "join_paths",
     "is_prefix",
@@ -451,25 +450,6 @@ def get_by_dotted_path(d, path, default=None):
             return default
         current_option = current_option[p]
     return current_option
-
-
-def iter_path_splits(path):
-    """
-    Iterate over possible splits of a dotted path.
-
-    The first part can be empty the second should not be.
-
-    Example:
-    >>> list(iter_path_splits('foo.bar.baz'))
-    [('',        'foo.bar.baz'),
-     ('foo',     'bar.baz'),
-     ('foo.bar', 'baz')]
-    """
-    split_path = path.split(".")
-    for i in range(len(split_path)):
-        p1 = join_paths(*split_path[:i])
-        p2 = join_paths(*split_path[i:])
-        yield p1, p2
 
 
 def iter_prefixes(path):

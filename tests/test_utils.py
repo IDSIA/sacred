@@ -8,7 +8,6 @@ from sacred.utils import (
     convert_to_nested_dict,
     get_by_dotted_path,
     is_prefix,
-    iter_path_splits,
     iter_prefixes,
     iterate_flattened,
     iterate_flattened_separately,
@@ -75,14 +74,6 @@ def test_get_by_dotted_path():
     assert get_by_dotted_path({"a": 12}, "") == {"a": 12}
     assert get_by_dotted_path({"foo": {"a": 12}}, "foo.a") == 12
     assert get_by_dotted_path({"foo": {"a": 12}}, "foo.b") is None
-
-
-def test_iter_path_splits():
-    assert list(iter_path_splits("foo.bar.baz")) == [
-        ("", "foo.bar.baz"),
-        ("foo", "bar.baz"),
-        ("foo.bar", "baz"),
-    ]
 
 
 def test_iter_prefixes():
