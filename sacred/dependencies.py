@@ -508,7 +508,6 @@ class PackageDependency:
     def __repr__(self):
         return "<PackageDependency: {}={}>".format(self.name, self.version)
 
-
     @classmethod
     def create(cls, mod):
         if not cls.modname_to_dist:

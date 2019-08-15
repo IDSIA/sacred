@@ -108,16 +108,6 @@ def test_get_py_file_if_possible_with_pyc_but_nonexistent_py_file():
     assert get_py_file_if_possible("doesnotexist.pyc") == "doesnotexist.pyc"
 
 
-versions = [
-    ("0.7.2", "0.7.2"),
-    ("1.0", "1.0"),
-    ("foobar", None),
-    (10, None),
-    ((2, 6), "2.6"),
-    ((1, 4, 8), "1.4.8"),
-]
-
-
 def test_package_dependency_create_no_version():
     mod = mock.Mock(spec=[], __name__="testmod")
     pd = PackageDependency.create(mod)
