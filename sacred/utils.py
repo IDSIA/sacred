@@ -697,22 +697,6 @@ def module_is_in_cache(modname):
     return modname in sys.modules
 
 
-def module_is_imported(modname, scope=None):
-    """Checks if a module is imported within the current namespace."""
-    # return early if modname is not even cached
-    if not module_is_in_cache(modname):
-        return False
-
-    if scope is None:  # use globals() of the caller by default
-        scope = inspect.stack()[1][0].f_globals
-
-    for m in scope.values():
-        if isinstance(m, type(sys)) and m.__name__ == modname:
-            return True
-
-    return False
-
-
 def parse_version(version_string):
     """Returns a parsed version string."""
     return version.parse(version_string)
