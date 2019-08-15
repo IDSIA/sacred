@@ -37,12 +37,12 @@ try:
     import ctypes
     from ctypes.util import find_library
 except ImportError:
-    has_libc, libc = False, None
+    libc = None
 else:
     try:
-        has_libc, libc = True, ctypes.cdll.msvcrt  # Windows
+        libc = ctypes.cdll.msvcrt  # Windows
     except OSError:
-        has_libc, libc = True, ctypes.cdll.LoadLibrary(find_library("c"))
+        libc = ctypes.cdll.LoadLibrary(find_library("c"))
 
 
 has_numpy, np = optional_import("numpy")
