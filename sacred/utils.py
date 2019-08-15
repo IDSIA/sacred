@@ -4,7 +4,6 @@
 import collections
 import contextlib
 import importlib
-import inspect
 import logging
 import pkgutil
 import re
