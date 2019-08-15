@@ -118,24 +118,6 @@ versions = [
 ]
 
 
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_version__(version, expected):
-    mod = mock.Mock(spec=[], __version__=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_version(version, expected):
-    mod = mock.Mock(spec=[], version=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_VERSION(version, expected):
-    mod = mock.Mock(spec=[], VERSION=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
 def test_package_dependency_create_no_version():
     mod = mock.Mock(spec=[], __name__="testmod")
     pd = PackageDependency.create(mod)

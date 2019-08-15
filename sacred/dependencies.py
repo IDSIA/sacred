@@ -508,20 +508,6 @@ class PackageDependency:
     def __repr__(self):
         return "<PackageDependency: {}={}>".format(self.name, self.version)
 
-    @staticmethod
-    def get_version_heuristic(mod):
-        possible_version_attributes = ["__version__", "VERSION", "version"]
-        for vattr in possible_version_attributes:
-            if hasattr(mod, vattr):
-                version = getattr(mod, vattr)
-                if isinstance(version, str) and PEP440_VERSION_PATTERN.match(version):
-                    return version
-                if isinstance(version, tuple):
-                    version = ".".join([str(n) for n in version])
-                    if PEP440_VERSION_PATTERN.match(version):
-                        return version
-
-        return None
 
     @classmethod
     def create(cls, mod):
@@ -536,7 +522,6 @@ class PackageDependency:
                 except Exception:
                     pass
 
-        # version = PackageDependency.get_version_heuristic(mod)
         name, version = cls.modname_to_dist.get(mod.__name__, (mod.__name__, None))
 
         return PackageDependency(name, version)
