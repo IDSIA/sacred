@@ -56,6 +56,7 @@ class Experiment(Ingredient):
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
         additional_host_info: List[HostInfoGetter] = None,
+        save_git_commit: Optional[bool] = None,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
@@ -83,6 +84,11 @@ class Experiment(Ingredient):
             Optional dictionary containing as keys the names of the pieces of
             host info you want to collect, and as
             values the functions collecting those pieces of information.
+
+        save_git_commit:
+            Optionally save the git commit hash and the git state
+            (clean or dirty) for all source files. This requires the GitPython
+            package.
         """
         self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
@@ -108,6 +114,7 @@ class Experiment(Ingredient):
             interactive=interactive,
             base_dir=base_dir,
             _caller_globals=caller_globals,
+            save_git_commit=save_git_commit,
         )
         self.default_command = None
         self.command(print_config, unobserved=True)

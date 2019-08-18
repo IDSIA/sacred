@@ -169,7 +169,9 @@ def test_package_dependency_repr():
 def test_gather_sources_and_dependencies():
     from tests.dependency_example import some_func
 
-    main, sources, deps = gather_sources_and_dependencies(some_func.__globals__)
+    main, sources, deps = gather_sources_and_dependencies(
+        some_func.__globals__, save_git_commit=False
+    )
     assert isinstance(main, Source)
     assert isinstance(sources, set)
     assert isinstance(deps, set)
@@ -197,7 +199,7 @@ def test_custom_base_dir():
     from tests.basedir.my_experiment import some_func
 
     main, sources, deps = gather_sources_and_dependencies(
-        some_func.__globals__, TEST_DIRECTORY
+        some_func.__globals__, False, TEST_DIRECTORY
     )
     assert isinstance(main, Source)
     assert isinstance(sources, set)

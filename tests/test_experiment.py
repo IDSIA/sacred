@@ -12,6 +12,7 @@ import sys
 from sacred import host_info_gatherer
 from sacred.experiment import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError, SacredError
+from sacred import optional as opt
 
 
 @pytest.fixture
@@ -422,3 +423,55 @@ def test_additional_gatherers():
 
     experiment.run()
     assert experiment.current_run.host_info["hello"] == "hello world"
+
+
+@pytest.mark.skipif(
+    not opt.has_gitpython,
+    reason="Without GitPython, no warning is needed since the default behavior won't change",
+)
+def test_git_warning():
+
+    with pytest.warns(
+        DeprecationWarning, match="By default no git " "information will be collected"
+    ):
+        experiment = Experiment("ator3000")
+
+        @experiment.main
+        def foo():
+            pass
+
+        experiment.run()
+
+
+@pytest.mark.skipif(
+    not opt.has_gitpython, reason="Without git, there will be an import error."
+)
+def test_git_no_warning():
+
+    with pytest.warns(
+        DeprecationWarning, match="By default no git " "information will be collected"
+    ) as warning_reccord:
+        experiment = Experiment("ator3000", save_git_commit=True)
+
+        @experiment.main
+        def foo():
+            pass
+
+        experiment.run()
+
+    assert not warning_reccord.list
+
+
+@pytest.mark.skipif(
+    opt.has_gitpython, reason="Checking for import error for GitPython."
+)
+def test_git_no_warning():
+
+    with pytest.raises(ImportError):
+        experiment = Experiment("ator3000", save_git_commit=True)
+
+        @experiment.main
+        def foo():
+            pass
+
+        experiment.run()

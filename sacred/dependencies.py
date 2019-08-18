@@ -7,6 +7,7 @@ import os.path
 import re
 import sys
 from pathlib import Path
+import warnings
 
 import pkg_resources
 
@@ -374,6 +375,8 @@ $
     flags=re.VERBOSE,
 )
 
+already_warned_about_git = False
+
 
 def get_py_file_if_possible(pyc_name):
     """Try to retrieve a X.py file for a given X.py[c] file."""
@@ -397,7 +400,7 @@ def get_digest(filename):
         return h.hexdigest()
 
 
-def get_commit_if_possible(filename):
+def get_commit_if_possible(filename, save_git_commit):
     """Try to retrieve VCS information for a given file.
 
     Currently only supports git using the gitpython package.
@@ -415,8 +418,8 @@ def get_commit_if_possible(filename):
         is_dirty: bool
             True if there are uncommitted changes in the repository
     """
-    # git
-    if opt.has_gitpython:
+    global already_warned_about_git
+    if opt.has_gitpython or save_git_commit:
         from git import Repo, InvalidGitRepositoryError
 
         try:
@@ -428,9 +431,23 @@ def get_commit_if_possible(filename):
                 path = "git:/" + repo.working_dir
             is_dirty = repo.is_dirty()
             commit = repo.head.commit.hexsha
+            if not already_warned_about_git:
+                warnings.warn(
+                    "Currently, git information about sources are "
+                    "saved because you have GitPython installed and didn't specified"
+                    "the argument `save_git_commit`. This behavior will change in the future."
+                    "By default no git information will be collected even if GitPython is"
+                    "installed. Please set `save_git_commit=True` in your Experiment"
+                    "or ingredient constructor to ensure your git information will"
+                    "be saved even after the default behavior changes.",
+                    DeprecationWarning,
+                )
+
+                already_warned_about_git = True
             return path, commit, is_dirty
         except (InvalidGitRepositoryError, ValueError):
-            pass
+            if save_git_commit:
+                raise
     return None, None, None
 
 
@@ -444,12 +461,12 @@ class Source:
         self.is_dirty = isdirty
 
     @staticmethod
-    def create(filename):
+    def create(filename, save_git_commit=None):
         if not filename or not os.path.exists(filename):
             raise ValueError('invalid filename or file not found "{}"'.format(filename))
 
         main_file = get_py_file_if_possible(os.path.abspath(filename))
-        repo, commit, is_dirty = get_commit_if_possible(main_file)
+        repo, commit, is_dirty = get_commit_if_possible(main_file, save_git_commit)
         return Source(main_file, get_digest(main_file), repo, commit, is_dirty)
 
     def to_json(self, base_dir=None):
@@ -594,14 +611,14 @@ def is_local_source(filename, modname, experiment_path):
     return all([p == m for p, m in zip(reversed(abs_path_parts), reversed(mod_parts))])
 
 
-def get_main_file(globs):
+def get_main_file(globs, save_git_commit):
     filename = globs.get("__file__")
 
     if filename is None:
         experiment_path = os.path.abspath(os.path.curdir)
         main = None
     else:
-        main = Source.create(globs.get("__file__"))
+        main = Source.create(globs.get("__file__"), save_git_commit)
         experiment_path = os.path.dirname(main.filename)
     return experiment_path, main
 
@@ -645,7 +662,7 @@ def iterate_sys_modules():
             yield modname, mod
 
 
-def get_sources_from_modules(module_iterator, base_path):
+def get_sources_from_modules(module_iterator, base_path, save_git_commit):
     sources = set()
     for modname, mod in module_iterator:
         # hasattr doesn't work with python extensions
@@ -654,7 +671,7 @@ def get_sources_from_modules(module_iterator, base_path):
 
         filename = os.path.abspath(mod.__file__)
         if filename not in sources and is_local_source(filename, modname, base_path):
-            s = Source.create(filename)
+            s = Source.create(filename, save_git_commit)
             sources.add(s)
     return sources
 
@@ -679,16 +696,21 @@ def get_dependencies_from_modules(module_iterator, base_path):
     return dependencies
 
 
-def get_sources_from_sys_modules(globs, base_path):
-    return get_sources_from_modules(iterate_sys_modules(), base_path)
+def get_sources_from_sys_modules(globs, base_path, save_git_commit):
+    return get_sources_from_modules(iterate_sys_modules(), base_path, save_git_commit)
 
 
-def get_sources_from_imported_modules(globs, base_path):
-    return get_sources_from_modules(iterate_imported_modules(globs), base_path)
+def get_sources_from_imported_modules(globs, base_path, save_git_commit):
+    return get_sources_from_modules(
+        iterate_imported_modules(globs), base_path, save_git_commit
+    )
 
 
-def get_sources_from_local_dir(globs, base_path):
-    return {Source.create(filename) for filename in iterate_all_python_files(base_path)}
+def get_sources_from_local_dir(globs, base_path, save_git_commit):
+    return {
+        Source.create(filename, save_git_commit)
+        for filename in iterate_all_python_files(base_path)
+    }
 
 
 def get_dependencies_from_sys_modules(globs, base_path):
@@ -723,15 +745,15 @@ dependency_discovery_strategies = {
 }
 
 
-def gather_sources_and_dependencies(globs, base_dir=None):
+def gather_sources_and_dependencies(globs, save_git_commit, base_dir=None):
     """Scan the given globals for modules and return them as dependencies."""
 
-    experiment_path, main = get_main_file(globs)
+    experiment_path, main = get_main_file(globs, save_git_commit)
 
     base_dir = base_dir or experiment_path
 
     gather_sources = source_discovery_strategies[SETTINGS["DISCOVER_SOURCES"]]
-    sources = gather_sources(globs, base_dir)
+    sources = gather_sources(globs, base_dir, save_git_commit)
     if main is not None:
         sources.add(main)
 
