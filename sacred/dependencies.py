@@ -375,8 +375,6 @@ $
     flags=re.VERBOSE,
 )
 
-already_warned_about_git = False
-
 
 def get_py_file_if_possible(pyc_name):
     """Try to retrieve a X.py file for a given X.py[c] file."""
@@ -418,8 +416,9 @@ def get_commit_if_possible(filename, save_git_commit):
         is_dirty: bool
             True if there are uncommitted changes in the repository
     """
-    global already_warned_about_git
-    if opt.has_gitpython or save_git_commit:
+    if save_git_commit is False:
+        return None, None, None
+    if opt.has_gitpython or save_git_commit is True:
         from git import Repo, InvalidGitRepositoryError
 
         try:
@@ -431,7 +430,7 @@ def get_commit_if_possible(filename, save_git_commit):
                 path = "git:/" + repo.working_dir
             is_dirty = repo.is_dirty()
             commit = repo.head.commit.hexsha
-            if not already_warned_about_git:
+            if save_git_commit is None:
                 warnings.warn(
                     "Currently, git information about sources are "
                     "saved because you have GitPython installed and didn't specified"
@@ -443,7 +442,6 @@ def get_commit_if_possible(filename, save_git_commit):
                     DeprecationWarning,
                 )
 
-                already_warned_about_git = True
             return path, commit, is_dirty
         except (InvalidGitRepositoryError, ValueError):
             if save_git_commit:

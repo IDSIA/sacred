@@ -446,12 +446,11 @@ def test_git_warning():
 @pytest.mark.skipif(
     not opt.has_gitpython, reason="Without git, there will be an import error."
 )
-def test_git_no_warning():
+@pytest.mark.parametrize("save_git_commit", (True, False))
+def test_git_no_warning(save_git_commit):
 
-    with pytest.warns(
-        DeprecationWarning, match="By default no git information will be collected"
-    ) as warning_reccord:
-        experiment = Experiment("ator3000", save_git_commit=True)
+    with pytest.warns(None) as warning_reccord:
+        experiment = Experiment("ator3000", save_git_commit=save_git_commit)
 
         @experiment.main
         def foo():
@@ -459,7 +458,9 @@ def test_git_no_warning():
 
         experiment.run()
 
-    assert not warning_reccord.list
+    for warning_reccorded in warning_reccord:
+        msg = warning_reccorded.message.args[0]
+        assert "By default no git information will be collected" not in msg
 
 
 @pytest.mark.skipif(
