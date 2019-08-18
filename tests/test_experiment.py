@@ -432,7 +432,7 @@ def test_additional_gatherers():
 def test_git_warning():
 
     with pytest.warns(
-        DeprecationWarning, match="By default no git " "information will be collected"
+        DeprecationWarning, match="By default no git information will be collected"
     ):
         experiment = Experiment("ator3000")
 
@@ -449,7 +449,7 @@ def test_git_warning():
 def test_git_no_warning():
 
     with pytest.warns(
-        DeprecationWarning, match="By default no git " "information will be collected"
+        DeprecationWarning, match="By default no git information will be collected"
     ) as warning_reccord:
         experiment = Experiment("ator3000", save_git_commit=True)
 
