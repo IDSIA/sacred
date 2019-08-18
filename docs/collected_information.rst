@@ -55,10 +55,12 @@ It can also be inspected using the :ref:`print_dependencies` command.
 
 Version Control
 ---------------
-If the experiment is part of a version control repository, Sacred will also
-try to collect the url of the repository, the current commit hash and if the
+If the experiment is part of a version control repository, Sacred can also
+collect the url of the repository, the current commit hash and if the
 repository is dirty (has uncommitted changes).
-At the moment Sacred only supports git and only if ``GitPython`` is installed.
+For this, pass ``save_git_commit=True`` to the ``Experiement`` or ``Ingredient``
+constructor.
+Sacred only supports Git and ``GitPython`` needs to be installed for this to work.
 
 This information can be inspected using the :ref:`print_dependencies` command.
 But it is also available from ``run.experiment_info['repositories']``, as a
