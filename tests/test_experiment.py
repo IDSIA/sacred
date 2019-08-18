@@ -465,7 +465,7 @@ def test_git_no_warning():
 @pytest.mark.skipif(
     opt.has_gitpython, reason="Checking for import error for GitPython."
 )
-def test_git_no_warning():
+def test_git_import_error():
 
     with pytest.raises(ImportError):
         experiment = Experiment("ator3000", save_git_commit=True)
