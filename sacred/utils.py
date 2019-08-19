@@ -369,7 +369,7 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
         if key in manually_sorted_keys:
             return 0, manually_sorted_keys.index(key)
         elif not isinstance(value, dict) or not value:
-            return 1 , key
+            return 1, key
         else:
             return 2, key
 
