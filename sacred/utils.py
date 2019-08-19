@@ -363,33 +363,23 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     non-dictionary values (sorted by keys), then over the rest
     (sorted by keys), providing full dotted paths for every leaf.
     """
-    if manually_sorted_keys is None:
-        manually_sorted_keys = []
-    for key in manually_sorted_keys:
-        if key in dictionary:
-            yield key, dictionary[key]
 
-    single_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (not dictionary[key] or not isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(single_line_keys):
-        yield key, dictionary[key]
+    def get_order(key_and_value):
+        key, value = key_and_value
+        if key in manually_sorted_keys:
+            return 0, manually_sorted_keys.index(key)
+        elif not isinstance(value, dict) or not value:
+            return 1 , key
+        else:
+            return 2, key
 
-    multi_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (dictionary[key] and isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(multi_line_keys):
-        yield key, PATHCHANGE
-        for k, val in iterate_flattened_separately(
-            dictionary[key], manually_sorted_keys
-        ):
-            yield join_paths(key, k), val
+    for key, value in sorted(dictionary.items(), key=get_order):
+        if isinstance(value, dict):
+            yield key, PATHCHANGE
+            for k, val in iterate_flattened_separately(value, manually_sorted_keys):
+                yield join_paths(key, k), val
+        else:
+            yield key, value
 
 
 def iterate_flattened(d):
