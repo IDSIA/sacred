@@ -25,40 +25,56 @@ class SlackObserver(RunObserver):
         """
         d = load_config_file(filename)
         obs = None
-        if 'webhook_url' in d:
-            obs = cls(d['webhook_url'])
+        if "webhook_url" in d:
+            obs = cls(d["webhook_url"])
         else:
-            raise ValueError("Slack configuration file must contain "
-                             "an entry for 'webhook_url'!")
-        for k in ['completed_text', 'interrupted_text', 'failed_text',
-                  'bot_name', 'icon']:
+            raise ValueError(
+                "Slack configuration file must contain " "an entry for 'webhook_url'!"
+            )
+        for k in [
+            "completed_text",
+            "interrupted_text",
+            "failed_text",
+            "bot_name",
+            "icon",
+        ]:
             if k in d:
                 setattr(obs, k, d[k])
         return obs
 
-    def __init__(self, webhook_url, bot_name="sacred-bot", icon=":angel:",
-                 priority=DEFAULT_SLACK_PRIORITY):
+    def __init__(
+        self,
+        webhook_url,
+        bot_name="sacred-bot",
+        icon=":angel:",
+        priority=DEFAULT_SLACK_PRIORITY,
+    ):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
-        self.completed_text = ":white_check_mark: *{experiment[name]}* " \
+        self.completed_text = (
+            ":white_check_mark: *{experiment[name]}* "
             "completed after _{elapsed_time}_ with result=`{result}`"
-        self.interrupted_text = ":warning: *{experiment[name]}* " \
-                                "interrupted after _{elapsed_time}_"
-        self.failed_text = ":x: *{experiment[name]}* failed after " \
-                           "_{elapsed_time}_ with `{error}`"
+        )
+        self.interrupted_text = (
+            ":warning: *{experiment[name]}* " "interrupted after _{elapsed_time}_"
+        )
+        self.failed_text = (
+            ":x: *{experiment[name]}* failed after " "_{elapsed_time}_ with `{error}`"
+        )
         self.run = None
         self.priority = priority
 
-    def started_event(self, ex_info, command, host_info, start_time, config,
-                      meta_info, _id):
+    def started_event(
+        self, ex_info, command, host_info, start_time, config, meta_info, _id
+    ):
         self.run = {
-            '_id': _id,
-            'config': config,
-            'start_time': start_time,
-            'experiment': ex_info,
-            'command': command,
-            'host_info': host_info,
+            "_id": _id,
+            "config": config,
+            "start_time": start_time,
+            "experiment": ex_info,
+            "command": command,
+            "host_info": host_info,
         }
 
     def get_completed_text(self):
@@ -72,55 +88,55 @@ class SlackObserver(RunObserver):
 
     def completed_event(self, stop_time, result):
         import requests
+
         if self.completed_text is None:
             return
 
-        self.run['result'] = result
-        self.run['stop_time'] = stop_time
-        self.run['elapsed_time'] = td_format(stop_time -
-                                             self.run['start_time'])
+        self.run["result"] = result
+        self.run["stop_time"] = stop_time
+        self.run["elapsed_time"] = td_format(stop_time - self.run["start_time"])
 
         data = {
             "username": self.bot_name,
             "icon_emoji": self.icon,
-            "text": self.get_completed_text()
+            "text": self.get_completed_text(),
         }
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {"Content-type": "application/json", "Accept": "text/plain"}
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def interrupted_event(self, interrupt_time, status):
         import requests
+
         if self.interrupted_text is None:
             return
 
-        self.run['status'] = status
-        self.run['interrupt_time'] = interrupt_time
-        self.run['elapsed_time'] = td_format(interrupt_time -
-                                             self.run['start_time'])
+        self.run["status"] = status
+        self.run["interrupt_time"] = interrupt_time
+        self.run["elapsed_time"] = td_format(interrupt_time - self.run["start_time"])
 
         data = {
             "username": self.bot_name,
             "icon_emoji": self.icon,
-            "text": self.get_interrupted_text()
+            "text": self.get_interrupted_text(),
         }
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {"Content-type": "application/json", "Accept": "text/plain"}
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)
 
     def failed_event(self, fail_time, fail_trace):
         import requests
+
         if self.failed_text is None:
             return
 
-        self.run['fail_trace'] = fail_trace
-        self.run['error'] = fail_trace[-1].strip()
-        self.run['fail_time'] = fail_time
-        self.run['elapsed_time'] = td_format(fail_time -
-                                             self.run['start_time'])
+        self.run["fail_trace"] = fail_trace
+        self.run["error"] = fail_trace[-1].strip()
+        self.run["fail_time"] = fail_time
+        self.run["elapsed_time"] = td_format(fail_time - self.run["start_time"])
 
         data = {
             "username": self.bot_name,
             "icon_emoji": self.icon,
-            "text": self.get_failed_text()
+            "text": self.get_failed_text(),
         }
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {"Content-type": "application/json", "Accept": "text/plain"}
         requests.post(self.webhook_url, data=json.dumps(data), headers=headers)

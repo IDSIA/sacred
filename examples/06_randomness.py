@@ -53,7 +53,7 @@ Here are a couple of things you should try:
 
 from sacred import Experiment
 
-ex = Experiment('randomness')
+ex = Experiment("randomness")
 
 
 @ex.config

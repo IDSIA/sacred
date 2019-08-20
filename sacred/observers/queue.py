@@ -11,7 +11,6 @@ WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
 
 class QueueObserver(RunObserver):
-
     def __init__(self, covered_observer, interval=20, retry_interval=10):
         self._covered_observer = covered_observer
         self._retry_interval = retry_interval
@@ -26,8 +25,7 @@ class QueueObserver(RunObserver):
     def started_event(self, *args, **kwargs):
         self._queue = Queue()
         self._stop_worker_event, self._worker = IntervalTimer.create(
-            self._run,
-            interval=self._interval,
+            self._run, interval=self._interval
         )
         self._worker.start()
 
@@ -59,14 +57,11 @@ class QueueObserver(RunObserver):
     def log_metrics(self, metrics_by_name, info):
         for metric_name, metric_values in metrics_by_name.items():
             self._queue.put(
-                WrappedEvent(
-                    "log_metrics",
-                    [metric_name, metric_values, info],
-                    {},
-                )
+                WrappedEvent("log_metrics", [metric_name, metric_values, info], {})
             )
 
     def _run(self):
+        """Empty the queue every interval."""
         while not self._queue.empty():
             try:
                 event = self._queue.get()
@@ -76,12 +71,10 @@ class QueueObserver(RunObserver):
                 pass
             else:
                 try:
-                    # method = getattr(self._covered_observer, event.name)
                     method = getattr(self._covered_observer, event.name)
                 except NameError:
-                    # covered observer does not implement event handler
-                    # for the event, so just
-                    # discard the message.
+                    # The covered observer does not implement an event handler
+                    # for the event, so just discard the message.
                     self._queue.task_done()
                 else:
                     while True:

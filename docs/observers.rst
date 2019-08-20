@@ -695,6 +695,35 @@ The observer is then added to the experment like this:
 To set the bot's profile photo and description, use @BotFather's commands ``/setuserpic`` and ``/setdescription``.
 Note that ``/setuserpic`` requires a *minimum* picture size.
 
+Neptune Observer
+================
+Neptune observer sends all the experiment metadata to the Neptune app.
+It requires the `neptune-contrib <https://neptune-contrib.readthedocs.io/index.html/>`_ package to be installed.
+You can install it by running:
+
+.. code-block:: bash
+
+    pip install neptune-contrib
+
+Adding a Neptune Observer
+-------------------------
+
+NeptuneObserver can only be added from the Python code.
+You simply need to initialize it with your project name and (optionally) api token.
+
+.. code-block:: python
+
+    from neptunecontrib.monitoring.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
+                                        project_name='USER_NAME/PROJECT_NAME'))
+
+.. warning::
+
+    Always keep your API token secret - it is like password to the application.
+    It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
+    To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
+    line to your `~/.bashrc` or `~/.bash_profile` files.
+
 Events
 ======
 A ``started_event`` is fired when a run starts.

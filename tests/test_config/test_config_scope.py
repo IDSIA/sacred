@@ -4,9 +4,13 @@
 
 import pytest
 import sacred.optional as opt
-from sacred.config.config_scope import (ConfigScope, dedent_function_body,
-                                        dedent_line, get_function_body,
-                                        is_empty_or_comment)
+from sacred.config.config_scope import (
+    ConfigScope,
+    dedent_function_body,
+    dedent_line,
+    get_function_body,
+    is_empty_or_comment,
+)
 from sacred.config.custom_containers import DogmaticDict, DogmaticList
 
 
@@ -19,19 +23,19 @@ def conf_scope():
         # description for b and c
         b, c = 2.0, True
         # d and dd are both strings
-        d = dd = 'string'
+        d = dd = "string"
         e = [1, 2, 3]  # inline description for e
-        f = {'a': 'b', 'c': 'd'}
+        f = {"a": "b", "c": "d"}
         composit1 = a + b
         # pylint: this comment is filtered out
-        composit2 = f['c'] + "ada"
+        composit2 = f["c"] + "ada"
 
         func1 = lambda: 23
 
         deriv = func1()
 
         def func2(a):
-            return 'Nothing to report' + a
+            return "Nothing to report" + a
 
         some_type = int
 
@@ -46,67 +50,81 @@ def test_result_of_config_scope_is_dict(conf_scope):
 
 def test_result_of_config_scope_contains_keys(conf_scope):
     cfg = conf_scope()
-    assert set(cfg.keys()) == {'a', 'b', 'c', 'd', 'dd', 'e', 'f',
-                               'composit1', 'composit2', 'deriv', 'func1',
-                               'func2', 'some_type'}
+    assert set(cfg.keys()) == {
+        "a",
+        "b",
+        "c",
+        "d",
+        "dd",
+        "e",
+        "f",
+        "composit1",
+        "composit2",
+        "deriv",
+        "func1",
+        "func2",
+        "some_type",
+    }
 
-    assert cfg['a'] == 1
-    assert cfg['b'] == 2.0
-    assert cfg['c']
-    assert cfg['d'] == 'string'
-    assert cfg['dd'] == 'string'
-    assert cfg['e'] == [1, 2, 3]
-    assert cfg['f'] == {'a': 'b', 'c': 'd'}
-    assert cfg['composit1'] == 3.0
-    assert cfg['composit2'] == 'dada'
-    assert cfg['func1']() == 23
-    assert cfg['func2'](', sir!') == 'Nothing to report, sir!'
-    assert cfg['some_type'] == int
-    assert cfg['deriv'] == 23
+    assert cfg["a"] == 1
+    assert cfg["b"] == 2.0
+    assert cfg["c"]
+    assert cfg["d"] == "string"
+    assert cfg["dd"] == "string"
+    assert cfg["e"] == [1, 2, 3]
+    assert cfg["f"] == {"a": "b", "c": "d"}
+    assert cfg["composit1"] == 3.0
+    assert cfg["composit2"] == "dada"
+    assert cfg["func1"]() == 23
+    assert cfg["func2"](", sir!") == "Nothing to report, sir!"
+    assert cfg["some_type"] == int
+    assert cfg["deriv"] == 23
 
 
 def test_fixing_values(conf_scope):
-    cfg = conf_scope({'a': 100})
-    assert cfg['a'] == 100
-    assert cfg['composit1'] == 102.0
+    cfg = conf_scope({"a": 100})
+    assert cfg["a"] == 100
+    assert cfg["composit1"] == 102.0
 
 
 def test_fixing_nested_dicts(conf_scope):
-    cfg = conf_scope({'f': {'c': 't'}})
-    assert cfg['f']['a'] == 'b'
-    assert cfg['f']['c'] == 't'
-    assert cfg['composit2'] == 'tada'
+    cfg = conf_scope({"f": {"c": "t"}})
+    assert cfg["f"]["a"] == "b"
+    assert cfg["f"]["c"] == "t"
+    assert cfg["composit2"] == "tada"
 
 
 def test_adding_values(conf_scope):
-    cfg = conf_scope({'g': 23, 'h': {'i': 10}})
-    assert cfg['g'] == 23
-    assert cfg['h'] == {'i': 10}
-    assert cfg.added == {'g', 'h', 'h.i'}
+    cfg = conf_scope({"g": 23, "h": {"i": 10}})
+    assert cfg["g"] == 23
+    assert cfg["h"] == {"i": 10}
+    assert cfg.added == {"g", "h", "h.i"}
 
 
 def test_typechange(conf_scope):
-    cfg = conf_scope({'a': 'bar', 'b': 'foo', 'c': 1})
-    assert cfg.typechanged == {'a': (int, type('bar')),
-                               'b': (float, type('foo')),
-                               'c': (bool, int)}
+    cfg = conf_scope({"a": "bar", "b": "foo", "c": 1})
+    assert cfg.typechanged == {
+        "a": (int, type("bar")),
+        "b": (float, type("foo")),
+        "c": (bool, int),
+    }
 
 
 def test_nested_typechange(conf_scope):
-    cfg = conf_scope({'f': {'a': 10}})
-    assert cfg.typechanged == {'f.a': (type('a'), int)}
+    cfg = conf_scope({"f": {"a": 10}})
+    assert cfg.typechanged == {"f.a": (type("a"), int)}
 
 
 def test_config_docs(conf_scope):
     cfg = conf_scope()
     assert cfg.docs == {
-        'a': 'description for a',
-        'b': 'description for b and c',
-        'c': 'description for b and c',
-        'd': 'd and dd are both strings',
-        'dd': 'd and dd are both strings',
-        'e': 'inline description for e',
-        'seed': 'the random seed for this experiment'
+        "a": "description for a",
+        "b": "description for b and c",
+        "c": "description for b and c",
+        "d": "d and dd are both strings",
+        "dd": "d and dd are both strings",
+        "e": "inline description for e",
+        "seed": "the random seed for this experiment",
     }
 
 
@@ -120,7 +138,7 @@ def is_dogmatic(a):
 
 
 def test_conf_scope_is_not_dogmatic(conf_scope):
-    assert not is_dogmatic(conf_scope({'e': [1, 1, 1]}))
+    assert not is_dogmatic(conf_scope({"e": [1, 1, 1]}))
 
 
 @pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
@@ -130,8 +148,8 @@ def test_conf_scope_handles_numpy_bools():
         a = opt.np.bool_(1)
 
     cfg = conf_scope()
-    assert 'a' in cfg
-    assert cfg['a']
+    assert "a" in cfg
+    assert cfg["a"]
 
 
 def test_conf_scope_can_access_preset():
@@ -139,8 +157,8 @@ def test_conf_scope_can_access_preset():
     def conf_scope(a):
         answer = 2 * a
 
-    cfg = conf_scope(preset={'a': 21})
-    assert cfg['answer'] == 42
+    cfg = conf_scope(preset={"a": 21})
+    assert cfg["answer"] == 42
 
 
 def test_conf_scope_contains_presets():
@@ -148,11 +166,11 @@ def test_conf_scope_contains_presets():
     def conf_scope(a):
         answer = 2 * a
 
-    cfg = conf_scope(preset={'a': 21, 'unrelated': True})
-    assert set(cfg.keys()) == {'a', 'answer', 'unrelated'}
-    assert cfg['a'] == 21
-    assert cfg['answer'] == 42
-    assert cfg['unrelated'] is True
+    cfg = conf_scope(preset={"a": 21, "unrelated": True})
+    assert set(cfg.keys()) == {"a", "answer", "unrelated"}
+    assert cfg["a"] == 21
+    assert cfg["answer"] == 42
+    assert cfg["unrelated"] is True
 
 
 def test_conf_scope_cannot_access_undeclared_presets():
@@ -161,7 +179,7 @@ def test_conf_scope_cannot_access_undeclared_presets():
         answer = 2 * a
 
     with pytest.raises(NameError):
-        conf_scope(preset={'a': 21})
+        conf_scope(preset={"a": 21})
 
 
 def test_conf_scope_can_access_fallback():
@@ -169,8 +187,8 @@ def test_conf_scope_can_access_fallback():
     def conf_scope(a):
         answer = 2 * a
 
-    cfg = conf_scope(fallback={'a': 21})
-    assert cfg['answer'] == 42
+    cfg = conf_scope(fallback={"a": 21})
+    assert cfg["answer"] == 42
 
 
 def test_conf_scope_does_not_contain_fallback():
@@ -178,8 +196,8 @@ def test_conf_scope_does_not_contain_fallback():
     def conf_scope(a):
         answer = 2 * a
 
-    cfg = conf_scope(fallback={'a': 21, 'b': 10})
-    assert set(cfg.keys()) == {'answer'}
+    cfg = conf_scope(fallback={"a": 21, "b": 10})
+    assert set(cfg.keys()) == {"answer"}
 
 
 def test_conf_scope_cannot_access_undeclared_fallback():
@@ -188,7 +206,7 @@ def test_conf_scope_cannot_access_undeclared_fallback():
         answer = 2 * a
 
     with pytest.raises(NameError):
-        conf_scope(fallback={'a': 21})
+        conf_scope(fallback={"a": 21})
 
 
 def test_conf_scope_can_access_fallback_and_preset():
@@ -196,8 +214,8 @@ def test_conf_scope_can_access_fallback_and_preset():
     def conf_scope(a, b):
         answer = a + b
 
-    cfg = conf_scope(preset={'b': 40}, fallback={'a': 2})
-    assert cfg['answer'] == 42
+    cfg = conf_scope(preset={"b": 40}, fallback={"a": 2})
+    assert cfg["answer"] == 42
 
 
 def test_conf_raises_for_unaccessible_arguments():
@@ -206,14 +224,15 @@ def test_conf_raises_for_unaccessible_arguments():
         answer = 42
 
     with pytest.raises(KeyError):
-        conf_scope(preset={'a': 1}, fallback={'b': 2})
+        conf_scope(preset={"a": 1}, fallback={"b": 2})
 
 
 def test_can_access_globals_from_original_scope():
     from .enclosed_config_scope import cfg as conf_scope
+
     cfg = conf_scope()
-    assert set(cfg.keys()) == {'answer'}
-    assert cfg['answer'] == 42
+    assert set(cfg.keys()) == {"answer"}
+    assert cfg["answer"] == 42
 
 
 SEVEN = 7
@@ -221,6 +240,7 @@ SEVEN = 7
 
 def test_cannot_access_globals_from_calling_scope():
     from .enclosed_config_scope import cfg2 as conf_scope
+
     with pytest.raises(NameError):
         conf_scope()  # would require SEVEN
 
@@ -230,14 +250,15 @@ def test_fixed_subentry_of_preset():
     def conf_scope():
         pass
 
-    cfg = conf_scope(preset={'d': {'a': 1, 'b': 2}}, fixed={'d': {'a': 10}})
+    cfg = conf_scope(preset={"d": {"a": 1, "b": 2}}, fixed={"d": {"a": 10}})
 
-    assert set(cfg.keys()) == {'d'}
-    assert set(cfg['d'].keys()) == {'a', 'b'}
-    assert cfg['d']['a'] == 10
-    assert cfg['d']['b'] == 2
+    assert set(cfg.keys()) == {"d"}
+    assert set(cfg["d"].keys()) == {"a", "b"}
+    assert cfg["d"]["a"] == 10
+    assert cfg["d"]["b"] == 2
 
 
+# fmt: off
 @pytest.mark.parametrize("line,indent,expected", [
     ('    a=5', '    ', 'a=5'),
     ('  a=5',   '    ', 'a=5'),
@@ -346,6 +367,7 @@ foo=12
 def subfunc():
     return 23
 '''
+# fmt: on
 
 
 def test_dedent_body():

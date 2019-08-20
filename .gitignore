@@ -93,3 +93,4 @@ com_crashlytics_export_strings.xml
 # GEdit temporary files
 *~
 
+pip-wheel-metadata/

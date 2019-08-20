@@ -12,17 +12,14 @@ import ast
 from collections import OrderedDict
 import textwrap
 import inspect
+from shlex import quote
 
 from sacred.serializer import restore
 from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
 
-try:
-    from shlex import quote as cmd_quote
-except ImportError:
-    from pipes import quote as cmd_quote
 
-__all__ = ('get_config_updates', 'format_usage')
+__all__ = ("get_config_updates", "format_usage")
 
 
 USAGE_TEMPLATE = """Usage:
@@ -63,11 +60,11 @@ def get_config_updates(updates):
     if not updates:
         return config_updates, named_configs
     for upd in updates:
-        if upd == '':
+        if upd == "":
             continue
-        path, sep, value = upd.partition('=')
-        if sep == '=':
-            path = path.strip()    # get rid of surrounding whitespace
+        path, sep, value = upd.partition("=")
+        if sep == "=":
+            path = path.strip()  # get rid of surrounding whitespace
             value = value.strip()  # get rid of surrounding whitespace
             set_by_dotted_path(config_updates, path, _convert_value(value))
         else:
@@ -95,14 +92,17 @@ def _format_options_usage(options):
         short, long = op.get_flags()
         if op.arg:
             flag = "{short} {arg} {long}={arg}".format(
-                short=short, long=long, arg=op.arg)
+                short=short, long=long, arg=op.arg
+            )
         else:
             flag = "{short} {long}".format(short=short, long=long)
 
-        wrapped_description = textwrap.wrap(inspect.cleandoc(op.__doc__),
-                                            width=79,
-                                            initial_indent=' ' * 32,
-                                            subsequent_indent=' ' * 32)
+        wrapped_description = textwrap.wrap(
+            inspect.cleandoc(op.__doc__),
+            width=79,
+            initial_indent=" " * 32,
+            subsequent_indent=" " * 32,
+        )
         wrapped_description = "\n".join(wrapped_description).strip()
 
         options_usage += "  {:28}  {}\n".format(flag, wrapped_description)
@@ -128,13 +128,14 @@ def _format_arguments_usage(options):
     argument_usage = ""
     for op in options:
         if op.arg and op.arg_description:
-            wrapped_description = textwrap.wrap(op.arg_description,
-                                                width=79,
-                                                initial_indent=' ' * 12,
-                                                subsequent_indent=' ' * 12)
+            wrapped_description = textwrap.wrap(
+                op.arg_description,
+                width=79,
+                initial_indent=" " * 12,
+                subsequent_indent=" " * 12,
+            )
             wrapped_description = "\n".join(wrapped_description).strip()
-            argument_usage += "  {:8}  {}\n".format(op.arg,
-                                                    wrapped_description)
+            argument_usage += "  {:8}  {}\n".format(op.arg, wrapped_description)
     return argument_usage
 
 
@@ -159,8 +160,11 @@ def _format_command_usage(commands):
     command_usage = "\nCommands:\n"
     cmd_len = max([len(c) for c in commands] + [8])
     command_doc = OrderedDict(
-        [(cmd_name, _get_first_line_of_docstring(cmd_doc))
-         for cmd_name, cmd_doc in commands.items()])
+        [
+            (cmd_name, _get_first_line_of_docstring(cmd_doc))
+            for cmd_name, cmd_doc in commands.items()
+        ]
+    )
     for cmd_name, cmd_doc in command_doc.items():
         command_usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
     return command_usage
@@ -190,17 +194,17 @@ def format_usage(program_name, description, commands=None, options=()):
 
     """
     usage = USAGE_TEMPLATE.format(
-        program_name=cmd_quote(program_name),
-        description=description.strip() if description else '',
+        program_name=quote(program_name),
+        description=description.strip() if description else "",
         options=_format_options_usage(options),
         arguments=_format_arguments_usage(options),
-        commands=_format_command_usage(commands)
+        commands=_format_command_usage(commands),
     )
     return usage
 
 
 def _get_first_line_of_docstring(func):
-    return textwrap.dedent(func.__doc__ or "").strip().split('\n')[0]
+    return textwrap.dedent(func.__doc__ or "").strip().split("\n")[0]
 
 
 def _convert_value(value):
