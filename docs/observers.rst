@@ -618,8 +618,6 @@ prefer to pass in a specific region, you can use the ``region`` parameter of cre
 If you try to create an S3Observer without this parameter, and with region not set in your config
 file, it will error out at the point of the observer object being created.
 
-
-
 Directory Structure
 --------------------
 
