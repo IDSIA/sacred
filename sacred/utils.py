@@ -557,8 +557,6 @@ def format_sacred_error(e, short_usage):
     if e.print_traceback:
         lines.append(format_filtered_stacktrace(e.filter_traceback))
     else:
-        import traceback as tb
-
         lines.append("\n".join(tb.format_exception_only(type(e), e)))
     return "\n".join(lines)
 
