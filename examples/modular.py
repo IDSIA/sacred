@@ -21,8 +21,8 @@ data_paths = Ingredient("dataset.paths", ingredients=[s])
 
 @data_paths.config
 def cfg2(settings):
-    v = not settings['verbose']
-    base = '/home/sacred/'
+    v = not settings["verbose"]
+    base = "/home/sacred/"
 
 
 # ============== Ingredient 2: dataset =======================
@@ -31,7 +31,7 @@ data = Ingredient("dataset", ingredients=[data_paths, s])
 
 @data.config
 def cfg3(paths):
-    basepath = paths['base'] + 'datasets/'
+    basepath = paths["base"] + "datasets/"
     filename = "foo.hdf5"
 
 
@@ -43,7 +43,7 @@ def foo(basepath, filename, paths, settings):
 
 
 # ============== Experiment ==============================
-ex = Experiment('modular_example', ingredients=[data, data_paths])
+ex = Experiment("modular_example", ingredients=[data, data_paths])
 
 
 @ex.config
@@ -51,16 +51,16 @@ def cfg(dataset):
     a = 10
     b = 17
     c = a + b
-    out_base = dataset['paths']['base'] + 'outputs/'
-    out_filename = dataset['filename'].replace('.hdf5', '.out')
+    out_base = dataset["paths"]["base"] + "outputs/"
+    out_filename = dataset["filename"].replace(".hdf5", ".out")
 
 
 @ex.automain
 def main(a, b, c, out_base, out_filename, dataset):
-    print('a =', a)
-    print('b =', b)
-    print('c =', c)
-    print('out_base =', out_base, out_filename)
+    print("a =", a)
+    print("b =", b)
+    print("c =", c)
+    print("out_base =", out_base, out_filename)
     # print("dataset", dataset)
     # print("dataset.paths", dataset['paths'])
     print("foo()", foo())

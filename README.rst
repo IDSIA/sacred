@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|unix_build| |windows_build| |coverage| |code_quality|
+|build| |coverage| |code_quality| |black|
 
 
 
@@ -141,6 +141,26 @@ in Jupyter notebooks.
 Sacredboard is a web-based dashboard interface to the sacred runs stored in a
 MongoDB.
 
+`Neptune <https://neptune.ml/>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. image:: docs/images/neptune-compare.png
+.. image:: docs/images/neptune-collaboration.png
+
+Neptune is a web service that lets you visualize, organize and compare your experiment runs.
+Once things are logged to Neptune you can share it with others, add comments and even access objects via
+experiment API:
+
+.. image:: docs/images/neptune-query-api.png
+
+In order to log your runs to Neptune, all you need to do is add an observer:
+
+.. code-block:: python
+
+    from neptunecontrib.monitoring.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
+                                        project_name='USER_NAME/PROJECT_NAME'))
+
+For more info, check the `neptune-contrib library <https://neptune-contrib.readthedocs.io/examples/observer_sacred.html>`_.
 
 `SacredBrowser <https://github.com/michaelwand/SacredBrowser>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -234,13 +254,9 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: http://dx.doi.org/10.5281/zenodo.16386
     :alt: DOI for this release
 
-.. |unix_build| image:: https://img.shields.io/travis/IDSIA/sacred.svg?branch=master&style=flat&label=unix%20build
-    :target: https://travis-ci.org/IDSIA/sacred
-    :alt: Travis-CI Status
-
-.. |windows_build| image:: https://img.shields.io/appveyor/ci/qwlouse/sacred.svg?style=flat&label=windows%20build
-    :target: https://ci.appveyor.com/project/Qwlouse/sacred
-    :alt: appveyor-CI Status
+.. |build| image:: https://dev.azure.com/qwlouse/Sacred%20CI/_apis/build/status/IDSIA.sacred?branchName=master
+    :target: https://dev.azure.com/qwlouse/Sacred%20CI/_build/latest?definitionId=1&branchName=master
+    :alt: Azure CI status
 
 .. |coverage| image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
     :target: https://coveralls.io/r/IDSIA/sacred
@@ -250,5 +266,6 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: https://scrutinizer-ci.com/g/IDSIA/sacred/
     :alt: Code Scrutinizer Quality
 
-
-
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/ambv/black
+    :alt: Code style: black

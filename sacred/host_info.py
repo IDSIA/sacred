@@ -7,23 +7,57 @@ import platform
 import re
 import subprocess
 from xml.etree import ElementTree
+import warnings
+from typing import List
 
 import cpuinfo
 
 from sacred.utils import optional_kwargs_decorator
 from sacred.settings import SETTINGS
 
-__all__ = ('host_info_gatherers', 'get_host_info', 'host_info_getter')
+__all__ = ("host_info_gatherers", "get_host_info", "host_info_getter")
 
+# Legacy global dict of functions that are used
+# to collect the host information.
 host_info_gatherers = {}
-"""Global dict of functions that are used to collect the host information."""
 
 
 class IgnoreHostInfo(Exception):
     """Used by host_info_getters to signal that this cannot be gathered."""
 
 
-def get_host_info():
+class HostInfoGetter:
+    def __init__(self, getter_function, name):
+        self.getter_function = getter_function
+        self.name = name
+
+    def __call__(self):
+        return self.getter_function()
+
+    def get_info(self):
+        return self.getter_function()
+
+
+def host_info_gatherer(name):
+    def wrapper(f):
+        return HostInfoGetter(f, name)
+
+    return wrapper
+
+
+def check_additional_host_info(additional_host_info: List[HostInfoGetter]):
+    names_taken = [x.name for x in _host_info_gatherers_list]
+    for getter in additional_host_info:
+        if getter.name in names_taken:
+            error_msg = (
+                "Key {} used in `additional_host_info` already exists as a "
+                "default gatherer function. Do not use the following keys: "
+                "{}"
+            ).format(getter.name, names_taken)
+            raise KeyError(error_msg)
+
+
+def get_host_info(additional_host_info: List[HostInfoGetter] = None):
     """Collect some information about the machine this experiment runs on.
 
     Returns
@@ -33,8 +67,14 @@ def get_host_info():
         Python version of this machine.
 
     """
+    additional_host_info = additional_host_info or []
+    # can't use += because we don't want to modify the mutable argument.
+    additional_host_info = additional_host_info + _host_info_gatherers_list
+    all_host_info_gatherers = host_info_gatherers.copy()
+    for getter in additional_host_info:
+        all_host_info_gatherers[getter.name] = getter
     host_info = {}
-    for k, v in host_info_gatherers.items():
+    for k, v in all_host_info_gatherers.items():
         try:
             host_info[k] = v()
         except IgnoreHostInfo:
@@ -66,6 +106,12 @@ def host_info_getter(func, name=None):
     The function itself.
 
     """
+    warnings.warn(
+        "The host_info_getter is deprecated. "
+        "Please use the `additional_host_info` argument"
+        " in the Experiment constructor.",
+        DeprecationWarning,
+    )
     name = name or func.__name__
     host_info_gatherers[name] = func
     return func
@@ -73,22 +119,23 @@ def host_info_getter(func, name=None):
 
 # #################### Default Host Information ###############################
 
-@host_info_getter(name='hostname')
+
+@host_info_gatherer(name="hostname")
 def _hostname():
     return platform.node()
 
 
-@host_info_getter(name='os')
+@host_info_gatherer(name="os")
 def _os():
     return [platform.system(), platform.platform()]
 
 
-@host_info_getter(name='python_version')
+@host_info_gatherer(name="python_version")
 def _python_version():
     return platform.python_version()
 
 
-@host_info_getter(name='cpu')
+@host_info_gatherer(name="cpu")
 def _cpu():
     if platform.system() == "Windows":
         return _get_cpu_by_pycpuinfo()
@@ -102,45 +149,47 @@ def _cpu():
         return _get_cpu_by_pycpuinfo()
 
 
-@host_info_getter(name='gpus')
+@host_info_gatherer(name="gpus")
 def _gpus():
     if not SETTINGS.HOST_INFO.INCLUDE_GPU_INFO:
         return
 
     try:
-        xml = subprocess.check_output(['nvidia-smi', '-q', '-x']).decode()
+        xml = subprocess.check_output(["nvidia-smi", "-q", "-x"]).decode()
     except (FileNotFoundError, OSError, subprocess.CalledProcessError):
         raise IgnoreHostInfo()
 
-    gpu_info = {'gpus': []}
+    gpu_info = {"gpus": []}
     for child in ElementTree.fromstring(xml):
-        if child.tag == 'driver_version':
-            gpu_info['driver_version'] = child.text
-        if child.tag != 'gpu':
+        if child.tag == "driver_version":
+            gpu_info["driver_version"] = child.text
+        if child.tag != "gpu":
             continue
         gpu = {
-            'model': child.find('product_name').text,
-            'total_memory': int(child.find('fb_memory_usage').find('total')
-                                .text.split()[0]),
-            'persistence_mode': (child.find('persistence_mode').text ==
-                                 'Enabled')
+            "model": child.find("product_name").text,
+            "total_memory": int(
+                child.find("fb_memory_usage").find("total").text.split()[0]
+            ),
+            "persistence_mode": (child.find("persistence_mode").text == "Enabled"),
         }
-        gpu_info['gpus'].append(gpu)
+        gpu_info["gpus"].append(gpu)
 
     return gpu_info
 
 
-@host_info_getter(name='ENV')
+@host_info_gatherer(name="ENV")
 def _environment():
     keys_to_capture = SETTINGS.HOST_INFO.CAPTURED_ENV
     return {k: os.environ[k] for k in keys_to_capture if k in os.environ}
 
 
+_host_info_gatherers_list = [_hostname, _os, _python_version, _cpu, _gpus, _environment]
+
 # ################### Get CPU Information ###############################
 
 
 def _get_cpu_by_sysctl():
-    os.environ['PATH'] += ':/usr/sbin'
+    os.environ["PATH"] += ":/usr/sbin"
     command = ["sysctl", "-n", "machdep.cpu.brand_string"]
     return subprocess.check_output(command).decode().strip()
 
@@ -155,4 +204,4 @@ def _get_cpu_by_proc_cpuinfo():
 
 
 def _get_cpu_by_pycpuinfo():
-    return cpuinfo.get_cpu_info().get('brand', 'Unknown')
+    return cpuinfo.get_cpu_info().get("brand", "Unknown")
