@@ -40,7 +40,7 @@ def _is_valid_bucket(bucket_name):
         return True
 
 
-def s3_join(**args):
+def s3_join(*args):
     return "/".join(args)
 
 
@@ -186,7 +186,7 @@ class S3Observer(RunObserver):
 
             _id = max_run_id + 1
 
-        self.dir = s3_join([self.basedir, str(_id)])
+        self.dir = s3_join(self.basedir, str(_id))
         if self._objects_exist_in_dir(self.dir):
             raise FileExistsError("S3 dir at {} already exists".format(self.dir))
         return _id
@@ -257,7 +257,7 @@ class S3Observer(RunObserver):
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + "_" + md5sum + ext
-        store_path = s3_join([store_dir, store_name])
+        store_path = s3_join(store_dir, store_name)
         if len(self._list_s3_subdirs(prefix=store_path)) == 0:
             self.save_file(filename, store_path)
         return store_path, md5sum
@@ -266,12 +266,12 @@ class S3Observer(RunObserver):
         self.s3.Object(self.bucket, key).put(Body=binary_data)
 
     def save_json(self, obj, filename):
-        key = s3_join([self.dir, filename])
+        key = s3_join(self.dir, filename)
         self.put_data(key, json.dumps(flatten(obj), sort_keys=True, indent=2))
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        key = s3_join([self.dir, target_name])
+        key = s3_join(self.dir, target_name)
         self.put_data(key, open(filename, "rb"))
 
     def save_directory(self, source_dir, target_name):
@@ -285,7 +285,7 @@ class S3Observer(RunObserver):
 
         for filename in all_files:
             file_location = s3_join(
-                [self.dir, target_name, os.path.relpath(filename, source_dir)]
+                self.dir, target_name, os.path.relpath(filename, source_dir)
             )
             s3_resource.Object(self.bucket, file_location).put(
                 Body=open(filename, "rb")
@@ -293,7 +293,7 @@ class S3Observer(RunObserver):
 
     def save_cout(self):
         binary_data = self.cout[self.cout_write_cursor :].encode("utf-8")
-        key = s3_join([self.dir, "cout.txt"])
+        key = s3_join(self.dir, "cout.txt")
         self.put_data(key, binary_data)
         self.cout_write_cursor = len(self.cout)
 
