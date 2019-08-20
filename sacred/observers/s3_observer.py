@@ -106,7 +106,7 @@ class S3Observer(RunObserver):
         try:
             self.s3.meta.client.head_bucket(Bucket=self.bucket)
         except ClientError as er:
-            if er.response['Error']['Code'] == 'NoSuchBucket':
+            if er.response['Error']['Code'] == '404':
                 return False
         return True
 
@@ -136,7 +136,6 @@ class S3Observer(RunObserver):
     def _determine_run_dir(self, _id):
         if _id is None:
             bucket_exists = self._bucket_exists()
-
             if not bucket_exists:
                 self._create_bucket()
                 bucket_path_subdirs = []
