@@ -43,6 +43,7 @@ def _is_valid_bucket(bucket_name):
 def s3_join(iterable):
     return "/".join(iterable)
 
+
 class S3Observer(RunObserver):
     VERSION = "S3Observer-0.1.0"
 
