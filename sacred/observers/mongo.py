@@ -75,7 +75,7 @@ class MongoObserver(RunObserver):
         priority=DEFAULT_MONGO_PRIORITY,
         client=None,
         failure_dir=None,
-        **kwargs,
+        **kwargs
     ):
         """Factory method for MongoObserver.
 
