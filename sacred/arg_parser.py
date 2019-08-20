@@ -9,7 +9,6 @@ first programmatically generate a usage text and then parse it with ``docopt``.
 """
 
 import ast
-from collections import OrderedDict
 import textwrap
 import inspect
 from shlex import quote
