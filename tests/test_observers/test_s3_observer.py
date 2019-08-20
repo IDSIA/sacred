@@ -20,6 +20,7 @@ T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 BUCKET = 'pytest-s3-observer-bucket'
 BASEDIR = 'some-tests'
+REGION = 'us-west-2'
 
 
 @pytest.fixture()
@@ -42,7 +43,7 @@ def sample_run():
 
 @pytest.fixture
 def observer():
-    return S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
+    return S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
 
 
 @pytest.fixture
@@ -129,19 +130,17 @@ def test_fs_observer_started_event_increments_run_id(observer, sample_run):
 
 
 def test_s3_observer_equality():
-    obs_one = S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
-    obs_two = S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
-    different_basedir = S3Observer.create(bucket=BUCKET,
-                                          basedir="another/dir")
-    different_bucket = S3Observer.create(bucket="some-other-bucket",
-                                         basedir=BASEDIR)
+    obs_one = S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
+    obs_two = S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
+    different_basedir = S3Observer.create(bucket=BUCKET, basedir="another/dir", region=REGION)
+    different_bucket = S3Observer.create(bucket="other-bucket", basedir=BASEDIR, region=REGION)
     assert obs_one == obs_two
     assert obs_one != different_basedir
     assert obs_one != different_bucket
 
 
 @mock_s3
-def test_raises_error_on_duplicate_id_directory(observer, sample_run):
+def test_z_raises_error_on_duplicate_id_directory(observer, sample_run):
     observer.started_event(**sample_run)
     sample_run['_id'] = 1
     with pytest.raises(FileExistsError):
