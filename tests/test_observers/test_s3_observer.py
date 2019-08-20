@@ -8,7 +8,7 @@ import os
 import pytest
 import json
 
-from sacred.observers import S3FileObserver
+from sacred.observers import S3Observer
 import tempfile
 import hashlib
 
@@ -42,7 +42,7 @@ def sample_run():
 
 @pytest.fixture
 def observer():
-    return S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
+    return S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
 
 
 @pytest.fixture
@@ -129,12 +129,15 @@ def test_fs_observer_started_event_increments_run_id(observer, sample_run):
 
 
 def test_s3_observer_equality():
-    obs_one = S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
-    obs_two = S3FileObserver.create(bucket=BUCKET, basedir=BASEDIR)
-    different_basedir = S3FileObserver.create(bucket=BUCKET,
-                                              basedir="another/dir")
+    obs_one = S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
+    obs_two = S3Observer.create(bucket=BUCKET, basedir=BASEDIR)
+    different_basedir = S3Observer.create(bucket=BUCKET,
+                                          basedir="another/dir")
+    different_bucket = S3Observer.create(bucket="some-other-bucket",
+                                         basedir=BASEDIR)
     assert obs_one == obs_two
     assert obs_one != different_basedir
+    assert obs_one != different_bucket
 
 
 @mock_s3
@@ -219,11 +222,19 @@ def test_artifact_event_works(observer, sample_run, tmpfile):
     assert artifact_data == tmpfile.content
 
 
-def test_raises_error_on_invalid_bucket_name():
-    with pytest.raises(ValueError):
-        _ = S3FileObserver.create(bucket="this_bucket_is_invalid",
-                                  basedir=BASEDIR)
+test_buckets = [("hi", True),
+                ("this_bucket_is_invalid", True),
+                ("this-bucket-is-valid", False),
+                ("this-bucket.is-valid", False),
+                ("this-bucket..is-invalid", True)]
 
-    with pytest.raises(ValueError):
-        _ = S3FileObserver.create(bucket="hi",
+
+@pytest.mark.parametrize("bucket_name, should_raise", test_buckets)
+def test_raises_error_on_invalid_bucket_name(bucket_name, should_raise):
+    if should_raise:
+        with pytest.raises(ValueError):
+            _ = S3Observer.create(bucket=bucket_name,
                                   basedir=BASEDIR)
+    else:
+        _ = S3Observer.create(bucket=bucket_name,
+                              basedir=BASEDIR)

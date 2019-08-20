@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 import json
 import os
 import os.path
@@ -23,16 +20,18 @@ def _is_valid_bucket(bucket_name):
     # cloudtrail-s3-bucket-naming-requirements.html
     if len(bucket_name) < 3 or len(bucket_name) > 63:
         return False
-    if '..' in bucket_name or '.-' in bucket_name or '-.' in bucket_name:
-        return False
-    for char in bucket_name:
-        if char.isdigit():
-            continue
-        if char.islower():
-            continue
-        if char == '-':
-            continue
-        return False
+
+    labels = bucket_name.split('.')
+    # A bucket name consists of "labels" separated by periods
+    for label in labels:
+        if len(label) == 0 or label[0] == '-' or label[-1] == '-':
+            # Labels must be of nonzero length, and cannot begin or end with a hyphen
+            return False
+        for char in label:
+            # Labels can only contain digits, lowercase letters, or hyphens.
+            # Anything else will fail here
+            if not (char.isdigit() or char.islower() or char == '-'):
+                return False
     try:
         # If a name is a valid IP address, it cannot be a bucket name
         socket.inet_aton(bucket_name)
@@ -40,12 +39,24 @@ def _is_valid_bucket(bucket_name):
         return True
 
 
-class S3FileObserver(RunObserver):
-    VERSION = 'S3FileObserver-0.1.0'
+class S3Observer(RunObserver):
+    VERSION = 'S3Observer-0.1.0'
 
     @classmethod
     def create(cls, bucket, basedir, resource_dir=None, source_dir=None,
                priority=DEFAULT_S3_PRIORITY):
+        """
+        A factory method to create a S3Observer object
+
+        :param bucket: The name of the bucket you want to store results in. Doesn't need to contain
+        `s3://`, but does need to be a valid AWS bucket name
+        :param basedir: The relative path inside your bucket where you want this experiment
+        to store results
+        :param resource_dir: TODO what is this anyway?
+        :param source_dir:
+        :param priority:
+        :return:
+        """
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
         source_dir = source_dir or os.path.join(basedir, '_sources')
 
@@ -81,18 +92,19 @@ class S3FileObserver(RunObserver):
         all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
         return len(all_keys) > 0
 
+    def _bucket_exists(self):
+        try:
+            self.s3.meta.client.head_bucket(Bucket=self.bucket)
+        except ClientError as er:
+            if er.response['Error']['Code'] == 'NoSuchBucket':
+                return False
+        return True
+
     def _list_s3_subdirs(self, prefix=None):
         if prefix is None:
             prefix = self.basedir
-        try:
-            bucket = self.s3.Bucket(self.bucket)
-            all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
-        except ClientError as er:
-            if er.response['Error']['Code'] == 'NoSuchBucket':
-                return None
-            else:
-                raise ClientError(er.response['Error']['Code'])
-
+        bucket = self.s3.Bucket(self.bucket)
+        all_keys = [obj.key for obj in bucket.objects.filter(Prefix=prefix)]
         subdir_match = r'{prefix}\/(.*)\/'.format(prefix=prefix)
         subdirs = []
         for key in all_keys:
@@ -115,18 +127,20 @@ class S3FileObserver(RunObserver):
 
     def _determine_run_dir(self, _id):
         if _id is None:
-            # Get all existing subdirectories under s3://bucket/basedir/
-            bucket_path_subdirs = self._list_s3_subdirs()
-            # _list_s3_subdirs returns None when the bucket doesn't exist
-            if bucket_path_subdirs is None:
-                self._create_bucket()
+            bucket_exists = self._bucket_exists()
 
-            if bucket_path_subdirs is None or len(bucket_path_subdirs) == 0:
+            if not bucket_exists:
+                self._create_bucket()
+                bucket_path_subdirs = []
+            else:
+                bucket_path_subdirs = self._list_s3_subdirs()
+
+            if not bucket_path_subdirs:
                 max_run_id = 0
             else:
                 integer_directories = [int(d) for d in bucket_path_subdirs
                                        if d.isdigit()]
-                if len(integer_directories) == 0:
+                if not integer_directories:
                     max_run_id = 0
                 else:
                     # If there are directories under basedir that aren't
@@ -303,13 +317,14 @@ class S3FileObserver(RunObserver):
         self.save_json(self.saved_metrics, 'metrics.json')
 
     def __eq__(self, other):
-        if isinstance(other, S3FileObserver):
+        if isinstance(other, S3Observer):
             return (self.bucket == other.bucket and
                     self.basedir == other.basedir)
-        return False
+        else:
+            return False
 
 
-class S3StorageOption(CommandLineOption):
+class S3Option(CommandLineOption):
     """Add a S3 File observer to the experiment."""
 
     short_flag = 'S3'
@@ -324,5 +339,5 @@ class S3StorageOption(CommandLineOption):
                              "Enter bucket and directory path like: "
                              "s3://<bucket>/path/to/exp")
         bucket, basedir = match_obj.groups()
-        run.observers.append(S3FileObserver.create(bucket=bucket,
-                                                   basedir=basedir))
+        run.observers.append(S3Observer.create(bucket=bucket,
+                                               basedir=basedir))
