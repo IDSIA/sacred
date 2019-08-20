@@ -40,8 +40,8 @@ def _is_valid_bucket(bucket_name):
         return True
 
 
-def s3_join(iterable):
-    return "/".join(iterable)
+def s3_join(**args):
+    return "/".join(args)
 
 
 class S3Observer(RunObserver):

@@ -23,6 +23,9 @@ BASEDIR = "some-tests"
 REGION = "us-west-2"
 
 
+def s3_join(*args):
+    return "/".join(args)
+
 @pytest.fixture()
 def sample_run():
     exp = {"name": "test_exp", "sources": [], "doc": "", "base_dir": "/tmp"}
@@ -95,17 +98,17 @@ def _get_file_data(bucket_name, key):
 @mock_s3
 def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     _id = observer.started_event(**sample_run)
-    run_dir = os.path.join(BASEDIR, str(_id))
+    run_dir = s3_join(BASEDIR, str(_id))
     assert _bucket_exists(bucket_name=BUCKET)
-    assert _key_exists(bucket_name=BUCKET, key=os.path.join(run_dir, "cout.txt"))
-    assert _key_exists(bucket_name=BUCKET, key=os.path.join(run_dir, "config.json"))
-    assert _key_exists(bucket_name=BUCKET, key=os.path.join(run_dir, "run.json"))
+    assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "cout.txt"))
+    assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "config.json"))
+    assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "run.json"))
     config = _get_file_data(
-        bucket_name=BUCKET, key=os.path.join(run_dir, "config.json")
+        bucket_name=BUCKET, key=s3_join(run_dir, "config.json")
     )
 
     assert json.loads(config.decode("utf-8")) == sample_run["config"]
-    run = _get_file_data(bucket_name=BUCKET, key=os.path.join(run_dir, "run.json"))
+    run = _get_file_data(bucket_name=BUCKET, key=s3_join(run_dir, "run.json"))
     assert json.loads(run.decode("utf-8")) == {
         "experiment": sample_run["ex_info"],
         "command": sample_run["command"],
@@ -153,14 +156,14 @@ def test_completed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "RUNNING"
     observer.completed_event(T2, "success!")
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "COMPLETED"
@@ -171,14 +174,14 @@ def test_interrupted_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "RUNNING"
     observer.interrupted_event(T2, "SERVER_EXPLODED")
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "SERVER_EXPLODED"
@@ -189,14 +192,14 @@ def test_failed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "RUNNING"
     observer.failed_event(T2, "Everything imaginable went wrong")
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "FAILED"
@@ -209,7 +212,7 @@ def test_queued_event_updates_run_json(observer, sample_run):
     observer.queued_event(**sample_run)
     run = json.loads(
         _get_file_data(
-            bucket_name=BUCKET, key=os.path.join(observer.dir, "run.json")
+            bucket_name=BUCKET, key=s3_join(observer.dir, "run.json")
         ).decode("utf-8")
     )
     assert run["status"] == "QUEUED"
@@ -221,10 +224,10 @@ def test_artifact_event_works(observer, sample_run, tmpfile):
     observer.artifact_event("test_artifact.py", tmpfile.name)
 
     assert _key_exists(
-        bucket_name=BUCKET, key=os.path.join(observer.dir, "test_artifact.py")
+        bucket_name=BUCKET, key=s3_join(observer.dir, "test_artifact.py")
     )
     artifact_data = _get_file_data(
-        bucket_name=BUCKET, key=os.path.join(observer.dir, "test_artifact.py")
+        bucket_name=BUCKET, key=s3_join(observer.dir, "test_artifact.py")
     ).decode("utf-8")
     assert artifact_data == tmpfile.content
 
