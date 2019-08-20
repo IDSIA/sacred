@@ -159,13 +159,9 @@ def _format_command_usage(commands):
         return ""
     command_usage = "\nCommands:\n"
     cmd_len = max([len(c) for c in commands] + [8])
-    command_doc = OrderedDict(
-        [
-            (cmd_name, _get_first_line_of_docstring(cmd_doc))
-            for cmd_name, cmd_doc in commands.items()
-        ]
-    )
-    for cmd_name, cmd_doc in command_doc.items():
+
+    for cmd_name, cmd_doc in commands.items():
+        cmd_doc = _get_first_line_of_docstring(cmd_doc)
         command_usage += ("  {:%d}  {}\n" % cmd_len).format(cmd_name, cmd_doc)
     return command_usage
 
