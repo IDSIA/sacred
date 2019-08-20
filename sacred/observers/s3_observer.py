@@ -151,7 +151,7 @@ class S3Observer(RunObserver):
                     max_run_id = 0
                 else:
                     # If there are directories under basedir that aren't
-                    # run directories, ignore those
+                    # numeric run directories, ignore those
                     max_run_id = max(integer_directories)
 
             _id = max_run_id + 1
