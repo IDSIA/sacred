@@ -37,6 +37,12 @@ class RunObserver:
     def artifact_event(self, name, filename, metadata=None, content_type=None):
         pass
 
+    def log_metrics(self, metrics_by_name, info):
+        pass
+
+    def join(self):
+        pass
+
 
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
 def td_format(td_object):
