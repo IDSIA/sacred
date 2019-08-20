@@ -242,6 +242,10 @@ test_buckets = [
 def test_raises_error_on_invalid_bucket_name(bucket_name, should_raise):
     if should_raise:
         with pytest.raises(ValueError):
-            _ = S3Observer.create(bucket=bucket_name, basedir=BASEDIR)
+            _ = S3Observer.create(bucket=bucket_name,
+                                  basedir=BASEDIR,
+                                  region=REGION)
     else:
-        _ = S3Observer.create(bucket=bucket_name, basedir=BASEDIR)
+        _ = S3Observer.create(bucket=bucket_name,
+                              basedir=BASEDIR,
+                              region=REGION)
