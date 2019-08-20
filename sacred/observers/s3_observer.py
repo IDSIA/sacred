@@ -44,7 +44,7 @@ class S3Observer(RunObserver):
 
     @classmethod
     def create(cls, bucket, basedir, resource_dir=None, source_dir=None,
-               priority=DEFAULT_S3_PRIORITY):
+               priority=DEFAULT_S3_PRIORITY, region=None):
         """
         A factory method to create a S3Observer object
 
@@ -60,10 +60,10 @@ class S3Observer(RunObserver):
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
         source_dir = source_dir or os.path.join(basedir, '_sources')
 
-        return cls(bucket, basedir, resource_dir, source_dir, priority)
+        return cls(bucket, basedir, resource_dir, source_dir, priority, region)
 
     def __init__(self, bucket, basedir, resource_dir, source_dir,
-                 priority=DEFAULT_S3_PRIORITY):
+                 priority=DEFAULT_S3_PRIORITY, region=None):
         if not _is_valid_bucket(bucket):
             raise ValueError("Your chosen bucket name does not follow AWS "
                              "bucket naming rules")
@@ -81,8 +81,18 @@ class S3Observer(RunObserver):
         self.info = None
         self.cout = ""
         self.cout_write_cursor = 0
-        self.s3 = boto3.resource('s3')
         self.saved_metrics = {}
+        if region is not None:
+            self.region = region
+            self.s3 = boto3.resource('s3', region_name=region)
+        else:
+            session = boto3.session.Session()
+            if session.region_name is not None:
+                self.region = session.region_name
+                self.s3 = boto3.resource('s3')
+            else:
+                raise ValueError("You must either pass in an AWS region name, or have a region"
+                                 " name specified in your AWS config file")
 
     def _objects_exist_in_dir(self, prefix):
         # This should be run after you've confirmed the bucket
@@ -117,12 +127,10 @@ class S3Observer(RunObserver):
         return list(distinct_subdirs)
 
     def _create_bucket(self):
-        session = boto3.session.Session()
-        current_region = session.region_name or 'us-west-2'
         bucket_response = self.s3.create_bucket(
             Bucket=self.bucket,
             CreateBucketConfiguration={
-                'LocationConstraint': current_region})
+                'LocationConstraint': self.region})
         return bucket_response
 
     def _determine_run_dir(self, _id):
