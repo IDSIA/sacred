@@ -25,7 +25,8 @@ def _is_valid_bucket(bucket_name):
     # A bucket name consists of "labels" separated by periods
     for label in labels:
         if len(label) == 0 or label[0] == '-' or label[-1] == '-':
-            # Labels must be of nonzero length, and cannot begin or end with a hyphen
+            # Labels must be of nonzero length,
+            # and cannot begin or end with a hyphen
             return False
         for char in label:
             # Labels can only contain digits, lowercase letters, or hyphens.
@@ -48,13 +49,19 @@ class S3Observer(RunObserver):
         """
         A factory method to create a S3Observer object
 
-        :param bucket: The name of the bucket you want to store results in. Doesn't need to contain
-        `s3://`, but does need to be a valid AWS bucket name
-        :param basedir: The relative path inside your bucket where you want this experiment
-        to store results
-        :param resource_dir: TODO what is this anyway?
-        :param source_dir:
-        :param priority:
+        :param bucket: The name of the bucket you want to store results in.
+         Doesn't need to contain `s3://`, but needs to be a valid bucket name
+        :param basedir: The relative path inside your bucket where you want
+         this experiment to store results
+        :param resource_dir: Where to store resources for this experiment. By
+         default, will be <basedir>/_resources
+        :param source_dir: Where to store code sources for this experiment. By
+         default, will be <basedir>/sources
+        :param priority: The priority to assign to this observer if
+         multiple observers are present
+        :param region: The AWS region in which you want to create and access
+        buckets. Needs to be either set here or configured in your AWS
+        config file.
         :return:
         """
         resource_dir = resource_dir or os.path.join(basedir, '_resources')
@@ -91,8 +98,9 @@ class S3Observer(RunObserver):
                 self.region = session.region_name
                 self.s3 = boto3.resource('s3')
             else:
-                raise ValueError("You must either pass in an AWS region name, or have a region"
-                                 " name specified in your AWS config file")
+                raise ValueError("You must either pass in an AWS region name,"
+                                 " or have a region name specified in your"
+                                 " AWS config file")
 
     def _objects_exist_in_dir(self, prefix):
         # This should be run after you've confirmed the bucket
