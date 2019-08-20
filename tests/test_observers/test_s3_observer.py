@@ -26,6 +26,7 @@ REGION = "us-west-2"
 def s3_join(*args):
     return "/".join(args)
 
+
 @pytest.fixture()
 def sample_run():
     exp = {"name": "test_exp", "sources": [], "doc": "", "base_dir": "/tmp"}
@@ -103,9 +104,7 @@ def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "cout.txt"))
     assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "config.json"))
     assert _key_exists(bucket_name=BUCKET, key=s3_join(run_dir, "run.json"))
-    config = _get_file_data(
-        bucket_name=BUCKET, key=s3_join(run_dir, "config.json")
-    )
+    config = _get_file_data(bucket_name=BUCKET, key=s3_join(run_dir, "config.json"))
 
     assert json.loads(config.decode("utf-8")) == sample_run["config"]
     run = _get_file_data(bucket_name=BUCKET, key=s3_join(run_dir, "run.json"))
