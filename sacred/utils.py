@@ -367,7 +367,7 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     ordering_function = get_ordering(manually_sorted_keys)
 
     for key, value in sorted(dictionary.items(), key=ordering_function):
-        if isinstance(value, dict):
+        if is_non_empty_dict(value):
             yield key, PATHCHANGE
             for k, val in iterate_flattened_separately(value, manually_sorted_keys):
                 yield join_paths(key, k), val
@@ -380,11 +380,16 @@ def get_ordering(manually_sorted_keys):
         key, value = key_and_value
         if key in manually_sorted_keys:
             return 0, manually_sorted_keys.index(key)
-        elif not isinstance(value, dict) or not value:
+        elif not is_non_empty_dict(value):
             return 1, key
         else:
             return 2, key
+
     return get_order
+
+
+def is_non_empty_dict(python_object):
+    return isinstance(python_object, dict) and python_object
 
 
 def iterate_flattened(d):
