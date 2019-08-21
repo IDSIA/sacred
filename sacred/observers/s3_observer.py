@@ -91,7 +91,7 @@ class S3Observer(RunObserver):
     ):
         if not _is_valid_bucket(bucket):
             raise ValueError(
-                "Your chosen bucket name does not follow AWS " "bucket naming rules"
+                "Your chosen bucket name doesn't follow AWS bucket naming rules"
             )
 
         self.basedir = basedir
@@ -118,9 +118,8 @@ class S3Observer(RunObserver):
                 self.s3 = boto3.resource("s3")
             else:
                 raise ValueError(
-                    "You must either pass in an AWS region name,"
-                    " or have a region name specified in your"
-                    " AWS config file"
+                    "You must either pass in an AWS region name, or have a "
+                    "region name specified in your AWS config file"
                 )
 
     def _objects_exist_in_dir(self, prefix):
