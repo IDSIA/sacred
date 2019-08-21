@@ -62,7 +62,7 @@ You can also add it from code like this:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create())
+    ex.observers.append(MongoObserver())
 
 
 
@@ -72,8 +72,8 @@ Or with server and port:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(url='my.server.org:27017',
-                                             db_name='MY_DB'))
+    ex.observers.append(MongoObserver(url='my.server.org:27017',
+                                      db_name='MY_DB'))
 
 This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
@@ -93,7 +93,7 @@ you want to use. If it can be done by just using the ``MongoDB URI`` then just p
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url='mongodb://user:password@example.com/the_database?authMechanism=SCRAM-SHA-1',
         db_name='MY_DB'))
 
@@ -103,7 +103,7 @@ If additional arguments need to be passed to the MongoClient they can just be in
 
 .. code-block:: python
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url="mongodb://<X.509 derived username>@example.com/?authMechanism=MONGODB-X509",
         db_name='MY_DB',
         ssl=True,
@@ -349,7 +349,11 @@ Alternatively, you can also add the observer from code like this:
 
     from sacred.observers import TinyDbObserver
 
-    ex.observers.append(TinyDbObserver.create('my_runs'))
+    ex.observers.append(TinyDbObserver('my_runs'))
+
+    # You can also create this observer from a HashFS and
+    # TinyDB object directly with:
+    ex.observers.append(TinyDbObserver.create_from(my_db, my_fs))
 
 
 Directory Structure
