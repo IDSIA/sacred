@@ -163,6 +163,7 @@ class MongoObserver(RunObserver):
     def create_from(cls, *args, **kwargs):
         self = cls.__new__(cls)  # skip __init__ call
         self.initialize(*args, **kwargs)
+        return self
 
     def queued_event(
         self, ex_info, command, host_info, queue_time, config, meta_info, _id
