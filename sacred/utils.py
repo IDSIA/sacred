@@ -364,18 +364,7 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     (sorted by keys), providing full dotted paths for every leaf.
     """
     manually_sorted_keys = manually_sorted_keys or []
-    ordering_function = get_ordering(manually_sorted_keys)
 
-    for key, value in sorted(dictionary.items(), key=ordering_function):
-        if is_non_empty_dict(value):
-            yield key, PATHCHANGE
-            for k, val in iterate_flattened_separately(value, manually_sorted_keys):
-                yield join_paths(key, k), val
-        else:
-            yield key, value
-
-
-def get_ordering(manually_sorted_keys):
     def get_order(key_and_value):
         key, value = key_and_value
         if key in manually_sorted_keys:
@@ -385,7 +374,13 @@ def get_ordering(manually_sorted_keys):
         else:
             return 2, key
 
-    return get_order
+    for key, value in sorted(dictionary.items(), key=get_order):
+        if is_non_empty_dict(value):
+            yield key, PATHCHANGE
+            for k, val in iterate_flattened_separately(value, manually_sorted_keys):
+                yield join_paths(key, k), val
+        else:
+            yield key, value
 
 
 def is_non_empty_dict(python_object):
