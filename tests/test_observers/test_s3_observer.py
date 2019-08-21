@@ -143,7 +143,7 @@ def test_s3_observer_equality():
 
 
 @mock_s3
-def test_z_raises_error_on_duplicate_id_directory(observer, sample_run):
+def test_raises_error_on_duplicate_id_directory(observer, sample_run):
     observer.started_event(**sample_run)
     sample_run["_id"] = 1
     with pytest.raises(FileExistsError):
