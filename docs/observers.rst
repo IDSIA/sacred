@@ -21,7 +21,7 @@ At the moment there are five observers that are shipped with Sacred:
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
  * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
-   some specified prefix/directory
+   a given prefix/directory
 
 
 But if you want the run information stored some other way, it is easy to write
