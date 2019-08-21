@@ -6,6 +6,7 @@ import os
 import os.path
 from pathlib import Path
 from typing import Optional
+import warnings
 
 from shutil import copyfile
 
@@ -24,8 +25,16 @@ class FileStorageObserver(RunObserver):
     VERSION = "FileStorageObserver-0.7.0"
 
     @classmethod
-    def create(
-        cls,
+    def create(cls, *args, **kwargs):
+        warnings.warn(
+            "FileStorageObserver.create(...) is deprecated. "
+            "Please use FileStorageObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(*args, **kwargs)
+
+    def __init__(
+        self,
         basedir: PathType,
         resource_dir: Optional[PathType] = None,
         source_dir: Optional[PathType] = None,
@@ -44,9 +53,9 @@ class FileStorageObserver(RunObserver):
             template = basedir / "template.html"
             if not template.exists():
                 template = None
-        return cls(basedir, resource_dir, source_dir, template, priority)
+        self.initialize(basedir, resource_dir, source_dir, template, priority)
 
-    def __init__(
+    def initialize(
         self,
         basedir,
         resource_dir,
@@ -65,6 +74,12 @@ class FileStorageObserver(RunObserver):
         self.info = None
         self.cout = ""
         self.cout_write_cursor = 0
+
+    @classmethod
+    def create_from(cls, *args, **kwargs):
+        self = cls.__new__(cls)  # skip __init__ call
+        self.initialize(*args, **kwargs)
+        return self
 
     def _maximum_existing_run_id(self):
         dir_nrs = [
@@ -289,4 +304,4 @@ class FileStorageOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        run.observers.append(FileStorageObserver.create(args))
+        run.observers.append(FileStorageObserver(args))
