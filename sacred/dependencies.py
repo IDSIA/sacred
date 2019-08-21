@@ -7,7 +7,6 @@ import os.path
 import re
 import sys
 from pathlib import Path
-import warnings
 from git import Repo, InvalidGitRepositoryError
 
 import pkg_resources
