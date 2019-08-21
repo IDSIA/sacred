@@ -30,7 +30,7 @@ def mongo_obs(monkeypatch):
     monkeypatch.setattr(pymongo, "MongoClient", lambda *args, **kwargs: client)
     monkeypatch.setattr(gridfs, "GridFS", lambda d: mock.MagicMock())
 
-    return QueuedMongoObserver.create(interval=0.01, retry_interval=0.01)
+    return QueuedMongoObserver(interval=0.01, retry_interval=0.01)
 
 
 @pytest.fixture()

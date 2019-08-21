@@ -8,6 +8,7 @@ import re
 import sys
 import time
 from tempfile import NamedTemporaryFile
+import warnings
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -548,8 +549,16 @@ class QueueCompatibleMongoObserver(MongoObserver):
 
 class QueuedMongoObserver(QueueObserver):
     @classmethod
-    def create(
-        cls,
+    def create(cls, *args, **kwargs):
+        warnings.warn(
+            "QueuedMongoObserver.create(...) is deprecated. "
+            "Please use QueuedMongoObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(*args, **kwargs)
+
+    def __init__(
+        self,
         interval=20,
         retry_interval=10,
         url=None,
@@ -560,7 +569,7 @@ class QueuedMongoObserver(QueueObserver):
         client=None,
         **kwargs
     ):
-        return cls(
+        super().__init__(
             QueueCompatibleMongoObserver.create(
                 url=url,
                 db_name=db_name,
