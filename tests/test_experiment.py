@@ -12,7 +12,6 @@ import sys
 from sacred import host_info_gatherer
 from sacred.experiment import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError, SacredError
-from sacred import optional as opt
 
 
 @pytest.fixture
