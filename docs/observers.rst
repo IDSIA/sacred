@@ -20,7 +20,9 @@ At the moment there are five observers that are shipped with Sacred:
    to store run information in a JSON file. 
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
- * The :ref:`s3_observer` stores run information within an AWS S3 bucket
+ * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
+   some specified prefix/directory
+
 
 But if you want the run information stored some other way, it is easy to write
 your own :ref:`custom_observer`.
@@ -610,8 +612,8 @@ To create an S3Observer in Python:
 .. code-block:: python
 
     from sacred.observers import S3Observer
-    ex.observers.append(S3Observer.create(bucket='my-awesome-bucket',
-                                          basedir='/my-project/my-cool-experiment/'))
+    ex.observers.append(S3Observer(bucket='my-awesome-bucket',
+                                   basedir='/my-project/my-cool-experiment/'))
 
 By default, an S3Observer will use the region that is set in your AWS config file, but if you'd
 prefer to pass in a specific region, you can use the ``region`` parameter of create to do so.

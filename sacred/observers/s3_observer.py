@@ -47,9 +47,8 @@ def s3_join(*args):
 class S3Observer(RunObserver):
     VERSION = "S3Observer-0.1.0"
 
-    @classmethod
-    def create(
-        cls,
+    def __init__(
+        self,
         bucket,
         basedir,
         resource_dir=None,
@@ -58,7 +57,8 @@ class S3Observer(RunObserver):
         region=None,
     ):
         """
-        A factory method to create a S3Observer object
+        Constructor for a S3Observer object. This is run when you
+        first create the object, before it's used within an experiment.
 
         :param bucket: The name of the bucket you want to store results in.
          Doesn't need to contain `s3://`, but needs to be a valid bucket name
@@ -75,24 +75,13 @@ class S3Observer(RunObserver):
         config file.
         :return:
         """
-        resource_dir = resource_dir or "/".join([basedir, "_resources"])
-        source_dir = source_dir or "/".join([basedir, "_sources"])
 
-        return cls(bucket, basedir, resource_dir, source_dir, priority, region)
-
-    def __init__(
-        self,
-        bucket,
-        basedir,
-        resource_dir,
-        source_dir,
-        priority=DEFAULT_S3_PRIORITY,
-        region=None,
-    ):
         if not _is_valid_bucket(bucket):
             raise ValueError(
                 "Your chosen bucket name doesn't follow AWS bucket naming rules"
             )
+        resource_dir = resource_dir or "/".join([basedir, "_resources"])
+        source_dir = source_dir or "/".join([basedir, "_sources"])
 
         self.basedir = basedir
         self.bucket = bucket
