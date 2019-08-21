@@ -558,7 +558,7 @@ class QueuedMongoObserver(QueueObserver):
         overwrite=None,
         priority=DEFAULT_MONGO_PRIORITY,
         client=None,
-        **kwargs,
+        **kwargs
     ):
         return cls(
             QueueCompatibleMongoObserver.create(
@@ -568,7 +568,7 @@ class QueuedMongoObserver(QueueObserver):
                 overwrite=overwrite,
                 priority=priority,
                 client=client,
-                **kwargs,
+                **kwargs
             ),
             interval=interval,
             retry_interval=retry_interval,
