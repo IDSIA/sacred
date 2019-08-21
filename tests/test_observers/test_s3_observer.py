@@ -47,7 +47,7 @@ def sample_run():
 
 @pytest.fixture
 def observer():
-    return S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
+    return S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
 
 
 @pytest.fixture
@@ -129,12 +129,12 @@ def test_fs_observer_started_event_increments_run_id(observer, sample_run):
 
 
 def test_s3_observer_equality():
-    obs_one = S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
-    obs_two = S3Observer.create(bucket=BUCKET, basedir=BASEDIR, region=REGION)
-    different_basedir = S3Observer.create(
+    obs_one = S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
+    obs_two = S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
+    different_basedir = S3Observer(
         bucket=BUCKET, basedir="another/dir", region=REGION
     )
-    different_bucket = S3Observer.create(
+    different_bucket = S3Observer(
         bucket="other-bucket", basedir=BASEDIR, region=REGION
     )
     assert obs_one == obs_two
@@ -244,6 +244,6 @@ test_buckets = [
 def test_raises_error_on_invalid_bucket_name(bucket_name, should_raise):
     if should_raise:
         with pytest.raises(ValueError):
-            _ = S3Observer.create(bucket=bucket_name, basedir=BASEDIR, region=REGION)
+            _ = S3Observer(bucket=bucket_name, basedir=BASEDIR, region=REGION)
     else:
-        _ = S3Observer.create(bucket=bucket_name, basedir=BASEDIR, region=REGION)
+        _ = S3Observer(bucket=bucket_name, basedir=BASEDIR, region=REGION)
