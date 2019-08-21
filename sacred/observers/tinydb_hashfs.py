@@ -7,6 +7,7 @@ import os
 import textwrap
 import uuid
 from collections import OrderedDict
+import warnings
 
 from sacred.__about__ import __version__
 from sacred.commandline_options import CommandLineOption
@@ -17,18 +18,34 @@ class TinyDbObserver(RunObserver):
 
     VERSION = "TinyDbObserver-{}".format(__version__)
 
-    @staticmethod
-    def create(path="./runs_db", overwrite=None):
+    @classmethod
+    def create(cls, path="./runs_db", overwrite=None):
+        warnings.warn(
+            "TinyDbObserver.create(...) is deprecated. "
+            "Please use TinyDbObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(path, overwrite)
+
+    def __init__(self, path="./runs_db", overwrite=None):
         from .tinydb_hashfs_bases import get_db_file_manager
 
         root_dir = os.path.abspath(path)
-        if not os.path.exists(root_dir):
-            os.makedirs(root_dir)
+        os.makedirs(root_dir, exist_ok=True)
 
         db, fs = get_db_file_manager(root_dir)
-        return TinyDbObserver(db, fs, overwrite=overwrite, root=root_dir)
+        self.db = db
+        self.runs = db.table("runs")
+        self.fs = fs
+        self.overwrite = overwrite
+        self.run_entry = {}
+        self.db_run_id = None
+        self.root = root_dir
 
-    def __init__(self, db, fs, overwrite=None, root=None):
+    @classmethod
+    def create_from(cls, db, fs, overwrite=None, root=None):
+        """Instantiate a TinyDbObserver with an existing db and filesystem."""
+        self = cls.__new__(cls)  # skip __init__ call
         self.db = db
         self.runs = db.table("runs")
         self.fs = fs
@@ -165,7 +182,7 @@ class TinyDbOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         location = cls.parse_tinydb_arg(args)
-        tinydb_obs = TinyDbObserver.create(path=location)
+        tinydb_obs = TinyDbObserver(path=location)
         run.observers.append(tinydb_obs)
 
     @classmethod
