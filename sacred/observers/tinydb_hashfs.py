@@ -53,6 +53,7 @@ class TinyDbObserver(RunObserver):
         self.run_entry = {}
         self.db_run_id = None
         self.root = root
+        return self
 
     def save(self):
         """Insert or update the current run entry."""
