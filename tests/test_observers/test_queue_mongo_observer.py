@@ -91,7 +91,7 @@ def test_mongo_observer_equality(mongo_obs):
     mongo_obs.join()
 
     fs = mock.MagicMock()
-    m = MongoObserver(runs, fs)
+    m = MongoObserver.create_from(runs, fs)
     assert mongo_obs == m
     assert not mongo_obs != m
 
