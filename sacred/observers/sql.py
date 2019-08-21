@@ -41,7 +41,7 @@ class SqlObserver(RunObserver):
 
     @classmethod
     def create_from(cls, engine, session, priority=DEFAULT_SQL_PRIORITY):
-        """Second constructor, Java style"""
+        """Instantiate a SqlObserver with an existing engine and session"""
         self = cls.__new__(cls)
         self.engine = engine
         self.session = session
