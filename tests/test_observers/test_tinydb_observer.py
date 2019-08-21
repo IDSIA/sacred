@@ -171,7 +171,7 @@ def test_tinydb_observer_equality(tmpdir, tinydb_obs):
     fs = HashFS(
         os.path.join(tmpdir.strpath, "hashfs"), depth=3, width=2, algorithm="md5"
     )
-    m = TinyDbObserver(db, fs)
+    m = TinyDbObserver.create_from(db, fs)
 
     assert tinydb_obs == m
     assert not tinydb_obs != m

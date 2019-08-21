@@ -349,7 +349,11 @@ Alternatively, you can also add the observer from code like this:
 
     from sacred.observers import TinyDbObserver
 
-    ex.observers.append(TinyDbObserver.create('my_runs'))
+    ex.observers.append(TinyDbObserver('my_runs'))
+
+    # You can also create this observer from a HashFS and
+    # TinyDB object directly with:
+    ex.observers.append(TinyDbObserver.create_from(my_db, my_fs))
 
 
 Directory Structure
