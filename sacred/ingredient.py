@@ -51,7 +51,7 @@ class Ingredient:
         interactive: bool = False,
         _caller_globals: Optional[dict] = None,
         base_dir: Optional[PathType] = None,
-        save_git_commit: Optional[bool] = None,
+        save_git_commit: bool = True,
     ):
         self.path = path
         self.config_hooks = []
