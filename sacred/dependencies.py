@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 import warnings
+from git import Repo, InvalidGitRepositoryError
 
 import pkg_resources
 
@@ -418,35 +419,19 @@ def get_commit_if_possible(filename, save_git_commit):
     """
     if save_git_commit is False:
         return None, None, None
-    if opt.has_gitpython or save_git_commit is True:
-        from git import Repo, InvalidGitRepositoryError
 
-        try:
-            directory = os.path.dirname(filename)
-            repo = Repo(directory, search_parent_directories=True)
-            try:
-                path = repo.remote().url
-            except ValueError:
-                path = "git:/" + repo.working_dir
-            is_dirty = repo.is_dirty()
-            commit = repo.head.commit.hexsha
-            if save_git_commit is None:
-                warnings.warn(
-                    "Currently, git information about sources are "
-                    "saved because you have GitPython installed and didn't specified"
-                    "the argument `save_git_commit`. This behavior will change in the future."
-                    "By default no git information will be collected even if GitPython is"
-                    "installed. Please set `save_git_commit=True` in your Experiment"
-                    "or ingredient constructor to ensure your git information will"
-                    "be saved even after the default behavior changes.",
-                    DeprecationWarning,
-                )
-
-            return path, commit, is_dirty
-        except (InvalidGitRepositoryError, ValueError):
-            if save_git_commit:
-                raise
-    return None, None, None
+    directory = os.path.dirname(filename)
+    try:
+        repo = Repo(directory, search_parent_directories=True)
+    except InvalidGitRepositoryError:
+        return None, None, None
+    try:
+        path = repo.remote().url
+    except ValueError:
+        path = "git:/" + repo.working_dir
+    is_dirty = repo.is_dirty()
+    commit = repo.head.commit.hexsha
+    return path, commit, is_dirty
 
 
 @functools.total_ordering
@@ -459,7 +444,7 @@ class Source:
         self.is_dirty = isdirty
 
     @staticmethod
-    def create(filename, save_git_commit=None):
+    def create(filename, save_git_commit=True):
         if not filename or not os.path.exists(filename):
             raise ValueError('invalid filename or file not found "{}"'.format(filename))
 

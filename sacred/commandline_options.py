@@ -236,13 +236,6 @@ class EnforceCleanOption(CommandLineOption):
 
     @classmethod
     def apply(cls, args, run):
-        try:
-            import git  # NOQA
-        except ImportError:
-            warnings.warn(
-                "GitPython must be installed to use the " "--enforce-clean option."
-            )
-            raise
         repos = run.experiment_info["repositories"]
         if not repos:
             raise RuntimeError(

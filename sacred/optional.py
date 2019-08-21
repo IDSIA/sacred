@@ -51,6 +51,5 @@ has_pandas, pandas = optional_import("pandas")
 
 has_sqlalchemy = modules_exist("sqlalchemy")
 has_mako = modules_exist("mako")
-has_gitpython = modules_exist("git")
 has_tinydb = modules_exist("tinydb", "tinydb_serialization", "hashfs")
 has_tensorflow = modules_exist("tensorflow")

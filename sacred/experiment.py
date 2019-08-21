@@ -56,7 +56,7 @@ class Experiment(Ingredient):
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
         additional_host_info: List[HostInfoGetter] = None,
-        save_git_commit: Optional[bool] = None,
+        save_git_commit: bool = True,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
