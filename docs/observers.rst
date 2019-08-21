@@ -72,8 +72,8 @@ Or with server and port:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.(url='my.server.org:27017',
-                                       db_name='MY_DB'))
+    ex.observers.append(MongoObserver(url='my.server.org:27017',
+                                      db_name='MY_DB'))
 
 This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
