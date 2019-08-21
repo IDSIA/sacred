@@ -24,22 +24,10 @@ class SlackObserver(RunObserver):
         ``failed_text``.
         """
         d = load_config_file(filename)
-        obs = None
-        if "webhook_url" in d:
-            obs = cls(d["webhook_url"])
-        else:
-            raise ValueError(
-                "Slack configuration file must contain " "an entry for 'webhook_url'!"
-            )
-        for k in [
-            "completed_text",
-            "interrupted_text",
-            "failed_text",
-            "bot_name",
-            "icon",
-        ]:
-            if k in d:
-                setattr(obs, k, d[k])
+        obs = cls(d["webhook_url"], d["bot_name"], d["icon"])
+        obs.completed_text = d["completed_text"]
+        obs.interrupted_text = d["interrupted_text"]
+        obs.failed_text = d["failed_text"]
         return obs
 
     def __init__(
