@@ -131,12 +131,8 @@ def test_fs_observer_started_event_increments_run_id(observer, sample_run):
 def test_s3_observer_equality():
     obs_one = S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
     obs_two = S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
-    different_basedir = S3Observer(
-        bucket=BUCKET, basedir="another/dir", region=REGION
-    )
-    different_bucket = S3Observer(
-        bucket="other-bucket", basedir=BASEDIR, region=REGION
-    )
+    different_basedir = S3Observer(bucket=BUCKET, basedir="another/dir", region=REGION)
+    different_bucket = S3Observer(bucket="other-bucket", basedir=BASEDIR, region=REGION)
     assert obs_one == obs_two
     assert obs_one != different_basedir
     assert obs_one != different_bucket
