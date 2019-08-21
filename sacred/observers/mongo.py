@@ -568,7 +568,7 @@ class QueuedMongoObserver(QueueObserver):
                 overwrite=overwrite,
                 priority=priority,
                 client=client,
-                **kwargs
+                **kwargs,
             ),
             interval=interval,
             retry_interval=retry_interval,
