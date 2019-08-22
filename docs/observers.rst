@@ -9,7 +9,7 @@ Observers have a ``priority`` attribute, and are run in order of descending
 priority. The first observer determines the ``_id`` of the run.
 
 
-At the moment there are four observers that are shipped with Sacred:
+At the moment there are five observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
@@ -20,6 +20,9 @@ At the moment there are four observers that are shipped with Sacred:
    to store run information in a JSON file. 
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
+ * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
+   a given prefix/directory
+
 
 But if you want the run information stored some other way, it is easy to write
 your own :ref:`custom_observer`.
@@ -598,6 +601,40 @@ Schema
 ------
 .. image:: images/sql_schema.png
 
+
+.. _s3_observer:
+
+S3 Observer
+============
+The S3Observer stores run information in a designated prefix location within a S3 bucket, either by
+using an existing bucket, or creating a new one. Using the S3Observer requires that boto3 be
+installed, and also that an AWS config file is created with a user's Access Key and Secret Key.
+An easy way to do this is by installing AWS command line tools (``pip install awscli``) and
+running ``aws configure``.
+
+Adding a S3Observer
+--------------------
+
+To create an S3Observer in Python:
+
+.. code-block:: python
+
+    from sacred.observers import S3Observer
+    ex.observers.append(S3Observer(bucket='my-awesome-bucket',
+                                   basedir='/my-project/my-cool-experiment/'))
+
+By default, an S3Observer will use the region that is set in your AWS config file, but if you'd
+prefer to pass in a specific region, you can use the ``region`` parameter of create to do so.
+If you try to create an S3Observer without this parameter, and with region not set in your config
+file, it will error out at the point of the observer object being created.
+
+Directory Structure
+--------------------
+
+S3Observers follow the same conventions as FileStorageObservers when it comes to directory
+structure within a S3 bucket: within ``s3://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
 
 
 Slack Observer
