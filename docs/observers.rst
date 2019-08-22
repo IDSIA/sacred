@@ -216,7 +216,7 @@ You can, of course, also add it from code like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs'))
+    ex.observers.append(FileStorageObserver('my_runs'))
 
 
 Directory Structure
@@ -294,7 +294,7 @@ the FileStorageObserver like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs', template='/custom/template.txt'))
+    ex.observers.append(FileStorageObserver('my_runs', template='/custom/template.txt'))
 
 The FileStorageObserver will then render that template into a
 ``report.html``/``report.txt`` file in the respective run directory.
