@@ -195,7 +195,13 @@ class FileStorageObserver(RunObserver):
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, target_name))
+        target_path = Path(self.dir) / target_name
+        if target_path.exists():
+            error_message = "File {} cannot be copied to {} since a file " \
+                            "already exists at that location."
+            raise RuntimeError(error_message.format(filename, target_path))
+        else:
+            copyfile(filename, target_path)
 
     def save_cout(self):
         with open(os.path.join(self.dir, "cout.txt"), "ab") as f:

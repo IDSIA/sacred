@@ -281,6 +281,18 @@ def test_fs_observer_artifact_event(dir_obs, sample_run, tmpfile):
     assert run["artifacts"][0] == artifact.relto(run_dir)
 
 
+def test_fs_observer_artifact_event_no_file_overwrite(dir_obs, sample_run,
+                                                      tmpfile):
+    basedir, obs = dir_obs
+    _id = obs.started_event(**sample_run)
+    run_dir = basedir.join(_id)
+
+    obs.artifact_event("my_artifact.py", tmpfile.name)
+
+    with pytest.raises(RuntimeError):
+        obs.artifact_event("my_artifact.py", tmpfile.name)
+
+
 def test_fs_observer_resource_event(dir_obs, sample_run, tmpfile):
     basedir, obs = dir_obs
     _id = obs.started_event(**sample_run)
