@@ -31,7 +31,7 @@ class Run:
         post_run_hooks,
         captured_out_filter=None,
         sorted_ingredients=None,
-        nest_ingredients=False
+        nest_ingredients=False,
     ):
 
         self._id = None
@@ -341,9 +341,14 @@ class Run:
             )
             if self._id is None:
                 self._id = _id
-            if observer.__class__.__name__ == 'FileStorageObserver' and self.nest_ingredients:
+            if (
+                observer.__class__.__name__ == "FileStorageObserver"
+                and self.nest_ingredients
+            ):
                 for ingredient in self.sorted_ingredients:
-                    ingredient_observer_dir = os.path.join(observer.dir, ingredient.path)
+                    ingredient_observer_dir = os.path.join(
+                        observer.dir, ingredient.path
+                    )
                     new_observer = FileStorageObserver.create(ingredient_observer_dir)
                     ingredient.observers.append(new_observer)
             # do not catch any exceptions on startup:
