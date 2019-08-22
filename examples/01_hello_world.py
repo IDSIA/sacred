@@ -33,4 +33,4 @@ ex = Experiment()
 # This function should be executed so we are decorating it with @ex.automain
 @ex.automain
 def main():
-    print('Hello world!')
+    print("Hello world!")

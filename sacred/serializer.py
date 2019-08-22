@@ -7,7 +7,7 @@ import json as _json
 
 from sacred import optional as opt
 
-__all__ = ('flatten', 'restore')
+__all__ = ("flatten", "restore")
 
 
 # class DatetimeHandler(BaseHandler):
@@ -25,8 +25,8 @@ if opt.has_numpy:
 
     class NumpyArrayHandler(BaseHandler):
         def flatten(self, obj, data):
-            data['values'] = obj.tolist()
-            data['dtype'] = str(obj.dtype)
+            data["values"] = obj.tolist()
+            data["dtype"] = str(obj.dtype)
             return data
 
         def restore(self, obj):
@@ -40,9 +40,24 @@ if opt.has_numpy:
             return obj
 
     NumpyArrayHandler.handles(np.ndarray)
-    for t in [np.bool_, np.int_, np.float_, np.intc, np.intp, np.int8,
-              np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32,
-              np.uint64, np.float16, np.float32, np.float64]:
+    for t in [
+        np.bool_,
+        np.int_,
+        np.float_,
+        np.intc,
+        np.intp,
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.uint8,
+        np.uint16,
+        np.uint32,
+        np.uint64,
+        np.float16,
+        np.float32,
+        np.float64,
+    ]:
         NumpyGenericHandler.handles(t)
 
 
@@ -52,19 +67,18 @@ if opt.has_pandas:
     class PandasDataframeHandler(BaseHandler):
         def flatten(self, obj, data):
             # TODO: this is slow
-            data['values'] = json.loads(obj.to_json())
-            data['dtypes'] = {k: str(v) for k, v in dict(obj.dtypes).items()}
+            data["values"] = json.loads(obj.to_json())
+            data["dtypes"] = {k: str(v) for k, v in dict(obj.dtypes).items()}
             return data
 
         def restore(self, obj):
             # TODO: get rid of unnecessary json.dumps
-            return pd.read_json(json.dumps(obj['values']),
-                                dtype=obj['dtypes'])
+            return pd.read_json(json.dumps(obj["values"]), dtype=obj["dtypes"])
 
     PandasDataframeHandler.handles(pd.DataFrame)
 
-json.set_encoder_options('simplejson', sort_keys=True, indent=4)
-json.set_encoder_options('demjson', compactly=False)
+json.set_encoder_options("simplejson", sort_keys=True, indent=4)
+json.set_encoder_options("demjson", compactly=False)
 
 
 def flatten(obj):

@@ -5,9 +5,7 @@ from sklearn import svm, datasets, model_selection
 
 ex = Experiment("svm")
 
-ex.observers.append(
-    FileStorageObserver.create("my_runs")
-)
+ex.observers.append(FileStorageObserver("my_runs"))
 
 
 @ex.config  # Configuration is defined through local variables.
@@ -26,7 +24,9 @@ def get_model(C, gamma, kernel):
 @ex.automain  # Using automain to enable command line integration.
 def run():
     X, y = datasets.load_breast_cancer(return_X_y=True)
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(
+        X, y, test_size=0.2
+    )
     clf = get_model()  # Parameters are injected automatically.
     clf.fit(X_train, y_train)
     return clf.score(X_test, y_test)
