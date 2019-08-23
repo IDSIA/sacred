@@ -296,20 +296,19 @@ class Run:
         )
         self.run_logger.info("Queuing-up command '%s'", command)
         for observer in self.observers:
-            if hasattr(observer, "queued_event"):
-                _id = observer.queued_event(
-                    ex_info=self.experiment_info,
-                    command=command,
-                    host_info=self.host_info,
-                    queue_time=queue_time,
-                    config=self.config,
-                    meta_info=self.meta_info,
-                    _id=self._id,
-                )
-                if self._id is None:
-                    self._id = _id
-                # do not catch any exceptions on startup:
-                # the experiment SHOULD fail if any of the observers fails
+            _id = observer.queued_event(
+                ex_info=self.experiment_info,
+                command=command,
+                host_info=self.host_info,
+                queue_time=queue_time,
+                config=self.config,
+                meta_info=self.meta_info,
+                _id=self._id,
+            )
+            if self._id is None:
+                self._id = _id
+            # do not catch any exceptions on startup:
+            # the experiment SHOULD fail if any of the observers fails
 
         if self._id is None:
             self.run_logger.info("Queued")
@@ -324,20 +323,19 @@ class Run:
         )
         self.run_logger.info("Running command '%s'", command)
         for observer in self.observers:
-            if hasattr(observer, "started_event"):
-                _id = observer.started_event(
-                    ex_info=self.experiment_info,
-                    command=command,
-                    host_info=self.host_info,
-                    start_time=self.start_time,
-                    config=self.config,
-                    meta_info=self.meta_info,
-                    _id=self._id,
-                )
-                if self._id is None:
-                    self._id = _id
-                # do not catch any exceptions on startup:
-                # the experiment SHOULD fail if any of the observers fails
+            _id = observer.started_event(
+                ex_info=self.experiment_info,
+                command=command,
+                host_info=self.host_info,
+                start_time=self.start_time,
+                config=self.config,
+                meta_info=self.meta_info,
+                _id=self._id,
+            )
+            if self._id is None:
+                self._id = _id
+            # do not catch any exceptions on startup:
+            # the experiment SHOULD fail if any of the observers fails
         if self._id is None:
             self.run_logger.info("Started")
         else:
@@ -417,7 +415,7 @@ class Run:
             )
 
     def _safe_call(self, obs, method, **kwargs):
-        if obs not in self._failed_observers and hasattr(obs, method):
+        if obs not in self._failed_observers:
             try:
                 getattr(obs, method)(**kwargs)
             except Exception as e:
@@ -427,14 +425,13 @@ class Run:
                 )
 
     def _final_call(self, observer, method, **kwargs):
-        if hasattr(observer, method):
-            try:
-                getattr(observer, method)(**kwargs)
-            except Exception:
-                # Feels dirty to catch all exceptions, but it is just for
-                # finishing up, so we don't want one observer to kill the
-                # others
-                self.run_logger.error(tb.format_exc())
+        try:
+            getattr(observer, method)(**kwargs)
+        except Exception:
+            # Feels dirty to catch all exceptions, but it is just for
+            # finishing up, so we don't want one observer to kill the
+            # others
+            self.run_logger.error(tb.format_exc())
 
     def _wait_for_observers(self):
         """Block until all observers finished processing."""

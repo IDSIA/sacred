@@ -8,6 +8,7 @@ import re
 import sys
 import time
 from tempfile import NamedTemporaryFile
+import warnings
 
 import sacred.optional as opt
 from sacred.commandline_options import CommandLineOption
@@ -66,8 +67,16 @@ class MongoObserver(RunObserver):
     VERSION = "MongoObserver-0.7.0"
 
     @classmethod
-    def create(
-        cls,
+    def create(cls, *args, **kwargs):
+        warnings.warn(
+            "MongoObserver.create(...) is deprecated. "
+            "Please use MongoObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(*args, **kwargs)
+
+    def __init__(
+        self,
         url=None,
         db_name="sacred",
         collection="runs",
@@ -115,7 +124,7 @@ class MongoObserver(RunObserver):
         runs_collection = database[collection]
         metrics_collection = database["metrics"]
         fs = gridfs.GridFS(database)
-        return cls(
+        self.initialize(
             runs_collection,
             fs,
             overwrite=overwrite,
@@ -124,7 +133,7 @@ class MongoObserver(RunObserver):
             priority=priority,
         )
 
-    def __init__(
+    def initialize(
         self,
         runs_collection,
         fs,
@@ -149,6 +158,12 @@ class MongoObserver(RunObserver):
         self.run_entry = None
         self.priority = priority
         self.failure_dir = failure_dir
+
+    @classmethod
+    def create_from(cls, *args, **kwargs):
+        self = cls.__new__(cls)  # skip __init__ call
+        self.initialize(*args, **kwargs)
+        return self
 
     def queued_event(
         self, ex_info, command, host_info, queue_time, config, meta_info, _id
@@ -447,7 +462,7 @@ class MongoDbOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         kwargs = cls.parse_mongo_db_arg(args)
-        mongo = MongoObserver.create(**kwargs)
+        mongo = MongoObserver(**kwargs)
         run.observers.append(mongo)
 
     @classmethod
@@ -548,8 +563,16 @@ class QueueCompatibleMongoObserver(MongoObserver):
 
 class QueuedMongoObserver(QueueObserver):
     @classmethod
-    def create(
-        cls,
+    def create(cls, *args, **kwargs):
+        warnings.warn(
+            "QueuedMongoObserver.create(...) is deprecated. "
+            "Please use QueuedMongoObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(*args, **kwargs)
+
+    def __init__(
+        self,
         interval=20,
         retry_interval=10,
         url=None,
@@ -560,8 +583,8 @@ class QueuedMongoObserver(QueueObserver):
         client=None,
         **kwargs
     ):
-        return cls(
-            QueueCompatibleMongoObserver.create(
+        super().__init__(
+            QueueCompatibleMongoObserver(
                 url=url,
                 db_name=db_name,
                 collection=collection,

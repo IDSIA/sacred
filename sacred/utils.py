@@ -363,33 +363,28 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     non-dictionary values (sorted by keys), then over the rest
     (sorted by keys), providing full dotted paths for every leaf.
     """
-    if manually_sorted_keys is None:
-        manually_sorted_keys = []
-    for key in manually_sorted_keys:
-        if key in dictionary:
-            yield key, dictionary[key]
+    manually_sorted_keys = manually_sorted_keys or []
 
-    single_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (not dictionary[key] or not isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(single_line_keys):
-        yield key, dictionary[key]
+    def get_order(key_and_value):
+        key, value = key_and_value
+        if key in manually_sorted_keys:
+            return 0, manually_sorted_keys.index(key)
+        elif not is_non_empty_dict(value):
+            return 1, key
+        else:
+            return 2, key
 
-    multi_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (dictionary[key] and isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(multi_line_keys):
-        yield key, PATHCHANGE
-        for k, val in iterate_flattened_separately(
-            dictionary[key], manually_sorted_keys
-        ):
-            yield join_paths(key, k), val
+    for key, value in sorted(dictionary.items(), key=get_order):
+        if is_non_empty_dict(value):
+            yield key, PATHCHANGE
+            for k, val in iterate_flattened_separately(value, manually_sorted_keys):
+                yield join_paths(key, k), val
+        else:
+            yield key, value
+
+
+def is_non_empty_dict(python_object):
+    return isinstance(python_object, dict) and python_object
 
 
 def iterate_flattened(d):
@@ -557,8 +552,6 @@ def format_sacred_error(e, short_usage):
     if e.print_traceback:
         lines.append(format_filtered_stacktrace(e.filter_traceback))
     else:
-        import traceback as tb
-
         lines.append("\n".join(tb.format_exception_only(type(e), e)))
     return "\n".join(lines)
 

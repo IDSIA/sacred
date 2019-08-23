@@ -12,7 +12,7 @@ def ex():
 @pytest.mark.skipif(has_sqlalchemy, reason="We are testing the import error.")
 def test_importerror_sql(ex):
     with pytest.raises(ImportError):
-        ex.observers.append(SqlObserver.create("some_uri"))
+        ex.observers.append(SqlObserver("some_uri"))
 
         @ex.config
         def cfg():

@@ -30,7 +30,7 @@ def mongo_obs(monkeypatch):
     monkeypatch.setattr(pymongo, "MongoClient", lambda *args, **kwargs: client)
     monkeypatch.setattr(gridfs, "GridFS", lambda d: mock.MagicMock())
 
-    return QueuedMongoObserver.create(interval=0.01, retry_interval=0.01)
+    return QueuedMongoObserver(interval=0.01, retry_interval=0.01)
 
 
 @pytest.fixture()
@@ -91,7 +91,7 @@ def test_mongo_observer_equality(mongo_obs):
     mongo_obs.join()
 
     fs = mock.MagicMock()
-    m = MongoObserver(runs, fs)
+    m = MongoObserver.create_from(runs, fs)
     assert mongo_obs == m
     assert not mongo_obs != m
 
