@@ -23,24 +23,7 @@ class SlackObserver(RunObserver):
         ``bot_name``, ``icon``, ``completed_text``, ``interrupted_text``, and
         ``failed_text``.
         """
-        d = load_config_file(filename)
-        obs = None
-        if "webhook_url" in d:
-            obs = cls(d["webhook_url"])
-        else:
-            raise ValueError(
-                "Slack configuration file must contain " "an entry for 'webhook_url'!"
-            )
-        for k in [
-            "completed_text",
-            "interrupted_text",
-            "failed_text",
-            "bot_name",
-            "icon",
-        ]:
-            if k in d:
-                setattr(obs, k, d[k])
-        return obs
+        return cls(**load_config_file(filename))
 
     def __init__(
         self,
@@ -48,18 +31,21 @@ class SlackObserver(RunObserver):
         bot_name="sacred-bot",
         icon=":angel:",
         priority=DEFAULT_SLACK_PRIORITY,
+        completed_text=None,
+        interruped_text=None,
+        failed_text=None,
     ):
         self.webhook_url = webhook_url
         self.bot_name = bot_name
         self.icon = icon
-        self.completed_text = (
+        self.completed_text = completed_text or (
             ":white_check_mark: *{experiment[name]}* "
             "completed after _{elapsed_time}_ with result=`{result}`"
         )
-        self.interrupted_text = (
+        self.interrupted_text = interruped_text or (
             ":warning: *{experiment[name]}* " "interrupted after _{elapsed_time}_"
         )
-        self.failed_text = (
+        self.failed_text = failed_text or (
             ":x: *{experiment[name]}* failed after " "_{elapsed_time}_ with `{error}`"
         )
         self.run = None
