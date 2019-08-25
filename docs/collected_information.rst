@@ -56,7 +56,7 @@ It can also be inspected using the :ref:`print_dependencies` command.
 Version Control
 ---------------
 If the experiment is part of a Git repository, Sacred will also
-collect the url of the repository, the current commit hash and if the
+collect the url of the repository, the current commit hash and whether the
 repository is dirty (has uncommitted changes).
 
 This information can be inspected using the :ref:`print_dependencies` command.
