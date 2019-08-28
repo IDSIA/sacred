@@ -32,7 +32,7 @@ class SlackObserver(RunObserver):
         icon=":angel:",
         priority=DEFAULT_SLACK_PRIORITY,
         completed_text=None,
-        interruped_text=None,
+        interrupted_text=None,
         failed_text=None,
     ):
         self.webhook_url = webhook_url
@@ -42,7 +42,7 @@ class SlackObserver(RunObserver):
             ":white_check_mark: *{experiment[name]}* "
             "completed after _{elapsed_time}_ with result=`{result}`"
         )
-        self.interrupted_text = interruped_text or (
+        self.interrupted_text = interrupted_text or (
             ":warning: *{experiment[name]}* " "interrupted after _{elapsed_time}_"
         )
         self.failed_text = failed_text or (
