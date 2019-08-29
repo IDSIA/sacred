@@ -3,6 +3,7 @@
 
 import json
 from threading import Lock
+import warnings
 
 from sacred.commandline_options import CommandLineOption
 from sacred.observers.base import RunObserver
@@ -17,6 +18,14 @@ DEFAULT_SQL_PRIORITY = 40
 class SqlObserver(RunObserver):
     @classmethod
     def create(cls, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
+        warnings.warn(
+            "SqlObserver.create(...) is deprecated. Please use"
+            " SqlObserver(...) instead.",
+            DeprecationWarning,
+        )
+        return cls(url, echo, priority)
+
+    def __init__(self, url, echo=False, priority=DEFAULT_SQL_PRIORITY):
         from sqlalchemy.orm import sessionmaker, scoped_session
         import sqlalchemy as sa
 
@@ -24,14 +33,22 @@ class SqlObserver(RunObserver):
         session_factory = sessionmaker(bind=engine)
         # make session thread-local to avoid problems with sqlite (see #275)
         session = scoped_session(session_factory)
-        return cls(engine, session, priority)
-
-    def __init__(self, engine, session, priority=DEFAULT_SQL_PRIORITY):
         self.engine = engine
         self.session = session
         self.priority = priority
         self.run = None
         self.lock = Lock()
+
+    @classmethod
+    def create_from(cls, engine, session, priority=DEFAULT_SQL_PRIORITY):
+        """Instantiate a SqlObserver with an existing engine and session"""
+        self = cls.__new__(cls)  # skip __init__ call
+        self.engine = engine
+        self.session = session
+        self.priority = priority
+        self.run = None
+        self.lock = Lock()
+        return self
 
     def started_event(
         self, ex_info, command, host_info, start_time, config, meta_info, _id

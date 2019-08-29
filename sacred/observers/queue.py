@@ -61,6 +61,7 @@ class QueueObserver(RunObserver):
             )
 
     def _run(self):
+        """Empty the queue every interval."""
         while not self._queue.empty():
             try:
                 event = self._queue.get()
@@ -70,12 +71,10 @@ class QueueObserver(RunObserver):
                 pass
             else:
                 try:
-                    # method = getattr(self._covered_observer, event.name)
                     method = getattr(self._covered_observer, event.name)
                 except NameError:
-                    # covered observer does not implement event handler
-                    # for the event, so just
-                    # discard the message.
+                    # The covered observer does not implement an event handler
+                    # for the event, so just discard the message.
                     self._queue.task_done()
                 else:
                     while True:

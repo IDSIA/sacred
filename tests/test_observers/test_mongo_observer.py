@@ -25,13 +25,13 @@ T3 = datetime.datetime(1999, 5, 5, 5, 10, 5)
 def test_create_should_raise_error_on_non_pymongo_client():
     client = mongomock.MongoClient()
     with pytest.raises(ValueError):
-        MongoObserver.create(client=client)
+        MongoObserver(client=client)
 
 
 def test_create_should_raise_error_on_both_client_and_url():
     real_client = pymongo.MongoClient()
     with pytest.raises(ValueError, match="Cannot pass both a client and a url."):
-        MongoObserver.create(client=real_client, url="mymongourl")
+        MongoObserver(client=real_client, url="mymongourl")
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def mongo_obs():
     runs = db.runs
     metrics = db.metrics
     fs = mock.MagicMock()
-    return MongoObserver(runs, fs, metrics_collection=metrics)
+    return MongoObserver.create_from(runs, fs, metrics_collection=metrics)
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def failing_mongo_observer():
     runs = db.runs
     metrics = db.metrics
     fs = mock.MagicMock()
-    return MongoObserver(runs, fs, metrics_collection=metrics)
+    return MongoObserver.create_from(runs, fs, metrics_collection=metrics)
 
 
 @pytest.fixture()
@@ -109,7 +109,7 @@ def test_mongo_observer_started_event_uses_given_id(mongo_obs, sample_run):
 def test_mongo_observer_equality(mongo_obs):
     runs = mongo_obs.runs
     fs = mock.MagicMock()
-    m = MongoObserver(runs, fs)
+    m = MongoObserver.create_from(runs, fs)
     assert mongo_obs == m
     assert not mongo_obs != m
 

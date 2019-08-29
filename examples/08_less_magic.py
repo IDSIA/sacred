@@ -5,7 +5,7 @@ from sklearn import svm, datasets, model_selection
 
 ex = Experiment("svm")
 
-ex.observers.append(FileStorageObserver.create("my_runs"))
+ex.observers.append(FileStorageObserver("my_runs"))
 ex.add_config(
     {  # Configuration is explicitly defined as dictionary.
         "C": 1.0,

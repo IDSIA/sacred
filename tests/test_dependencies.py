@@ -108,34 +108,6 @@ def test_get_py_file_if_possible_with_pyc_but_nonexistent_py_file():
     assert get_py_file_if_possible("doesnotexist.pyc") == "doesnotexist.pyc"
 
 
-versions = [
-    ("0.7.2", "0.7.2"),
-    ("1.0", "1.0"),
-    ("foobar", None),
-    (10, None),
-    ((2, 6), "2.6"),
-    ((1, 4, 8), "1.4.8"),
-]
-
-
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_version__(version, expected):
-    mod = mock.Mock(spec=[], __version__=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_version(version, expected):
-    mod = mock.Mock(spec=[], version=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
-@pytest.mark.parametrize("version,expected", versions)
-def test_package_dependency_get_version_heuristic_VERSION(version, expected):
-    mod = mock.Mock(spec=[], VERSION=version)
-    assert PackageDependency.get_version_heuristic(mod) == expected
-
-
 def test_package_dependency_create_no_version():
     mod = mock.Mock(spec=[], __name__="testmod")
     pd = PackageDependency.create(mod)

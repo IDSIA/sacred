@@ -8,7 +8,6 @@ from sacred.utils import (
     convert_to_nested_dict,
     get_by_dotted_path,
     is_prefix,
-    iter_path_splits,
     iter_prefixes,
     iterate_flattened,
     iterate_flattened_separately,
@@ -19,7 +18,6 @@ from sacred.utils import (
     convert_camel_case_to_snake_case,
     apply_backspaces_and_linefeeds,
     module_exists,
-    module_is_imported,
     module_is_in_cache,
     get_package_version,
     parse_version,
@@ -76,14 +74,6 @@ def test_get_by_dotted_path():
     assert get_by_dotted_path({"a": 12}, "") == {"a": 12}
     assert get_by_dotted_path({"foo": {"a": 12}}, "foo.a") == 12
     assert get_by_dotted_path({"foo": {"a": 12}}, "foo.b") is None
-
-
-def test_iter_path_splits():
-    assert list(iter_path_splits("foo.bar.baz")) == [
-        ("", "foo.bar.baz"),
-        ("foo", "bar.baz"),
-        ("foo.bar", "baz"),
-    ]
 
 
 def test_iter_prefixes():
@@ -196,19 +186,6 @@ def test_module_is_in_cache():
     assert module_is_in_cache("pytest")
     assert module_is_in_cache("pkgutil")
     assert not module_is_in_cache("does_not_even_exist")
-
-
-def test_module_is_imported():
-    globs = globals()
-    assert module_is_imported("pytest", scope=globs)
-    assert not module_is_imported("pkgutil", scope=globs)
-    assert not module_is_imported("does_not_even_exist", scope=globs)
-
-
-def test_module_is_imported_uses_caller_globals_by_default():
-    assert module_is_imported("pytest")
-    assert not module_is_imported("pkgutil")
-    assert not module_is_imported("does_not_even_exist")
 
 
 def test_get_package_version():

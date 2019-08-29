@@ -38,7 +38,7 @@ def sample_run():
 @pytest.fixture()
 def dir_obs(tmpdir):
     basedir = tmpdir.join("file_storage")
-    return basedir, FileStorageObserver.create(basedir.strpath)
+    return basedir, FileStorageObserver(basedir.strpath)
 
 
 @pytest.fixture
@@ -300,7 +300,7 @@ def test_fs_observer_resource_event(dir_obs, sample_run, tmpfile):
 
 def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run, tmpfile):
     basedir, obs = dir_obs
-    obs2 = FileStorageObserver.create(obs.basedir)
+    obs2 = FileStorageObserver(obs.basedir)
     obs.started_event(**sample_run)
 
     obs.resource_event(tmpfile.name)
@@ -322,7 +322,7 @@ def test_fs_observer_resource_event_does_not_duplicate(dir_obs, sample_run, tmpf
 
 def test_fs_observer_equality(dir_obs):
     basedir, obs = dir_obs
-    obs2 = FileStorageObserver.create(obs.basedir)
+    obs2 = FileStorageObserver(obs.basedir)
     assert obs == obs2
     assert not obs != obs2
 
@@ -421,8 +421,8 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
 
 
 def test_observer_equality(tmpdir):
-    observer_1 = FileStorageObserver.create(str(tmpdir / "a"))
-    observer_2 = FileStorageObserver.create(str(tmpdir / "b"))
-    observer_3 = FileStorageObserver.create(str(tmpdir / "a"))
+    observer_1 = FileStorageObserver(str(tmpdir / "a"))
+    observer_2 = FileStorageObserver(str(tmpdir / "b"))
+    observer_3 = FileStorageObserver(str(tmpdir / "a"))
     assert observer_1 == observer_3
     assert observer_1 != observer_2

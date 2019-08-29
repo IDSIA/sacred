@@ -4,7 +4,6 @@
 import collections
 import contextlib
 import importlib
-import inspect
 import logging
 import pkgutil
 import re
@@ -32,7 +31,6 @@ __all__ = [
     "iterate_flattened_separately",
     "set_by_dotted_path",
     "get_by_dotted_path",
-    "iter_path_splits",
     "iter_prefixes",
     "join_paths",
     "is_prefix",
@@ -365,33 +363,28 @@ def iterate_flattened_separately(dictionary, manually_sorted_keys=None):
     non-dictionary values (sorted by keys), then over the rest
     (sorted by keys), providing full dotted paths for every leaf.
     """
-    if manually_sorted_keys is None:
-        manually_sorted_keys = []
-    for key in manually_sorted_keys:
-        if key in dictionary:
-            yield key, dictionary[key]
+    manually_sorted_keys = manually_sorted_keys or []
 
-    single_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (not dictionary[key] or not isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(single_line_keys):
-        yield key, dictionary[key]
+    def get_order(key_and_value):
+        key, value = key_and_value
+        if key in manually_sorted_keys:
+            return 0, manually_sorted_keys.index(key)
+        elif not is_non_empty_dict(value):
+            return 1, key
+        else:
+            return 2, key
 
-    multi_line_keys = [
-        key
-        for key in dictionary.keys()
-        if key not in manually_sorted_keys
-        and (dictionary[key] and isinstance(dictionary[key], dict))
-    ]
-    for key in sorted(multi_line_keys):
-        yield key, PATHCHANGE
-        for k, val in iterate_flattened_separately(
-            dictionary[key], manually_sorted_keys
-        ):
-            yield join_paths(key, k), val
+    for key, value in sorted(dictionary.items(), key=get_order):
+        if is_non_empty_dict(value):
+            yield key, PATHCHANGE
+            for k, val in iterate_flattened_separately(value, manually_sorted_keys):
+                yield join_paths(key, k), val
+        else:
+            yield key, value
+
+
+def is_non_empty_dict(python_object):
+    return isinstance(python_object, dict) and python_object
 
 
 def iterate_flattened(d):
@@ -452,25 +445,6 @@ def get_by_dotted_path(d, path, default=None):
             return default
         current_option = current_option[p]
     return current_option
-
-
-def iter_path_splits(path):
-    """
-    Iterate over possible splits of a dotted path.
-
-    The first part can be empty the second should not be.
-
-    Example:
-    >>> list(iter_path_splits('foo.bar.baz'))
-    [('',        'foo.bar.baz'),
-     ('foo',     'bar.baz'),
-     ('foo.bar', 'baz')]
-    """
-    split_path = path.split(".")
-    for i in range(len(split_path)):
-        p1 = join_paths(*split_path[:i])
-        p2 = join_paths(*split_path[i:])
-        yield p1, p2
 
 
 def iter_prefixes(path):
@@ -578,8 +552,6 @@ def format_sacred_error(e, short_usage):
     if e.print_traceback:
         lines.append(format_filtered_stacktrace(e.filter_traceback))
     else:
-        import traceback as tb
-
         lines.append("\n".join(tb.format_exception_only(type(e), e)))
     return "\n".join(lines)
 
@@ -697,22 +669,6 @@ def module_is_in_cache(modname):
     return modname in sys.modules
 
 
-def module_is_imported(modname, scope=None):
-    """Checks if a module is imported within the current namespace."""
-    # return early if modname is not even cached
-    if not module_is_in_cache(modname):
-        return False
-
-    if scope is None:  # use globals() of the caller by default
-        scope = inspect.stack()[1][0].f_globals
-
-    for m in scope.values():
-        if isinstance(m, type(sys)) and m.__name__ == modname:
-            return True
-
-    return False
-
-
 def parse_version(version_string):
     """Returns a parsed version string."""
     return version.parse(version_string)
@@ -749,8 +705,7 @@ class IntervalTimer(threading.Thread):
         return stop_event, timer_thread
 
     def __init__(self, event, func, interval=10.0):
-        # TODO use super here.
-        threading.Thread.__init__(self)
+        super().__init__()
         self.stopped = event
         self.func = func
         self.interval = interval
