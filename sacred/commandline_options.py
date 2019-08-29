@@ -10,6 +10,7 @@ Some further options that add observers to the run are defined alongside those.
 import warnings
 from typing import Callable
 import inspect
+import re
 
 from sacred.run import Run
 from sacred.commands import print_config
