@@ -22,7 +22,7 @@ This can be especially useful together with the  :ref:`cmdline_enforce_clean`
 experiment immediately fails with an error if started on a dirty repository.
 
 .. note::
-    Git integration can be disabled with ``save_git_commit`` flag in the
+    Git integration can be disabled with ``save_git_info`` flag in the
     ``Experiment`` or ``Ingredient`` constructor.
 
 

@@ -64,7 +64,7 @@ But it is also available from ``run.experiment_info['repositories']``, as a
 list of dictionaries of the form
 ``{'url': URL, 'commit': COMMIT_HASH, 'dirty': True}``.
 
-To disable this, pass ``save_git_commit=False`` to the ``Experiement``
+To disable this, pass ``save_git_info=False`` to the ``Experiement``
 or ``Ingredient`` constructor.
 
 
