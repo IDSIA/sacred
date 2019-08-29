@@ -659,6 +659,9 @@ of adding a SlackObserver is from a configuration file:
     slack_obs = SlackObserver.from_config('slack.json')
     ex.observers.append(slack_obs)
 
+    # You can also instantiate it directly without a config file:
+     slack_obs = SlackObserver(my_webhook_url)
+
 Where ``slack.json`` at least specifies the ``webhook_url``::
 
     # Content of file 'slack.json':
