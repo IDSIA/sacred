@@ -51,7 +51,7 @@ class Ingredient:
         interactive: bool = False,
         _caller_globals: Optional[dict] = None,
         base_dir: Optional[PathType] = None,
-        save_git_commit: bool = True,
+        save_git_info: bool = True,
     ):
         self.path = path
         self.config_hooks = []
@@ -68,14 +68,14 @@ class Ingredient:
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
         mainfile_dir = os.path.dirname(_caller_globals.get("__file__", "."))
         self.base_dir = os.path.abspath(base_dir or mainfile_dir)
-        self.save_git_commit = save_git_commit
+        self.save_git_info = save_git_info
         self.doc = _caller_globals.get("__doc__", "")
         (
             self.mainfile,
             self.sources,
             self.dependencies,
         ) = gather_sources_and_dependencies(
-            _caller_globals, save_git_commit, self.base_dir
+            _caller_globals, save_git_info, self.base_dir
         )
         if self.mainfile is None and not interactive:
             raise RuntimeError(
@@ -280,7 +280,7 @@ class Ingredient:
         :param filename: filename of the source to be added as dependency
         :type filename: str
         """
-        self.sources.add(Source.create(filename, self.save_git_commit))
+        self.sources.add(Source.create(filename, self.save_git_info))
 
     def add_package_dependency(self, package_name, version):
         """

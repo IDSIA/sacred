@@ -142,7 +142,7 @@ def test_gather_sources_and_dependencies():
     from tests.dependency_example import some_func
 
     main, sources, deps = gather_sources_and_dependencies(
-        some_func.__globals__, save_git_commit=False
+        some_func.__globals__, save_git_info=False
     )
     assert isinstance(main, Source)
     assert isinstance(sources, set)

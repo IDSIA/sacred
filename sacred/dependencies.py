@@ -398,7 +398,7 @@ def get_digest(filename):
         return h.hexdigest()
 
 
-def get_commit_if_possible(filename, save_git_commit):
+def get_commit_if_possible(filename, save_git_info):
     """Try to retrieve VCS information for a given file.
 
     Currently only supports git using the gitpython package.
@@ -416,7 +416,7 @@ def get_commit_if_possible(filename, save_git_commit):
         is_dirty: bool
             True if there are uncommitted changes in the repository
     """
-    if save_git_commit is False:
+    if save_git_info is False:
         return None, None, None
 
     directory = os.path.dirname(filename)
@@ -443,12 +443,12 @@ class Source:
         self.is_dirty = isdirty
 
     @staticmethod
-    def create(filename, save_git_commit=True):
+    def create(filename, save_git_info=True):
         if not filename or not os.path.exists(filename):
             raise ValueError('invalid filename or file not found "{}"'.format(filename))
 
         main_file = get_py_file_if_possible(os.path.abspath(filename))
-        repo, commit, is_dirty = get_commit_if_possible(main_file, save_git_commit)
+        repo, commit, is_dirty = get_commit_if_possible(main_file, save_git_info)
         return Source(main_file, get_digest(main_file), repo, commit, is_dirty)
 
     def to_json(self, base_dir=None):
@@ -577,14 +577,14 @@ def is_local_source(filename, modname, experiment_path):
     return all([p == m for p, m in zip(reversed(abs_path_parts), reversed(mod_parts))])
 
 
-def get_main_file(globs, save_git_commit):
+def get_main_file(globs, save_git_info):
     filename = globs.get("__file__")
 
     if filename is None:
         experiment_path = os.path.abspath(os.path.curdir)
         main = None
     else:
-        main = Source.create(globs.get("__file__"), save_git_commit)
+        main = Source.create(globs.get("__file__"), save_git_info)
         experiment_path = os.path.dirname(main.filename)
     return experiment_path, main
 
@@ -628,7 +628,7 @@ def iterate_sys_modules():
             yield modname, mod
 
 
-def get_sources_from_modules(module_iterator, base_path, save_git_commit):
+def get_sources_from_modules(module_iterator, base_path, save_git_info):
     sources = set()
     for modname, mod in module_iterator:
         # hasattr doesn't work with python extensions
@@ -637,7 +637,7 @@ def get_sources_from_modules(module_iterator, base_path, save_git_commit):
 
         filename = os.path.abspath(mod.__file__)
         if filename not in sources and is_local_source(filename, modname, base_path):
-            s = Source.create(filename, save_git_commit)
+            s = Source.create(filename, save_git_info)
             sources.add(s)
     return sources
 
@@ -662,19 +662,19 @@ def get_dependencies_from_modules(module_iterator, base_path):
     return dependencies
 
 
-def get_sources_from_sys_modules(globs, base_path, save_git_commit):
-    return get_sources_from_modules(iterate_sys_modules(), base_path, save_git_commit)
+def get_sources_from_sys_modules(globs, base_path, save_git_info):
+    return get_sources_from_modules(iterate_sys_modules(), base_path, save_git_info)
 
 
-def get_sources_from_imported_modules(globs, base_path, save_git_commit):
+def get_sources_from_imported_modules(globs, base_path, save_git_info):
     return get_sources_from_modules(
-        iterate_imported_modules(globs), base_path, save_git_commit
+        iterate_imported_modules(globs), base_path, save_git_info
     )
 
 
-def get_sources_from_local_dir(globs, base_path, save_git_commit):
+def get_sources_from_local_dir(globs, base_path, save_git_info):
     return {
-        Source.create(filename, save_git_commit)
+        Source.create(filename, save_git_info)
         for filename in iterate_all_python_files(base_path)
     }
 
@@ -711,15 +711,15 @@ dependency_discovery_strategies = {
 }
 
 
-def gather_sources_and_dependencies(globs, save_git_commit, base_dir=None):
+def gather_sources_and_dependencies(globs, save_git_info, base_dir=None):
     """Scan the given globals for modules and return them as dependencies."""
 
-    experiment_path, main = get_main_file(globs, save_git_commit)
+    experiment_path, main = get_main_file(globs, save_git_info)
 
     base_dir = base_dir or experiment_path
 
     gather_sources = source_discovery_strategies[SETTINGS["DISCOVER_SOURCES"]]
-    sources = gather_sources(globs, base_dir, save_git_commit)
+    sources = gather_sources(globs, base_dir, save_git_info)
     if main is not None:
         sources.add(main)
 
