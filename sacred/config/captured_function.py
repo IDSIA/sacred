@@ -5,6 +5,7 @@ import time
 from datetime import timedelta
 
 import wrapt
+from sacred.settings import SETTINGS
 from sacred.config.custom_containers import fallback_dict
 from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
@@ -14,7 +15,9 @@ from sacred.utils import ConfigError
 def create_captured_function(function, prefix=None):
     sig = Signature(function)
     function.signature = sig
-    function.uses_randomness = "_seed" in sig.arguments or "_rnd" in sig.arguments
+    function.uses_randomness = (
+        "_seed" in sig.arguments or "_rnd" in sig.arguments
+    ) and SETTINGS.AUTOMATIC_SEEDING
     function.logger = None
     function.config = {}
     function.rnd = None

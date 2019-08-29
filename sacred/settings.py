@@ -47,5 +47,6 @@ SETTINGS = munchify(
         "DISCOVER_DEPENDENCIES": "imported",
         # configure how source-files are discovered. [none, imported, sys, dir]
         "DISCOVER_SOURCES": "imported",
+        "AUTOMATIC_SEEDING": True,
     }
 )

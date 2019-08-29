@@ -26,15 +26,32 @@ def create_rnd(seed):
 
 
 def set_global_seed(seed):
-    random.seed(seed)
-    if opt.has_numpy:
-        opt.np.random.seed(seed)
+    set_python_random_seed(seed)
+    set_numpy_seed(seed)
     if module_is_in_cache("tensorflow"):
-        tf = opt.get_tensorflow()
-        tf.set_random_seed(seed)
+        set_tensorflow_seed(seed)
     if module_is_in_cache("torch"):
-        import torch
+        set_pytorch_seed(seed)
 
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
+
+def set_python_random_seed(seed):
+    random.seed(seed)
+
+
+def set_numpy_seed(seed):
+    import numpy as np
+
+    np.random.seed(seed)
+
+
+def set_tensorflow_seed(seed):
+    tf = opt.get_tensorflow()
+    tf.set_random_seed(seed)
+
+
+def set_pytorch_seed(seed):
+    import torch
+
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

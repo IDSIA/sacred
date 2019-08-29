@@ -5,7 +5,9 @@ import datetime
 import os.path
 import sys
 import traceback as tb
+import warnings
 
+import sacred
 from sacred import metrics_logger
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
@@ -218,7 +220,23 @@ class Run:
             self.observers = sorted(self.observers, key=lambda x: -x.priority)
 
         self.warn_if_unobserved()
-        set_global_seed(self.config["seed"])
+        if sacred.settings.SETTINGS.AUTOMATIC_SEEDING:
+            set_global_seed(self.config["seed"])
+            warnings.warn(
+                "The use of automatic seeding is deprecated "
+                "and this functionality will be removed in a future versions. "
+                "Please do the seeding yourself explicitly by adding a seed argument "
+                "in the config and then use "
+                "sacred.set_python_random_seed(seed_value), "
+                "sacred.set_numpy_seed(seed_value), "
+                "sacred.set_tensorflow_seed(seed_value) or "
+                "sacred.set_pytorch_seed(seed_value). "
+                "When this is done, please turn off "
+                "the global automatic seeding by using "
+                "`sacred.settings.SETTINGS.AUTOMATIC_SEEDING = False`."
+                "In the future, this flag will default to False.",
+                DeprecationWarning,
+            )
 
         if self.capture_mode is None and not self.observers:
             capture_mode = "no"
