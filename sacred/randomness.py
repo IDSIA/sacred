@@ -27,7 +27,8 @@ def create_rnd(seed):
 
 def set_global_seed(seed):
     set_python_random_seed(seed)
-    set_numpy_seed(seed)
+    if opt.has_numpy:
+        set_numpy_seed(seed)
     if module_is_in_cache("tensorflow"):
         set_tensorflow_seed(seed)
     if module_is_in_cache("torch"):
