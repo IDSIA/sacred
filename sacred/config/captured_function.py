@@ -8,7 +8,7 @@ import wrapt
 from sacred.settings import SETTINGS
 from sacred.config.custom_containers import fallback_dict
 from sacred.config.signature import Signature
-from sacred.randomness import create_rnd, get_seed
+from sacred.randomness.legacy import create_rnd, get_seed
 from sacred.utils import ConfigError
 
 
