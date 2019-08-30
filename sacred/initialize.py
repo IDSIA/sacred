@@ -15,7 +15,7 @@ from sacred.config import (
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.custom_containers import make_read_only
 from sacred.host_info import get_host_info
-from sacred.randomness.legacy import create_rnd, get_seed
+from sacred.random.legacy import create_rnd, get_seed
 from sacred.run import Run
 from sacred.utils import (
     convert_to_nested_dict,
