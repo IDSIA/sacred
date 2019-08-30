@@ -186,15 +186,17 @@ class Scaffold:
     def finalize_initialization(self, run):
         # look at seed again, because it might have changed during the
         # configuration process
-        if "seed" in self.config:
-            self.seed = self.config["seed"]
-        self.rnd = create_rnd(self.seed)
+        if SETTINGS.AUTOMATIC_SEEDING:
+            if "seed" in self.config:
+                self.seed = self.config["seed"]
+            self.rnd = create_rnd(self.seed)
 
         for cfunc in self._captured_functions:
             # Setup the captured function
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            seed = get_seed(self.rnd)
-            cfunc.rnd = create_rnd(seed)
+            if SETTINGS.AUTOMATIC_SEEDING:
+                seed = get_seed(self.rnd)
+                cfunc.rnd = create_rnd(seed)
             cfunc.run = run
             cfunc.config = get_by_dotted_path(
                 self.get_fixture(), cfunc.prefix, default={}
@@ -445,7 +447,8 @@ def create_run(
 
     # Phase 4: finalize seeding
     for scaffold in reversed(list(scaffolding.values())):
-        scaffold.set_up_seed()  # partially recursive
+        if SETTINGS.AUTOMATIC_SEEDING:
+            scaffold.set_up_seed()  # partially recursive
 
     config = get_configuration(scaffolding)
     config_modifications = get_config_modifications(scaffolding)
