@@ -1,6 +1,5 @@
 import random
 
-import sacred
 import sacred.optional as opt
 from sacred.utils import module_is_in_cache
 from sacred import randomness
@@ -26,10 +25,10 @@ def create_rnd(seed):
 
 
 def set_global_seed(seed):
-    sacred.randomness.python.set_seed(seed)
+    randomness.set_python_random_seed(seed)
     if opt.has_numpy:
-        sacred.randomness.numpy.set_seed(seed)
+        randomness.set_numpy_seed(seed)
     if module_is_in_cache("tensorflow"):
-        sacred.randomness.tensorflow.set_seed()
+        randomness.set_tensorflow_seed(seed)
     if module_is_in_cache("torch"):
-        sacred.randomness.torch.set_seed()
+        randomness.set_torch_seed(seed)
