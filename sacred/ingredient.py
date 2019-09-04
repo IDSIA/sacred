@@ -311,7 +311,7 @@ class Ingredient:
 
     def gather_named_configs(
         self,
-    ) -> Generator[Tuple[str, Union[ConfigScope, ConfigDict, str]]]:
+    ) -> Generator[Tuple[str, Union[ConfigScope, ConfigDict, str]], None, None]:
         """Collect all named configs from this ingredient and its sub-ingredients.
 
         Yields
