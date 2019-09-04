@@ -1,4 +1,4 @@
-"""This module defines the Experiment class, which is central to sacred."""
+"""The Experiment class, which is central to sacred."""
 import inspect
 import os.path
 import sys
