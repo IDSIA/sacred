@@ -1,5 +1,4 @@
 """This module defines the Experiment class, which is central to sacred."""
-from typing import Optional
 import inspect
 import os.path
 import sys
@@ -395,7 +394,7 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        filename 
+        filename
             name of the file to be stored as artifact
         name
             optionally set the name of the artifact.
@@ -438,13 +437,13 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        name 
+        name
             The name of the metric, e.g. training.loss
         value
             The measured value
         step
-            The step number (integer), e.g. the iteration number 
-            If not specified, an internal counter for each metric 
+            The step number (integer), e.g. the iteration number
+            If not specified, an internal counter for each metric
             is used, incremented by one.
         """
         # Method added in change https://github.com/chovanecm/sacred/issues/4
