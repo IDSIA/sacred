@@ -31,7 +31,7 @@ class CLIOption:
     ):
 
         assert re.match(r"-\w", short_flag)
-        assert re.match(r"--[\w-]+", long_flag)
+        assert re.match(r"--[\w-]+\w$", long_flag)
         self.apply_function = apply_function
         self.short_flag = short_flag
         self.long_flag = long_flag
