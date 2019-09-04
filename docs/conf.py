@@ -271,3 +271,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
+
+# The return type is indicated by type hints instead.
+napoleon_use_rtype = False

@@ -20,6 +20,12 @@ If you are reporting a bug, please include:
 * Any details about your local setup that might be helpful in troubleshooting.
 * Steps to reproduce the bug, and if possible a minimal example demonstrating the problem.
 
+Good first issue
+~~~~~~~~~~~~~~~~
+
+Look through the GitHub issues for bugs. Anything tagged with "good first issue"
+is a great place to get started.
+
 Fix Bugs
 ~~~~~~~~
 
@@ -38,6 +44,30 @@ Write Documentation
 Sacred could always use more documentation, whether as part of the
 official Sacred docs, in docstrings, or even on the web in blog posts,
 articles, and such.
+
+When writing docstrings, stick to the `NumPy style
+<https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html>`_.
+However, prefer using Python type hints, over type annotation in the docstring.
+This makes your type hints useable by type checkers and IDEs. An example docstring
+could look like this.
+
+.. code-block :: python
+
+    def add(a: int, b: int) -> int:
+        """Add two numbers.
+
+        Parameters
+        ----------
+        a
+            The first number.
+        b
+            The second number.
+
+        Returns
+        -------
+        The sum of the two numbers.
+        """
+        return a + b
 
 Submit Feedback
 ~~~~~~~~~~~~~~~

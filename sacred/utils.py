@@ -142,8 +142,7 @@ class CircularDependencyError(SacredError):
 
 
 class ConfigError(SacredError):
-    """There was an error in the configuration. Pretty prints the conflicting
-    configuration values."""
+    """Pretty prints the conflicting configuration values."""
 
     def __init__(
         self,
@@ -207,26 +206,24 @@ class ConfigError(SacredError):
 
 
 class InvalidConfigError(ConfigError):
-    """
-    Exception that can be raised in the user code if an error in the
-    configuration values is detected.
+    """Can be raised in the user code if an error in the configuration is detected.
 
-    Examples:
-        >>> # Experiment definitions ...
-        ... @ex.automain
-        ... def main(a, b):
-        ...     if a != b['a']:
-        ...         raise InvalidConfigError(
-        ...                     'Need to be equal',
-        ...                     conflicting_configs=('a', 'b.a'))
+    Examples
+    --------
+    >>> # Experiment definitions ...
+    ... @ex.automain
+    ... def main(a, b):
+    ...     if a != b['a']:
+    ...         raise InvalidConfigError(
+    ...                     'Need to be equal',
+    ...                     conflicting_configs=('a', 'b.a'))
     """
 
     pass
 
 
 class MissingConfigError(SacredError):
-    """A config value that is needed by a captured function is not present in
-    the provided config."""
+    """A config value that is needed by a captured function is not present in the provided config."""
 
     def __init__(
         self,
@@ -307,10 +304,7 @@ class ConfigAddedError(ConfigError):
 
 
 class SignatureError(SacredError, TypeError):
-    """
-    Error that is raised when the passed arguments do not match the functions
-    signature
-    """
+    """Error that is raised when the passed arguments do not match the functions signature."""
 
     def __init__(
         self,
@@ -323,11 +317,13 @@ class SignatureError(SacredError, TypeError):
 
 
 def create_basic_stream_logger():
-    """
-    Sets up a basic stream logger. Configures the root logger to use a
+    """Sets up a basic stream logger.
+
+    Configures the root logger to use a
     `logging.StreamHandler` and sets the logging level to `logging.INFO`.
 
-    Note:
+    Notes
+    -----
         This does not change the logger configuration if the root logger
         already is configured (i.e. `len(getLogger().handlers) > 0`)
     """
@@ -432,7 +428,8 @@ def get_by_dotted_path(d, path, default=None):
     """
     Get an entry from nested dictionaries using a dotted path.
 
-    Example:
+    Example
+    -------
     >>> get_by_dotted_path({'foo': {'a': 12}}, 'foo.a')
     12
     """
@@ -451,7 +448,8 @@ def iter_prefixes(path):
     """
     Iterate through all (non-empty) prefixes of a dotted path.
 
-    Example:
+    Example
+    -------
     >>> list(iter_prefixes('foo.bar.baz'))
     ['foo', 'foo.bar', 'foo.bar.baz']
     """

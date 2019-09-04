@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding=utf-8
-"""This module helps to collect information about the host of an experiment."""
+"""Helps to collect information about the host of an experiment."""
 
 import os
 import platform
