@@ -56,26 +56,31 @@ class S3Observer(RunObserver):
         priority=DEFAULT_S3_PRIORITY,
         region=None,
     ):
-        """
-        Constructor for a S3Observer object. This is run when you
-        first create the object, before it's used within an experiment.
+        """Constructor for a S3Observer object.
 
-        :param bucket: The name of the bucket you want to store results in.
-         Doesn't need to contain `s3://`, but needs to be a valid bucket name
-        :param basedir: The relative path inside your bucket where you want
-         this experiment to store results
-        :param resource_dir: Where to store resources for this experiment. By
-         default, will be <basedir>/_resources
-        :param source_dir: Where to store code sources for this experiment. By
-         default, will be <basedir>/sources
-        :param priority: The priority to assign to this observer if
-         multiple observers are present
-        :param region: The AWS region in which you want to create and access
-        buckets. Needs to be either set here or configured in your AWS
-        config file.
-        :return:
-        """
+        Run when the object is first created,
+        before it's used within an experiment.
 
+        Parameters
+        ----------
+        bucket
+            The name of the bucket you want to store results in.
+            Doesn't need to contain `s3://`, but needs to be a valid bucket name
+        basedir
+            The relative path inside your bucket where you want this experiment to store results
+        resource_dir
+            Where to store resources for this experiment. By
+            default, will be <basedir>/_resources
+        source_dir
+            Where to store code sources for this experiment. By
+            default, will be <basedir>/sources
+        priority
+            The priority to assign to this observer if
+            multiple observers are present
+        region
+            The AWS region in which you want to create and access
+            buckets. Needs to be either set here or configured in your AWS
+        """
         if not _is_valid_bucket(bucket):
             raise ValueError(
                 "Your chosen bucket name doesn't follow AWS bucket naming rules"
@@ -324,9 +329,7 @@ class S3Observer(RunObserver):
         self.save_json(self.run_entry, "run.json")
 
     def log_metrics(self, metrics_by_name, info):
-        """Store new measurements into metrics.json.
-        """
-
+        """Store new measurements into metrics.json."""
         for metric_name, metric_ptr in metrics_by_name.items():
 
             if metric_name not in self.saved_metrics:

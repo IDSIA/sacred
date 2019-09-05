@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# coding=utf-8
 """
-This module contains the command-line parsing and help for experiments.
+Contains the command-line parsing and help for experiments.
 
 The command-line interface of sacred is built on top of ``docopt``, which
 constructs a command-line parser from a usage text. Curiously in sacred we

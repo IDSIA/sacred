@@ -174,9 +174,7 @@ class ReadOnlyContainer:
 
 
 class ReadOnlyDict(ReadOnlyContainer, dict):
-    """
-    A read-only variant of a `dict`
-    """
+    """A read-only variant of a `dict`."""
 
     # Overwrite all methods that can modify a dict
     clear = ReadOnlyContainer._readonly
@@ -201,9 +199,7 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
 
 
 class ReadOnlyList(ReadOnlyContainer, list):
-    """
-    A read-only variant of a `list`
-    """
+    """A read-only variant of a `list`."""
 
     append = ReadOnlyContainer._readonly
     clear = ReadOnlyContainer._readonly
@@ -230,7 +226,8 @@ class ReadOnlyList(ReadOnlyContainer, list):
 
 
 def make_read_only(o, error_message=None):
-    """
+    """Makes objects read-only.
+
     Converts every `list` and `dict` into `ReadOnlyList` and `ReadOnlyDict` in
     a nested structure of `list`s, `dict`s and `tuple`s. Does not modify `o`
     but returns the converted structure.

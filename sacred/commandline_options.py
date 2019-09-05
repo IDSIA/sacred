@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# coding=utf-8
 """
-This module provides the basis for all command-line options (flags) in sacred.
+Provides the basis for all command-line options (flags) in sacred.
 
 It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
