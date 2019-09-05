@@ -28,8 +28,15 @@ class CLIOption:
         is_flag: bool,
     ):
 
-        assert re.match(r"-\w$", short_flag)
-        assert re.match(r"--[\w-]+\w$", long_flag)
+        if not re.match(r"-\w$", short_flag):
+            raise ValueError(
+                "Short flag malformed. " "One correct short flag would be: `-j`."
+            )
+        if not re.match(r"--[\w-]+\w$", long_flag):
+            raise ValueError(
+                "Long flag malformed. One correct long flag "
+                "would be: `--my-pretty-flag`"
+            )
         self.apply_function = apply_function
         self.short_flag = short_flag
         self.long_flag = long_flag
