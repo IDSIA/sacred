@@ -108,15 +108,18 @@ def _format_named_configs(named_configs, indent=2):
     return "\n".join(lines)
 
 
-def print_named_configs(ingredient):
-    """
-    Returns a command function that prints the available named configs for the
-     ingredient and all sub-ingredients and exits.
+def print_named_configs(ingredient):  # noqa: D202
+    """Returns a command that prints named configs recursively.
 
-     The output is highlighted:
-       white: config names
-       grey:  doc
-     """
+    The command function prints the available named configs for the
+    ingredient and all sub-ingredients and exits.
+
+    Example
+    -------
+    The output is highlighted:
+        white: config names
+        grey:  doc
+    """
 
     def print_named_configs():
         """Print the available named configs and exit."""

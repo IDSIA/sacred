@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding=utf-8
-
+from typing import Generator, Tuple, Union
 import inspect
 import os.path
 from sacred.utils import PathType
@@ -296,7 +294,7 @@ class Ingredient:
         self.dependencies.add(PackageDependency(package_name, version))
 
     def post_process_name(self, name, ingredient):
-        """ Can be overridden to change the command name."""
+        """Can be overridden to change the command name."""
         return name
 
     def gather_commands(self):
@@ -315,15 +313,16 @@ class Ingredient:
                 cmd_name = self.post_process_name(cmd_name, ingredient)
                 yield cmd_name, command
 
-    def gather_named_configs(self):
-        """Collect all named configs from this ingredient and its
-        sub-ingredients.
+    def gather_named_configs(
+        self,
+    ) -> Generator[Tuple[str, Union[ConfigScope, ConfigDict, str]], None, None]:
+        """Collect all named configs from this ingredient and its sub-ingredients.
 
         Yields
         ------
-        config_name: str
+        config_name
             The full (dotted) name of the named config.
-        config: ConfigScope or ConfigDict or basestring
+        config
             The corresponding named config.
         """
         for ingredient, _ in self.traverse_ingredients():

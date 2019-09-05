@@ -713,7 +713,6 @@ dependency_discovery_strategies = {
 
 def gather_sources_and_dependencies(globs, save_git_info, base_dir=None):
     """Scan the given globals for modules and return them as dependencies."""
-
     experiment_path, main = get_main_file(globs, save_git_info)
 
     base_dir = base_dir or experiment_path

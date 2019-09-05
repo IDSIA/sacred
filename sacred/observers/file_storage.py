@@ -260,8 +260,7 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.run_entry, "run.json")
 
     def log_metrics(self, metrics_by_name, info):
-        """Store new measurements into metrics.json.
-        """
+        """Store new measurements into metrics.json."""
         try:
             metrics_path = os.path.join(self.dir, "metrics.json")
             with open(metrics_path, "r") as f:

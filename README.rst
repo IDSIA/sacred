@@ -247,7 +247,7 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :alt: MIT licensed
 
 .. |rtfd| image:: https://readthedocs.org/projects/sacred/badge/?version=latest&style=flat
-    :target: http://sacred.readthedocs.org/
+    :target: https://sacred.readthedocs.io/en/stable/
     :alt: ReadTheDocs
 
 .. |doi| image:: https://zenodo.org/badge/doi/10.5281/zenodo.16386.svg
