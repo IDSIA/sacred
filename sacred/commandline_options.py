@@ -195,6 +195,7 @@ class HelpOption(CommandLineOption):
 def debug_option(args, run):
     """
     Set this run to debug mode.
+
     Suppress warnings about missing observers and don't filter the stacktrace.
     Also enables usage with ipython --pdb.
     """
@@ -214,6 +215,8 @@ class PDBOption(CommandLineOption):
 @cli_option("-l", "--loglevel")
 def loglevel_option(args, run):
     """
+    Set the LogLevel.
+
     Loglevel either as 0 - 50 or as string: DEBUG(10),
     INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
     """
