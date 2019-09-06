@@ -181,3 +181,50 @@ with ex.start():
 python my_main.py with config_change1
 python my_main.py with config_change2
 ```
+
+
+
+### Example with config updates depending on each other
+
+
+`config_change3` depend on some parameters of `config_change1`.
+
+```python
+import sacred
+
+
+configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
+
+def config_change1(config):
+    config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
+    config['dataset_size'] = 500
+    
+
+def config_change2(config):
+    config['dataset_config'] = dict(crop_size=(50, 50), random_flip=False)
+    config['dataset_size'] = 700
+    
+    
+def config_change3(config):
+    config_change1(config)
+    config['dataset_size'] = 1_000_000
+
+
+potential_modifs = [config_change1, config_change2, config_change3]
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration,
+                       potential_modifications=potential_modifs)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
+    # main experiment here
+    my_dataset = load_dataset(dataset_size, **dataset_config)
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
+```
+
+```bash
+python my_main.py with config_change1
+python my_main.py with config_change2
+```
