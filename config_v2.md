@@ -145,7 +145,7 @@ class Delayed:
 
 ### Example with selecting part of the configuration from the command line
 
-This is a replacement for ingredients.
+This is a replacement for named configs.
 
 
 ```python
