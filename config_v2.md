@@ -223,8 +223,3 @@ def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
 with ex.start():
     my_main_function(**ex.config)
 ```
-
-```bash
-python my_main.py with config_change1
-python my_main.py with config_change2
-```
