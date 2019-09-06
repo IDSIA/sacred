@@ -160,8 +160,8 @@ def config_change1(config):
     
 
 def config_change2(config):
-    config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
-    config['dataset_size'] = 500
+    config['dataset_config'] = dict(crop_size=(50, 50), random_flip=False)
+    config['dataset_size'] = 700
 
 
 ex = sacred.Experiment('my_pretty_experiment',
