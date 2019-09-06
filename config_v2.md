@@ -25,6 +25,20 @@
 
 ## API description:
 
+The goal is to make the API easier to understand.
+
+* There is no more `Run` nor `Ingredient`, everything is done at the `Experiment` level. 
+
+* There is no config scopes.
+
+* Queuing Runs now means queuing Experiments. 
+
+* An Experiment can be used only once. 
+
+* Ingredients are replaced by functions which can be activated either from the command line or when creating the Experiment.
+
+* No 
+
 
 ### Basic example:
 
@@ -67,4 +81,16 @@ def my_main_function(batch_size, dataset_size, nb_epochs, experiment, logger):
 with ex.start():
     my_main_function(**ex.config, experiment=ex, logger=ex.logger)
 ```
+
+
+### Example with delayed evaluation of a config variable:
+
+
+```python
+
+
+
+```
+
+
 
