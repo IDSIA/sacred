@@ -33,12 +33,38 @@
 import sacred
 
 
-configuration = 
+configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
 
 
-ex = sacred.Experiment('my_pretty_experiment')
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs):
+    # main experiment here
+    ...
 
-
-
-
+with ex.start():
+    my_main_function(**ex.config)
 ```
+
+
+### Example with the log and run object:
+
+```python
+import sacred
+
+
+configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs, experiment, logger):
+    # main experiment here
+    ...
+
+with ex.start():
+    my_main_function(**ex.config, experiment=ex, logger=ex.logger)
+```
+
