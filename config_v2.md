@@ -27,13 +27,9 @@
 
 The goal is to make the API easier to understand.
 
-* There is no more `Run` nor `Ingredient`, everything is done at the `Experiment` level. 
+* There is no more `Ingredient`. 
 
 * There is no config scopes.
-
-* Queuing Runs now means queuing Experiments. 
-
-* An Experiment can be used only once. 
 
 * Ingredients are replaced by functions which can be activated either from the command line or when creating the Experiment.
 
