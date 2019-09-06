@@ -37,7 +37,7 @@ The goal is to make the API easier to understand.
 
 * Ingredients are replaced by functions which can be activated either from the command line or when creating the Experiment.
 
-* No 
+* No local variable gathering, injections or override. In short, no black magic.
 
 
 ### Basic example:
@@ -86,11 +86,71 @@ with ex.start():
 ### Example with delayed evaluation of a config variable:
 
 
+This handles the case where a configuration value, if not set should be evaluated based on other values present in the config.
+
+If the `Delayed` object is present even after all overrides from the command lines and other, it is evaluated before starting the Experiment.
+
 ```python
+import sacred
+from sacred import Delayed
 
 
+configuration = dict(
+    batch_size=32, 
+    dataset_size=Delayed(lambda config: config['batch_size'] * 100), 
+    nb_epochs=50
+)
 
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs):
+    # main experiment here
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
+```
+
+For example:
+
+```bash
+python my_main.py with batch_size=60  # dataset_size is 6000 here
+python my_main.py with dataset_size=5000  # dataset_size is 5000 here
 ```
 
 
+### Example with selecting part of the configuration from the command line
+
+This is a replacement for ingredients.
+
+
+```python
+import sacred
+
+
+configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
+
+def config_change1(config):
+    config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
+    config['dataset_size'] = 500
+    
+
+def config_change2(config):
+    config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
+    config['dataset_size'] = 500
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
+    # main experiment here
+    my_dataset = load_dataset(dataset_size, **dataset_config)
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
+```
 
