@@ -74,12 +74,12 @@ configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
 ex = sacred.Experiment('my_pretty_experiment',
                        config=configuration)
                        
-def my_main_function(batch_size, dataset_size, nb_epochs, experiment, logger):
+def my_main_function(batch_size, dataset_size, nb_epochs, run, logger):
     # main experiment here
     ...
 
 with ex.start():
-    my_main_function(**ex.config, experiment=ex, logger=ex.logger)
+    my_main_function(**ex.config, run=ex.current_run, logger=ex.logger)
 ```
 
 
@@ -143,7 +143,8 @@ def config_change2(config):
 
 
 ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+                       config=configuration,
+                       potential_modifications=[config_change1, config_change2])
                        
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
@@ -154,3 +155,7 @@ with ex.start():
     my_main_function(**ex.config)
 ```
 
+```bash
+python my_main.py with config_change1
+python my_main.py with config_change2
+```
