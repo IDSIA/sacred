@@ -35,6 +35,8 @@ The goal is to make the API easier to understand.
 
 * No local variable gathering, injections or override. In short, no black magic.
 
+* Classes and functions can be put in the config, but only the full name will be saved with the Observers.
+
 
 ### Basic example:
 
@@ -116,6 +118,30 @@ python my_main.py with batch_size=60  # dataset_size is 6000 here
 python my_main.py with dataset_size=5000  # dataset_size is 5000 here
 ```
 
+
+##### Api of the Delayed object:
+
+```python
+class Delayed:
+    def __init__(self, evaluation_function, priority=0):
+        """
+        The evaluation function takes the config dict as an input and 
+        returns an object which will go in the config.
+        
+        In cases where some Delayed object must be evaluated in a certain order, 
+        because they depend on some other Delayed objects,
+        we can use the priority argument to make sure that the Delayed objects are
+        evaluated correctly, in order. If the priority of two delayed objects are 
+        equal, we use the depth or the order of the list to choose which goes first.
+        Starting from py3.7, we'll use the order of the dict too.
+        
+        With python 3.7, dict are ordered by default and we will use
+        this to avoid specifying 'priority' in some other cases. priority will
+        only be used in some very weird (but certainly valid) cases.
+        """
+        ...
+
+```
 
 ### Example with selecting part of the configuration from the command line
 
