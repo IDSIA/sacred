@@ -130,7 +130,6 @@ import sacred
 from sacred import Config
 
 
-
 def config_change1(config):
     config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
     config['dataset_size'] = 500
@@ -186,7 +185,6 @@ import sacred
 from sacred import Config
 
 
-
 def config_change1(config):
     config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
     config['dataset_size'] = 500
@@ -205,7 +203,6 @@ def config_change3(config):
 potential_modifs = [config_change1, config_change2, config_change3]
 configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
-
 
 
 ex = sacred.Experiment('my_pretty_experiment',
@@ -298,7 +295,6 @@ def config_dataset_cifar(config):
 potential_modifs = [config_dataset_mnist, config_dataset_cifar]
 configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
-
 
 
 ex = sacred.Experiment('my_pretty_experiment',
