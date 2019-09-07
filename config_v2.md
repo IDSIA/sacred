@@ -355,7 +355,6 @@ def config_dataset_mnist(config):
     config.add_potential_modification(config_mnist2)
     
 
-
 configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_dataset_mnist])
 
