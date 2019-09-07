@@ -244,7 +244,7 @@ with ex.start():
 ### Example with dynamic population of the potential modifications.
 
 
-There is a hierarchy now.
+There is a hierarchy now. Similar to ingredients.
 
 ```python
 import sacred
@@ -306,4 +306,57 @@ From the command line:
 
 ```bash
 python my_main.py with config_dataset_cifar config_cifar2
+```
+
+
+### Example with default parameters.
+
+We'll provide a function `sacred.get_default_args(some_function)` which will extract the default arguments and their values to make a dictionary. The you should be able to use that in the configs. 
+
+
+
+```python
+import sacred
+from sacred import Config, get_default_args
+
+def get_mnist(crop_size, random_flip=True, brightness=0.5):
+    ...
+    
+print(get_default_args(get_mnist))
+# {'random_flip': True, 'brightness': 0.5}
+
+def config_mnist1(config):
+    config['dataset_args'].update(dict(crop_size=(30, 30), random_flip=True))
+
+
+def config_mnist2(config):
+    config['dataset_args'].update(dict(crop_size=(40, 60), random_flip=False))
+
+
+def config_dataset_mnist(config):
+    config['function_get_dataset'] = get_mnist
+    config['dataset_args'] = get_default_args(get_mnist)
+    # the brightness is now in the config!
+    
+    config.add_potential_modification(config_mnist1)
+    config.add_potential_modification(config_mnist2)
+    
+
+
+configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
+                       potential_modifications=[config_dataset_mnist])
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
+    # main experiment here
+    
+    my_dataset = function_get_dataset(**dataset_args)
+    my_dataset = my_dataset[:dataset_size]
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
 ```
