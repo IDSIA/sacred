@@ -373,3 +373,8 @@ def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args
 with ex.start():
     my_main_function(**ex.config)
 ```
+
+
+### dotted access
+
+The config object should support the dotted access `condig.dodo[2].dada` instead of `config['dodo'][2]['dada']`. Since there is no black magic anymore, this should be only an implementation detail, and feasible without too much work with a munchify.
