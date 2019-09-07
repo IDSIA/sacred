@@ -11,7 +11,8 @@ from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
     ForceOption,
     gather_command_line_options,
-    LoglevelOption,
+    loglevel_option,
+    CLIOption,
 )
 from sacred.commands import (
     help_for_command,
@@ -54,6 +55,7 @@ class Experiment(Ingredient):
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
         additional_host_info: Optional[List[HostInfoGetter]] = None,
+        additional_cli_options: Optional[Sequence[CLIOption]] = None,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
@@ -84,6 +86,7 @@ class Experiment(Ingredient):
         """
         self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
+        self.additional_cli_options = additional_cli_options or []
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
@@ -208,6 +211,7 @@ class Experiment(Ingredient):
         )
         commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
+        options += self.additional_cli_options
         long_usage = format_usage(program_name, self.doc, commands, options)
         # internal usage is a workaround because docopt cannot handle spaces
         # in program names. So for parsing we use 'dummy' as the program name.
@@ -505,7 +509,7 @@ class Experiment(Ingredient):
             config_updates,
             named_configs=named_configs,
             force=options.get(ForceOption.get_flag(), False),
-            log_level=options.get(LoglevelOption.get_flag(), None),
+            log_level=options.get(loglevel_option.get_flag(), None),
         )
         if info is not None:
             run.info.update(info)
@@ -516,7 +520,8 @@ class Experiment(Ingredient):
         if meta_info:
             run.meta_info.update(meta_info)
 
-        for option in gather_command_line_options():
+        options_list = gather_command_line_options() + self.additional_cli_options
+        for option in options_list:
             option_value = options.get(option.get_flag(), False)
             if option_value:
                 option.apply(option_value, run)

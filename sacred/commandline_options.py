@@ -6,10 +6,77 @@ Some further options that add observers to the run are defined alongside those.
 """
 
 import warnings
+from typing import Callable
+import inspect
+import re
 
+from sacred.run import Run
 from sacred.commands import print_config
 from sacred.settings import SETTINGS
 from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+
+
+CLIFunction = Callable[[str, Run], None]
+
+
+class CLIOption:
+    def __init__(
+        self,
+        apply_function: CLIFunction,
+        short_flag: str,
+        long_flag: str,
+        is_flag: bool,
+    ):
+
+        if not re.match(r"-\w$", short_flag):
+            raise ValueError(
+                "Short flag malformed. " "One correct short flag would be: `-j`."
+            )
+        if not re.match(r"--[\w-]+\w$", long_flag):
+            raise ValueError(
+                "Long flag malformed. One correct long flag "
+                "would be: `--my-pretty-flag`"
+            )
+        self.apply_function = apply_function
+        self.short_flag = short_flag
+        self.long_flag = long_flag
+        self.is_flag = is_flag
+
+        # trick for backward compatibility:
+        self.arg = None if is_flag else "VALUE"
+        self.arg_description = None if is_flag else ""
+
+    def __call__(self, *args, **kwargs):
+        return self.apply_function(*args, **kwargs)
+
+    def get_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.long_flag
+
+    def get_short_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag
+
+    def get_flags(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag, self.long_flag
+
+    def apply(self, args, run):
+        """Legacy function. Should be removed at some point."""
+        return self.apply_function(args, run)
+
+    def get_name(self):
+        return self.apply_function.__name__
+
+    def get_description(self):
+        return inspect.getdoc(self.apply_function) or ""
+
+
+def cli_option(short_flag: str, long_flag: str, is_flag=False):
+    def wrapper(f: CLIFunction):
+        return CLIOption(f, short_flag, long_flag, is_flag)
+
+    return wrapper
 
 
 class CommandLineOption:
@@ -99,33 +166,47 @@ class CommandLineOption:
         pass
 
 
+def get_name(option):
+    if isinstance(option, CLIOption):
+        return option.get_name()
+    else:
+        return option.__name__
+
+
 def gather_command_line_options(filter_disabled=None):
     """Get a sorted list of all CommandLineOption subclasses."""
     if filter_disabled is None:
         filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-    options = [
-        opt
-        for opt in get_inheritors(CommandLineOption)
-        if not filter_disabled or opt._enabled
-    ]
-    return sorted(options, key=lambda opt: opt.__name__)
+
+    options = []
+    for opt in get_inheritors(CommandLineOption):
+        warnings.warn(
+            "Subclassing `CommandLineOption` is deprecated. Please "
+            "use the `sacred.cli_option` decorator and pass the function "
+            "to the Experiment constructor."
+        )
+        if filter_disabled and not opt._enabled:
+            continue
+        options.append(opt)
+
+    options += DEFAULT_COMMAND_LINE_OPTIONS
+
+    return sorted(options, key=get_name)
 
 
 class HelpOption(CommandLineOption):
     """Print this help message and exit."""
 
 
-class DebugOption(CommandLineOption):
+@cli_option("-d", "--debug", is_flag=True)
+def debug_option(args, run):
     """
-    Suppress warnings about missing observers and don't filter the stacktrace.
+    Set this run to debug mode.
 
+    Suppress warnings about missing observers and don't filter the stacktrace.
     Also enables usage with ipython --pdb.
     """
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to debug mode."""
-        run.debug = True
+    run.debug = True
 
 
 class PDBOption(CommandLineOption):
@@ -138,25 +219,21 @@ class PDBOption(CommandLineOption):
         run.pdb = True
 
 
-class LoglevelOption(CommandLineOption):
-    """Adjust the loglevel."""
+@cli_option("-l", "--loglevel")
+def loglevel_option(args, run):
+    """
+    Set the LogLevel.
 
-    arg = "LEVEL"
-    arg_description = (
-        "Loglevel either as 0 - 50 or as string: DEBUG(10), "
-        "INFO(20), WARNING(30), ERROR(40), CRITICAL(50)"
-    )
+    Loglevel either as 0 - 50 or as string: DEBUG(10),
+    INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
+    """
+    # TODO: sacred.initialize.create_run already takes care of this
 
-    @classmethod
-    def apply(cls, args, run):
-        """Adjust the loglevel of the root-logger of this run."""
-        # TODO: sacred.initialize.create_run already takes care of this
-
-        try:
-            lvl = int(args)
-        except ValueError:
-            lvl = args
-        run.root_logger.setLevel(lvl)
+    try:
+        lvl = int(args)
+    except ValueError:
+        lvl = args
+    run.root_logger.setLevel(lvl)
 
 
 class CommentOption(CommandLineOption):
@@ -289,3 +366,6 @@ class CaptureOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.capture_mode = args
+
+
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
