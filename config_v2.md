@@ -162,6 +162,19 @@ python my_main.py with config_change1
 python my_main.py with config_change2
 ```
 
+By default, when calling the potential_modification from the command line, 
+you should specify the `__name__` of the function. If you want to be able to say exactly which name you want, you can do:
+
+```python
+@sacred.potential_modification('pretty_name_here')
+def config_change2849459(config):
+    ...
+```
+
+```bash
+python my_main.py with pretty_name_here
+```
+
 
 ### Example with config updates depending on each other
 
