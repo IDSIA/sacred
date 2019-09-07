@@ -37,16 +37,17 @@ The goal is to make the API easier to understand.
 
 * Classes and functions can be put in the config, but only the full name will be saved with the Observers.
 
+* We have a Config object now, and all the command lines updates are done at the end of the constructor. The Experiment does not modify the Config object.
 
 ### Basic example:
 
 
 ```python
 import sacred
+from sacred import Config
 
 
-configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
-
+configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
 
 ex = sacred.Experiment('my_pretty_experiment',
                        config=configuration)
@@ -64,14 +65,14 @@ with ex.start():
 
 ```python
 import sacred
+from sacred import Config
 
 
-configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
-
+configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
 
 ex = sacred.Experiment('my_pretty_experiment',
                        config=configuration)
-                       
+
 def my_main_function(batch_size, dataset_size, nb_epochs, run, logger):
     # main experiment here
     ...
@@ -90,14 +91,14 @@ If the `Delayed` object is present even after all overrides from the command lin
 
 ```python
 import sacred
-from sacred import Delayed
+from sacred import ConfigValue, Config
 
 
-configuration = dict(
+configuration = Config(dict(
     batch_size=32, 
-    dataset_size=Delayed(lambda config: config['batch_size'] * 100), 
+    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, delayed=True), 
     nb_epochs=50
-)
+))
 
 
 ex = sacred.Experiment('my_pretty_experiment',
@@ -119,30 +120,6 @@ python my_main.py with dataset_size=5000  # dataset_size is 5000 here
 ```
 
 
-##### Api of the Delayed object:
-
-```python
-class Delayed:
-    def __init__(self, evaluation_function, priority=0):
-        """
-        The evaluation function takes the config dict as an input and 
-        returns an object which will go in the config.
-        
-        In cases where some Delayed object must be evaluated in a certain order, 
-        because they depend on some other Delayed objects,
-        we can use the priority argument to make sure that the Delayed objects are
-        evaluated correctly, in order. If the priority of two delayed objects are 
-        equal, we use the depth or the order of the list to choose which goes first.
-        Starting from py3.7, we'll use the order of the dict too.
-        
-        With python 3.7, dict are ordered by default and we will use
-        this to avoid specifying 'priority' in some other cases. priority will
-        only be used in some very weird (but certainly valid) cases.
-        """
-        ...
-
-```
-
 ### Example with selecting part of the configuration from the command line
 
 This is a replacement for named configs.
@@ -150,9 +127,9 @@ This is a replacement for named configs.
 
 ```python
 import sacred
+from sacred import Config
 
 
-configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
 
 def config_change1(config):
     config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
@@ -164,10 +141,13 @@ def config_change2(config):
     config['dataset_size'] = 700
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration,
+configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_change1, config_change2])
-                       
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
     my_dataset = load_dataset(dataset_size, **dataset_config)
@@ -183,7 +163,6 @@ python my_main.py with config_change2
 ```
 
 
-
 ### Example with config updates depending on each other
 
 
@@ -191,9 +170,9 @@ python my_main.py with config_change2
 
 ```python
 import sacred
+from sacred import Config
 
 
-configuration = dict(batch_size=32, dataset_size=10_000, nb_epochs=50)
 
 def config_change1(config):
     config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
@@ -211,9 +190,13 @@ def config_change3(config):
 
 
 potential_modifs = [config_change1, config_change2, config_change3]
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration,
+configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
+
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
                        
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
@@ -222,4 +205,105 @@ def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
 
 with ex.start():
     my_main_function(**ex.config)
+```
+
+
+### Example with descriptions of the config values:
+
+
+The `Config` object will remove the `ConfigValues` and keep only the value, for ease of access.
+It will put the descriptions somewhere else, in another attribute of the `Config` object. 
+Let's say `Config.values_descriptions`. 
+
+Notice the way the batch size value is accessed when getting the default dataset size. The ConfigValue has been removed in the constructor.
+
+```python
+import sacred
+from sacred import ConfigValue, Config
+
+
+configuration = Config(dict(
+    batch_size=ConfigValue(32, "The batch size value"),
+    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, "The dataset size", delayed=True),
+    nb_epochs=ConfigValue(50, "The number of epochs")
+))
+print(configuration['batch_size'])  # will print 32, not a ConfigValue.
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(batch_size, dataset_size, nb_epochs):
+    # main experiment here
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
+```
+
+
+### Example with dynamic population of the potential modifications.
+
+
+There is a hierarchy now.
+
+```python
+import sacred
+from sacred import Config
+
+from somewhere_else import get_mnist, get_cifar
+
+
+def config_mnist1(config):
+    config['dataset_args'] = dict(crop_size=(30, 30), random_flip=True)
+
+
+def config_mnist2(config):
+    config['dataset_args'] = dict(crop_size=(40, 60), random_flip=False)
+
+
+def config_dataset_mnist(config):
+    config['function_get_dataset'] = get_mnist
+    config.add_potential_modification(config_mnist1)
+    config.add_potential_modification(config_mnist2)
+    
+
+
+def config_cifar1(config):
+    config['dataset_args'] = dict(color=True, random_flip=True)
+
+
+def config_cifar2(config):
+    config['dataset_args'] = dict(color=False, random_flip=False)
+
+
+def config_dataset_cifar(config):
+    config['function_get_dataset'] = get_cifar
+    config.add_potential_modification(config_cifar1)
+    config.add_potential_modification(config_cifar2)
+
+
+potential_modifs = [config_dataset_mnist, config_dataset_cifar]
+configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
+                       potential_modifications=potential_modifs)
+
+
+
+ex = sacred.Experiment('my_pretty_experiment',
+                       config=configuration)
+                       
+def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
+    # main experiment here
+    
+    my_dataset = function_get_dataset(**dataset_args)
+    my_dataset = my_dataset[:dataset_size]
+    ...
+
+with ex.start():
+    my_main_function(**ex.config)
+```
+
+From the command line:
+
+```bash
+python my_main.py with config_dataset_cifar config_cifar2
 ```
