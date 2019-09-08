@@ -362,4 +362,4 @@ class CaptureOption(CommandLineOption):
         run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, comment_option]
