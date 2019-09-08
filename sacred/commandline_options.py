@@ -260,31 +260,25 @@ class BeatIntervalOption(CommandLineOption):
         run.beat_interval = float(args)
 
 
-class UnobservedOption(CommandLineOption):
-    """Ignore all observers for this run."""
+@cli_option("-u", "--unobserve", is_flag=True)
+def unobserved_option(args, run):
+    """
+    Ignore all observers for this run.
+    Set this run to unobserved mode.
+    """
+    run.unobserved = True
 
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to unobserved mode."""
-        run.unobserved = True
 
-
-class QueueOption(CommandLineOption):
+@cli_option("-q", "--queue", is_flag=True)
+def queue_option(args, run):
     """Only queue this run, do not start it."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to queue only mode."""
-        run.queue_only = True
+    run.queue_only = True
 
 
-class ForceOption(CommandLineOption):
+@cli_option("-f", "--force", is_flag=True)
+def force_option(args, run):
     """Disable warnings about suspicious changes for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to not warn about suspicous changes."""
-        run.force = True
+    run.force = True
 
 
 class PriorityOption(CommandLineOption):
@@ -368,4 +362,10 @@ class CaptureOption(CommandLineOption):
         run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [
+    debug_option,
+    loglevel_option,
+    unobserved_option,
+    queue_option,
+    force_option,
+]
