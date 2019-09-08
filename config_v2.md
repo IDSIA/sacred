@@ -56,7 +56,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs):
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 
@@ -76,7 +76,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs, run, logger):
     ...
 
 with ex.start():
-    my_main_function(**ex.config, run=ex.current_run, logger=ex.logger)
+    my_main_function(**configuration, run=ex.current_run, logger=ex.logger)
 ```
 
 
@@ -106,7 +106,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs):
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 For example:
@@ -149,7 +149,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 ```bash
@@ -211,7 +211,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 
@@ -243,7 +243,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs):
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 
@@ -303,7 +303,7 @@ def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 From the command line:
@@ -361,7 +361,7 @@ def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args
     ...
 
 with ex.start():
-    my_main_function(**ex.config)
+    my_main_function(**configuration)
 ```
 
 
