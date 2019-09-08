@@ -49,8 +49,7 @@ from sacred import Config
 
 configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
@@ -70,8 +69,7 @@ from sacred import Config
 
 configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
 
 def my_main_function(batch_size, dataset_size, nb_epochs, run, logger):
     # main experiment here
@@ -96,13 +94,12 @@ from sacred import ConfigValue, Config
 
 configuration = Config(dict(
     batch_size=32, 
-    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, delayed=True), 
+    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, delayed=True),
     nb_epochs=50
 ))
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
@@ -144,8 +141,7 @@ configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_change1, config_change2])
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
 
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
@@ -184,6 +180,8 @@ python my_main.py with pretty_name_here
 import sacred
 from sacred import Config
 
+from somewhere_else import load_dataset
+
 
 def config_change1(config):
     config['dataset_config'] = dict(crop_size=(30, 30), random_flip=True)
@@ -205,8 +203,7 @@ configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
@@ -239,8 +236,7 @@ configuration = Config(dict(
 ))
 print(configuration['batch_size'])  # will print 32, not a ConfigValue.
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
@@ -297,8 +293,7 @@ configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
     # main experiment here
@@ -328,6 +323,7 @@ We'll provide a function `sacred.get_default_args(some_function)` which will ext
 import sacred
 from sacred import Config, get_default_args
 
+
 def get_mnist(crop_size, random_flip=True, brightness=0.5):
     ...
     
@@ -355,8 +351,7 @@ configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_dataset_mnist])
 
 
-ex = sacred.Experiment('my_pretty_experiment',
-                       config=configuration)
+ex = sacred.Experiment('my_pretty_experiment', config=configuration)
                        
 def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
     # main experiment here
