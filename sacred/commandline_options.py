@@ -248,16 +248,14 @@ class CommentOption(CommandLineOption):
         run.meta_info["comment"] = args
 
 
-class BeatIntervalOption(CommandLineOption):
-    """Control the rate of heartbeat events."""
+@cli_option("-b", "--beat-interval")
+def beat_interval_option(args, run):
+    """
+    Set the heart-beat interval for this run.
 
-    arg = "BEAT_INTERVAL"
-    arg_description = "Time between two heartbeat events measured in seconds."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set the heart-beat interval for this run."""
-        run.beat_interval = float(args)
+    Time between two heartbeat events is measured in seconds.
+    """
+    run.beat_interval = float(args)
 
 
 class UnobservedOption(CommandLineOption):
@@ -368,4 +366,4 @@ class CaptureOption(CommandLineOption):
         run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, beat_interval_option]
