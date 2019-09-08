@@ -236,16 +236,10 @@ def loglevel_option(args, run):
     run.root_logger.setLevel(lvl)
 
 
-class CommentOption(CommandLineOption):
-    """Adds a message to the run."""
-
-    arg = "COMMENT"
-    arg_description = "A comment that should be stored along with the run."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add a comment to this run."""
-        run.meta_info["comment"] = args
+@cli_option("-c", "--comment")
+def comment_option(args, run):
+    """Add a comment to this run."""
+    run.meta_info["comment"] = args
 
 
 class BeatIntervalOption(CommandLineOption):
