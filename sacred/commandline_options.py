@@ -262,10 +262,7 @@ class BeatIntervalOption(CommandLineOption):
 
 @cli_option("-u", "--unobserve", is_flag=True)
 def unobserved_option(args, run):
-    """
-    Ignore all observers for this run.
-    Set this run to unobserved mode.
-    """
+    """Ignore all observers for this run."""
     run.unobserved = True
 
 
