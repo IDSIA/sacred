@@ -288,6 +288,8 @@ def config_dataset_cifar(config):
     config.add_potential_modification(config_cifar2)
 
 
+# Here you only specify the 2 main modifications, not the 6 of them
+# the other modifications will be pulled dynamically.
 potential_modifs = [config_dataset_mnist, config_dataset_cifar]
 configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
