@@ -335,13 +335,11 @@ class EnforceCleanOption(CommandLineOption):
                     )
 
 
-class PrintConfigOption(CommandLineOption):
+@cli_option("-p", "--print-config", is_flag=True)
+def print_config_option(args, run):
     """Always print the configuration first."""
-
-    @classmethod
-    def apply(cls, args, run):
-        print_config(run)
-        print("-" * 79)
+    print_config(run)
+    print("-" * 79)
 
 
 class NameOption(CommandLineOption):
@@ -368,4 +366,4 @@ class CaptureOption(CommandLineOption):
         run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, print_config_option]
