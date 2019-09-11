@@ -344,16 +344,11 @@ class PrintConfigOption(CommandLineOption):
         print("-" * 79)
 
 
-class NameOption(CommandLineOption):
+@cli_option("-n", "--name")
+def name_option(args, run):
     """Set the name for this run."""
-
-    arg = "NAME"
-    arg_description = "Name for this run."
-
-    @classmethod
-    def apply(cls, args, run):
-        run.experiment_info["name"] = args
-        run.run_logger = run.root_logger.getChild(args)
+    run.experiment_info["name"] = args
+    run.run_logger = run.root_logger.getChild(args)
 
 
 class CaptureOption(CommandLineOption):
@@ -368,4 +363,4 @@ class CaptureOption(CommandLineOption):
         run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, name_option]
