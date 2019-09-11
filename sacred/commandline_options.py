@@ -356,16 +356,14 @@ class NameOption(CommandLineOption):
         run.run_logger = run.root_logger.getChild(args)
 
 
-class CaptureOption(CommandLineOption):
-    """Control the way stdout and stderr are captured."""
+@cli_option("-C", "--capture")
+def capture_option(args, run):
+    """
+    Control the way stdout and stderr are captured.
 
-    short_flag = "C"
-    arg = "CAPTURE_MODE"
-    arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.capture_mode = args
+    The argument value must be one of [no, sys, fd]
+    """
+    run.capture_mode = args
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, capture_option]
