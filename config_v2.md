@@ -20,15 +20,18 @@
 
 * Caring about looking like our old API about configs. Legacy API design should not prevent us from pushing a better API.
 
-* Handling seeding.
-
 ## API description:
 
-The goal is to make the API easier to understand. We add a new class: `Configuration`.
+The goal is to make the API easier to understand. 
 
-* `Ingredient` is not needed anymore. 
 
-* There is no config scopes.
+* We add a new class: `Configuration`.
+
+* `Ingredient` is not needed anymore, and deprecated.
+
+* There is no config scopes. They are deprecated too.
+
+* The API of `Experiment` and `Run` does not change.
 
 * Ingredients are replaced by functions which can be activated either from the command line or when creating the Experiment.
 
@@ -38,7 +41,65 @@ The goal is to make the API easier to understand. We add a new class: `Configura
 
 * We have a Configuration object now, and all the command lines updates are done at the end of the constructor. The Experiment does not modify the Configuration object unless specifically asked by the user, with the `ex.run(config_updates=...)` for example.
 
-* We don't deprecate anything at the moment, we just add a new class.
+
+### The parameter class:
+
+It's only pseudo-code.
+
+```python
+class Parameter:
+
+    def __init__(self, value, description=None, delayed=False):
+        self.value = value
+        self.description = description
+        self.delayed = delayed
+```
+
+
+### The Configuration class:
+
+It's only pseudo-code.
+
+```python
+class Configuration:
+    def __init__(self, dictionary=None, potential_modificaitons=None, auto=True):
+        """If auto=False, you're free to manipulate this object however you like.
+        This class supports dotted access.
+        """
+        self.dictionary = dictionary or {}
+        self.potential_modifications = potential_modificaitons or []
+        self.parameters_descriptions = {}
+        if auto:
+            self.gather_parameters_descriptions()
+            self.update_with_sys_argv()
+            self.gather_parameters_descriptions()
+            self.evaluate_delayed_parameters()
+
+    def update_with_sys_argv(self):
+        """
+        Do the command line updates, use the potential_modifications if
+        they are present in sys.argv.
+        """
+        ...
+
+    def gather_parameters_descriptions(self):
+        """Traverse the dictionary, sub-dictionaries and lists, fill the 
+        parameters_description and replace the parameters with their values.
+        """
+        ...
+
+    def evaluate_delayed_parameters(self):
+        """Traverse the dictionary and evaluate the delayed parameters."""
+        ...
+        
+    def add_potential_modifications(self, new_potential_modification):
+        self.potential_modifications.append(new_potential_modification)
+```
+
+### dotted access
+
+The `Configuration` class should support the dotted access `condig.dodo[2].dada` instead of `config['dodo'][2]['dada']`. Since there is no black magic anymore, this should be only an implementation detail, and feasible without too much work with a munchify.
+
 
 ### Basic example:
 
@@ -119,7 +180,7 @@ def config_change2(config):
 
 
 configuration = Configuration(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
-                       potential_modifications=[config_change1, config_change2])
+                              potential_modifications=[config_change1, config_change2])
 
 
 ex = sacred.Experiment('my_pretty_experiment')
@@ -181,7 +242,7 @@ def config_change3(config):
 
 potential_modifs = [config_change1, config_change2, config_change3]
 configuration = Configuration(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
-                       potential_modifications=potential_modifs)
+                              potential_modifications=potential_modifs)
 
 
 ex = sacred.Experiment('my_pretty_experiment')
@@ -201,7 +262,7 @@ def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
 
 The `Configuration` object will remove the `Parameters` and keep only the value, for ease of access.
 It will put the descriptions somewhere else, in another attribute of the `Configuration` object. 
-Let's say `Configuration.values_descriptions`. 
+Let's say `Configuration.parameters_descriptions`. 
 
 Notice the way the batch size value is accessed when getting the default dataset size. The Parameter has been removed in the constructor.
 
@@ -273,7 +334,7 @@ def config_dataset_cifar(config):
 # the other modifications will be pulled dynamically.
 potential_modifs = [config_dataset_mnist, config_dataset_cifar]
 configuration = Configuration(dict(dataset_size=10_000, nb_epochs=50),
-                       potential_modifications=potential_modifs)
+                              potential_modifications=potential_modifs)
 
 
 ex = sacred.Experiment('my_pretty_experiment')
@@ -346,8 +407,3 @@ def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args
     my_dataset = my_dataset[:dataset_size]
     ...
 ```
-
-
-### dotted access
-
-The config object should support the dotted access `condig.dodo[2].dada` instead of `config['dodo'][2]['dada']`. Since there is no black magic anymore, this should be only an implementation detail, and feasible without too much work with a munchify.
