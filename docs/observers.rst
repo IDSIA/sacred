@@ -75,7 +75,7 @@ Or with server and port:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver(url='my.server.org:27017',
+    ex.observers.append(MongoObserver.create(url='my.server.org:27017',
                                       db_name='MY_DB'))
 
 This assumes you either have a local MongoDB running or have access to it over
@@ -96,7 +96,7 @@ you want to use. If it can be done by just using the ``MongoDB URI`` then just p
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver(
+    ex.observers.append(MongoObserver.create(
         url='mongodb://user:password@example.com/the_database?authMechanism=SCRAM-SHA-1',
         db_name='MY_DB'))
 
@@ -106,7 +106,7 @@ If additional arguments need to be passed to the MongoClient they can just be in
 
 .. code-block:: python
 
-    ex.observers.append(MongoObserver(
+    ex.observers.append(MongoObserver.create(
         url="mongodb://<X.509 derived username>@example.com/?authMechanism=MONGODB-X509",
         db_name='MY_DB',
         ssl=True,
