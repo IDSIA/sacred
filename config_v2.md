@@ -127,8 +127,6 @@ def my_main_function(batch_size, dataset_size, nb_epochs):
 
 This handles the case where a configuration value, if not set should be evaluated based on other values present in the config.
 
-If the `Delayed` object is present even after all overrides from the command lines and other, it is evaluated before starting the Experiment.
-
 ```python
 import sacred
 from sacred import Parameter, Configuration
