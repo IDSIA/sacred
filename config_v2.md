@@ -20,14 +20,13 @@
 
 * Caring about looking like our old API about configs. Legacy API design should not prevent us from pushing a better API.
 
-* Handling seeding. The seeding has been separated from the configuration process with the PR [Making the seeding more intuitive](https://github.com/IDSIA/sacred/pull/615)
-
+* Handling seeding.
 
 ## API description:
 
-The goal is to make the API easier to understand.
+The goal is to make the API easier to understand. We add a new class: `Configuration`.
 
-* There is no more `Ingredient`. 
+* `Ingredient` is not needed anymore. 
 
 * There is no config scopes.
 
@@ -37,46 +36,28 @@ The goal is to make the API easier to understand.
 
 * Classes and functions can be put in the config, but only the full name will be saved with the Observers.
 
-* We have a Config object now, and all the command lines updates are done at the end of the constructor. The Experiment does not modify the Config object.
+* We have a Configuration object now, and all the command lines updates are done at the end of the constructor. The Experiment does not modify the Configuration object unless specifically asked by the user, with the `ex.run(config_updates=...)` for example.
+
+* We don't deprecate anything at the moment, we just add a new class.
 
 ### Basic example:
 
 
 ```python
 import sacred
-from sacred import Config
+from sacred import Configuration
 
 
-configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
+configuration = Configuration(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
-                       
+ex = sacred.Experiment('my_pretty_experiment')
+
+ex.add_config(configuration)
+
+@ex.automain
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
     ...
-
-with ex.start():
-    my_main_function(**configuration)
-```
-
-
-### Example with the log and run object:
-
-```python
-import sacred
-from sacred import Config
-
-
-configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50))
-
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
-
-def my_main_function(batch_size, dataset_size, nb_epochs, run, logger):
-    # main experiment here
-    ...
-
-with ex.start():
-    my_main_function(**configuration, run=ex.current_run, logger=ex.logger)
 ```
 
 
@@ -89,24 +70,24 @@ If the `Delayed` object is present even after all overrides from the command lin
 
 ```python
 import sacred
-from sacred import ConfigValue, Config
+from sacred import Parameter, Configuration
 
 
-configuration = Config(dict(
+configuration = Configuration(dict(
     batch_size=32, 
-    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, delayed=True),
+    dataset_size=Parameter(lambda config: config['batch_size'] * 100, delayed=True),
     nb_epochs=50
 ))
 
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
+ex = sacred.Experiment('my_pretty_experiment')
                        
+ex.add_config(configuration)
+
+@ex.automain
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 For example:
@@ -124,7 +105,7 @@ This is a replacement for named configs.
 
 ```python
 import sacred
-from sacred import Config
+from sacred import Configuration
 
 
 def config_change1(config):
@@ -137,19 +118,19 @@ def config_change2(config):
     config['dataset_size'] = 700
 
 
-configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
+configuration = Configuration(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_change1, config_change2])
 
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
+ex = sacred.Experiment('my_pretty_experiment')
 
+ex.add_config(configuration)
+
+@ex.automain
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
     my_dataset = load_dataset(dataset_size, **dataset_config)
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 ```bash
@@ -178,7 +159,7 @@ python my_main.py with pretty_name_here
 
 ```python
 import sacred
-from sacred import Config
+from sacred import Configuration
 
 from somewhere_else import load_dataset
 
@@ -199,51 +180,51 @@ def config_change3(config):
 
 
 potential_modifs = [config_change1, config_change2, config_change3]
-configuration = Config(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
+configuration = Configuration(dict(batch_size=32, dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
 
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
-                       
+ex = sacred.Experiment('my_pretty_experiment')
+
+ex.add_config(configuration)
+
+@ex.automain           
 def my_main_function(batch_size, dataset_size, nb_epochs, dataset_config):
     # main experiment here
     my_dataset = load_dataset(dataset_size, **dataset_config)
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 
 ### Example with descriptions of the config values:
 
 
-The `Config` object will remove the `ConfigValues` and keep only the value, for ease of access.
-It will put the descriptions somewhere else, in another attribute of the `Config` object. 
-Let's say `Config.values_descriptions`. 
+The `Configuration` object will remove the `Parameters` and keep only the value, for ease of access.
+It will put the descriptions somewhere else, in another attribute of the `Configuration` object. 
+Let's say `Configuration.values_descriptions`. 
 
-Notice the way the batch size value is accessed when getting the default dataset size. The ConfigValue has been removed in the constructor.
+Notice the way the batch size value is accessed when getting the default dataset size. The Parameter has been removed in the constructor.
 
 ```python
 import sacred
-from sacred import ConfigValue, Config
+from sacred import Parameter, Configuration
 
 
-configuration = Config(dict(
-    batch_size=ConfigValue(32, "The batch size value"),
-    dataset_size=ConfigValue(lambda config: config['batch_size'] * 100, "The dataset size", delayed=True),
-    nb_epochs=ConfigValue(50, "The number of epochs")
+configuration = Configuration(dict(
+    batch_size=Parameter(32, "The batch size value"),
+    dataset_size=Parameter(lambda config: config['batch_size'] * 100, "The dataset size", delayed=True),
+    nb_epochs=Parameter(50, "The number of epochs")
 ))
-print(configuration['batch_size'])  # will print 32, not a ConfigValue.
+print(configuration['batch_size'])  # will print 32, not a Parameter.
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
+ex = sacred.Experiment('my_pretty_experiment')
                        
+ex.add_config(configuration)
+
+@ex.automain
 def my_main_function(batch_size, dataset_size, nb_epochs):
     # main experiment here
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 
@@ -254,7 +235,7 @@ There is a hierarchy now. Similar to ingredients.
 
 ```python
 import sacred
-from sacred import Config
+from sacred import Configuration
 
 from somewhere_else import get_mnist, get_cifar
 
@@ -291,21 +272,21 @@ def config_dataset_cifar(config):
 # Here you only specify the 2 main modifications, not the 6 of them
 # the other modifications will be pulled dynamically.
 potential_modifs = [config_dataset_mnist, config_dataset_cifar]
-configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
+configuration = Configuration(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=potential_modifs)
 
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
-                       
+ex = sacred.Experiment('my_pretty_experiment')
+
+ex.add_config(configuration)
+
+@ex.automain           
 def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
     # main experiment here
     
     my_dataset = function_get_dataset(**dataset_args)
     my_dataset = my_dataset[:dataset_size]
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 From the command line:
@@ -323,7 +304,7 @@ We'll provide a function `sacred.get_default_args(some_function)` which will ext
 
 ```python
 import sacred
-from sacred import Config, get_default_args
+from sacred import Configuration, get_default_args
 
 
 def get_mnist(crop_size, random_flip=True, brightness=0.5):
@@ -349,21 +330,21 @@ def config_dataset_mnist(config):
     config.add_potential_modification(config_mnist2)
     
 
-configuration = Config(dict(dataset_size=10_000, nb_epochs=50),
+configuration = Configuration(dict(dataset_size=10_000, nb_epochs=50),
                        potential_modifications=[config_dataset_mnist])
 
 
-ex = sacred.Experiment('my_pretty_experiment', config=configuration)
-                       
+ex = sacred.Experiment('my_pretty_experiment')
+
+ex.add_config(configuration)
+
+@ex.automain           
 def my_main_function(dataset_size, nb_epochs, function_get_dataset, dataset_args):
     # main experiment here
     
     my_dataset = function_get_dataset(**dataset_args)
     my_dataset = my_dataset[:dataset_size]
     ...
-
-with ex.start():
-    my_main_function(**configuration)
 ```
 
 
