@@ -204,7 +204,7 @@ def debug_option(args, run):
     Set this run to debug mode.
 
     Suppress warnings about missing observers and don't filter the stacktrace.
-    Also enables usage with ipython --pdb.
+    Also enables usage with ipython `--pdb`.
     """
     run.debug = True
 
