@@ -581,4 +581,6 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     commandline_options.loglevel_option,
     sql_option,
     commandline_options.print_config_option,
+    commandline_options.unobserved_option,
+    commandline_options.queue_option,
 ]

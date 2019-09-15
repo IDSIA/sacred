@@ -238,22 +238,16 @@ class BeatIntervalOption(CommandLineOption):
         run.beat_interval = float(args)
 
 
-class UnobservedOption(CommandLineOption):
+@cli_option("-u", "--unobserve", is_flag=True)
+def unobserved_option(args, run):
     """Ignore all observers for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to unobserved mode."""
-        run.unobserved = True
+    run.unobserved = True
 
 
-class QueueOption(CommandLineOption):
+@cli_option("-q", "--queue", is_flag=True)
+def queue_option(args, run):
     """Only queue this run, do not start it."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to queue only mode."""
-        run.queue_only = True
+    run.queue_only = True
 
 
 class ForceOption(CommandLineOption):
