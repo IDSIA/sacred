@@ -12,8 +12,7 @@ import re
 
 from sacred.run import Run
 from sacred.commands import print_config
-from sacred.settings import SETTINGS
-from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+from sacred.utils import convert_camel_case_to_snake_case
 
 
 CLIFunction = Callable[[str, Run], None]
@@ -173,27 +172,6 @@ def get_name(option):
         return option.__name__
 
 
-def gather_command_line_options(filter_disabled=None):
-    """Get a sorted list of all CommandLineOption subclasses."""
-    if filter_disabled is None:
-        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-
-    options = []
-    for opt in get_inheritors(CommandLineOption):
-        warnings.warn(
-            "Subclassing `CommandLineOption` is deprecated. Please "
-            "use the `sacred.cli_option` decorator and pass the function "
-            "to the Experiment constructor."
-        )
-        if filter_disabled and not opt._enabled:
-            continue
-        options.append(opt)
-
-    options += DEFAULT_COMMAND_LINE_OPTIONS
-
-    return sorted(options, key=get_name)
-
-
 class HelpOption(CommandLineOption):
     """Print this help message and exit."""
 
@@ -204,7 +182,7 @@ def debug_option(args, run):
     Set this run to debug mode.
 
     Suppress warnings about missing observers and don't filter the stacktrace.
-    Also enables usage with ipython --pdb.
+    Also enables usage with ipython `--pdb`.
     """
     run.debug = True
 
@@ -260,22 +238,16 @@ class BeatIntervalOption(CommandLineOption):
         run.beat_interval = float(args)
 
 
-class UnobservedOption(CommandLineOption):
+@cli_option("-u", "--unobserve", is_flag=True)
+def unobserved_option(args, run):
     """Ignore all observers for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to unobserved mode."""
-        run.unobserved = True
+    run.unobserved = True
 
 
-class QueueOption(CommandLineOption):
+@cli_option("-q", "--queue", is_flag=True)
+def queue_option(args, run):
     """Only queue this run, do not start it."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to queue only mode."""
-        run.queue_only = True
+    run.queue_only = True
 
 
 class ForceOption(CommandLineOption):
@@ -335,13 +307,11 @@ class EnforceCleanOption(CommandLineOption):
                     )
 
 
-class PrintConfigOption(CommandLineOption):
+@cli_option("-p", "--print-config", is_flag=True)
+def print_config_option(args, run):
     """Always print the configuration first."""
-
-    @classmethod
-    def apply(cls, args, run):
-        print_config(run)
-        print("-" * 79)
+    print_config(run)
+    print("-" * 79)
 
 
 @cli_option("-n", "--name")
@@ -361,6 +331,3 @@ class CaptureOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.capture_mode = args
-
-
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, name_option]
