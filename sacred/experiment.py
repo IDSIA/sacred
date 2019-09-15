@@ -28,6 +28,7 @@ from sacred.commands import (
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.observers.sql import sql_option
 from sacred.run import Run
 from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
@@ -581,4 +582,4 @@ def gather_command_line_options(filter_disabled=None):
     return sorted(options, key=get_name)
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, sql_option]
