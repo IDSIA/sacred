@@ -10,7 +10,7 @@ import warnings
 
 from shutil import copyfile
 
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred import optional as opt
@@ -294,13 +294,11 @@ class FileStorageObserver(RunObserver):
         return False
 
 
-class FileStorageOption(CommandLineOption):
-    """Add a file-storage observer to the experiment."""
+@cli_option("-F", "--file_storage")
+def file_storage_option(args, run):
+    """Add a file-storage observer to the experiment.
 
-    short_flag = "F"
-    arg = "BASEDIR"
-    arg_description = "Base-directory to write the runs to"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.observers.append(FileStorageObserver(args))
+    The value of the arguement should be the
+    base-directory to write the runs to
+    """
+    run.observers.append(FileStorageObserver(args))
