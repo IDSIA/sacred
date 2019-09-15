@@ -25,6 +25,7 @@ from sacred.commands import (
     save_config,
     print_named_configs,
 )
+from sacred.observers.s3_observer import s3_option
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
@@ -581,4 +582,4 @@ def gather_command_line_options(filter_disabled=None):
     return sorted(options, key=get_name)
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, s3_option]
