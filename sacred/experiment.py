@@ -10,14 +10,8 @@ from docopt import docopt, printable_usage
 
 from sacred import SETTINGS
 from sacred.arg_parser import format_usage, get_config_updates
-from sacred.commandline_options import (
-    ForceOption,
-    loglevel_option,
-    CLIOption,
-    debug_option,
-    CommandLineOption,
-    get_name,
-)
+from sacred import commandline_options
+from sacred.commandline_options import CLIOption
 from sacred.commands import (
     help_for_command,
     print_config,
@@ -514,8 +508,8 @@ class Experiment(Ingredient):
             command_name,
             config_updates,
             named_configs=named_configs,
-            force=options.get(ForceOption.get_flag(), False),
-            log_level=options.get(loglevel_option.get_flag(), None),
+            force=options.get(commandline_options.ForceOption.get_flag(), False),
+            log_level=options.get(commandline_options.loglevel_option.get_flag(), None),
         )
         if info is not None:
             run.info.update(info)
@@ -567,7 +561,7 @@ def gather_command_line_options(filter_disabled=None):
         filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
 
     options = []
-    for opt in get_inheritors(CommandLineOption):
+    for opt in get_inheritors(commandline_options.CommandLineOption):
         warnings.warn(
             "Subclassing `CommandLineOption` is deprecated. Please "
             "use the `sacred.cli_option` decorator and pass the function "
@@ -579,7 +573,12 @@ def gather_command_line_options(filter_disabled=None):
 
     options += DEFAULT_COMMAND_LINE_OPTIONS
 
-    return sorted(options, key=get_name)
+    return sorted(options, key=commandline_options.get_name)
 
 
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option, sql_option]
+DEFAULT_COMMAND_LINE_OPTIONS = [
+    commandline_options.debug_option,
+    commandline_options.loglevel_option,
+    sql_option,
+    commandline_options.print_config_option,
+]
