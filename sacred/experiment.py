@@ -16,6 +16,7 @@ from sacred.commandline_options import (
     CLIOption,
     CommandLineOption,
     get_name,
+    debug_option,
 )
 from sacred.commands import (
     help_for_command,

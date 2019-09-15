@@ -10,9 +10,8 @@ import time
 from tempfile import NamedTemporaryFile
 import warnings
 
-import sacred
 import sacred.optional as opt
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
@@ -413,7 +412,7 @@ class MongoObserver(RunObserver):
         return False
 
 
-@sacred.cli_option("-m", "--mongo_db")
+@cli_option("-m", "--mongo_db")
 def mongo_db_option(args, run):
     """Add a MongoDB Observer to the experiment.
 
