@@ -360,7 +360,6 @@ def s3_option(args, run):
 
     The argument value should be `s3://<bucket>/path/to/exp`.
     """
-
     match_obj = re.match(r"s3:\/\/([^\/]*)\/(.*)", args)
     if match_obj is None or len(match_obj.groups()) != 2:
         raise ValueError(
