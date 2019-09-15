@@ -2,17 +2,21 @@
 import inspect
 import os.path
 import sys
+import warnings
 from collections import OrderedDict
 from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
+from sacred import SETTINGS
 from sacred.arg_parser import format_usage, get_config_updates
 from sacred.commandline_options import (
     ForceOption,
-    gather_command_line_options,
     loglevel_option,
     CLIOption,
+    debug_option,
+    CommandLineOption,
+    get_name,
 )
 from sacred.commands import (
     help_for_command,
@@ -24,6 +28,7 @@ from sacred.commands import (
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.observers.sql import sql_option
 from sacred.run import Run
 from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
@@ -32,6 +37,7 @@ from sacred.utils import (
     SacredError,
     format_sacred_error,
     PathType,
+    get_inheritors,
 )
 
 __all__ = ("Experiment",)
@@ -553,3 +559,32 @@ class Experiment(Ingredient):
                 print(help_for_command(commands[args["COMMAND"]]))
                 return True
         return False
+
+
+def gather_command_line_options(filter_disabled=None):
+    """Get a sorted list of all CommandLineOption subclasses."""
+    if filter_disabled is None:
+        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
+
+    options = []
+    for opt in get_inheritors(CommandLineOption):
+        warnings.warn(
+            "Subclassing `CommandLineOption` is deprecated. Please "
+            "use the `sacred.cli_option` decorator and pass the function "
+            "to the Experiment constructor."
+        )
+        if filter_disabled and not opt._enabled:
+            continue
+        options.append(opt)
+
+    options += DEFAULT_COMMAND_LINE_OPTIONS
+
+    return sorted(options, key=get_name)
+
+
+DEFAULT_COMMAND_LINE_OPTIONS = [
+    debug_option,
+    loglevel_option,
+    sql_option,
+    print_config_option,
+]
