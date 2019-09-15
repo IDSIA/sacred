@@ -20,9 +20,10 @@ all other seeds and PRNGs depend on it in a deterministic way.
 Global Seeds
 ============
 Upon starting the experiment, sacred automatically sets the global seed of
-``random`` and (if installed) ``numpy.random`` to the auto-generated root-seed
-of the experiment. This means that even if you don't take any further steps,
-at least the randomness stemming from those two libraries is properly seeded.
+``random`` and (if installed) ``numpy.random``, ``tensorflow.set_random_seed``, 
+``pytorch.manual_seed`` to the auto-generated root-seed of the experiment. 
+This means that even if you don't take any further steps, at least the randomness 
+stemming from those two libraries is properly seeded.
 
 If you rely on any other library that you want to seed globally you should do
 so manually first thing inside your main function. For this you can either take
