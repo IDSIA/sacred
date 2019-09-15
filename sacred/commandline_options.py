@@ -12,8 +12,7 @@ import re
 
 from sacred.run import Run
 from sacred.commands import print_config
-from sacred.settings import SETTINGS
-from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+from sacred.utils import convert_camel_case_to_snake_case
 
 
 CLIFunction = Callable[[str, Run], None]
@@ -171,27 +170,6 @@ def get_name(option):
         return option.get_name()
     else:
         return option.__name__
-
-
-def gather_command_line_options(filter_disabled=None):
-    """Get a sorted list of all CommandLineOption subclasses."""
-    if filter_disabled is None:
-        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-
-    options = []
-    for opt in get_inheritors(CommandLineOption):
-        warnings.warn(
-            "Subclassing `CommandLineOption` is deprecated. Please "
-            "use the `sacred.cli_option` decorator and pass the function "
-            "to the Experiment constructor."
-        )
-        if filter_disabled and not opt._enabled:
-            continue
-        options.append(opt)
-
-    options += DEFAULT_COMMAND_LINE_OPTIONS
-
-    return sorted(options, key=get_name)
 
 
 class HelpOption(CommandLineOption):
@@ -366,6 +344,3 @@ class CaptureOption(CommandLineOption):
     @classmethod
     def apply(cls, args, run):
         run.capture_mode = args
-
-
-DEFAULT_COMMAND_LINE_OPTIONS = [debug_option, loglevel_option]
