@@ -12,8 +12,7 @@ import re
 
 from sacred.run import Run
 from sacred.commands import print_config
-from sacred.settings import SETTINGS
-from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+from sacred.utils import convert_camel_case_to_snake_case
 
 
 CLIFunction = Callable[[str, Run], None]
