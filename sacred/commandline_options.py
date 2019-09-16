@@ -272,33 +272,32 @@ class PriorityOption(CommandLineOption):
         run.meta_info["priority"] = priority
 
 
-class EnforceCleanOption(CommandLineOption):
+@cli_option("-e", "--enforce_clean", is_flag=True)
+def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
 
-    @classmethod
-    def apply(cls, args, run):
-        try:
-            import git  # NOQA
-        except ImportError:
-            warnings.warn(
-                "GitPython must be installed to use the " "--enforce-clean option."
-            )
-            raise
-        repos = run.experiment_info["repositories"]
-        if not repos:
-            raise RuntimeError(
-                "No version control detected. "
-                "Cannot enforce clean repository.\n"
-                "Make sure that your sources under VCS and the "
-                "corresponding python package is installed."
-            )
-        else:
-            for repo in repos:
-                if repo["dirty"]:
-                    raise RuntimeError(
-                        "EnforceClean: Uncommited changes in "
-                        'the "{}" repository.'.format(repo)
-                    )
+    try:
+        import git  # NOQA
+    except ImportError:
+        warnings.warn(
+            "GitPython must be installed to use the " "--enforce-clean option."
+        )
+        raise
+    repos = run.experiment_info["repositories"]
+    if not repos:
+        raise RuntimeError(
+            "No version control detected. "
+            "Cannot enforce clean repository.\n"
+            "Make sure that your sources under VCS and the "
+            "corresponding python package is installed."
+        )
+    else:
+        for repo in repos:
+            if repo["dirty"]:
+                raise RuntimeError(
+                    "EnforceClean: Uncommited changes in "
+                    'the "{}" repository.'.format(repo)
+                )
 
 
 @cli_option("-p", "--print-config", is_flag=True)
