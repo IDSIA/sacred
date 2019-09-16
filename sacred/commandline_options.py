@@ -275,7 +275,6 @@ class PriorityOption(CommandLineOption):
 @cli_option("-e", "--enforce_clean", is_flag=True)
 def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
-
     try:
         import git  # NOQA
     except ImportError:
