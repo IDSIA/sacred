@@ -66,27 +66,29 @@ The `Config` class should support the dotted access `condig.dodo[2].dada` and `c
 
 A `Config` object can be used independently of an `Experiment`. A `Config` object can contain another `Config` object.
 
+An experiment will trigger the command line updates, but if the user wants complete control, he/she can call `Config.update_with_sys_argv()` manually, and the experiment won't do it (it can be checked with `Config.was_updated_with_sys_argv`).
+
 
 ```python
+from typing import List, Union, Callable
+
+
 class Config:
-    def __init__(self, dictionary=None, potential_modificaitons=None, auto=True):
+    def __init__(self, dictionary=None, potential_modificaitons=None):
         """If auto=False, you're free to manipulate this object however you like.
         This class supports dotted access.
         """
         self.dictionary = dictionary or {}
         self.potential_modifications = potential_modificaitons or []
         self.parameters_descriptions = {}
-        if auto:
-            self.gather_parameters_descriptions()
-            self.update_with_sys_argv()
-            self.gather_parameters_descriptions()
-            self.evaluate_delayed_parameters()
+        self.was_updated_with_sys_argv = False
 
     def update_with_sys_argv(self):
         """
         Do the command line updates, use the potential_modifications if
         they are present in sys.argv.
         """
+        self.was_updated_with_sys_argv = True
         ...
 
     def gather_parameters_descriptions(self):
@@ -99,7 +101,8 @@ class Config:
         """Traverse the dictionary and evaluate the delayed parameters."""
         ...
         
-    def add_potential_modifications(self, new_potential_modification):
+    def add_potential_modifications(self, new_potential_modification: Union[List[Callable], Callable]):
+        """can be a list"""
         self.potential_modifications.append(new_potential_modification)
 ```
 
@@ -145,17 +148,18 @@ print(get_default_args(dodo, docstring_style='google'))
 
 ```python
 import sacred
-from sacred import Config, get_default_args
+from sacred import get_default_args
+
+
+ex = sacred.Experiment('my_pretty_experiment')
+
 
 def my_main_function(batch_size=32, dataset_size=10_000, nb_epochs=50):
     # main experiment here
     ...
 
 
-configuration = Config(get_default_args(my_main_function))
-
-ex = sacred.Experiment('my_pretty_experiment')
-ex.add_config(configuration)
+ex.add_config(get_default_args(my_main_function))
 ex.automain(my_main_function)
 ```
 
@@ -169,17 +173,19 @@ This handles the case where a configuration value, if not set should be evaluate
 import sacred
 from sacred import Parameter, Config, get_default_args
 
+
+ex = sacred.Experiment('my_pretty_experiment')
+
+
 def my_main_function(batch_size=32, dataset_size=None, nb_epochs=50):
     # main experiment here
     ...
 
+
 default_args = get_default_args(my_main_function)
-default_args.dataset_size = Parameter(lambda config: config['batch_size'] * 100, delayed=True)
+default_args.dataset_size = Parameter(lambda config: config.batch_size * 100, delayed=True)
 
-configuration = Config(default_args)
-
-ex = sacred.Experiment('my_pretty_experiment')
-ex.add_config(configuration)
+ex.add_config(default_args)
 ex.automain(my_main_function)
 ```
 
@@ -218,11 +224,11 @@ def config_change(config):
 
 default_config = get_default_args(my_main_function)
 default_config.dataset_config = get_default_args(load_dataset)
-configuration = Config(default_config, potential_modifications=[config_change])
+default_config.add_potential_modifications(config_change)
 
 
 ex = sacred.Experiment('my_pretty_experiment')
-ex.add_config(configuration)
+ex.add_config(default_config)
 ex.automain(my_main_function)
 
 ```
@@ -257,6 +263,7 @@ from sacred import Config, get_default_args
 
 from somewhere_else import load_dataset
 
+ex = sacred.Experiment('my_pretty_experiment')
 
 def my_main_function(batch_size=32, dataset_size=10_000, nb_epochs=50, dataset_config=None):
     # main experiment here
@@ -280,11 +287,9 @@ def config_change3(config):
 
 
 potential_modifs = [config_change1, config_change2, config_change3]
-configuration = Config(get_default_args(my_main_function),
-                              potential_modifications=potential_modifs)
+configuration = get_default_args(my_main_function)
+configuration.add_potential_modifications(potential_modifs)
 
-
-ex = sacred.Experiment('my_pretty_experiment')
 ex.add_config(configuration)
 ex.automain(my_main_function)           
 
@@ -336,14 +341,14 @@ ex.automain(my_main_function)
 
 ```python
 import sacred
-from sacred import Parameter, Config
+from sacred import Parameter
 
 
-configuration = Config(dict(
+configuration = dict(
     batch_size=Parameter(32, "The batch size value"),
     dataset_size=Parameter(lambda config: config.batch_size * 100, "The dataset size", delayed=True),
     nb_epochs=Parameter(50, "The number of epochs")
-))
+)
 
 ex = sacred.Experiment('my_pretty_experiment')
 ex.add_config(configuration)
@@ -408,9 +413,8 @@ def config_dataset_cifar(config):
 # Here you only specify the 2 main modifications, not the 6 of them
 # the other modifications will be pulled dynamically.
 potential_modifs = [config_dataset_mnist, config_dataset_cifar]
-configuration = Config(get_default_args(my_main_function),
-                       potential_modifications=potential_modifs)
-
+configuration = get_default_args(my_main_function)
+configuration.add_potential_modifications(potential_modifs)
 
 ex = sacred.Experiment('my_pretty_experiment')
 ex.add_config(configuration)
