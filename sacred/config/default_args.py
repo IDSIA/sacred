@@ -10,9 +10,6 @@ class Parameter:
         self.type_ = type_
         self.description = description
 
-    def __repr__(self):
-        return "{} {} {} {}".format(self.name, self.value, self.type_, self.description)
-
 
 class GoogleDocGetDesciption(GoogleDocstring):
     def __init__(self, *args, **kwargs):
