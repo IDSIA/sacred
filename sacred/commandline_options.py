@@ -5,7 +5,6 @@ It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
 
-import warnings
 from typing import Callable
 import inspect
 import re
