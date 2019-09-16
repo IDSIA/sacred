@@ -10,3 +10,4 @@ repos:
     hooks:
     -   id: flake8
         exclude: ^(tests|examples|docs)/*
+        additional_dependencies: [pep8-naming, flake8-docstrings]
