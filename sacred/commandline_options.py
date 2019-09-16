@@ -275,7 +275,6 @@ class PriorityOption(CommandLineOption):
 @cli_option("-e", "--enforce_clean", is_flag=True)
 def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
-
     repos = run.experiment_info["repositories"]
     if not repos:
         raise RuntimeError(
