@@ -79,3 +79,8 @@ jobs:
         versionSpec: $(PYTHON_VERSION)
     - bash: pip install tox
     - bash: tox -e $TOX_CMD
+- job: test_pre_commit
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+    - bash: bash ./tests/check_pre_commit.sh
