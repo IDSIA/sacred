@@ -4,11 +4,10 @@ import inspect
 
 
 class Parameter:
-    def __init__(self, name, value, type_=None, description=None):
-        self.name = name
+    def __init__(self, value, description=None, type_=None):
         self.value = value
-        self.type_ = type_
         self.description = description
+        self.type_ = type_
 
 
 class GoogleDocGetDesciption(GoogleDocstring):
@@ -56,11 +55,9 @@ def get_default_args(func):
     default_args_values = get_default_args_values(func)
     default_args_description = get_default_args_description(func)
 
-    list_default_args = []
+    default_args = {}
     for name, type_, description in default_args_description:
         default_value = default_args_values[name]
-        description = filter(lambda x: x != "", description)
-        description = "\n".join(description)
-        parameter = Parameter(name, default_value, type_, description)
-        list_default_args.append(parameter)
-    return list_default_args
+        description = "\n".join(description).strip()
+        default_args[name] = Parameter(default_value, description, type_)
+    return default_args

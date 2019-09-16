@@ -26,12 +26,10 @@ def dodo(dudu=4885, dada=[8485, 545]):
 def test_get_default_args():
     default_args = get_default_args(dodo)
 
-    assert default_args[0].name == "dudu"
-    assert default_args[0].value == 4885
-    assert default_args[0].type_ == "int"
-    assert default_args[0].description == "First parameter.\nSecond line."
+    assert default_args["dudu"].value == 4885
+    assert default_args["dudu"].type_ == "int"
+    assert default_args["dudu"].description == "First parameter.\nSecond line."
 
-    assert default_args[1].name == "dada"
-    assert default_args[1].value == [8485, 545]
-    assert default_args[1].type_ == "list"
-    assert default_args[1].description == "The second parameter."
+    assert default_args["dada"].value == [8485, 545]
+    assert default_args["dada"].type_ == "list"
+    assert default_args["dada"].description == "The second parameter."
