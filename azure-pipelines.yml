@@ -83,4 +83,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
+    - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.7'
     - bash: bash ./tests/check_pre_commit.sh
