@@ -81,6 +81,6 @@ jobs:
     - bash: tox -e $TOX_CMD
 - job: test_pre_commit
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-16.04'
   steps:
     - bash: bash ./tests/check_pre_commit.sh
