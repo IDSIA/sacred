@@ -432,7 +432,7 @@ def test_observer_equality(tmpdir):
 def test_blacklist_paths(tmpdir, dir_obs, sample_run):
     basedir, obs = dir_obs
     obs.started_event(**sample_run)
-    other_file = Path(tmpdir / "dodo.txt")
+    other_file = Path(str(tmpdir / "dodo.txt"))
     other_file.touch()
     with pytest.raises(FileExistsError):
         obs.save_file(str(other_file), "cout.txt")
