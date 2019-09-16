@@ -584,4 +584,5 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     commandline_options.print_config_option,
     commandline_options.unobserved_option,
     commandline_options.queue_option,
+    commandline_options.comment_option,
 ]
