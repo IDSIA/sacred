@@ -8,6 +8,7 @@ import tempfile
 from copy import copy
 import pytest
 import json
+from pathlib import Path
 
 from sacred.observers.file_storage import FileStorageObserver
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
@@ -426,3 +427,12 @@ def test_observer_equality(tmpdir):
     observer_3 = FileStorageObserver(str(tmpdir / "a"))
     assert observer_1 == observer_3
     assert observer_1 != observer_2
+
+
+def test_blacklist_paths(tmpdir, dir_obs, sample_run):
+    basedir, obs = dir_obs
+    obs.started_event(**sample_run)
+    other_file = Path(tmpdir / "dodo.txt")
+    other_file.touch()
+    with pytest.raises(FileExistsError):
+        obs.save_file(str(other_file), "cout.txt")
