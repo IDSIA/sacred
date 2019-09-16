@@ -2,17 +2,16 @@
 import inspect
 import os.path
 import sys
+import warnings
 from collections import OrderedDict
 from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
+from sacred import SETTINGS
 from sacred.arg_parser import format_usage, get_config_updates
-from sacred.commandline_options import (
-    ForceOption,
-    gather_command_line_options,
-    LoglevelOption,
-)
+from sacred import commandline_options
+from sacred.commandline_options import CLIOption
 from sacred.commands import (
     help_for_command,
     print_config,
@@ -23,6 +22,7 @@ from sacred.commands import (
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.observers.sql import sql_option
 from sacred.run import Run
 from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
@@ -31,6 +31,7 @@ from sacred.utils import (
     SacredError,
     format_sacred_error,
     PathType,
+    get_inheritors,
 )
 
 __all__ = ("Experiment",)
@@ -54,6 +55,7 @@ class Experiment(Ingredient):
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
         additional_host_info: Optional[List[HostInfoGetter]] = None,
+        additional_cli_options: Optional[Sequence[CLIOption]] = None,
         save_git_info: bool = True,
     ):
         """
@@ -90,6 +92,7 @@ class Experiment(Ingredient):
         """
         self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
+        self.additional_cli_options = additional_cli_options or []
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
@@ -215,6 +218,7 @@ class Experiment(Ingredient):
         )
         commands = OrderedDict(self.gather_commands())
         options = gather_command_line_options()
+        options += self.additional_cli_options
         long_usage = format_usage(program_name, self.doc, commands, options)
         # internal usage is a workaround because docopt cannot handle spaces
         # in program names. So for parsing we use 'dummy' as the program name.
@@ -511,8 +515,8 @@ class Experiment(Ingredient):
             command_name,
             config_updates,
             named_configs=named_configs,
-            force=options.get(ForceOption.get_flag(), False),
-            log_level=options.get(LoglevelOption.get_flag(), None),
+            force=options.get(commandline_options.ForceOption.get_flag(), False),
+            log_level=options.get(commandline_options.loglevel_option.get_flag(), None),
         )
         if info is not None:
             run.info.update(info)
@@ -523,7 +527,8 @@ class Experiment(Ingredient):
         if meta_info:
             run.meta_info.update(meta_info)
 
-        for option in gather_command_line_options():
+        options_list = gather_command_line_options() + self.additional_cli_options
+        for option in options_list:
             option_value = options.get(option.get_flag(), False)
             if option_value:
                 option.apply(option_value, run)
@@ -555,3 +560,37 @@ class Experiment(Ingredient):
                 print(help_for_command(commands[args["COMMAND"]]))
                 return True
         return False
+
+
+def gather_command_line_options(filter_disabled=None):
+    """Get a sorted list of all CommandLineOption subclasses."""
+    if filter_disabled is None:
+        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
+
+    options = []
+    for opt in get_inheritors(commandline_options.CommandLineOption):
+        warnings.warn(
+            "Subclassing `CommandLineOption` is deprecated. Please "
+            "use the `sacred.cli_option` decorator and pass the function "
+            "to the Experiment constructor."
+        )
+        if filter_disabled and not opt._enabled:
+            continue
+        options.append(opt)
+
+    options += DEFAULT_COMMAND_LINE_OPTIONS
+
+    return sorted(options, key=commandline_options.get_name)
+
+
+DEFAULT_COMMAND_LINE_OPTIONS = [
+    commandline_options.debug_option,
+    commandline_options.loglevel_option,
+    sql_option,
+    commandline_options.capture_option,
+    commandline_options.print_config_option,
+    commandline_options.unobserved_option,
+    commandline_options.queue_option,
+    commandline_options.comment_option,
+    commandline_options.enforce_clean_option,
+]

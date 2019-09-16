@@ -12,6 +12,7 @@ from sacred.experiment import Experiment
 from sacred.ingredient import Ingredient
 from sacred import observers
 from sacred.host_info import host_info_getter, host_info_gatherer
+from sacred.commandline_options import cli_option
 
 
 __all__ = (
@@ -25,4 +26,5 @@ __all__ = (
     "__url__",
     "SETTINGS",
     "host_info_gatherer",
+    "cli_option",
 )

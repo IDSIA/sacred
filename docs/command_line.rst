@@ -645,46 +645,55 @@ or ``fd`` (default for Linux/OSX). For more information see :ref:`here <capturin
 Custom Flags
 ============
 It is possible to add custom flags to an experiment by inheriting from
-``sacred.commandline_option.CommandLineOption`` like this:
+``sacred.cli_option`` like this:
 
 .. code-block:: python
 
-    from sacred.commandline_option import CommandLineOption
-
-    class OwnFlag(CommandLineOption):
-    """ This is my personal flag """
-
-        @classmethod
-        def apply(cls, args, run):
-            # useless feature: add some string to the info dict
-            run.info['some'] = 'prepopulation of the info dict'
+    from sacred import cli_option, Experiment
 
 
-The name of the flag is taken from the class name and here would be
-``-o``/``-own_flag``. The short flag can be customized by setting a
-``short_flag`` class variable. The documentation for the flag is taken from
-the docstring. The ``apply`` method of that class is called after the ``Run``
+    @cli_option('-o', '--own-flag', is_flag=True)
+    def my_option(args, run):
+        # useless feature: add some string to the info dict
+        run.info['some'] = 'prepopulation of the info dict'
+
+
+    ex = Experiment('my pretty exp', additional_cli_options=[my_option])
+
+    @ex.run
+    def my_main():
+        ...
+
+
+The name of the flag is taken from the decorator arguments and here would be
+``-o``/``--own-flag``. The documentation for the flag is taken from
+the docstring. The decorated function is called after the ``Run``
 object has been created, but before it has been started.
 
 In this case the ``args`` parameter will be always be ``True``. But it is also
-possible to add a flag which takes an argument, by specifying the ``arg``
-and ``arg_description`` class variables:
+possible to add a flag which takes an argument, by turning off
+the ``is_flag`` option (which is the default):
 
 .. code-block:: python
 
-    from sacred.commandline_options import CommandLineOption
+    from sacred import cli_option, Experiment
 
-    class ImprovedFlag(CommandLineOption):
-    """ This is my even better personal flag """
 
-        short_flag = 'q'
-        arg = 'MESSAGE'
-        arg_description = 'The cool message that gets saved to info'
+    @cli_option('-o', '--own-flag')  # is_flag=False is the default
+    def improved_option(args, run):
+        """
+        This is my even better personal flag
+        The cool message that gets saved to info.
+        """
+        run.info['some'] = args
 
-        @classmethod
-        def apply(cls, args, run):
-            run.info['some'] = args
 
-Here the flag would be ``-q MESSAGE`` / ``-improved_flag=MESSAGE`` and
+    ex = Experiment('my pretty exp', additional_cli_options=[improved_option])
+
+    @ex.run
+    def my_main():
+        ...
+
+Here the flag would be ``-o MESSAGE`` / ``--own-flag=MESSAGE`` and
 the ``args`` parameter of the ``apply`` function would contain the
 ``MESSAGE`` as a string.

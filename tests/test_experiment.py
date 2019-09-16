@@ -9,6 +9,7 @@ from mock import patch
 import pytest
 import sys
 
+from sacred import cli_option
 from sacred import host_info_gatherer
 from sacred.experiment import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds, ConfigAddedError, SacredError
@@ -422,3 +423,41 @@ def test_additional_gatherers():
 
     experiment.run()
     assert experiment.current_run.host_info["hello"] == "hello world"
+
+
+@pytest.mark.parametrize("command_line_option", ["-w", "--warning"])
+def test_additional_cli_options_flag(command_line_option):
+
+    executed = [False]
+
+    @cli_option("-w", "--warning", is_flag=True)
+    def dummy_option(args, run):
+        executed[0] = True
+
+    experiment = Experiment("ator3000", additional_cli_options=[dummy_option])
+
+    @experiment.main
+    def foo():
+        pass
+
+    experiment.run_commandline([__file__, command_line_option])
+    assert executed[0]
+
+
+@pytest.mark.parametrize("command_line_option", ["-w", "--warning"])
+def test_additional_cli_options(command_line_option):
+
+    executed = [False]
+
+    @cli_option("-w", "--warning")
+    def dummy_option(args, run):
+        executed[0] = args
+
+    experiment = Experiment("ator3000", additional_cli_options=[dummy_option])
+
+    @experiment.main
+    def foo():
+        pass
+
+    experiment.run_commandline([__file__, command_line_option, "10"])
+    assert executed[0] == "10"
