@@ -2,7 +2,6 @@ import json
 import os
 import os.path
 
-import boto3
 from botocore.errorfactory import ClientError
 
 from sacred.commandline_options import CommandLineOption
@@ -81,6 +80,8 @@ class S3Observer(RunObserver):
             The AWS region in which you want to create and access
             buckets. Needs to be either set here or configured in your AWS
         """
+        import boto3
+
         if not _is_valid_bucket(bucket):
             raise ValueError(
                 "Your chosen bucket name doesn't follow AWS bucket naming rules"
@@ -268,6 +269,8 @@ class S3Observer(RunObserver):
         self.put_data(key, open(filename, "rb"))
 
     def save_directory(self, source_dir, target_name):
+        import boto3
+
         # Stolen from:
         # https://github.com/boto/boto3/issues/358#issuecomment-346093506
         target_name = target_name or os.path.basename(source_dir)
