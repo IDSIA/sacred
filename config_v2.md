@@ -39,7 +39,7 @@ The goal is to make the API easier to understand.
 
 * Classes and functions can be put in the config, but only the full name will be saved with the Observers.
 
-* We have a Config object now, and all the command lines updates are done at the end of the constructor. The Experiment does not modify the Config object unless specifically asked by the user, with the `ex.run(config_updates=...)` for example.
+* We have a Config object now, and all the command lines updates are done when the experiement starts. It's also possible to trigger the command line updates manually by calling a config method if the user wants extra flexibility (no more config hooks).
 
 * The idiomatic way to use this new API is to craft the `Config` object, update it from the command line, and then unpack it progressively as you call functions with the unpack operator `**`, because a `Config` will be a subclass of `dict` (I hope it doesn't come back to bite us later). Of course if your experiment is very big, you'll end up with a very big config object that will be given at the start, but that's to be expected of a computer program.
 
@@ -286,9 +286,8 @@ def config_change3(config):
     config.dataset_size = 1_000_000
 
 
-potential_modifs = [config_change1, config_change2, config_change3]
 configuration = get_default_args(my_main_function)
-configuration.add_potential_modifications(potential_modifs)
+configuration.add_potential_modifications([config_change1, config_change2, config_change3])
 
 ex.add_config(configuration)
 ex.automain(my_main_function)           
@@ -412,9 +411,8 @@ def config_dataset_cifar(config):
 
 # Here you only specify the 2 main modifications, not the 6 of them
 # the other modifications will be pulled dynamically.
-potential_modifs = [config_dataset_mnist, config_dataset_cifar]
 configuration = get_default_args(my_main_function)
-configuration.add_potential_modifications(potential_modifs)
+configuration.add_potential_modifications([config_dataset_mnist, config_dataset_cifar])
 
 ex = sacred.Experiment('my_pretty_experiment')
 ex.add_config(configuration)
