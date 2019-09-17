@@ -34,6 +34,7 @@ from sacred.utils import (
     PathType,
     get_inheritors,
 )
+from sacred.observers.mongo import mongo_db_option
 
 __all__ = ("Experiment",)
 
@@ -581,6 +582,7 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     s3_option,
     commandline_options.debug_option,
     commandline_options.loglevel_option,
+    mongo_db_option,
     sql_option,
     commandline_options.capture_option,
     commandline_options.print_config_option,
