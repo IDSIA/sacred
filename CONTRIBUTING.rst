@@ -99,8 +99,20 @@ local development.
 4. Create your development environment and install the pre-commit hooks::
 
     $ # Activate your environment
-    $ pip install -r dev-requirements.txt
+    $ pip install -e .
     $ pre-commit install
+
+You can check that pre-commit works with::
+
+    $ pre-commit run --all-files
+
+if you get the error ``ModuleNotFoundError: No module named 'distutils.spawn'``,
+you should do the following::
+
+    $ sudo apt-get update
+    $ sudo apt-get install python3-distutils
+
+It should solve the problem with ``distutils.spawn``.
 
 Now you can make your changes locally.
 
@@ -109,7 +121,7 @@ Now you can make your changes locally.
 
     $ tox
 
-To get tox, just pip install it.
+To get tox, use ``pip install tox`` or ``conda install conda-tox``.
 
 6. Commit your changes and push your branch to GitHub::
 
