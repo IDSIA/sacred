@@ -97,7 +97,7 @@ minutes.
 Afterwards mongoDB should be up and running. ``mongo-express``, an admin interface for MonogDB, should now
 be available on port ``8081``, accessible by the user and password set in the ``.env`` file (``ME_CONFIG_BASICAUTH_USERNAME``
 and ``ME_CONFIG_BASICAUTH_PASSWORD``). ``Sacredboard ``should be available on port ``5000``. ``Omniboard`` should be
-available on port ``9000``. All services will by default only be exposed to ``localhost``. If you want
+available on port ``9000``. They will both listen to the the database name setted in the ``.env`` file (``MONGO_DATABASE``) which will allow the boards to listen to the appropriated mongo database name setted when creating the MongoObserver with the ``db_name`` arg. All services will by default only be exposed to ``localhost``. If you want
 to expose them on all interfaces, e.g. for the use on a server, you need to change the port mappings
 in ``docker-compose.yml`` from ``127.0.0.1:XXXX:XXXX`` to ``XXXX:XXXX``. However, in this case you should
 change the authentification information in ``.env`` to something more secure.
