@@ -2,10 +2,9 @@ import json
 import os
 import os.path
 
-import boto3
 from botocore.errorfactory import ClientError
 
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
@@ -81,6 +80,8 @@ class S3Observer(RunObserver):
             The AWS region in which you want to create and access
             buckets. Needs to be either set here or configured in your AWS
         """
+        import boto3
+
         if not _is_valid_bucket(bucket):
             raise ValueError(
                 "Your chosen bucket name doesn't follow AWS bucket naming rules"
@@ -268,6 +269,8 @@ class S3Observer(RunObserver):
         self.put_data(key, open(filename, "rb"))
 
     def save_directory(self, source_dir, target_name):
+        import boto3
+
         # Stolen from:
         # https://github.com/boto/boto3/issues/358#issuecomment-346093506
         target_name = target_name or os.path.basename(source_dir)
@@ -354,21 +357,18 @@ class S3Observer(RunObserver):
             return False
 
 
-class S3Option(CommandLineOption):
-    """Add a S3 File observer to the experiment."""
+@cli_option("-S", "--s3")
+def s3_option(args, run):
+    """Add a S3 File observer to the experiment.
 
-    short_flag = "S3"
-    arg = "BUCKET_PATH"
-    arg_description = "s3://<bucket>/path/to/exp"
-
-    @classmethod
-    def apply(cls, args, run):
-        match_obj = re.match(r"s3:\/\/([^\/]*)\/(.*)", args)
-        if match_obj is None or len(match_obj.groups()) != 2:
-            raise ValueError(
-                "Valid bucket specification not found. "
-                "Enter bucket and directory path like: "
-                "s3://<bucket>/path/to/exp"
-            )
-        bucket, basedir = match_obj.groups()
-        run.observers.append(S3Observer.create(bucket=bucket, basedir=basedir))
+    The argument value should be `s3://<bucket>/path/to/exp`.
+    """
+    match_obj = re.match(r"s3:\/\/([^\/]*)\/(.*)", args)
+    if match_obj is None or len(match_obj.groups()) != 2:
+        raise ValueError(
+            "Valid bucket specification not found. "
+            "Enter bucket and directory path like: "
+            "s3://<bucket>/path/to/exp"
+        )
+    bucket, basedir = match_obj.groups()
+    run.observers.append(S3Observer(bucket=bucket, basedir=basedir))

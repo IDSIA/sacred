@@ -214,28 +214,20 @@ def loglevel_option(args, run):
     run.root_logger.setLevel(lvl)
 
 
-class CommentOption(CommandLineOption):
-    """Adds a message to the run."""
-
-    arg = "COMMENT"
-    arg_description = "A comment that should be stored along with the run."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add a comment to this run."""
-        run.meta_info["comment"] = args
+@cli_option("-c", "--comment")
+def comment_option(args, run):
+    """Add a comment to this run."""
+    run.meta_info["comment"] = args
 
 
-class BeatIntervalOption(CommandLineOption):
-    """Control the rate of heartbeat events."""
+@cli_option("-b", "--beat-interval")
+def beat_interval_option(args, run):
+    """
+    Set the heart-beat interval for this run.
 
-    arg = "BEAT_INTERVAL"
-    arg_description = "Time between two heartbeat events measured in seconds."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set the heart-beat interval for this run."""
-        run.beat_interval = float(args)
+    Time between two heartbeat events is measured in seconds.
+    """
+    run.beat_interval = float(args)
 
 
 @cli_option("-u", "--unobserve", is_flag=True)
@@ -278,33 +270,31 @@ class PriorityOption(CommandLineOption):
         run.meta_info["priority"] = priority
 
 
-class EnforceCleanOption(CommandLineOption):
+@cli_option("-e", "--enforce_clean", is_flag=True)
+def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
-
-    @classmethod
-    def apply(cls, args, run):
-        try:
-            import git  # NOQA
-        except ImportError:
-            warnings.warn(
-                "GitPython must be installed to use the " "--enforce-clean option."
-            )
-            raise
-        repos = run.experiment_info["repositories"]
-        if not repos:
-            raise RuntimeError(
-                "No version control detected. "
-                "Cannot enforce clean repository.\n"
-                "Make sure that your sources under VCS and the "
-                "corresponding python package is installed."
-            )
-        else:
-            for repo in repos:
-                if repo["dirty"]:
-                    raise RuntimeError(
-                        "EnforceClean: Uncommited changes in "
-                        'the "{}" repository.'.format(repo)
-                    )
+    try:
+        import git  # NOQA
+    except ImportError:
+        warnings.warn(
+            "GitPython must be installed to use the " "--enforce-clean option."
+        )
+        raise
+    repos = run.experiment_info["repositories"]
+    if not repos:
+        raise RuntimeError(
+            "No version control detected. "
+            "Cannot enforce clean repository.\n"
+            "Make sure that your sources under VCS and the "
+            "corresponding python package is installed."
+        )
+    else:
+        for repo in repos:
+            if repo["dirty"]:
+                raise RuntimeError(
+                    "EnforceClean: Uncommited changes in "
+                    'the "{}" repository.'.format(repo)
+                )
 
 
 @cli_option("-p", "--print-config", is_flag=True)
@@ -314,25 +304,18 @@ def print_config_option(args, run):
     print("-" * 79)
 
 
-class NameOption(CommandLineOption):
+@cli_option("-n", "--name")
+def name_option(args, run):
     """Set the name for this run."""
-
-    arg = "NAME"
-    arg_description = "Name for this run."
-
-    @classmethod
-    def apply(cls, args, run):
-        run.experiment_info["name"] = args
-        run.run_logger = run.root_logger.getChild(args)
+    run.experiment_info["name"] = args
+    run.run_logger = run.root_logger.getChild(args)
 
 
-class CaptureOption(CommandLineOption):
-    """Control the way stdout and stderr are captured."""
+@cli_option("-C", "--capture")
+def capture_option(args, run):
+    """
+    Control the way stdout and stderr are captured.
 
-    short_flag = "C"
-    arg = "CAPTURE_MODE"
-    arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.capture_mode = args
+    The argument value must be one of [no, sys, fd]
+    """
+    run.capture_mode = args

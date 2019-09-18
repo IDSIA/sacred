@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 import warnings
 
 import sacred.optional as opt
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
@@ -412,82 +412,82 @@ class MongoObserver(RunObserver):
         return False
 
 
-class MongoDbOption(CommandLineOption):
-    """Add a MongoDB Observer to the experiment."""
+@cli_option("-m", "--mongo_db")
+def mongo_db_option(args, run):
+    """Add a MongoDB Observer to the experiment.
 
-    arg = "DB"
-    arg_description = (
-        "Database specification. Can be "
-        "[host:port:]db_name[.collection[:id]][!priority]"
-    )
+    The argument value is the database specification.
+    Should be in the form:
 
-    RUN_ID_PATTERN = r"(?P<overwrite>\d{1,12})"
-    PORT1_PATTERN = r"(?P<port1>\d{1,5})"
-    PORT2_PATTERN = r"(?P<port2>\d{1,5})"
-    PRIORITY_PATTERN = r"(?P<priority>-?\d+)?"
-    DB_NAME_PATTERN = r"(?P<db_name>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
-    COLL_NAME_PATTERN = (
+    `[host:port:]db_name[.collection[:id]][!priority]`
+    """
+    kwargs = parse_mongo_db_arg(args)
+    mongo = MongoObserver(**kwargs)
+    run.observers.append(mongo)
+
+
+def get_pattern():
+    run_id_pattern = r"(?P<overwrite>\d{1,12})"
+    port1_pattern = r"(?P<port1>\d{1,5})"
+    port2_pattern = r"(?P<port2>\d{1,5})"
+    priority_pattern = r"(?P<priority>-?\d+)?"
+    db_name_pattern = r"(?P<db_name>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+    coll_name_pattern = (
         r"(?P<collection>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
     )
-    HOSTNAME1_PATTERN = (
+    hostname1_pattern = (
         r"(?P<host1>"
         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
         r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
         r"[0-9A-Za-z])?)*)"
     )
-    HOSTNAME2_PATTERN = (
+    hostname2_pattern = (
         r"(?P<host2>"
         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
         r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
         r"[0-9A-Za-z])?)*)"
     )
 
-    HOST_ONLY = r"^(?:{host}:{port})$".format(
-        host=HOSTNAME1_PATTERN, port=PORT1_PATTERN
+    host_only = r"^(?:{host}:{port})$".format(
+        host=hostname1_pattern, port=port1_pattern
     )
-    FULL = (
+    full = (
         r"^(?:{host}:{port}:)?{db}(?:\.{collection}(?::{rid})?)?"
         r"(?:!{priority})?$".format(
-            host=HOSTNAME2_PATTERN,
-            port=PORT2_PATTERN,
-            db=DB_NAME_PATTERN,
-            collection=COLL_NAME_PATTERN,
-            rid=RUN_ID_PATTERN,
-            priority=PRIORITY_PATTERN,
+            host=hostname2_pattern,
+            port=port2_pattern,
+            db=db_name_pattern,
+            collection=coll_name_pattern,
+            rid=run_id_pattern,
+            priority=priority_pattern,
         )
     )
 
-    PATTERN = r"{host_only}|{full}".format(host_only=HOST_ONLY, full=FULL)
+    return r"{host_only}|{full}".format(host_only=host_only, full=full)
 
-    @classmethod
-    def apply(cls, args, run):
-        kwargs = cls.parse_mongo_db_arg(args)
-        mongo = MongoObserver(**kwargs)
-        run.observers.append(mongo)
 
-    @classmethod
-    def parse_mongo_db_arg(cls, mongo_db):
-        g = re.match(cls.PATTERN, mongo_db).groupdict()
-        if g is None:
-            raise ValueError(
-                'mongo_db argument must have the form "db_name" '
-                'or "host:port[:db_name]" but was {}'.format(mongo_db)
-            )
+def parse_mongo_db_arg(mongo_db):
+    g = re.match(get_pattern(), mongo_db).groupdict()
+    if g is None:
+        raise ValueError(
+            'mongo_db argument must have the form "db_name" '
+            'or "host:port[:db_name]" but was {}'.format(mongo_db)
+        )
 
-        kwargs = {}
-        if g["host1"]:
-            kwargs["url"] = "{}:{}".format(g["host1"], g["port1"])
-        elif g["host2"]:
-            kwargs["url"] = "{}:{}".format(g["host2"], g["port2"])
+    kwargs = {}
+    if g["host1"]:
+        kwargs["url"] = "{}:{}".format(g["host1"], g["port1"])
+    elif g["host2"]:
+        kwargs["url"] = "{}:{}".format(g["host2"], g["port2"])
 
-        if g["priority"] is not None:
-            kwargs["priority"] = int(g["priority"])
+    if g["priority"] is not None:
+        kwargs["priority"] = int(g["priority"])
 
-        for p in ["db_name", "collection", "overwrite"]:
-            if g[p] is not None:
-                kwargs[p] = g[p]
+    for p in ["db_name", "collection", "overwrite"]:
+        if g[p] is not None:
+            kwargs[p] = g[p]
 
-        return kwargs
+    return kwargs
 
 
 class QueueCompatibleMongoObserver(MongoObserver):

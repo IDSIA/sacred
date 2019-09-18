@@ -20,6 +20,7 @@ from sacred.commands import (
     print_named_configs,
 )
 from sacred.observers.file_storage import file_storage_option
+from sacred.observers.s3_observer import s3_option
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
@@ -34,6 +35,7 @@ from sacred.utils import (
     PathType,
     get_inheritors,
 )
+from sacred.observers.mongo import mongo_db_option
 
 __all__ = ("Experiment",)
 
@@ -578,11 +580,18 @@ def gather_command_line_options(filter_disabled=None):
 
 
 DEFAULT_COMMAND_LINE_OPTIONS = [
+    s3_option,
     commandline_options.debug_option,
     file_storage_option,
     commandline_options.loglevel_option,
+    mongo_db_option,
     sql_option,
+    commandline_options.capture_option,
     commandline_options.print_config_option,
+    commandline_options.name_option,
     commandline_options.unobserved_option,
+    commandline_options.beat_interval_option,
     commandline_options.queue_option,
+    commandline_options.comment_option,
+    commandline_options.enforce_clean_option,
 ]
