@@ -246,23 +246,20 @@ class ForceOption(CommandLineOption):
         run.force = True
 
 
-class PriorityOption(CommandLineOption):
-    """Sets the priority for a queued up experiment."""
+@cli_option("-P", "--priority")
+def priority_option(args, run):
+    """Sets the priority for a queued up experiment.
 
-    short_flag = "P"
-    arg = "PRIORITY"
-    arg_description = "The (numeric) priority for this run."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add priority info for this run."""
-        try:
-            priority = float(args)
-        except ValueError:
-            raise ValueError(
-                "The PRIORITY argument must be a number! " "(but was '{}')".format(args)
-            )
-        run.meta_info["priority"] = priority
+    `--priority=NUMBER`
+    The number represent the priority for this run.
+    """
+    try:
+        priority = float(args)
+    except ValueError:
+        raise ValueError(
+            "The PRIORITY argument must be a number! (but was '{}')".format(args)
+        )
+    run.meta_info["priority"] = priority
 
 
 @cli_option("-e", "--enforce_clean", is_flag=True)
