@@ -241,13 +241,10 @@ def queue_option(args, run):
     run.queue_only = True
 
 
-class ForceOption(CommandLineOption):
+@cli_option("-f", "--force", is_flag=True)
+def force_option(args, run):
     """Disable warnings about suspicious changes for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to not warn about suspicous changes."""
-        run.force = True
+    run.force = True
 
 
 class PriorityOption(CommandLineOption):

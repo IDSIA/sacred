@@ -518,7 +518,7 @@ class Experiment(Ingredient):
             command_name,
             config_updates,
             named_configs=named_configs,
-            force=options.get(commandline_options.ForceOption.get_flag(), False),
+            force=options.get(commandline_options.force_option.get_flag(), False),
             log_level=options.get(commandline_options.loglevel_option.get_flag(), None),
         )
         if info is not None:
