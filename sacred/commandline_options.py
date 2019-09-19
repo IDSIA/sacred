@@ -186,14 +186,10 @@ def debug_option(args, run):
     run.debug = True
 
 
-class PDBOption(CommandLineOption):
+@cli_option("-D", "--pdb", is_flag=True)
+def pdb_option(args, run):
     """Automatically enter post-mortem debugging with pdb on failure."""
-
-    short_flag = "D"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.pdb = True
+    run.pdb = True
 
 
 @cli_option("-l", "--loglevel")

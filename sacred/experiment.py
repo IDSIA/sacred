@@ -588,6 +588,7 @@ def gather_command_line_options(filter_disabled=None):
 
 DEFAULT_COMMAND_LINE_OPTIONS = [
     s3_option,
+    commandline_options.pdb_option,
     commandline_options.debug_option,
     file_storage_option,
     commandline_options.loglevel_option,
