@@ -74,7 +74,7 @@ from typing import List, Union, Callable
 
 
 class Config:
-    def __init__(self, dictionary=None, potential_modificaitons=None):
+    def __init__(self, dictionary=None, potential_modifications=None):
         """If auto=False, you're free to manipulate this object however you like.
         This class supports dotted access.
         """
@@ -112,7 +112,7 @@ class Config:
 See https://github.com/IDSIA/sacred/pull/646 for the proof of concept.
 
 ```python
-def get_default_args(func, docstring_style=None):
+def get_default_args(func, docstring_style: str = None) -> Config:
     """grab the default arguments, as well as the description from the 
     docstring.
     docstring_style must be 'google' or 'numpy'. We use the parser from sphinx.
