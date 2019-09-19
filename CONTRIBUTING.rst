@@ -122,7 +122,7 @@ Now you can make your changes locally.
 
     $ tox
 
-To get tox, use ``pip install tox`` or ``conda install conda-tox``.
+To get tox, use ``pip install tox`` or ``pip install tox-conda``. If you have a conda distribution, you MUST use tox-conda.
 
 6. Commit your changes and push your branch to GitHub::
 
