@@ -5,7 +5,6 @@ It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
 
-import warnings
 from typing import Callable
 import inspect
 import re
@@ -273,13 +272,6 @@ class PriorityOption(CommandLineOption):
 @cli_option("-e", "--enforce_clean", is_flag=True)
 def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
-    try:
-        import git  # NOQA
-    except ImportError:
-        warnings.warn(
-            "GitPython must be installed to use the " "--enforce-clean option."
-        )
-        raise
     repos = run.experiment_info["repositories"]
     if not repos:
         raise RuntimeError(
