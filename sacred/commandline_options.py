@@ -171,8 +171,10 @@ def get_name(option):
         return option.__name__
 
 
-class HelpOption(CommandLineOption):
+@cli_option("-h", "--help", is_flag=True)
+def help_option(args, run):
     """Print this help message and exit."""
+    pass
 
 
 @cli_option("-d", "--debug", is_flag=True)
