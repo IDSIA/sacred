@@ -599,6 +599,7 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     commandline_options.unobserved_option,
     commandline_options.beat_interval_option,
     commandline_options.queue_option,
+    commandline_options.force_option,
     commandline_options.comment_option,
     commandline_options.enforce_clean_option,
 ]
