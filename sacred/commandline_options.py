@@ -254,7 +254,7 @@ class ForceOption(CommandLineOption):
 def priority_option(args, run):
     """Sets the priority for a queued up experiment.
 
-    usage: `--priority=NUMBER`
+    `--priority=NUMBER`
     The number represent the priority for this run.
     """
     try:
