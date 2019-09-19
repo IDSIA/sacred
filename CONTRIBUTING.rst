@@ -100,6 +100,7 @@ local development.
 
     $ # Activate your environment
     $ pip install -e .
+    $ pip install -r dev-requirements.txt
     $ pre-commit install
 
 You can check that pre-commit works with::
