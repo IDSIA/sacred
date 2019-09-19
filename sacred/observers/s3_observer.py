@@ -2,8 +2,6 @@ import json
 import os
 import os.path
 
-from botocore.errorfactory import ClientError
-
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
@@ -126,6 +124,8 @@ class S3Observer(RunObserver):
         return len(all_keys) > 0
 
     def _bucket_exists(self):
+        from botocore.errorfactory import ClientError
+
         try:
             self.s3.meta.client.head_bucket(Bucket=self.bucket)
         except ClientError as er:
