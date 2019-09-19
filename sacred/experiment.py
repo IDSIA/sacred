@@ -594,6 +594,7 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     mongo_db_option,
     sql_option,
     commandline_options.capture_option,
+    commandline_options.help_option,
     commandline_options.print_config_option,
     commandline_options.name_option,
     commandline_options.unobserved_option,
