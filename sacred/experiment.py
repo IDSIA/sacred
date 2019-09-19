@@ -25,6 +25,7 @@ from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
 from sacred.observers.sql import sql_option
+from sacred.observers.tinydb_hashfs import tiny_db_option
 from sacred.run import Run
 from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
@@ -605,4 +606,5 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     commandline_options.force_option,
     commandline_options.comment_option,
     commandline_options.enforce_clean_option,
+    tiny_db_option,
 ]
