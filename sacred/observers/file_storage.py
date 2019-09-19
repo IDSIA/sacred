@@ -195,7 +195,16 @@ class FileStorageObserver(RunObserver):
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, target_name))
+        blacklist = ["run.json", "config.json", "cout.txt", "metrics.json"]
+        blacklist = [os.path.join(self.dir, x) for x in blacklist]
+        dest_file = os.path.join(self.dir, target_name)
+        if dest_file in blacklist:
+            raise FileExistsError(
+                "You are trying to overwrite a file necessary for the "
+                "FileStorageObserver. "
+                "The list of blacklisted files is: {}".format(blacklist)
+            )
+        copyfile(filename, dest_file)
 
     def save_cout(self):
         with open(os.path.join(self.dir, "cout.txt"), "ab") as f:
