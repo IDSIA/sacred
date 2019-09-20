@@ -271,6 +271,10 @@ class Experiment(Ingredient):
             command_name, config_updates, named_configs, info, meta_info, options
         )
         run()
+
+        if self.notificator is not None:
+            self.notificator.send_notification(message="Job %s is done.".format(self.path))
+            
         return run
 
     def run_commandline(self, argv=None) -> Optional[Run]:
