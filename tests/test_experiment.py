@@ -471,6 +471,7 @@ def test_experiment_done_call_notificator(ex):
 
     mocked_notificator.send_notification.assert_called()
 
+
 def test_experiment_fail_call_notificator(ex):
     mocked_notificator = Mock(webhook_url="fake_url")
     mocked_notificator.send_notification("fake_message")
