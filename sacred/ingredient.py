@@ -83,6 +83,8 @@ class Ingredient:
                 " want to run it pass interactive=True"
             )
 
+        self.notificator = None
+
     # =========================== Decorators ==================================
     @optional_kwargs_decorator
     def capture(self, function=None, prefix=None):
@@ -292,6 +294,16 @@ class Ingredient:
         if not PEP440_VERSION_PATTERN.match(version):
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
+
+    def add_notificator(self, notificator):
+        """
+        Add a notificator to this ingredient/experiment.
+
+        Can be called with any notificator which implement a send_notification_error method. See `notif <https://github.com/davebulaval/notification>` package for example.
+
+        :param notificator: Notificator to push notification when experiment is finish or when experiment have fail.
+        """
+        self.notificator = notificator
 
     def post_process_name(self, name, ingredient):
         """Can be overridden to change the command name."""

@@ -342,6 +342,11 @@ class Experiment(Ingredient):
                     print(format_sacred_error(e, short_usage), file=sys.stderr)
                 else:
                     print_filtered_stacktrace()
+
+                # Handle the push of a notification threw a notificator
+                if self.notificator is not None:
+                    self.notificator.send_notification_error(error=e)
+
                 sys.exit(1)
 
     def open_resource(self, filename: PathType, mode: str = "r"):
