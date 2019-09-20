@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+from unittest.mock import Mock
 
 from sacred import Ingredient
 
@@ -34,7 +35,6 @@ def test_automain_imported(ex):
     main_called = [False]
 
     with patch.object(sys, "argv", ["test.py"]):
-
         @ex.automain
         def foo():
             main_called[0] = True
@@ -270,7 +270,6 @@ def test_adding_option_hooks(ex):
 
 def test_option_hooks_without_options_arg_raises(ex):
     with pytest.raises(KeyError):
-
         @ex.option_hook
         def invalid_hook(wrong_arg_name):
             pass
@@ -427,7 +426,6 @@ def test_additional_gatherers():
 
 @pytest.mark.parametrize("command_line_option", ["-w", "--warning"])
 def test_additional_cli_options_flag(command_line_option):
-
     executed = [False]
 
     @cli_option("-w", "--warning", is_flag=True)
@@ -446,7 +444,6 @@ def test_additional_cli_options_flag(command_line_option):
 
 @pytest.mark.parametrize("command_line_option", ["-w", "--warning"])
 def test_additional_cli_options(command_line_option):
-
     executed = [False]
 
     @cli_option("-w", "--warning")
@@ -461,3 +458,27 @@ def test_additional_cli_options(command_line_option):
 
     experiment.run_commandline([__file__, command_line_option, "10"])
     assert executed[0] == "10"
+
+
+def test_experiment_done_call_notificator(ex):
+    mocked_notificator = Mock(webhook_url="fake_url")
+    mocked_notificator.send_notification('fake_message')
+    ex.add_notificator(mocked_notificator)
+
+    @ex.main
+    def foo():
+        pass
+
+    mocked_notificator.send_notification.assert_called()
+
+def test_experiment_fail_call_notificator(ex):
+    mocked_notificator = Mock(webhook_url="fake_url")
+    mocked_notificator.send_notification("fake_message")
+    mocked_notificator.send_notification_error('fake_error')
+    ex.add_notificator(mocked_notificator)
+
+    @ex.main
+    def foo():
+        print(t)
+
+    mocked_notificator.send_notification_error.assert_called()
