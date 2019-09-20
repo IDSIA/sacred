@@ -272,9 +272,10 @@ class Experiment(Ingredient):
         )
         run()
 
+        # If a notificator is present we throw a notification threw it.
         if self.notificator is not None:
             self.notificator.send_notification(message="Job %s is done.".format(self.path))
-            
+
         return run
 
     def run_commandline(self, argv=None) -> Optional[Run]:
