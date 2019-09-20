@@ -462,24 +462,23 @@ def test_additional_cli_options(command_line_option):
 
 def test_experiment_done_call_notificator(ex):
     mocked_notificator = Mock(webhook_url="fake_url")
-    mocked_notificator.send_notification('fake_message')
+    mocked_notificator.send_notification()
     ex.add_notificator(mocked_notificator)
 
     @ex.main
     def foo():
         pass
 
-    mocked_notificator.send_notification.assert_called()
+    mocked_notificator.send_notification.assert_called_with()
 
 
 def test_experiment_fail_call_notificator(ex):
     mocked_notificator = Mock(webhook_url="fake_url")
-    mocked_notificator.send_notification("fake_message")
-    mocked_notificator.send_notification_error('fake_error')
+    mocked_notificator.send_notification_error()
     ex.add_notificator(mocked_notificator)
 
     @ex.main
     def foo():
         print(t)
 
-    mocked_notificator.send_notification_error.assert_called()
+    mocked_notificator.send_notification_error.assert_called_with()
