@@ -111,7 +111,7 @@ Please note the we also use `Flake8 <http://flake8.pycqa.org/en/latest/>`_ style
 
     $ tox
 
-To get tox, just pip install it.
+To get tox, just pip install it. Also, you will need to have locally various version of python (3.5, 3.6 and 3.7) to be able to run all the tests.
 
 6. Commit your changes and push your branch to GitHub::
 
