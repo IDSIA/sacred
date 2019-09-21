@@ -299,7 +299,8 @@ class Ingredient:
         """
         Add a notificator to this ingredient/experiment.
 
-        Can be called with any notificator which implement a send_notification_error method. See `notif <https://github.com/davebulaval/notification>` package for example.
+        Can be called with any notificator which implement a send_notification_error and send_notification methods.
+        See `notif <https://github.com/davebulaval/notification>` package for example and already defined notificator.
 
         :param notificator: Notificator to push notification when experiment is finish or when experiment have fail.
         """
