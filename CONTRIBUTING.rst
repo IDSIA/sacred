@@ -102,7 +102,9 @@ local development.
     $ pip install -r dev-requirements.txt
     $ pre-commit install
 
+
 Now you can make your changes locally.
+Please note the we also use `Flake8 <http://flake8.pycqa.org/en/latest/>`_ style enforcement and that it's tested in a pre-commit step.
 
 5. When you're done making changes, check that your changes pass style and unit
    tests, including testing other Python versions with tox::
