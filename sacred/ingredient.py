@@ -295,7 +295,7 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def add_notificator(self, notificator):
+    def add_notificator(self, notificator) -> None:
         """
         Add a notificator to this ingredient/experiment.
 
@@ -303,6 +303,7 @@ class Ingredient:
         See `notif <https://github.com/davebulaval/notification>` package for example and already defined notificator.
 
         :param notificator: Notificator to push notification when experiment is finish or when experiment have fail.
+        :type notificator
         """
         self.notificator = notificator
 
