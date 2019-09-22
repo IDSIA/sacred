@@ -295,7 +295,7 @@ class Ingredient:
             raise ValueError('Invalid Version: "{}"'.format(version))
         self.dependencies.add(PackageDependency(package_name, version))
 
-    def add_notificator(self, notificator) -> None:
+    def add_notificator(self, notificator):
         """
         Add a notificator to this ingredient/experiment.
 
