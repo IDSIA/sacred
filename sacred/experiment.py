@@ -274,7 +274,9 @@ class Experiment(Ingredient):
 
         # If a notificator is present we throw a notification threw it.
         if self.notificator is not None:
-            self.notificator.send_notification(message="Job {} is done.".format(self.path))
+            self.notificator.send_notification(
+                message="Job {} is done.".format(self.path)
+            )
 
         return run
 
