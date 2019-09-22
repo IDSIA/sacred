@@ -35,6 +35,7 @@ def test_automain_imported(ex):
     main_called = [False]
 
     with patch.object(sys, "argv", ["test.py"]):
+
         @ex.automain
         def foo():
             main_called[0] = True
@@ -270,6 +271,7 @@ def test_adding_option_hooks(ex):
 
 def test_option_hooks_without_options_arg_raises(ex):
     with pytest.raises(KeyError):
+
         @ex.option_hook
         def invalid_hook(wrong_arg_name):
             pass
