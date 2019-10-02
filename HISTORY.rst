@@ -10,7 +10,6 @@ Major release with several breaking changes.
 * API change: Switched constructor from Observer.create(...) to Observer(...) for all observers.
 * API change: Changed the interface for collecting custom host-information #569
 * API change: Changed interface for defining CLI options. #572
-* API change: Started using pathlib.Path instead of os.path in many places
 * Feature: Added new S3 file observer #542
 * Feature: added `started_text` option to TelegramObserver #494
 * Feature: added copy/deepcopy support to read-only containers #500
@@ -20,7 +19,8 @@ Major release with several breaking changes.
 * Bugfix: Several fixes for tensorflow integration
 * Bugfix: Fixed crash due to missing brand-key on some machines # 512
 * Internal: Migrated CI server to Azure
-* Internal: Added pre-commit hooks for python black for automated code formatting
+* Internal: Added pre-commit hooks for pep 8 checks and python black for automated code formatting
+* Internal: Started using pathlib.Path instead of os.path in many places
 
 
 0.7.5 (2019-06-20)
