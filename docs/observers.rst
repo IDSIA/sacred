@@ -22,6 +22,10 @@ At the moment there are five observers that are shipped with Sacred:
    relevant information there.
  * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
    a given prefix/directory
+ * The :ref:`queue_observer` can be used to wrap any of the above observers.
+   It will put the processing of observed events on a fault-tolerant 
+   queue in a background process. This is useful for observers that rely
+   on external services such as a database that might be temporarily unavailable.
 
 
 But if you want the run information stored some other way, it is easy to write
@@ -730,7 +734,7 @@ or pickle file containing...
   * optionally: ``username`` for proxy.
   * optionally: ``password`` for proxy.
 
-The observer is then added to the experment like this:
+The observer is then added to the experiment like this:
 
 .. code-block:: python
 
@@ -771,6 +775,48 @@ You simply need to initialize it with your project name and (optionally) api tok
     It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
     To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
     line to your `~/.bashrc` or `~/.bash_profile` files.
+
+.. _queue_observer:
+
+Queue Observer
+==============
+
+The `QueueObserver` can be used on top of other existing observers.
+It runs in a background thread. Observed events
+are buffered in a queue and the background thread is woken up to process
+new events at a fixed interval of 20 seconds be default.
+If the processing of an event fails, the event is put back on the queue
+and processed next time. The `QueueObserver` has currently no way
+of declaring an event as finally failed, so if the failure is not
+due to a temporary unavailability of an external service, the observer
+will try forever.
+
+Adding a Queue Observer
+-------------------------
+
+The ``QueueObserver`` can be used to wrap any other instantiated observer.
+For example, the ``FileStorageObserver`` can be made to use a queue like so
+
+.. code-block:: python
+
+    from sacred.observers import FileStorageObserver, QueueObserver
+
+    fs_observer = FileStorageObserver('my_runs', template='/custom/template.txt')
+    ex.observers.append(QueueObserver(fs_observer)
+
+
+
+For wrapping the :ref:`mongo_observer` a convenience class is provided
+to instantiate the queue based version.
+
+.. code-block:: python
+
+    from sacred.observers import QueueMongoObserver
+
+    ex.observers.append(
+        QueueMongoObserver(url="my.server.org:27017", db_name="MY_DB")
+    )
+
 
 Events
 ======
