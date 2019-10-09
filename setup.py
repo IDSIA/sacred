@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import codecs
+from pathlib import Path
 
 from setuptools import setup
 
@@ -39,18 +39,9 @@ setup(
     url=about["__url__"],
     packages=["sacred", "sacred.observers", "sacred.config", "sacred.stflow"],
     scripts=[],
-    install_requires=[
-        "docopt>=0.3, <1.0",
-        "jsonpickle>=0.7.2, <1.0",
-        "munch>=2.0.2, <3.0",
-        "wrapt>=1.0, <2.0",
-        "py-cpuinfo>=4.0",
-        "colorama>=0.4",
-        "packaging>=18.0",
-        "GitPython",
-    ],
+    install_requires=Path("requirements.txt").read_text().splitlines(),
     tests_require=["mock>=0.8, <3.0", "pytest==4.3.0"],
     classifiers=list(filter(None, classifiers.split("\n"))),
     description="Facilitates automated and reproducible experimental research",
-    long_description=codecs.open("README.rst", encoding="utf_8").read(),
+    long_description=Path("README.rst").read_text(),
 )
