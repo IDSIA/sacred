@@ -788,9 +788,12 @@ new events at a fixed interval of 20 seconds be default.
 If the processing of an event fails, the event is put back on the queue
 and processed next time. This is useful for observers that rely on
 external services like databases that might become temporarily
-unavailable.
+unavailable. Normally, the experiment would fail at this point,
+which could result in long running experiments being unnecessarily
+aborted. The `QueueObserver` can tolerate such temporary problems.
 
-The `QueueObserver` has currently no way
+
+However, the `QueueObserver` has currently no way
 of declaring an event as finally failed, so if the failure is not
 due to a temporary unavailability of an external service, the observer
 will try forever.
