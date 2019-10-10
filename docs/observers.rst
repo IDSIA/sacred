@@ -786,7 +786,11 @@ It runs in a background thread. Observed events
 are buffered in a queue and the background thread is woken up to process
 new events at a fixed interval of 20 seconds be default.
 If the processing of an event fails, the event is put back on the queue
-and processed next time. The `QueueObserver` has currently no way
+and processed next time. This is useful for observers that rely on
+external services like databases that might become temporarily
+unavailable.
+
+The `QueueObserver` has currently no way
 of declaring an event as finally failed, so if the failure is not
 due to a temporary unavailability of an external service, the observer
 will try forever.
