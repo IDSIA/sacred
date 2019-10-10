@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding=utf-8
-
+from typing import Optional
 import mimetypes
 import os.path
 import pickle
@@ -16,7 +14,7 @@ from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
-from sacred.utils import ObserverError
+from sacred.utils import ObserverError, PathType
 
 DEFAULT_MONGO_PRIORITY = 30
 
@@ -77,30 +75,33 @@ class MongoObserver(RunObserver):
 
     def __init__(
         self,
-        url=None,
-        db_name="sacred",
-        collection="runs",
-        overwrite=None,
-        priority=DEFAULT_MONGO_PRIORITY,
-        client=None,
-        failure_dir=None,
+        url: Optional[str] = None,
+        db_name: str = "sacred",
+        collection: str = "runs",
+        overwrite: Optional[bool] = None,
+        priority: int = DEFAULT_MONGO_PRIORITY,
+        client: Optional["pymongo.MongoClient"] = None,
+        failure_dir: Optional[PathType] = None,
         **kwargs
     ):
-        """Factory method for MongoObserver.
+        """Initializer for MongoObserver.
 
         Parameters
         ----------
-        url: Mongo URI to connect to.
-        db_name: Database to connect to.
-        collection: Collection to write the runs to. (default: "runs").
-        overwrite: _id of a run that should be overwritten.
-        priority: (default 30)
-        client: Client to connect to. Do not use client and URL together.
-        failure_dir: Directory to save the run of a failed observer to.
-
-        Returns
-        -------
-        An instantiated MongoObserver.
+        url
+            Mongo URI to connect to.
+        db_name
+            Database to connect to.
+        collection
+            Collection to write the runs to. (default: "runs").
+        overwrite
+            _id of a run that should be overwritten.
+        priority
+            (default 30)
+        client
+            Client to connect to. Do not use client and URL together.
+        failure_dir
+            Directory to save the run of a failed observer to.
         """
         import pymongo
         import gridfs
@@ -562,6 +563,8 @@ class QueueCompatibleMongoObserver(MongoObserver):
 
 
 class QueuedMongoObserver(QueueObserver):
+    """MongoObserver that uses a fault-tolerant background process."""
+
     @classmethod
     def create(cls, *args, **kwargs):
         warnings.warn(
@@ -573,16 +576,39 @@ class QueuedMongoObserver(QueueObserver):
 
     def __init__(
         self,
-        interval=20,
-        retry_interval=10,
-        url=None,
-        db_name="sacred",
-        collection="runs",
-        overwrite=None,
-        priority=DEFAULT_MONGO_PRIORITY,
-        client=None,
+        interval: int = 20,
+        retry_interval: int = 10,
+        url: Optional[str] = None,
+        db_name: str = "sacred",
+        collection: str = "runs",
+        overwrite: Optional[bool] = None,
+        priority: int = DEFAULT_MONGO_PRIORITY,
+        client: Optional["pymongo.MongoClient"] = None,
         **kwargs
     ):
+        """Initializer for MongoObserver.
+
+        Parameters
+        ----------
+        interval
+            The interval in seconds at which the background thread is woken up to process new events.
+        retry_interval
+            The interval in seconds to wait if an event failed to be processed.
+        url
+            Mongo URI to connect to.
+        db_name
+            Database to connect to.
+        collection
+            Collection to write the runs to. (default: "runs").
+        overwrite
+            _id of a run that should be overwritten.
+        priority
+            (default 30)
+        client
+            Client to connect to. Do not use client and URL together.
+        failure_dir
+            Directory to save the run of a failed observer to.
+        """
         super().__init__(
             QueueCompatibleMongoObserver(
                 url=url,

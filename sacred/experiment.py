@@ -97,6 +97,9 @@ class Experiment(Ingredient):
         self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
         self.additional_cli_options = additional_cli_options or []
+        self.all_cli_options = (
+            gather_command_line_options() + self.additional_cli_options
+        )
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
@@ -221,13 +224,13 @@ class Experiment(Ingredient):
             program_name or sys.argv[0] or "Dummy", self.base_dir
         )
         commands = OrderedDict(self.gather_commands())
-        options = gather_command_line_options()
-        options += self.additional_cli_options
-        long_usage = format_usage(program_name, self.doc, commands, options)
+        long_usage = format_usage(
+            program_name, self.doc, commands, self.all_cli_options
+        )
         # internal usage is a workaround because docopt cannot handle spaces
         # in program names. So for parsing we use 'dummy' as the program name.
         # for printing help etc. we want to use the actual program name.
-        internal_usage = format_usage("dummy", self.doc, commands, options)
+        internal_usage = format_usage("dummy", self.doc, commands, self.all_cli_options)
         short_usage = printable_usage(long_usage)
         return short_usage, long_usage, internal_usage
 
@@ -483,9 +486,21 @@ class Experiment(Ingredient):
         its default value.
 
         """
-        _, _, internal_usage = self.get_usage()
-        args = docopt(internal_usage, [])
-        return {k: v for k, v in args.items() if k.startswith("--")}
+        default_options = {}
+        for option in self.all_cli_options:
+            if isinstance(option, CLIOption):
+                if option.is_flag:
+                    default_value = False
+                else:
+                    default_value = None
+            else:  # legacy, should be removed later on.
+                if option.arg is None:
+                    default_value = False
+                else:
+                    default_value = None
+            default_options[option.get_flag()] = default_value
+
+        return default_options
 
     # =========================== Internal Interface ==========================
 

@@ -11,7 +11,31 @@ WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
 
 class QueueObserver(RunObserver):
-    def __init__(self, covered_observer, interval=20, retry_interval=10):
+    """Wraps any observer and puts processing of events in the background.
+
+    If the covered observer fails to process an event, the queue observer
+    will retry until it works. This is useful for observers that rely on
+    external services like databases that might become temporarily
+    unavailable.
+    """
+
+    def __init__(
+        self,
+        covered_observer: RunObserver,
+        interval: int = 20,
+        retry_interval: int = 10,
+    ):
+        """Initialize QueueObserver.
+
+        Parameters
+        ----------
+        covered_observer
+            The real observer that is being wrapped.
+        interval
+            The interval in seconds at which the background thread is woken up to process new events.
+        retry_interval
+            The interval in seconds to wait if an event failed to be processed.
+        """
         self._covered_observer = covered_observer
         self._retry_interval = retry_interval
         self._interval = interval
