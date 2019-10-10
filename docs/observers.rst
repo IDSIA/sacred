@@ -811,10 +811,10 @@ to instantiate the queue based version.
 
 .. code-block:: python
 
-    from sacred.observers import QueueMongoObserver
+    from sacred.observers import QueuedMongoObserver
 
     ex.observers.append(
-        QueueMongoObserver(url="my.server.org:27017", db_name="MY_DB")
+        QueuedMongoObserver(url="my.server.org:27017", db_name="MY_DB")
     )
 
 

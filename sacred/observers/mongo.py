@@ -54,8 +54,6 @@ def force_bson_encodeable(obj):
 
 
 class MongoObserver(RunObserver):
-    import pymongo
-
     COLLECTION_NAME_BLACKLIST = {
         "fs.files",
         "fs.chunks",
@@ -82,7 +80,7 @@ class MongoObserver(RunObserver):
         collection: str = "runs",
         overwrite: Optional[bool] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
-        client: Optional[pymongo.MongoClient] = None,
+        client: Optional["pymongo.MongoClient"] = None,
         failure_dir: Optional[PathType] = None,
         **kwargs
     ):
@@ -567,8 +565,6 @@ class QueueCompatibleMongoObserver(MongoObserver):
 class QueuedMongoObserver(QueueObserver):
     """MongoObserver that uses a fault-tolerant background process."""
 
-    import pymongo
-
     @classmethod
     def create(cls, *args, **kwargs):
         warnings.warn(
@@ -587,7 +583,7 @@ class QueuedMongoObserver(QueueObserver):
         collection: str = "runs",
         overwrite: Optional[bool] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
-        client: Optional[pymongo.MongoClient] = None,
+        client: Optional["pymongo.MongoClient"] = None,
         **kwargs
     ):
         """Initializer for MongoObserver.
