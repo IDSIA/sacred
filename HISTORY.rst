@@ -1,7 +1,7 @@
 Release History
 ---------------
 
-0.8.0 (2019-10-??)
+0.8.0 (2019-10-14)
 ++++++++++++++++++
 Major release with several breaking changes.
 
