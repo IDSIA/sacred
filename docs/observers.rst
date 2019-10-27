@@ -667,7 +667,7 @@ To create an GoogleCloudStorageObserver in Python:
                                                    basedir='/experiment-name/'))
 
 In order for the observer to correctly connect to the provided bucket, The environment variable
-`GOOGLE_APPLICATION_CREDENTIALS` needs to be set by the user. This variable should point to a
+`` GOOGLE_APPLICATION_CREDENTIALS``  needs to be set by the user. This variable should point to a
 valid JSON file containing Google authorisation credentials
 (see: `Google Cloud authentication <https://cloud.google.com/docs/authentication/getting-started/>`_).
 

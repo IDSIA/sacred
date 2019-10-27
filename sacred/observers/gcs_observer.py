@@ -98,7 +98,6 @@ class GoogleCloudStorageObserver(RunObserver):
         self.cout_write_cursor = 0
         self.saved_metrics = {}
 
-        # TODO: Check errors
         from google.cloud import storage
         import google.auth.exceptions
 
@@ -107,7 +106,7 @@ class GoogleCloudStorageObserver(RunObserver):
         except google.auth.exceptions.DefaultCredentialsError:
             raise ConnectionError(
                 "Could not create Google Cloud Storage observer, are you "
-                "sure that you have set enviornment variable GOOGLE_APPLICATION_CREDENTIALS?"
+                "sure that you have set environment variable GOOGLE_APPLICATION_CREDENTIALS?"
             )
 
         self.bucket = client.bucket(bucket)
