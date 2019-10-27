@@ -7,6 +7,7 @@ from sacred.observers.slack import SlackObserver
 from sacred.observers.telegram_obs import TelegramObserver
 from sacred.observers.s3_observer import S3Observer
 from sacred.observers.queue import QueueObserver
+from sacred.observers.gcs_observer import GoogleCloudStorageObserver
 
 
 __all__ = (
@@ -21,4 +22,5 @@ __all__ = (
     "TelegramObserver",
     "S3Observer",
     "QueueObserver",
+    "GoogleCloudStorageObserver"
 )
