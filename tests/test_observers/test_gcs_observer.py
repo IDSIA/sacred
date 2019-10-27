@@ -15,10 +15,10 @@ T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
 
 try:
-    BUCKET = os.environ['CLOUD_STORAGE_BUCKET']
-    _CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+    BUCKET = os.environ["CLOUD_STORAGE_BUCKET"]
+    _CREDENTIALS = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 except KeyError as key:
-    print('Skipping test due to missing environment variable', key)
+    print("Skipping test due to missing environment variable", key)
     pytest.skip("skipping google authentication-only tests", allow_module_level=True)
 
 BASEDIR = "sacred-tests"
@@ -146,7 +146,9 @@ def test_gcs_observer_equality():
     assert obs_one == obs_two
 
     test_directory = "sacred-tests-2/dir"
-    different_basedir = GoogleCloudStorageObserver(bucket=BUCKET, basedir=test_directory)
+    different_basedir = GoogleCloudStorageObserver(
+        bucket=BUCKET, basedir=test_directory
+    )
     assert obs_one != different_basedir
 
     _delete_bucket_directory(obs_one.bucket, BASEDIR)
@@ -163,16 +165,16 @@ def test_raises_error_on_duplicate_id_directory(observer, sample_run):
 def test_completed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, filename="run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, filename="run.json").decode(
+            "utf-8"
+        )
     )
     assert run["status"] == "RUNNING"
     observer.completed_event(T2, "success!")
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, filename="run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, filename="run.json").decode(
+            "utf-8"
+        )
     )
     assert run["status"] == "COMPLETED"
 
@@ -180,16 +182,16 @@ def test_completed_event_updates_run_json(observer, sample_run):
 def test_interrupted_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, filename="run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, filename="run.json").decode(
+            "utf-8"
+        )
     )
     assert run["status"] == "RUNNING"
     observer.interrupted_event(T2, "SERVER_EXPLODED")
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, filename="run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, filename="run.json").decode(
+            "utf-8"
+        )
     )
     assert run["status"] == "SERVER_EXPLODED"
 
@@ -197,16 +199,12 @@ def test_interrupted_event_updates_run_json(observer, sample_run):
 def test_failed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, "run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, "run.json").decode("utf-8")
     )
     assert run["status"] == "RUNNING"
     observer.failed_event(T2, "Everything imaginable went wrong")
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, "run.json"
-        ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, "run.json").decode("utf-8")
     )
     assert run["status"] == "FAILED"
 
@@ -216,9 +214,7 @@ def test_queued_event_updates_run_json(observer, sample_run):
     sample_run["queue_time"] = T2
     observer.queued_event(**sample_run)
     run = json.loads(
-        _get_file_data(
-            observer.bucket, observer.dir, "run.json"
-    ).decode("utf-8")
+        _get_file_data(observer.bucket, observer.dir, "run.json").decode("utf-8")
     )
     assert run["status"] == "QUEUED"
 
@@ -227,9 +223,7 @@ def test_artifact_event_works(observer, sample_run, tmpfile):
     observer.started_event(**sample_run)
     observer.artifact_event("test_artifact.py", tmpfile.name)
 
-    assert _file_exists(
-        observer.bucket, observer.dir, "test_artifact.py"
-    )
+    assert _file_exists(observer.bucket, observer.dir, "test_artifact.py")
     artifact_data = _get_file_data(
         observer.bucket, observer.dir, "test_artifact.py"
     ).decode("utf-8")

@@ -22,5 +22,5 @@ __all__ = (
     "TelegramObserver",
     "S3Observer",
     "QueueObserver",
-    "GoogleCloudStorageObserver"
+    "GoogleCloudStorageObserver",
 )

@@ -18,7 +18,7 @@ def _is_valid_bucket(bucket_name: str):
 
     Reference: https://cloud.google.com/storage/docs/naming
     """
-    if bucket_name.startswith('gs://'):
+    if bucket_name.startswith("gs://"):
         return False
 
     if len(bucket_name) < 3 or len(bucket_name) > 63:
@@ -31,10 +31,10 @@ def _is_valid_bucket(bucket_name: str):
     if not re.fullmatch("([^A-Z]|-|_|[.]|)+", bucket_name):
         return False
 
-    if '..' in bucket_name:
+    if ".." in bucket_name:
         return False
 
-    if 'goog' in bucket_name or 'g00g' in bucket_name:
+    if "goog" in bucket_name or "g00g" in bucket_name:
         return False
 
     return True
@@ -105,8 +105,10 @@ class GoogleCloudStorageObserver(RunObserver):
         try:
             client = storage.Client()
         except google.auth.exceptions.DefaultCredentialsError:
-            raise ConnectionError('Could not create Google Cloud Storage observer, are you '
-                                  'sure that you have set enviornment variable GOOGLE_APPLICATION_CREDENTIALS?')
+            raise ConnectionError(
+                "Could not create Google Cloud Storage observer, are you "
+                "sure that you have set enviornment variable GOOGLE_APPLICATION_CREDENTIALS?"
+            )
 
         self.bucket = client.bucket(bucket)
 
@@ -120,7 +122,7 @@ class GoogleCloudStorageObserver(RunObserver):
         if prefix is None:
             prefix = self.basedir
 
-        iterator = self.bucket.list_blobs(prefix=prefix, delimiter='/')
+        iterator = self.bucket.list_blobs(prefix=prefix, delimiter="/")
         prefixes = set()
         for page in iterator.pages:
             prefixes.update(page.prefixes)
@@ -129,18 +131,17 @@ class GoogleCloudStorageObserver(RunObserver):
 
     def _determine_run_dir(self, _id):
         if _id is None:
-            basepath = os.path.join(self.basedir, '')
+            basepath = os.path.join(self.basedir, "")
             bucket_path_subdirs = self._list_gcs_subdirs(prefix=basepath)
 
             if not bucket_path_subdirs:
                 max_run_id = 0
             else:
                 relative_paths = [
-                    path.replace(self.basedir, '').strip('/') for path in bucket_path_subdirs
+                    path.replace(self.basedir, "").strip("/")
+                    for path in bucket_path_subdirs
                 ]
-                integer_directories = [
-                    int(d) for d in relative_paths if d.isdigit()
-                ]
+                integer_directories = [int(d) for d in relative_paths if d.isdigit()]
                 if not integer_directories:
                     max_run_id = 0
                 else:
@@ -233,7 +234,9 @@ class GoogleCloudStorageObserver(RunObserver):
     def save_json(self, obj, filename):
         key = gcs_join(self.dir, filename)
         blob = self.bucket.blob(key)
-        blob.upload_from_string(json.dumps(flatten(obj), sort_keys=True, indent=2), content_type='text/json')
+        blob.upload_from_string(
+            json.dumps(flatten(obj), sort_keys=True, indent=2), content_type="text/json"
+        )
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
@@ -257,10 +260,10 @@ class GoogleCloudStorageObserver(RunObserver):
             self.put_data(file_location, open(filename, "rb"))
 
     def save_cout(self):
-        binary_data = self.cout[self.cout_write_cursor:].encode("utf-8")
+        binary_data = self.cout[self.cout_write_cursor :].encode("utf-8")
         key = gcs_join(self.dir, "cout.txt")
         blob = self.bucket.blob(key)
-        blob.upload_from_string(binary_data, content_type='text/plain')
+        blob.upload_from_string(binary_data, content_type="text/plain")
         self.cout_write_cursor = len(self.cout)
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
