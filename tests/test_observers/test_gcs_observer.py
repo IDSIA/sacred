@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 import pytest
 import datetime
 import os
 import json
 
+import hashlib
+import tempfile
 from sacred.observers import GoogleCloudStorageObserver
 
 storage = pytest.importorskip("google.cloud.storage")
@@ -31,6 +32,27 @@ def _delete_bucket_directory(bucket, basedir):
     blobs = bucket.list_blobs(prefix=basedir)
     for blob in blobs:
         blob.delete()
+
+
+@pytest.fixture
+def tmpfile():
+    # NOTE: instead of using a with block and delete=True we are creating and
+    # manually deleting the file, such that we can close it before running the
+    # tests. This is necessary since on Windows we can not open the same file
+    # twice, so for the FileStorageObserver to read it, we need to close it.
+    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+
+    f.content = "import sacred\n"
+    f.write(f.content.encode())
+    f.flush()
+    f.seek(0)
+    f.md5sum = hashlib.md5(f.read()).hexdigest()
+
+    f.close()
+
+    yield f
+
+    os.remove(f.name)
 
 
 @pytest.fixture()

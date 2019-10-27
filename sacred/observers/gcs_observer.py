@@ -14,8 +14,8 @@ DEFAULT_GCS_PRIORITY = 20
 
 
 def _is_valid_bucket(bucket_name: str):
-    """
-    Validates correctness of bucket naming.
+    """Validates correctness of bucket naming.
+
     Reference: https://cloud.google.com/storage/docs/naming
     """
     if bucket_name.startswith('gs://'):
@@ -28,7 +28,7 @@ def _is_valid_bucket(bucket_name: str):
     if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", bucket_name):
         return False
 
-    if not re.fullmatch("([^A-Z]|-|_|\.|)+", bucket_name):
+    if not re.fullmatch("([^A-Z]|-|_|[.]|)+", bucket_name):
         return False
 
     if '..' in bucket_name:
@@ -77,7 +77,6 @@ class GoogleCloudStorageObserver(RunObserver):
             The priority to assign to this observer if
             multiple observers are present
         """
-
         if not _is_valid_bucket(bucket):
             raise ValueError(
                 "Your chosen bucket name doesn't follow Google Cloud Storage bucket naming rules"
