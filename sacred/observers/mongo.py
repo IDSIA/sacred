@@ -326,7 +326,9 @@ class MongoObserver(RunObserver):
             if autoinc_key:
                 c = self.runs.find({}, {"_id": 1})
                 c = c.sort("_id", pymongo.DESCENDING).limit(1)
-                self.run_entry["_id"] = c.next()["_id"] + 1 if c.count() else 1
+                self.run_entry["_id"] = (
+                    c.next()["_id"] + 1 if self.runs.count_documents({}, limit=1) else 1
+                )
             try:
                 self.runs.insert_one(self.run_entry)
                 return

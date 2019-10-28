@@ -1,6 +1,7 @@
 import mongomock
 import pymongo
 import pymongo.errors
+from mongomock.store import DatabaseStore
 
 
 class FailingMongoClient(mongomock.MongoClient):
@@ -16,15 +17,22 @@ class FailingMongoClient(mongomock.MongoClient):
         self._exception_to_raise = exception_to_raise
 
     def get_database(
-        self, name, codec_options=None, read_preference=None, write_concern=None
+        self, name=None, codec_options=None, read_preference=None, write_concern=None
     ):
-        db = self._databases.get(name)
+        if name is None:
+            return self.get_default_database()
+
+        db = self._database_accesses.get(name)
         if db is None:
-            db = self._databases[name] = FailingDatabase(
+            db_store = self._store[name]
+            db = self._database_accesses[name] = FailingDatabase(
                 max_calls_before_failure=self._max_calls_before_failure,
                 exception_to_raise=self._exception_to_raise,
                 client=self,
                 name=name,
+                read_preference=read_preference or self.read_preference,
+                codec_options=self._codec_options,
+                _store=db_store,
             )
         return db
 
@@ -36,17 +44,33 @@ class FailingDatabase(mongomock.Database):
         self._exception_to_raise = exception_to_raise
 
     def get_collection(
-        self, name, codec_options=None, read_preference=None, write_concern=None
+        self,
+        name,
+        codec_options=None,
+        read_preference=None,
+        write_concern=None,
+        read_concern=None,
     ):
-        collection = self._collections.get(name)
-        if collection is None:
-            collection = self._collections[name] = FailingCollection(
+        try:
+            return self._collection_accesses[name].with_options(
+                codec_options=codec_options or self._codec_options,
+                read_preference=read_preference or self.read_preference,
+                read_concern=read_concern,
+                write_concern=write_concern,
+            )
+        except KeyError:
+            self._ensure_valid_collection_name(name)
+            collection = self._collection_accesses[name] = FailingCollection(
                 max_calls_before_failure=self._max_calls_before_failure,
                 exception_to_raise=self._exception_to_raise,
-                db=self,
+                database=self,
                 name=name,
+                write_concern=write_concern,
+                read_preference=read_preference or self.read_preference,
+                codec_options=codec_options or self._codec_options,
+                _db_store=self._store,
             )
-        return collection
+            return collection
 
 
 class FailingCollection(mongomock.Collection):
@@ -77,16 +101,23 @@ class ReconnectingMongoClient(FailingMongoClient):
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
     def get_database(
-        self, name, codec_options=None, read_preference=None, write_concern=None
+        self, name=None, codec_options=None, read_preference=None, write_concern=None
     ):
-        db = self._databases.get(name)
+        if name is None:
+            return self.get_default_database()
+
+        db = self._database_accesses.get(name)
         if db is None:
-            db = self._databases[name] = ReconnectingDatabase(
+            db_store = self._store[name]
+            db = self._database_accesses[name] = ReconnectingDatabase(
                 max_calls_before_reconnect=self._max_calls_before_reconnect,
                 max_calls_before_failure=self._max_calls_before_failure,
                 exception_to_raise=self._exception_to_raise,
                 client=self,
                 name=name,
+                read_preference=read_preference or self.read_preference,
+                codec_options=self._codec_options,
+                _store=db_store,
             )
         return db
 
@@ -97,18 +128,34 @@ class ReconnectingDatabase(FailingDatabase):
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
     def get_collection(
-        self, name, codec_options=None, read_preference=None, write_concern=None
+        self,
+        name,
+        codec_options=None,
+        read_preference=None,
+        write_concern=None,
+        read_concern=None,
     ):
-        collection = self._collections.get(name)
-        if collection is None:
-            collection = self._collections[name] = ReconnectingCollection(
+        try:
+            return self._collection_accesses[name].with_options(
+                codec_options=codec_options or self._codec_options,
+                read_preference=read_preference or self.read_preference,
+                read_concern=read_concern,
+                write_concern=write_concern,
+            )
+        except KeyError:
+            self._ensure_valid_collection_name(name)
+            collection = self._collection_accesses[name] = ReconnectingCollection(
                 max_calls_before_reconnect=self._max_calls_before_reconnect,
                 max_calls_before_failure=self._max_calls_before_failure,
                 exception_to_raise=self._exception_to_raise,
-                db=self,
+                database=self,
                 name=name,
+                write_concern=write_concern,
+                read_preference=read_preference or self.read_preference,
+                codec_options=codec_options or self._codec_options,
+                _db_store=self._store,
             )
-        return collection
+            return collection
 
 
 class ReconnectingCollection(FailingCollection):
