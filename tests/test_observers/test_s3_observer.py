@@ -2,13 +2,10 @@
 # coding=utf-8
 
 import datetime
-import os
 import pytest
 import json
 
 from sacred.observers import S3Observer
-import tempfile
-import hashlib
 
 moto = pytest.importorskip("moto")
 boto3 = pytest.importorskip("boto3")
@@ -47,27 +44,6 @@ def sample_run():
 @pytest.fixture
 def observer():
     return S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
-
-
-@pytest.fixture
-def tmpfile():
-    # NOTE: instead of using a with block and delete=True we are creating and
-    # manually deleting the file, such that we can close it before running the
-    # tests. This is necessary since on Windows we can not open the same file
-    # twice, so for the FileStorageObserver to read it, we need to close it.
-    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
-
-    f.content = "import sacred\n"
-    f.write(f.content.encode())
-    f.flush()
-    f.seek(0)
-    f.md5sum = hashlib.md5(f.read()).hexdigest()
-
-    f.close()
-
-    yield f
-
-    os.remove(f.name)
 
 
 def _bucket_exists(bucket_name):

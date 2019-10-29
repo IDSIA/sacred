@@ -2,9 +2,7 @@
 # coding=utf-8
 
 import datetime
-import hashlib
 import os
-import tempfile
 from copy import copy
 import pytest
 import json
@@ -40,27 +38,6 @@ def sample_run():
 def dir_obs(tmpdir):
     basedir = tmpdir.join("file_storage")
     return basedir, FileStorageObserver(basedir.strpath)
-
-
-@pytest.fixture
-def tmpfile():
-    # NOTE: instead of using a with block and delete=True we are creating and
-    # manually deleting the file, such that we can close it before running the
-    # tests. This is necessary since on Windows we can not open the same file
-    # twice, so for the FileStorageObserver to read it, we need to close it.
-    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
-
-    f.content = "import sacred\n"
-    f.write(f.content.encode())
-    f.flush()
-    f.seek(0)
-    f.md5sum = hashlib.md5(f.read()).hexdigest()
-
-    f.close()
-
-    yield f
-
-    os.remove(f.name)
 
 
 def test_fs_observer_create_does_not_create_basedir(dir_obs):

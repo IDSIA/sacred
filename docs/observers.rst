@@ -9,7 +9,7 @@ Observers have a ``priority`` attribute, and are run in order of descending
 priority. The first observer determines the ``_id`` of the run.
 
 
-At the moment there are five observers that are shipped with Sacred:
+At the moment there are seven observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
@@ -22,6 +22,8 @@ At the moment there are five observers that are shipped with Sacred:
    relevant information there.
  * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
    a given prefix/directory
+ * The :ref:`gcs_observer` stores run information in a provided Google Cloud
+   Storage bucket, within a given prefix/directory
  * The :ref:`queue_observer` can be used to wrap any of the above observers.
    It will put the processing of observed events on a fault-tolerant 
    queue in a background process. This is useful for observers that rely
@@ -637,6 +639,43 @@ Directory Structure
 
 S3Observers follow the same conventions as FileStorageObservers when it comes to directory
 structure within a S3 bucket: within ``s3://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
+
+
+Google Cloud Storage Observer
+============
+
+.. note::
+    Requires the `google cloud storage <https://cloud.google.com/storage/docs/reference/libraries/>`_ package.
+    Install with ``pip install google-cloud-storage``.
+
+The Google Cloud Storage Observer allows for experiments to be logged into cloud storage buckets
+provided by Google. In order to use this observer, the user must have created a bucket on the service
+prior to the running an experiment using this observer.
+
+
+Adding a GoogleCloudStorageObserver
+--------------------
+
+To create an GoogleCloudStorageObserver in Python:
+
+.. code-block:: python
+
+    from sacred.observers import GoogleCloudStorageObserver
+    ex.observers.append(GoogleCloudStorageObserver(bucket='bucket-name',
+                                                   basedir='/experiment-name/'))
+
+In order for the observer to correctly connect to the provided bucket, The environment variable
+`` GOOGLE_APPLICATION_CREDENTIALS``  needs to be set by the user. This variable should point to a
+valid JSON file containing Google authorisation credentials
+(see: `Google Cloud authentication <https://cloud.google.com/docs/authentication/getting-started/>`_).
+
+Directory Structure
+--------------------
+
+GoogleCloudStorageObserver follow the same conventions as FileStorageObservers when it comes to directory
+structure within a bucket: within ``gs://<bucket>/basedir/`` numeric run directories will be
 created in ascending order, and each run directory will contain the files specified within the
 FileStorageObserver Directory Structure documentation above.
 
