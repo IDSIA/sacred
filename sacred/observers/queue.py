@@ -110,8 +110,9 @@ class QueueObserver(RunObserver):
                             # the event so wait for some time and
                             # then try again.
                             logger.debug(
-                                f"Error while processing event. Trying again.\n"
-                                f"{traceback.format_exc()}"
+                                "Error while processing event. Trying again.\n{}".format(
+                                    traceback.format_exc()
+                                )
                             )
                             # logging.debug(f"""Error while processing event. Trying again.
                             # {traceback.format_exc()}""")

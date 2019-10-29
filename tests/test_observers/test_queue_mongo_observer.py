@@ -39,22 +39,6 @@ def mongo_obs(monkeypatch):
     return QueuedMongoObserver(interval=0.01, retry_interval=0.01)
 
 
-# @pytest.fixture
-# def mongo_obs():
-#     db = ReconnectingMongoClient(
-#         max_calls_before_reconnect=10,
-#         max_calls_before_failure=1,
-#         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError,
-#     ).db
-
-#     runs = db.runs
-#     metrics = db.metrics
-#     fs = gridfs.GridFS(db)
-#     observer = QueueCompatibleMongoObserver.create_from(runs, fs, metrics_collection=metrics)
-
-#     return QueueObserver(observer, interval=0.01, retry_interval=0.01)
-
-
 @pytest.fixture()
 def sample_run():
     exp = {"name": "test_exp", "sources": [], "doc": "", "base_dir": "/tmp"}
