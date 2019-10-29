@@ -3,17 +3,16 @@
 
 
 import datetime
-import hashlib
-import os
 
 import pytest
-import tempfile
 from sacred.serializer import json
 
 sqlalchemy = pytest.importorskip("sqlalchemy")
 
 from sacred.observers.sql import SqlObserver
 from sacred.observers.sql_bases import Host, Experiment, Run, Source, Resource
+
+from tests.conftest import tmpfile  # noqa F401
 
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -72,27 +71,6 @@ def sample_run():
         "config": config,
         "meta_info": meta_info,
     }
-
-
-@pytest.fixture
-def tmpfile():
-    # NOTE: instead of using a with block and delete=True we are creating and
-    # manually deleting the file, such that we can close it before running the
-    # tests. This is necessary since on Windows we can not open the same file
-    # twice, so for the FileStorageObserver to read it, we need to close it.
-    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
-
-    f.content = "import sacred\n"
-    f.write(f.content.encode())
-    f.flush()
-    f.seek(0)
-    f.md5sum = hashlib.md5(f.read()).hexdigest()
-
-    f.close()
-
-    yield f
-
-    os.remove(f.name)
 
 
 def test_sql_observer_started_event_creates_run(sql_obs, sample_run, session):

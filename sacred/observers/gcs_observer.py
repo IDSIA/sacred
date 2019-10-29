@@ -28,7 +28,7 @@ def _is_valid_bucket(bucket_name: str):
     if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", bucket_name):
         return False
 
-    if not re.fullmatch("([^A-Z]|-|_|[.]|)+", bucket_name):
+    if not re.fullmatch(r"([^A-Z]|-|_|[.]|)+", bucket_name):
         return False
 
     if ".." in bucket_name:

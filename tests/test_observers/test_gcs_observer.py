@@ -1,13 +1,11 @@
-#!/usr/bin/env python
-# coding=utf-8
 import pytest
 import datetime
 import os
 import json
 
-import hashlib
-import tempfile
 from sacred.observers import GoogleCloudStorageObserver
+
+from tests.conftest import tmpfile  # noqa F401
 
 storage = pytest.importorskip("google.cloud.storage")
 
@@ -32,27 +30,6 @@ def _delete_bucket_directory(bucket, basedir):
     blobs = bucket.list_blobs(prefix=basedir)
     for blob in blobs:
         blob.delete()
-
-
-@pytest.fixture
-def tmpfile():
-    # NOTE: instead of using a with block and delete=True we are creating and
-    # manually deleting the file, such that we can close it before running the
-    # tests. This is necessary since on Windows we can not open the same file
-    # twice, so for the FileStorageObserver to read it, we need to close it.
-    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
-
-    f.content = "import sacred\n"
-    f.write(f.content.encode())
-    f.flush()
-    f.seek(0)
-    f.md5sum = hashlib.md5(f.read()).hexdigest()
-
-    f.close()
-
-    yield f
-
-    os.remove(f.name)
 
 
 @pytest.fixture()
@@ -230,26 +207,36 @@ def test_artifact_event_works(observer, sample_run, tmpfile):
     assert artifact_data == tmpfile.content
 
 
-test_buckets = [
-    ("hi", True),
-    ("goog-24", True),
-    ("this_bucket_is_valid", False),
-    ("th15_8uck3t_15_v4l1d", False),
-    ("this-bucket-is-valid", False),
-    ("this-bucket.is-valid", False),
-    ("this-bucket..is-invalid", True),
-    ("-this-bucket-is-invalid", True),
-    ("this-BUCKET-is-invalid", True),
-    ("this-google-is-invalid", True),
-    ("this-g00gle-is-invalid", True),
-    ("192.168.5.4", True),
-]
+@pytest.fixture
+def valid_buckets():
+    return [
+        "this_bucket_is_valid",
+        "th15_8uck3t_15_v4l1d",
+        "this-bucket-is-valid",
+        "this-bucket.is-valid",
+    ]
 
 
-@pytest.mark.parametrize("bucket_name, should_raise", test_buckets)
-def test_raises_error_on_invalid_bucket_name(bucket_name, should_raise):
-    if should_raise:
+@pytest.fixture
+def invalid_buckets():
+    return [
+        "hi",
+        "goog-24",
+        "this-bucket..is-invalid",
+        "-this-bucket-is-invalid",
+        "this-BUCKET-is-invalid",
+        "this-google-is-invalid",
+        "this-g00gle-is-invalid",
+        "192.168.5.4",
+    ]
+
+
+def test_does_not_raise_error_on_valid_bucket_name(valid_buckets):
+    for bucket_name in valid_buckets:
+        _ = GoogleCloudStorageObserver(bucket=bucket_name, basedir=BASEDIR)
+
+
+def test_raises_error_on_invalid_bucket_name(invalid_buckets):
+    for bucket_name in invalid_buckets:
         with pytest.raises(ValueError):
             _ = GoogleCloudStorageObserver(bucket=bucket_name, basedir=BASEDIR)
-    else:
-        _ = GoogleCloudStorageObserver(bucket=bucket_name, basedir=BASEDIR)
