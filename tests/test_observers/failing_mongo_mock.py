@@ -80,14 +80,14 @@ class FailingCollection(mongomock.Collection):
         self._exception_to_raise = exception_to_raise
         self._calls = 0
 
-    def insert_one(self, document):
+    def insert_one(self, document, session=None):
         self._calls += 1
         if self._calls > self._max_calls_before_failure:
             raise pymongo.errors.ConnectionFailure
         else:
             return super().insert_one(document)
 
-    def update_one(self, filter, update, upsert=False):
+    def update_one(self, filter, update, upsert=False, session=None):
         self._calls += 1
         if self._calls > self._max_calls_before_failure:
             raise pymongo.errors.ConnectionFailure
@@ -163,7 +163,7 @@ class ReconnectingCollection(FailingCollection):
         super().__init__(**kwargs)
         self._max_calls_before_reconnect = max_calls_before_reconnect
 
-    def insert_one(self, document):
+    def insert_one(self, document, session=None):
         self._calls += 1
         if self._is_in_failure_range():
             print(self.name, "insert no connection")
@@ -172,7 +172,7 @@ class ReconnectingCollection(FailingCollection):
             print(self.name, "insert connection reestablished")
             return mongomock.Collection.insert_one(self, document)
 
-    def update_one(self, filter, update, upsert=False):
+    def update_one(self, filter, update, upsert=False, session=None):
         self._calls += 1
         if self._is_in_failure_range():
             print(self.name, "update no connection")

@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 import datetime
+from sacred.observers.queue import QueueObserver
 import mock
 import pytest
 
@@ -9,11 +7,18 @@ from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
-gridfs = pytest.importorskip("gridfs")
+import gridfs
+from mongomock.gridfs import enable_gridfs_integration
+
+enable_gridfs_integration()
 import pymongo.errors
 
 from sacred.dependencies import get_digest
-from sacred.observers.mongo import QueuedMongoObserver, MongoObserver
+from sacred.observers.mongo import (
+    QueuedMongoObserver,
+    MongoObserver,
+    QueueCompatibleMongoObserver,
+)
 from .failing_mongo_mock import ReconnectingMongoClient
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1)
@@ -27,10 +32,27 @@ def mongo_obs(monkeypatch):
         max_calls_before_failure=1,
         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError,
     )
+    fs = gridfs.GridFS(client.sacred)
     monkeypatch.setattr(pymongo, "MongoClient", lambda *args, **kwargs: client)
-    monkeypatch.setattr(gridfs, "GridFS", lambda d: mock.MagicMock())
+    monkeypatch.setattr(gridfs, "GridFS", lambda _: fs)
 
     return QueuedMongoObserver(interval=0.01, retry_interval=0.01)
+
+
+# @pytest.fixture
+# def mongo_obs():
+#     db = ReconnectingMongoClient(
+#         max_calls_before_reconnect=10,
+#         max_calls_before_failure=1,
+#         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError,
+#     ).db
+
+#     runs = db.runs
+#     metrics = db.metrics
+#     fs = gridfs.GridFS(db)
+#     observer = QueueCompatibleMongoObserver.create_from(runs, fs, metrics_collection=metrics)
+
+#     return QueueObserver(observer, interval=0.01, retry_interval=0.01)
 
 
 @pytest.fixture()
@@ -56,7 +78,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
     _id = mongo_obs.started_event(**sample_run)
     mongo_obs.join()
     assert _id is not None
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run == {
         "_id": _id,
@@ -81,7 +103,7 @@ def test_mongo_observer_started_event_uses_given_id(mongo_obs, sample_run):
     mongo_obs.join()
 
     assert _id == sample_run["_id"]
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["_id"] == sample_run["_id"]
 
@@ -106,7 +128,7 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=1337)
     mongo_obs.join()
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["heartbeat"] == T2
     assert db_run["result"] == 1337
@@ -119,7 +141,7 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
 
     mongo_obs.completed_event(stop_time=T2, result=42)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["result"] == 42
@@ -130,7 +152,7 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs, sample_run):
     mongo_obs.started_event(**sample_run)
     mongo_obs.interrupted_event(interrupt_time=T2, status="INTERRUPTED")
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "INTERRUPTED"
@@ -142,7 +164,7 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2, fail_trace=fail_trace)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "FAILED"
@@ -158,8 +180,8 @@ def test_mongo_observer_artifact_event(mongo_obs, sample_run):
     mongo_obs.artifact_event(name, filename)
     mongo_obs.join()
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["filename"].endswith(name)
+    [file] = mongo_obs.fs.list()
+    assert file.endswith(name)
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -178,11 +200,8 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=1337)
     mongo_obs.join()
 
-    assert mongo_obs.fs.exists.called
-    mongo_obs.fs.exists.assert_any_call(filename=filename)
-
     db_run = mongo_obs.runs.find_one()
-    assert db_run["resources"] == [(filename, md5)]
+    assert db_run["resources"] == [[filename, md5]]
 
 
 @pytest.fixture
@@ -234,13 +253,13 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=0)
     mongo_obs.join()
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert "metrics" in db_run["info"]
 
     # The newly added metrics belong to the same run and have the same names, so the total number
     # of metrics should not change.
-    assert mongo_obs.metrics.count() == 2
+    assert mongo_obs.metrics.count_documents({}) == 2
     loss = mongo_obs.metrics.find_one(
         {"name": "training.loss", "run_id": db_run["_id"]}
     )
@@ -271,9 +290,9 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
     mongo_obs.join()
     # A new run has been created
-    assert mongo_obs.runs.count() == 2
+    assert mongo_obs.runs.count_documents({}) == 2
     # Another 2 metrics have been created
-    assert mongo_obs.metrics.count() == 4
+    assert mongo_obs.metrics.count_documents({}) == 4
 
 
 def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):
@@ -286,8 +305,8 @@ def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run)
     mongo_obs.artifact_event(name, filename)
     mongo_obs.join()
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["content_type"] == "text/x-python"
+    file = mongo_obs.fs.find_one({})
+    assert file.content_type == "text/x-python"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -305,8 +324,8 @@ def test_mongo_observer_artifact_event_content_type_not_overwritten(
     mongo_obs.artifact_event(name, filename, content_type="application/json")
     mongo_obs.join()
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["content_type"] == "application/json"
+    file = mongo_obs.fs.find_one({})
+    assert file.content_type == "application/json"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -322,8 +341,8 @@ def test_mongo_observer_artifact_event_metadata(mongo_obs, sample_run):
     mongo_obs.artifact_event(name, filename, metadata={"comment": "the setup file"})
     mongo_obs.join()
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["metadata"]["comment"] == "the setup file"
+    file = mongo_obs.fs.find_one({})
+    assert file.metadata["comment"] == "the setup file"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]

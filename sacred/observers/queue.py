@@ -1,11 +1,11 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 from collections import namedtuple
 from queue import Queue
 from sacred.observers.base import RunObserver
 from sacred.utils import IntervalTimer
+import traceback
+import logging
 
+logger = logging.getLogger(__name__)
 
 WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
@@ -22,8 +22,8 @@ class QueueObserver(RunObserver):
     def __init__(
         self,
         covered_observer: RunObserver,
-        interval: int = 20,
-        retry_interval: int = 10,
+        interval: float = 20.0,
+        retry_interval: float = 10.0,
     ):
         """Initialize QueueObserver.
 
@@ -42,6 +42,7 @@ class QueueObserver(RunObserver):
         self._queue = None
         self._worker = None
         self._stop_worker_event = None
+        logger.debug("just testing")
 
     def queued_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("queued_event", args, kwargs))
@@ -108,6 +109,13 @@ class QueueObserver(RunObserver):
                             # Something went wrong during the processing of
                             # the event so wait for some time and
                             # then try again.
+                            logger.debug(
+                                f"Error while processing event. Trying again.\n"
+                                f"{traceback.format_exc()}"
+                            )
+                            # logging.debug(f"""Error while processing event. Trying again.
+                            # {traceback.format_exc()}""")
+
                             self._stop_worker_event.wait(self._retry_interval)
                             continue
                         else:

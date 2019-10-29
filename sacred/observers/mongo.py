@@ -527,9 +527,9 @@ class QueueCompatibleMongoObserver(MongoObserver):
             self.runs.update_one(
                 {"_id": self.run_entry["_id"]}, {"$set": self.run_entry}
             )
-        except pymongo.errors.InvalidDocument:
+        except pymongo.errors.InvalidDocument as e:
             raise ObserverError(
-                "Run contained an unserializable entry." "(most likely in the info)"
+                f"Run contained an unserializable entry. (most likely in the info). pymongo error {e}"
             )
 
     def final_save(self, attempts):
@@ -578,8 +578,8 @@ class QueuedMongoObserver(QueueObserver):
 
     def __init__(
         self,
-        interval: int = 20,
-        retry_interval: int = 10,
+        interval: float = 20.0,
+        retry_interval: float = 10.0,
         url: Optional[str] = None,
         db_name: str = "sacred",
         collection: str = "runs",

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 import datetime
 import os
 from glob import glob
@@ -52,7 +49,6 @@ def mongo_obs():
 def failing_mongo_observer():
     db = FailingMongoClient(
         max_calls_before_failure=2,
-        # exception_to_raise=pymongo.errors.AutoReconnect
         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError,
     ).db
 
@@ -231,7 +227,6 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.resource_event(filename)
 
     db_run = mongo_obs.runs.find_one()
-
     assert db_run["resources"] == [[filename, md5]]
 
 
