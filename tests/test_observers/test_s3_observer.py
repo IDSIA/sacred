@@ -7,8 +7,6 @@ import json
 
 from sacred.observers import S3Observer
 
-from tests.conftest import tmpfile  # noqa F401
-
 moto = pytest.importorskip("moto")
 boto3 = pytest.importorskip("boto3")
 pytest.importorskip("botocore")

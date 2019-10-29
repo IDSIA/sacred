@@ -12,8 +12,6 @@ sqlalchemy = pytest.importorskip("sqlalchemy")
 from sacred.observers.sql import SqlObserver
 from sacred.observers.sql_bases import Host, Experiment, Run, Source, Resource
 
-from tests.conftest import tmpfile  # noqa F401
-
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)

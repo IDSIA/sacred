@@ -11,8 +11,6 @@ from pathlib import Path
 from sacred.observers.file_storage import FileStorageObserver
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
-from tests.conftest import tmpfile  # noqa F401
-
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)

@@ -5,8 +5,6 @@ import json
 
 from sacred.observers import GoogleCloudStorageObserver
 
-from tests.conftest import tmpfile  # noqa F401
-
 storage = pytest.importorskip("google.cloud.storage")
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
