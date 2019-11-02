@@ -227,7 +227,7 @@ def beat_interval_option(args, run):
     run.beat_interval = float(args)
 
 
-@cli_option("-u", "--unobserve", is_flag=True)
+@cli_option("-u", "--unobserved", is_flag=True)
 def unobserved_option(args, run):
     """Ignore all observers for this run."""
     run.unobserved = True
