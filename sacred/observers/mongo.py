@@ -326,7 +326,9 @@ class MongoObserver(RunObserver):
             if autoinc_key:
                 c = self.runs.find({}, {"_id": 1})
                 c = c.sort("_id", pymongo.DESCENDING).limit(1)
-                self.run_entry["_id"] = c.next()["_id"] + 1 if c.count() else 1
+                self.run_entry["_id"] = (
+                    c.next()["_id"] + 1 if self.runs.count_documents({}, limit=1) else 1
+                )
             try:
                 self.runs.insert_one(self.run_entry)
                 return
@@ -525,10 +527,10 @@ class QueueCompatibleMongoObserver(MongoObserver):
             self.runs.update_one(
                 {"_id": self.run_entry["_id"]}, {"$set": self.run_entry}
             )
-        except pymongo.errors.InvalidDocument:
+        except pymongo.errors.InvalidDocument as exc:
             raise ObserverError(
-                "Run contained an unserializable entry." "(most likely in the info)"
-            )
+                "Run contained an unserializable entry. (most likely in the info)"
+            ) from exc
 
     def final_save(self, attempts):
         import pymongo
@@ -576,8 +578,8 @@ class QueuedMongoObserver(QueueObserver):
 
     def __init__(
         self,
-        interval: int = 20,
-        retry_interval: int = 10,
+        interval: float = 20.0,
+        retry_interval: float = 10.0,
         url: Optional[str] = None,
         db_name: str = "sacred",
         collection: str = "runs",
