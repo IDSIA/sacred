@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 import json
 import os
 import os.path
@@ -8,15 +5,14 @@ from pathlib import Path
 from typing import Optional
 import warnings
 
-from shutil import copyfile
-
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred import optional as opt
 from sacred.serializer import flatten
 from sacred.utils import PathType
-
+from fs import open_fs
+from fs.errors import ResourceNotFound
 
 DEFAULT_FILE_STORAGE_PRIORITY = 20
 
@@ -116,10 +112,17 @@ class FileStorageObserver(RunObserver):
             self.dir = os.path.join(self.basedir, str(_id))
             os.mkdir(self.dir)
 
+    def _init_fs(self, _id):
+        self._make_run_dir(_id)
+        self.fs = open_fs(self.dir)
+        self.base_fs = open_fs(self.basedir)
+        self.local_fs = open_fs("/")
+
     def queued_event(
         self, ex_info, command, host_info, queue_time, config, meta_info, _id
     ):
-        self._make_run_dir(_id)
+
+        self._init_fs(_id)
 
         self.run_entry = {
             "experiment": dict(ex_info),
@@ -142,10 +145,9 @@ class FileStorageObserver(RunObserver):
     def save_sources(self, ex_info):
         base_dir = ex_info["base_dir"]
         source_info = []
-        for s, m in ex_info["sources"]:
+        for s, _ in ex_info["sources"]:
             abspath = os.path.join(base_dir, s)
-            store_path, md5sum = self.find_or_save(abspath, self.source_dir)
-            # assert m == md5sum
+            store_path = self.find_or_save(abspath, self.source_dir)
             relative_source = os.path.relpath(str(store_path), self.basedir)
             source_info.append([s, relative_source])
         return source_info
@@ -153,8 +155,7 @@ class FileStorageObserver(RunObserver):
     def started_event(
         self, ex_info, command, host_info, start_time, config, meta_info, _id
     ):
-        self._make_run_dir(_id)
-
+        self._init_fs(_id)
         ex_info["sources"] = self.save_sources(ex_info)
 
         self.run_entry = {
@@ -180,18 +181,22 @@ class FileStorageObserver(RunObserver):
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir: Path):
-        os.makedirs(str(store_dir), exist_ok=True)
+        store_fs = self.base_fs.makedirs(store_dir.parts[-1], recreate=True)
+        print("storedir", store_dir)
+        print("storefs", store_fs)
+        print("base fs", self.base_fs)
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + "_" + md5sum + ext
         store_path = store_dir / store_name
+        print(filename)
+        print(store_path)
         if not store_path.exists():
-            copyfile(filename, str(store_path))
-        return store_path, md5sum
+            self.local_fs.copy(filename, str(store_path))
+        return store_path
 
     def save_json(self, obj, filename):
-        with open(os.path.join(self.dir, filename), "w") as f:
-            json.dump(flatten(obj), f, sort_keys=True, indent=2)
+        json.dump(flatten(obj), self.fs.open(filename, "w"), sort_keys=True, indent=2)
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
@@ -204,12 +209,13 @@ class FileStorageObserver(RunObserver):
                 "FileStorageObserver. "
                 "The list of blacklisted files is: {}".format(blacklist)
             )
-        copyfile(filename, dest_file)
+        self.local_fs.copy(filename, dest_file)
 
     def save_cout(self):
-        with open(os.path.join(self.dir, "cout.txt"), "ab") as f:
-            f.write(self.cout[self.cout_write_cursor :].encode("utf-8"))
-            self.cout_write_cursor = len(self.cout)
+        self.fs.appendbytes(
+            "cout.txt", self.cout[self.cout_write_cursor :].encode("utf-8")
+        )
+        self.cout_write_cursor = len(self.cout)
 
     def render_template(self):
         if opt.has_mako and self.template:
@@ -224,8 +230,7 @@ class FileStorageObserver(RunObserver):
                 savedir=self.dir,
             )
             ext = self.template.suffix
-            with open(os.path.join(self.dir, "report" + ext), "w") as f:
-                f.write(report)
+            self.fs.writetext("report" + ext, report)
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
         self.info = info
@@ -259,7 +264,7 @@ class FileStorageObserver(RunObserver):
         self.render_template()
 
     def resource_event(self, filename):
-        store_path, md5sum = self.find_or_save(filename, self.resource_dir)
+        store_path = self.find_or_save(filename, self.resource_dir)
         self.run_entry["resources"].append([filename, str(store_path)])
         self.save_json(self.run_entry, "run.json")
 
@@ -271,10 +276,8 @@ class FileStorageObserver(RunObserver):
     def log_metrics(self, metrics_by_name, info):
         """Store new measurements into metrics.json."""
         try:
-            metrics_path = os.path.join(self.dir, "metrics.json")
-            with open(metrics_path, "r") as f:
-                saved_metrics = json.load(f)
-        except IOError:
+            saved_metrics = json.loads(self.fs.readtext("metrics.json"))
+        except ResourceNotFound:
             # We haven't recorded anything yet. Start Collecting.
             saved_metrics = {}
 
