@@ -12,7 +12,7 @@ jobs:
         PYTHON_VERSION: '3.6'
         TOX_CMD: 'py36'
       Windows py37:
-        IMAGE_NAME: 'windows-2019'
+        IMAGE_NAME: 'vs2017-win2016'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
       OSX py35:

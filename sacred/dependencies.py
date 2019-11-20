@@ -199,7 +199,7 @@ MODULE_BLACKLIST |= {
     "md5",
     "mhlib",
     "mimetools",
-    "mimetypes",
+    "data",
     "MimeWriter",
     "mimify",
     "mmap",
