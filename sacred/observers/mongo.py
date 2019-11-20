@@ -15,11 +15,14 @@ from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError, PathType
+import pkg_resources
 
 DEFAULT_MONGO_PRIORITY = 30
 
 # This ensures consistent mimetype detection across platforms.
-mimetype_detector = mimetypes.MimeTypes(filenames=["sacred/data/mime.types"])
+mimetype_detector = mimetypes.MimeTypes(
+    filenames=[pkg_resources.resource_filename("sacred", "data/mime.types")]
+)
 
 
 def force_valid_bson_key(key):
