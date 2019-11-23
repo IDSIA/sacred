@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from pathlib import Path
+import codecs
 
 from setuptools import setup
 
@@ -43,5 +44,5 @@ setup(
     tests_require=["mock>=0.8, <3.0", "pytest==4.3.0"],
     classifiers=list(filter(None, classifiers.split("\n"))),
     description="Facilitates automated and reproducible experimental research",
-    long_description=Path("README.rst").read_text(encoding="utf-8"),
+    long_description=codecs.open("README.rst", "r", encoding="utf-8").read(),
 )
