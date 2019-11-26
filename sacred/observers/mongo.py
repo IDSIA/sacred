@@ -15,11 +15,14 @@ from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError, PathType
+import pkg_resources
 
 DEFAULT_MONGO_PRIORITY = 30
 
 # This ensures consistent mimetype detection across platforms.
-mimetypes.init(files=[])
+mimetype_detector = mimetypes.MimeTypes(
+    filenames=[pkg_resources.resource_filename("sacred", "data/mime.types")]
+)
 
 
 def force_valid_bson_key(key):
@@ -276,7 +279,7 @@ class MongoObserver(RunObserver):
 
     @staticmethod
     def _try_to_detect_content_type(filename):
-        mime_type, _ = mimetypes.guess_type(filename)
+        mime_type, _ = mimetype_detector.guess_type(filename)
         if mime_type is not None:
             print(
                 "Added {} as content-type of artifact {}.".format(mime_type, filename)
