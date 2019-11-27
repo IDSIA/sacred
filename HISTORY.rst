@@ -1,6 +1,12 @@
 Release History
 ---------------
 
+0.8.1 (2019-11-27)
+++++++++++++++++++
+* Feature: added Google Cloud Storage Observer (thanks @wohlert)
+* Bugfix: revert accidental renaming of --unobserved commandline option
+
+
 0.8.0 (2019-10-14)
 ++++++++++++++++++
 Major release with several breaking changes.
