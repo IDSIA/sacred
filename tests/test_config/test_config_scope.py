@@ -293,7 +293,7 @@ def test_is_empty_or_comment(line, expected):
 
 def evil_indentation_func(a,
                                     b,
-c, d):
+c, d):  # test comment
 # Lets do the most evil things with indentation
   # 1
     # 2
