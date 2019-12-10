@@ -143,11 +143,16 @@ class MongoObserver(RunObserver):
         runs_collection_name = '{}runs'.format(collection_prefix)
         metrics_collection_name = '{}metrics'.format(collection_prefix)
 
-        if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST or \
-           metrics_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
+        if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError(
                 'Collection name "{}" is reserved. '
-                "Please use a different one.".format(collection)
+                "Please use a different one.".format(runs_collection_name)
+            )
+
+        if metrics_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
+            raise KeyError(
+                'Collection name "{}" is reserved. '
+                "Please use a different one.".format(metrics_collection_name)
             )
 
         runs_collection = database[runs_collection_name]
