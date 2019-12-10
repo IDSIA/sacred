@@ -81,6 +81,7 @@ class MongoObserver(RunObserver):
         url: Optional[str] = None,
         db_name: str = "sacred",
         collection: str = "runs",
+        collection_prefix: str = "",
         overwrite: Optional[bool] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
@@ -97,6 +98,11 @@ class MongoObserver(RunObserver):
             Database to connect to.
         collection
             Collection to write the runs to. (default: "runs").
+            **DEPRECATED**, please use collection_prefix instead.
+        collection_prefix
+            Prefix the runs and metrics collection,
+            i.e. runs will be stored to PREFIX_runs, metrics to PREFIX_metrics.
+            If empty runs are stored to 'runs', metrics to 'metrics'.
         overwrite
             _id of a run that should be overwritten.
         priority
@@ -125,8 +131,24 @@ class MongoObserver(RunObserver):
                 'Collection name "{}" is reserved. '
                 "Please use a different one.".format(collection)
             )
-        runs_collection = database[collection]
-        metrics_collection = database["metrics"]
+        if collection != 'runs':
+            warnings.warn(
+                'Argument "collection" is deprecated. '
+                'Please use "collection_prefix" instead.',
+                DeprecationWarning)
+            if collection_prefix != "":
+                raise ValueError(
+                    'Cannot pass both collection and a collection prefix.'
+                )
+
+        if collection_prefix != "":
+            # separate prefix from 'runs' / 'collections' by an underscore.
+            collection_prefix = '{}_'.format(collection_prefix)
+
+        runs_collection_name = '{}runs'.format(collection_prefix)
+        metrics_collection_name = '{}metrics'.format(collection_prefix)
+        runs_collection = database[runs_collection_name]
+        metrics_collection = database[metrics_collection_name]
         fs = gridfs.GridFS(database)
         self.initialize(
             runs_collection,
