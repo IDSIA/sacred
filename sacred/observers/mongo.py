@@ -126,11 +126,6 @@ class MongoObserver(RunObserver):
         else:
             client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
-        if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
-            raise KeyError(
-                'Collection name "{}" is reserved. '
-                "Please use a different one.".format(collection)
-            )
         if collection != 'runs':
             warnings.warn(
                 'Argument "collection" is deprecated. '
@@ -147,6 +142,14 @@ class MongoObserver(RunObserver):
 
         runs_collection_name = '{}runs'.format(collection_prefix)
         metrics_collection_name = '{}metrics'.format(collection_prefix)
+
+        if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST or \
+           metrics_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
+            raise KeyError(
+                'Collection name "{}" is reserved. '
+                "Please use a different one.".format(collection)
+            )
+
         runs_collection = database[runs_collection_name]
         metrics_collection = database[metrics_collection_name]
         fs = gridfs.GridFS(database)
