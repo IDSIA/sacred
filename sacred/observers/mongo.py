@@ -127,26 +127,25 @@ class MongoObserver(RunObserver):
             client = pymongo.MongoClient(url, **kwargs)
 
         database = client[db_name]
-        if collection != 'runs':
+        if collection != "runs":
             # the 'old' way of setting a custom collection name
             # still works as before for backward compatibility
             warnings.warn(
                 'Argument "collection" is deprecated. '
                 'Please use "collection_prefix" instead.',
-                DeprecationWarning)
+                DeprecationWarning,
+            )
             if collection_prefix != "":
-                raise ValueError(
-                    'Cannot pass both collection and a collection prefix.'
-                )
+                raise ValueError("Cannot pass both collection and a collection prefix.")
             runs_collection_name = collection
-            metrics_collection_name = 'metrics'
+            metrics_collection_name = "metrics"
         else:
             if collection_prefix != "":
                 # separate prefix from 'runs' / 'collections' by an underscore.
-                collection_prefix = '{}_'.format(collection_prefix)
+                collection_prefix = "{}_".format(collection_prefix)
 
-            runs_collection_name = '{}runs'.format(collection_prefix)
-            metrics_collection_name = '{}metrics'.format(collection_prefix)
+            runs_collection_name = "{}runs".format(collection_prefix)
+            metrics_collection_name = "{}metrics".format(collection_prefix)
 
         if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError(

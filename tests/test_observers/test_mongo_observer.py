@@ -38,9 +38,14 @@ def test_create_should_raise_error_on_both_client_and_url():
 
 def test_create_should_raise_error_on_both_prefix_and_runs():
     real_client = pymongo.MongoClient()
-    with pytest.raises(ValueError, match="Cannot pass both collection and a collection prefix."):
-        MongoObserver(client=real_client, collection_prefix='myprefix',
-                      collection='some_collection')
+    with pytest.raises(
+        ValueError, match="Cannot pass both collection and a collection prefix."
+    ):
+        MongoObserver(
+            client=real_client,
+            collection_prefix="myprefix",
+            collection="some_collection",
+        )
 
 
 @pytest.fixture
@@ -56,7 +61,7 @@ def mongo_obs():
 def mongo_obs_with_prefix():
     # create a mongo observer with a collection prefix
     real_client = pymongo.MongoClient()
-    return MongoObserver(collection_prefix='testing', client=real_client)
+    return MongoObserver(collection_prefix="testing", client=real_client)
 
 
 @pytest.fixture
@@ -72,7 +77,7 @@ def mongo_obs_with_collection():
     # old, deprecated way of creating a mongo observer
     # should use 'my_collection' for runs and 'metrics' for metrics
     real_client = pymongo.MongoClient()
-    return MongoObserver(client=real_client, collection='my_collection')
+    return MongoObserver(client=real_client, collection="my_collection")
 
 
 @pytest.fixture
@@ -469,24 +474,24 @@ def test_mongo_observer_artifact_event_metadata(mongo_obs, sample_run):
 
 
 def test_mongo_observer_created_with_prefix(mongo_obs_with_prefix):
-    print('with_prefix_test')
+    print("with_prefix_test")
     runs_collection = mongo_obs_with_prefix.runs
     metrics_collection = mongo_obs_with_prefix.metrics
-    assert runs_collection.name == 'testing_runs'
-    assert metrics_collection.name == 'testing_metrics'
+    assert runs_collection.name == "testing_runs"
+    assert metrics_collection.name == "testing_metrics"
 
 
 def test_mongo_observer_created_without_prefix(mongo_obs_without_prefix):
-    print('without_prefix_test')
+    print("without_prefix_test")
     runs_collection = mongo_obs_without_prefix.runs
     metrics_collection = mongo_obs_without_prefix.metrics
-    assert runs_collection.name == 'runs'
-    assert metrics_collection.name == 'metrics'
+    assert runs_collection.name == "runs"
+    assert metrics_collection.name == "metrics"
 
 
 def test_mongo_observer_created_with_collection(mongo_obs_with_collection):
-    print('with_collection_test')
+    print("with_collection_test")
     runs_collection = mongo_obs_with_collection.runs
     metrics_collection = mongo_obs_with_collection.metrics
-    assert runs_collection.name == 'my_collection'
-    assert metrics_collection.name == 'metrics'
+    assert runs_collection.name == "my_collection"
+    assert metrics_collection.name == "metrics"
