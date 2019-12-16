@@ -81,6 +81,7 @@ class MongoObserver(RunObserver):
         url: Optional[str] = None,
         db_name: str = "sacred",
         collection: str = "runs",
+        collection_prefix: str = "",
         overwrite: Optional[bool] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
@@ -97,6 +98,11 @@ class MongoObserver(RunObserver):
             Database to connect to.
         collection
             Collection to write the runs to. (default: "runs").
+            **DEPRECATED**, please use collection_prefix instead.
+        collection_prefix
+            Prefix the runs and metrics collection,
+            i.e. runs will be stored to PREFIX_runs, metrics to PREFIX_metrics.
+            If empty runs are stored to 'runs', metrics to 'metrics'.
         overwrite
             _id of a run that should be overwritten.
         priority
@@ -119,14 +125,42 @@ class MongoObserver(RunObserver):
                 raise ValueError("Cannot pass both a client and a url.")
         else:
             client = pymongo.MongoClient(url, **kwargs)
+
         database = client[db_name]
-        if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
+        if collection != "runs":
+            # the 'old' way of setting a custom collection name
+            # still works as before for backward compatibility
+            warnings.warn(
+                'Argument "collection" is deprecated. '
+                'Please use "collection_prefix" instead.',
+                DeprecationWarning,
+            )
+            if collection_prefix != "":
+                raise ValueError("Cannot pass both collection and a collection prefix.")
+            runs_collection_name = collection
+            metrics_collection_name = "metrics"
+        else:
+            if collection_prefix != "":
+                # separate prefix from 'runs' / 'collections' by an underscore.
+                collection_prefix = "{}_".format(collection_prefix)
+
+            runs_collection_name = "{}runs".format(collection_prefix)
+            metrics_collection_name = "{}metrics".format(collection_prefix)
+
+        if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError(
                 'Collection name "{}" is reserved. '
-                "Please use a different one.".format(collection)
+                "Please use a different one.".format(runs_collection_name)
             )
-        runs_collection = database[collection]
-        metrics_collection = database["metrics"]
+
+        if metrics_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
+            raise KeyError(
+                'Collection name "{}" is reserved. '
+                "Please use a different one.".format(metrics_collection_name)
+            )
+
+        runs_collection = database[runs_collection_name]
+        metrics_collection = database[metrics_collection_name]
         fs = gridfs.GridFS(database)
         self.initialize(
             runs_collection,
