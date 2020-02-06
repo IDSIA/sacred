@@ -33,6 +33,7 @@ def test_fd_tee_output(capsys):
         "captured stderr",
         "stdout from C",
         "and this is from echo",
+        "keep\rcarriage\rreturns",
     }
 
     capture_mode, capture_stdout = get_stdcapturer("fd")
@@ -43,6 +44,7 @@ def test_fd_tee_output(capsys):
         with capture_stdout() as out:
             print("captured stdout")
             print("captured stderr", file=sys.stderr)
+            print("keep\rcarriage\rreturns")
             output += out.get()
             libc.puts(b"stdout from C")
             libc.fflush(None)
