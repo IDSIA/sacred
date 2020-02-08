@@ -94,7 +94,7 @@ To ease getting started with these services you find an exemplary ``docker-compo
 
 This will pull the necessary containers from the internet and build them. This may take several
 minutes.
-Afterwards mongoDB should be up and running. ``mongo-express``, an admin interface for MonogDB, should now
+Afterwards mongoDB should be up and running. ``mongo-express``, an admin interface for MongoDB, should now
 be available on port ``8081``, accessible by the user and password set in the ``.env`` file
 (``ME_CONFIG_BASICAUTH_USERNAME`` and ``ME_CONFIG_BASICAUTH_PASSWORD``).
 ``Sacredboard ``should be available on port ``5000``. ``Omniboard`` should be
