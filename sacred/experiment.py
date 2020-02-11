@@ -331,12 +331,16 @@ class Experiment(Ingredient):
                 # Debug: Don't change behavior, just re-raise exception
                 raise
             elif self.current_run and self.current_run.pdb:
-                # Print exception and attach pdb debugger
+                # Print exception and attach ipdb/pdb debugger
                 import traceback
-                import pdb
-
                 traceback.print_exception(*sys.exc_info())
-                pdb.post_mortem()
+
+                try:
+                    import ipdb
+                    ipdb.post_mortem()
+                except ImportError:
+                    import pdb
+                    pdb.post_mortem()
             else:
                 # Handle pretty printing of exceptions. This includes
                 # filtering the stacktrace and printing the usage, as
