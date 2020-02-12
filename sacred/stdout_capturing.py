@@ -172,6 +172,10 @@ def tee_output_fd():
             os.dup2(saved_stdout_fd, original_stdout_fd)
             os.dup2(saved_stderr_fd, original_stderr_fd)
 
+            # terminate both subprocesses to avoid timeout errors below
+            tee_stdout.terminate()
+            tee_stderr.terminate()
+
             tee_stdout.wait(timeout=1)
             tee_stderr.wait(timeout=1)
 
