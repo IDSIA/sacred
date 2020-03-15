@@ -192,6 +192,7 @@ class FileStorageObserver(RunObserver):
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), "w") as f:
             json.dump(flatten(obj), f, sort_keys=True, indent=2)
+            f.flush()
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
