@@ -422,10 +422,10 @@ def get_commit_if_possible(filename, save_git_info):
         from git import Repo, InvalidGitRepositoryError
     except ImportError as e:
         raise ValueError(
-            'Cannot import git (pip install GitPython).\n'
-            'Either GitPython or the git executable is missing.\n'
-            'You can disable git with:\n'
-            '    sacred.Experiment(..., save_git_info=False)'
+            "Cannot import git (pip install GitPython).\n"
+            "Either GitPython or the git executable is missing.\n"
+            "You can disable git with:\n"
+            "    sacred.Experiment(..., save_git_info=False)"
         ) from e
 
     directory = os.path.dirname(filename)
