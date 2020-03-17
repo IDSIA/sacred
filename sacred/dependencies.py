@@ -7,7 +7,6 @@ import os.path
 import re
 import sys
 from pathlib import Path
-from git import Repo, InvalidGitRepositoryError
 
 import pkg_resources
 
@@ -418,6 +417,16 @@ def get_commit_if_possible(filename, save_git_info):
     """
     if save_git_info is False:
         return None, None, None
+
+    try:
+        from git import Repo, InvalidGitRepositoryError
+    except ImportError as e:
+        raise ValueError(
+            "Cannot import git (pip install GitPython).\n"
+            "Either GitPython or the git executable is missing.\n"
+            "You can disable git with:\n"
+            "    sacred.Experiment(..., save_git_info=False)"
+        ) from e
 
     directory = os.path.dirname(filename)
     try:
