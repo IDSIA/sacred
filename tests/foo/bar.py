@@ -6,6 +6,5 @@ of sources.
 """
 
 
-
 def test_func():
     pass

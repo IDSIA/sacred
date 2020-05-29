@@ -1,17 +1,10 @@
-from .contextlibbackport import ContextDecorator
+from contextlib import ContextDecorator
 from .internal import ContextMethodDecorator
 import sacred.optional as opt
-from sacred.utils import get_package_version, parse_version
+
+
 if opt.has_tensorflow:
-    # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-    if get_package_version('tensorflow') < parse_version('1.13.1'):
-        import warnings
-        warnings.warn("Use of TensorFlow 1.12 and older is deprecated. "
-                      "Use Tensorflow 1.13 or newer instead.",
-                      DeprecationWarning)
-        import tensorflow as tf
-    else:
-        import tensorflow.compat.v1 as tf
+    tf = opt.get_tensorflow()
 else:
     tf = None
 
@@ -67,19 +60,19 @@ class LogFileWriter(ContextDecorator, ContextMethodDecorator):
     def __init__(self, experiment):
         self.experiment = experiment
 
-        def log_writer_decorator(instance, original_method, original_args,
-                                 original_kwargs):
-            result = original_method(instance, *original_args,
-                                     **original_kwargs)
+        def log_writer_decorator(
+            instance, original_method, original_args, original_kwargs
+        ):
+            result = original_method(instance, *original_args, **original_kwargs)
             if "logdir" in original_kwargs:
                 logdir = original_kwargs["logdir"]
             else:
                 logdir = original_args[0]
             self.experiment.info.setdefault("tensorflow", {}).setdefault(
-                "logdirs", []).append(logdir)
+                "logdirs", []
+            ).append(logdir)
             return result
 
-        ContextMethodDecorator.__init__(self,
-                                        tf.summary.FileWriter,
-                                        "__init__",
-                                        log_writer_decorator)
+        ContextMethodDecorator.__init__(
+            self, tf.summary.FileWriter, "__init__", log_writer_decorator
+        )

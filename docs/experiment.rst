@@ -182,7 +182,7 @@ add an observer like this:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create())
+    ex.observers.append(MongoObserver())
 
 ``MongoObserver`` is one of the default observers shipped with Sacred.
 It connects to a MongoDB and puts all these information into a document in a

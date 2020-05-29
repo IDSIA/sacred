@@ -8,8 +8,17 @@ from sacred.observers.sql import SqlObserver
 from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbReader
 from sacred.observers.slack import SlackObserver
 from sacred.observers.telegram_obs import TelegramObserver
+from sacred.observers.s3_observer import S3Observer
 
 
-__all__ = ('FileStorageObserver', 'RunObserver', 'MongoObserver',
-           'SqlObserver', 'TinyDbObserver', 'TinyDbReader',
-           'SlackObserver', 'TelegramObserver')
+__all__ = (
+    "FileStorageObserver",
+    "RunObserver",
+    "MongoObserver",
+    "SqlObserver",
+    "TinyDbObserver",
+    "TinyDbReader",
+    "SlackObserver",
+    "TelegramObserver",
+    "S3Observer",
+)

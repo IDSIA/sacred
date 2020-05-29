@@ -3,12 +3,12 @@ import pytest
 
 from sacred import Experiment
 from sacred.stflow import LogFileWriter
-from sacred.utils import get_package_version, parse_version
+import sacred.optional as opt
 
 
 @pytest.fixture
 def ex():
-    return Experiment('tensorflow_tests')
+    return Experiment("tensorflow_tests")
 
 
 @pytest.fixture()
@@ -18,13 +18,9 @@ def tf():
     so `tensorflow` is not required during the tests.
     """
     from sacred.optional import has_tensorflow
+
     if has_tensorflow:
-        # Ensures backward and forward compatibility with TensorFlow 1 and 2.
-        if get_package_version('tensorflow') < parse_version('1.13.1'):
-            import tensorflow as tf
-        else:
-            import tensorflow.compat.v1 as tf
-        return tf
+        return opt.get_tensorflow()
     else:
         # Let's define a mocked tensorflow
         class tensorflow:
@@ -33,7 +29,10 @@ def tf():
                     def __init__(self, logdir, graph):
                         self.logdir = logdir
                         self.graph = graph
-                        print("Mocked FileWriter got logdir=%s, graph=%s" % (logdir, graph))
+                        print(
+                            "Mocked FileWriter got logdir=%s, graph=%s"
+                            % (logdir, graph)
+                        )
 
             class Session:
                 def __init__(self):
@@ -47,6 +46,7 @@ def tf():
 
         # Set stflow to use the mock as the test
         import sacred.stflow.method_interception
+
         sacred.stflow.method_interception.tf = tensorflow
         return tensorflow
 
@@ -95,7 +95,10 @@ def test_log_summary_writer_as_context_manager(ex, tf):
                 assert swr is not None
                 assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR]
                 tf.summary.FileWriter(TEST_LOG_DIR2, s.graph)
-                assert _run.info["tensorflow"]["logdirs"] == [TEST_LOG_DIR, TEST_LOG_DIR2]
+                assert _run.info["tensorflow"]["logdirs"] == [
+                    TEST_LOG_DIR,
+                    TEST_LOG_DIR2,
+                ]
 
             # This should not be captured:
             tf.summary.FileWriter("/tmp/whatever", s.graph)
@@ -138,7 +141,7 @@ def test_log_summary_writer_class(ex, tf):
     TEST_LOG_DIR = "/dev/null"
     TEST_LOG_DIR2 = "/tmp/sacred_test"
 
-    class FooClass():
+    class FooClass:
         def __init__(self):
             pass
 

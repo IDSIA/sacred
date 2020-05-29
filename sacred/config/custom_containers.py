@@ -8,77 +8,15 @@ import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
 
 
-class FallbackDict(dict):
-    """Dictionary that defaults to a fallback dict for missing keys."""
-
-    def __init__(self, fallback, **kwargs):
-        super(FallbackDict, self).__init__(**kwargs)
-        self.fallback = fallback
-
-    def __getitem__(self, item):
-        if dict.__contains__(self, item):
-            return dict.__getitem__(self, item)
-        else:
-            return self.fallback[item]
-
-    def __contains__(self, item):
-        return dict.__contains__(self, item) or (item in self.fallback)
-
-    def get(self, k, d=None):
-        if dict.__contains__(self, k):
-            return dict.__getitem__(self, k)
-        else:
-            return self.fallback.get(k, d)
-
-    def items(self):
-        raise NotImplementedError()
-
-    def iteritems(self):
-        raise NotImplementedError()
-
-    def iterkeys(self):
-        raise NotImplementedError()
-
-    def itervalues(self):
-        raise NotImplementedError()
-
-    def keys(self):
-        raise NotImplementedError()
-
-    def pop(self, k, d=None):
-        raise NotImplementedError()
-
-    def popitem(self):
-        raise NotImplementedError()
-
-    def setdefault(self, k, d=None):
-        raise NotImplementedError()
-
-    def update(self, e=None, **f):
-        raise NotImplementedError()
-
-    def values(self):
-        raise NotImplementedError()
-
-    def viewitems(self):
-        raise NotImplementedError()
-
-    def viewkeys(self):
-        raise NotImplementedError()
-
-    def viewvalues(self):
-        raise NotImplementedError()
-
-    def __iter__(self):
-        raise NotImplementedError()
-
-    def __len__(self):
-        raise NotImplementedError()
+def fallback_dict(fallback, **kwargs):
+    fallback_copy = fallback.copy()
+    fallback_copy.update(kwargs)
+    return fallback_copy
 
 
 class DogmaticDict(dict):
     def __init__(self, fixed=None, fallback=None):
-        super(DogmaticDict, self).__init__()
+        super().__init__()
         self.typechanges = {}
         self.fallback_writes = []
         self.modified = set()
@@ -160,7 +98,7 @@ class DogmaticDict(dict):
 
     def update(self, iterable=None, **kwargs):
         if iterable is not None:
-            if hasattr(iterable, 'keys'):
+            if hasattr(iterable, "keys"):
                 for key in iterable:
                     self[key] = iterable[key]
             else:
@@ -216,7 +154,7 @@ class DogmaticList(list):
         pass
 
     def pop(self, index=None):
-        raise TypeError('Cannot pop from DogmaticList')
+        raise TypeError("Cannot pop from DogmaticList")
 
     def remove(self, value):
         pass
@@ -237,13 +175,10 @@ def _passthrough(fn):
 class ReadOnlyContainer:
     def __init__(self, *args, message=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.message = message or 'This container is read-only!'
+        self.message = message or "This container is read-only!"
 
     def _readonly(self, *args, **kwargs):
-        raise SacredError(
-            self.message,
-            filter_traceback='always'
-        )
+        raise SacredError(self.message, filter_traceback="always")
 
 
 class ReadOnlyDict(collections.Mapping, ReadOnlyContainer):
@@ -339,15 +274,16 @@ def make_read_only(o, error_message=None):
     a nested structure of `list`s, `dict`s and `tuple`s. Does not modify `o`
     but returns the converted structure.
     """
-    if isinstance(o, dict):
+    if type(o) == dict:
         return ReadOnlyDict(
             {k: make_read_only(v, error_message) for k, v in o.items()},
-            message=error_message)
-    elif isinstance(o, list):
+            message=error_message,
+        )
+    elif type(o) == list:
         return ReadOnlyList(
-            [make_read_only(v, error_message) for v in o],
-            message=error_message)
-    elif isinstance(o, tuple):
+            [make_read_only(v, error_message) for v in o], message=error_message
+        )
+    elif type(o) == tuple:
         return tuple(map(make_read_only, o))
     else:
         return o
@@ -370,13 +306,24 @@ SIMPLIFY_TYPE = {
 # datatypes to the corresponding python datatype
 if opt.has_numpy:
     from sacred.optional import np
-    NP_FLOATS = ['float', 'float16', 'float32', 'float64', 'float128']
+
+    NP_FLOATS = ["float", "float16", "float32", "float64", "float128"]
     for npf in NP_FLOATS:
         if hasattr(np, npf):
             SIMPLIFY_TYPE[getattr(np, npf)] = float
 
-    NP_INTS = ['int', 'int8', 'int16', 'int32', 'int64',
-               'uint', 'uint8', 'uint16', 'uint32', 'uint64']
+    NP_INTS = [
+        "int",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "uint",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+    ]
     for npi in NP_INTS:
         if hasattr(np, npi):
             SIMPLIFY_TYPE[getattr(np, npi)] = int

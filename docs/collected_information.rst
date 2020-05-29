@@ -104,13 +104,15 @@ The list of captured ENVIRONMENT variables (empty by default) can be extended
 by appending the relevant keys to ``sacred.SETTINGS.HOST_INFO.CAPTURED_ENV``.
 
 It is possible to extend the host information with custom functions decorated
-by :py:meth:`~sacred.host_info.host_info_getter` like this:
+by :py:meth:`~sacred.host_info.host_info_gatherer` like this:
 
 .. code-block:: python
 
-    from sacred import host_info_getter
+    from sacred import host_info_gatherer
+    from sacred import Experiment
 
-    @host_info_getter
+
+    @host_info_gatherer('host IP address')
     def ip():
         import socket
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -119,7 +121,15 @@ by :py:meth:`~sacred.host_info.host_info_getter` like this:
         s.close()
         return ip
 
-This example will create an ``ip`` entry in the host_info containing the
+
+    ex = Experiment('cool experiment',
+                    additional_host_info=[ip])
+
+    @ex.main
+    def my_main():
+        ...
+
+This example will create an ``host IP address`` entry in the host_info containing the
 IP address of the machine.
 
 Live Information

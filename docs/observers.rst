@@ -9,7 +9,7 @@ Observers have a ``priority`` attribute, and are run in order of descending
 priority. The first observer determines the ``_id`` of the run.
 
 
-At the moment there are four observers that are shipped with Sacred:
+At the moment there are five observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
@@ -20,6 +20,9 @@ At the moment there are four observers that are shipped with Sacred:
    to store run information in a JSON file. 
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
+ * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
+   a given prefix/directory
+
 
 But if you want the run information stored some other way, it is easy to write
 your own :ref:`custom_observer`.
@@ -62,7 +65,7 @@ You can also add it from code like this:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create())
+    ex.observers.append(MongoObserver())
 
 
 
@@ -72,8 +75,8 @@ Or with server and port:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(url='my.server.org:27017',
-                                             db_name='MY_DB'))
+    ex.observers.append(MongoObserver(url='my.server.org:27017',
+                                      db_name='MY_DB'))
 
 This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
@@ -93,7 +96,7 @@ you want to use. If it can be done by just using the ``MongoDB URI`` then just p
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url='mongodb://user:password@example.com/the_database?authMechanism=SCRAM-SHA-1',
         db_name='MY_DB'))
 
@@ -103,7 +106,7 @@ If additional arguments need to be passed to the MongoClient they can just be in
 
 .. code-block:: python
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url="mongodb://<X.509 derived username>@example.com/?authMechanism=MONGODB-X509",
         db_name='MY_DB',
         ssl=True,
@@ -213,7 +216,7 @@ You can, of course, also add it from code like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs'))
+    ex.observers.append(FileStorageObserver('my_runs'))
 
 
 Directory Structure
@@ -291,7 +294,7 @@ the FileStorageObserver like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs', template='/custom/template.txt'))
+    ex.observers.append(FileStorageObserver('my_runs', template='/custom/template.txt'))
 
 The FileStorageObserver will then render that template into a
 ``report.html``/``report.txt`` file in the respective run directory.
@@ -349,7 +352,11 @@ Alternatively, you can also add the observer from code like this:
 
     from sacred.observers import TinyDbObserver
 
-    ex.observers.append(TinyDbObserver.create('my_runs'))
+    ex.observers.append(TinyDbObserver('my_runs'))
+
+    # You can also create this observer from a HashFS and
+    # TinyDB object directly with:
+    ex.observers.append(TinyDbObserver.create_from(my_db, my_fs))
 
 
 Directory Structure
@@ -583,13 +590,51 @@ To add a SqlObserver from python code do:
 
     from sacred.observers import SqlObserver
 
-    ex.observers.append(SqlObserver.create('sqlite:///foo.db'))
+    ex.observers.append(SqlObserver('sqlite:///foo.db'))
+
+    # It's also possible to instantiate a SqlObserver with an existing
+    # engine and session with:
+    ex.observers.append(SqlObserver.create_from(my_engine, my_session))
 
 
 Schema
 ------
 .. image:: images/sql_schema.png
 
+
+.. _s3_observer:
+
+S3 Observer
+============
+The S3Observer stores run information in a designated prefix location within a S3 bucket, either by
+using an existing bucket, or creating a new one. Using the S3Observer requires that boto3 be
+installed, and also that an AWS config file is created with a user's Access Key and Secret Key.
+An easy way to do this is by installing AWS command line tools (``pip install awscli``) and
+running ``aws configure``.
+
+Adding a S3Observer
+--------------------
+
+To create an S3Observer in Python:
+
+.. code-block:: python
+
+    from sacred.observers import S3Observer
+    ex.observers.append(S3Observer(bucket='my-awesome-bucket',
+                                   basedir='/my-project/my-cool-experiment/'))
+
+By default, an S3Observer will use the region that is set in your AWS config file, but if you'd
+prefer to pass in a specific region, you can use the ``region`` parameter of create to do so.
+If you try to create an S3Observer without this parameter, and with region not set in your config
+file, it will error out at the point of the observer object being created.
+
+Directory Structure
+--------------------
+
+S3Observers follow the same conventions as FileStorageObservers when it comes to directory
+structure within a S3 bucket: within ``s3://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
 
 
 Slack Observer
@@ -694,6 +739,35 @@ The observer is then added to the experment like this:
 
 To set the bot's profile photo and description, use @BotFather's commands ``/setuserpic`` and ``/setdescription``.
 Note that ``/setuserpic`` requires a *minimum* picture size.
+
+Neptune Observer
+================
+Neptune observer sends all the experiment metadata to the Neptune app.
+It requires the `neptune-contrib <https://neptune-contrib.readthedocs.io/index.html/>`_ package to be installed.
+You can install it by running:
+
+.. code-block:: bash
+
+    pip install neptune-contrib
+
+Adding a Neptune Observer
+-------------------------
+
+NeptuneObserver can only be added from the Python code.
+You simply need to initialize it with your project name and (optionally) api token.
+
+.. code-block:: python
+
+    from neptunecontrib.monitoring.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
+                                        project_name='USER_NAME/PROJECT_NAME'))
+
+.. warning::
+
+    Always keep your API token secret - it is like password to the application.
+    It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
+    To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
+    line to your `~/.bashrc` or `~/.bash_profile` files.
 
 Events
 ======

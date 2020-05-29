@@ -1,0 +1,81 @@
+
+jobs:
+- job: test
+  strategy:
+    matrix:
+      Windows py35:
+        IMAGE_NAME: 'vs2017-win2016'
+        PYTHON_VERSION: '3.5'
+        TOX_CMD: 'py35'
+      Windows py36:
+        IMAGE_NAME: 'vs2017-win2016'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'py36'
+      Windows py37:
+        IMAGE_NAME: 'vs2017-win2016'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'py37'
+      OSX py35:
+        IMAGE_NAME: 'macos-10.13'
+        PYTHON_VERSION: '3.5'
+        TOX_CMD: 'py35'
+      OSX py36:
+        IMAGE_NAME: 'macos-10.13'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'py36'
+      OSX py37:
+        IMAGE_NAME: 'macos-10.13'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'py37'
+      Linux py35:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.5'
+        TOX_CMD: 'py35'
+      Linux py36:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'py36'
+      Linux py37:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'py37'
+      Linux tensorflow_112:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'tensorflow-112'
+      Linux tensorflow_113:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'tensorflow-113'
+      Linux tensorflow-114:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'tensorflow-114'
+      Linux tensorflow_2:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'tensorflow-2'
+      Linux setup:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'setup'
+      Linux flake8:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'flake8'
+      Linux black:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.6'
+        TOX_CMD: 'black'
+      Linux coverage:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'coverage'
+  pool:
+    vmImage: $(IMAGE_NAME)
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(PYTHON_VERSION)
+    - bash: pip install tox
+    - bash: tox -e $TOX_CMD

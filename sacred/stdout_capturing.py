@@ -17,23 +17,23 @@ def flush():
     try:
         sys.stdout.flush()
         sys.stderr.flush()
-    except (AttributeError, ValueError, IOError):
+    except (AttributeError, ValueError, OSError):
         pass  # unsupported
     try:
         libc.fflush(None)
-    except (AttributeError, ValueError, IOError):
+    except (AttributeError, ValueError, OSError):
         pass  # unsupported
 
 
 def get_stdcapturer(mode=None):
     mode = mode if mode is not None else SETTINGS.CAPTURE_MODE
-    capture_options = {
-        "no": no_tee,
-        "fd": tee_output_fd,
-        "sys": tee_output_python}
+    capture_options = {"no": no_tee, "fd": tee_output_fd, "sys": tee_output_python}
     if mode not in capture_options:
-        raise KeyError("Unknown capture mode '{}'. Available options are {}"
-                       .format(mode, sorted(capture_options.keys())))
+        raise KeyError(
+            "Unknown capture mode '{}'. Available options are {}".format(
+                mode, sorted(capture_options.keys())
+            )
+        )
     return mode, capture_options[mode]
 
 
@@ -41,7 +41,7 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
     """A wrapper around stdout or stderr that duplicates all output to out."""
 
     def __init__(self, wrapped, out):
-        super(TeeingStreamProxy, self).__init__(wrapped)
+        super().__init__(wrapped)
         self._self_out = out
 
     def write(self, data):
@@ -53,7 +53,7 @@ class TeeingStreamProxy(wrapt.ObjectProxy):
         self._self_out.flush()
 
 
-class CapturedStdout(object):
+class CapturedStdout:
     def __init__(self, buffer):
         self.buffer = buffer
         self.read_position = 0
@@ -116,7 +116,7 @@ def tee_output_python():
 @contextmanager
 def tee_output_fd():
     """Duplicate stdout and stderr to a file on the file descriptor level."""
-    with NamedTemporaryFile(mode='w+') as target:
+    with NamedTemporaryFile(mode="w+") as target:
         original_stdout_fd = 1
         original_stderr_fd = 2
         target_fd = target.fileno()
@@ -129,20 +129,30 @@ def tee_output_fd():
             # start_new_session=True to move process to a new process group
             # this is done to avoid receiving KeyboardInterrupts (see #149)
             tee_stdout = subprocess.Popen(
-                ['tee', '-a', target.name], start_new_session=True,
-                stdin=subprocess.PIPE, stdout=1)
+                ["tee", "-a", target.name],
+                start_new_session=True,
+                stdin=subprocess.PIPE,
+                stdout=1,
+            )
             tee_stderr = subprocess.Popen(
-                ['tee', '-a', target.name], start_new_session=True,
-                stdin=subprocess.PIPE, stdout=2)
+                ["tee", "-a", target.name],
+                start_new_session=True,
+                stdin=subprocess.PIPE,
+                stdout=2,
+            )
         except (FileNotFoundError, OSError, AttributeError):
             # No tee found in this operating system. Trying to use a python
             # implementation of tee. However this is slow and error-prone.
             tee_stdout = subprocess.Popen(
                 [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stderr=target_fd)
+                stdin=subprocess.PIPE,
+                stderr=target_fd,
+            )
             tee_stderr = subprocess.Popen(
                 [sys.executable, "-m", "sacred.pytee"],
-                stdin=subprocess.PIPE, stdout=target_fd)
+                stdin=subprocess.PIPE,
+                stdout=target_fd,
+            )
 
         flush()
         os.dup2(tee_stdout.stdin.fileno(), original_stdout_fd)
