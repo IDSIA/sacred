@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import collections
 import copy
-import sys
 
 import sacred.optional as opt
 from sacred.utils import join_paths, SacredError
@@ -169,106 +167,129 @@ class DogmaticList(list):
 def _passthrough(fn):
     def f(self, *args, **kwargs):
         return fn(self.container, *args, **kwargs)
+
     return f
 
 
-class ReadOnlyContainer:
-    def __init__(self, *args, message=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.message = message or "This container is read-only!"
+DEFAULT_READONLY_MSG = "This container is read-only"
+
+
+class ReadOnlyDict(dict):
+    """
+    A read-only variant of a `dict`.
+    """
+
+    def __init__(self, container, message=DEFAULT_READONLY_MSG):
+        # Call list init
+        self.container = dict(container)
+        # NOTE: You need to make a dict.__init__(self, x) call in order
+        # to get Python's C implementation of JSON to encode dict(x).
+        # Without this super call, JSON always encodes this object as "{}".
+        dict.__init__(self, dict(container))
+        # collections.abc.Mapping.__init__(self)
+        self.message = message
 
     def _readonly(self, *args, **kwargs):
         raise SacredError(self.message, filter_traceback="always")
 
+    # Disallow mutating functions.
+    __delitem__ = _readonly
+    __setitem__ = _readonly
+    clear = _readonly
+    pop = _readonly
+    popitem = _readonly
+    setdefault = _readonly
+    update = _readonly
 
-class ReadOnlyDict(collections.Mapping, ReadOnlyContainer):
-    """
-    A read-only variant of a `dict`
-    """
-    # Read-only
+    # Pass through read-only functions.
     __contains__ = _passthrough(dict.__contains__)
-    __eq__ = _passthrough(dict.__eq__)
     __getitem__ = _passthrough(dict.__getitem__)
     __iter__ = _passthrough(dict.__iter__)
     __len__ = _passthrough(dict.__len__)
+    __repr__ = _passthrough(dict.__repr__)
+    __str__ = _passthrough(dict.__str__)
+    copy = _passthrough(dict.copy)
     get = _passthrough(dict.get)
     keys = _passthrough(dict.keys)
     values = _passthrough(dict.values)
-
-    if sys.version_info[0] >= 3:
-        items = _passthrough(dict.items)
-    else:
-        iterkeys = _passthrough(dict.iterkeys)
-        itervalues = _passthrough(dict.itervalues)
-        iteritems = _passthrough(dict.iteritems)
-
-    # Mutable
-    __delitem__ = ReadOnlyContainer._readonly
-    __setitem__ = ReadOnlyContainer._readonly
-    clear = ReadOnlyContainer._readonly
-    pop = ReadOnlyContainer._readonly
-    popitem = ReadOnlyContainer._readonly
-    setdefault = ReadOnlyContainer._readonly
-    update = ReadOnlyContainer._readonly
-
-    def __init__(self, *args, **kwargs):
-        # Python 2.7 compatibility
-        self.message = kwargs.pop('message', None) or \
-            'This ReadOnlyDict is read-only!'
-
-        # Call dict init
-        self.container = dict(*args, **kwargs)
+    items = _passthrough(dict.items)
 
     def __copy__(self):
-        return {**self.container}
+        return dict(self.container)
 
     def __deepcopy__(self, memo):
         d = dict(self.container)
         return copy.deepcopy(d, memo=memo)
 
+    def __reduce__(self):
+        return ReadOnlyDict, (self.container, self.message)
 
-class ReadOnlyList(collections.Sequence, ReadOnlyContainer):
+
+class ReadOnlyList(list):
     """
-    A read-only variant of a `list`
+    A read-only variant of a `list`.
     """
-    # Read-only
-    __eq__ = _passthrough(list.__eq__)
+
+    def __init__(self, container, message=DEFAULT_READONLY_MSG):
+        # list.__init__(self)
+        # Call list init
+        self.container = list(container)
+        self.message = message
+
+    def _readonly(self, *args, **kwargs):
+        raise SacredError(self.message, filter_traceback="always")
+
+    # Disallow mutating functions
+    append = _readonly
+    clear = _readonly
+    extend = _readonly
+    insert = _readonly
+    pop = _readonly
+    remove = _readonly
+    reverse = _readonly
+    sort = _readonly
+    __setitem__ = _readonly
+    __delitem__ = _readonly
+
+    # Pass through read-only functions.
     __contains__ = _passthrough(list.__contains__)
     __getitem__ = _passthrough(list.__getitem__)
     __iter__ = _passthrough(list.__iter__)
-    __reversed__ = _passthrough(list.__reversed__)
     __len__ = _passthrough(list.__len__)
+    __repr__ = _passthrough(list.__repr__)
+    __reversed__ = _passthrough(list.__reversed__)
+    __str__ = _passthrough(list.__str__)
     index = _passthrough(list.index)
     count = _passthrough(list.count)
 
-    append = ReadOnlyContainer._readonly
-    clear = ReadOnlyContainer._readonly
-    extend = ReadOnlyContainer._readonly
-    insert = ReadOnlyContainer._readonly
-    pop = ReadOnlyContainer._readonly
-    remove = ReadOnlyContainer._readonly
-    reverse = ReadOnlyContainer._readonly
-    sort = ReadOnlyContainer._readonly
-    __setitem__ = ReadOnlyContainer._readonly
-    __delitem__ = ReadOnlyContainer._readonly
-
-    def __init__(self, *iterable, **kwargs):
-        # Python 2.7 compatibility
-        self.message = kwargs.pop('message', None) or \
-            'This ReadOnlyList is read-only!'
-
-        # Call list init
-        self.container = list(*iterable)
-
     def __copy__(self):
         return [*self.container]
+
+    def __eq__(self, other):
+        # Passthrough list fails when comparing `self == self`, among
+        # other things.
+        if not isinstance(other, list):
+            return False
+        if len(self) != len(other):
+            return False
+        for x, y in zip(self, other):
+            if x != y:
+                return False
+        return True
+
+    def __ne__(self, other):
+        # `self != self` goes to list.__ne__ without this stub.
+        return not self.__eq__(other)
 
     def __deepcopy__(self, memo):
         lst = list(self.container)
         return copy.deepcopy(lst, memo=memo)
 
+    def __reduce__(self):
+        return ReadOnlyList, (self.container, self.message)
 
-def make_read_only(o, error_message=None):
+
+def make_read_only(o, error_message=DEFAULT_READONLY_MSG):
     """
     Converts every `list` and `dict` into `ReadOnlyList` and `ReadOnlyDict` in
     a nested structure of `list`s, `dict`s and `tuple`s. Does not modify `o`
@@ -277,14 +298,15 @@ def make_read_only(o, error_message=None):
     if type(o) == dict:
         return ReadOnlyDict(
             {k: make_read_only(v, error_message) for k, v in o.items()},
-            message=error_message,
+            error_message,
         )
     elif type(o) == list:
         return ReadOnlyList(
-            [make_read_only(v, error_message) for v in o], message=error_message
+            [make_read_only(v, error_message) for v in o],
+            error_message,
         )
     elif type(o) == tuple:
-        return tuple(map(make_read_only, o))
+        return tuple(make_read_only(v, error_message) for v in o)
     else:
         return o
 
