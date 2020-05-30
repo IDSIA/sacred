@@ -81,11 +81,6 @@ def _check_read_only_dict(d):
     with raises_dict:
         d.setdefault("a", 0)
 
-    # Test json conversion
-    # blob = json.dumps(d)
-    # d_loaded = json.loads(blob)
-    # assert d == d_loaded
-
 
 def _check_read_only_list(lst):
     assert isinstance(lst, ReadOnlyList)
