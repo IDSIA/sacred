@@ -186,8 +186,8 @@ def find_doc_for(ast_entry, body_lines):
         line_comments = [t.string for t in tokens if t.type == COMMENT]
 
         if line_comments:
-            formatted_lcs = [l[1:].strip() for l in line_comments]
-            filtered_lcs = [l for l in formatted_lcs if not is_ignored(l)]
+            formatted_lcs = [lc[1:].strip() for lc in line_comments]
+            filtered_lcs = [lc for lc in formatted_lcs if not is_ignored(lc)]
             if filtered_lcs:
                 return filtered_lcs[0]
     except TokenError:

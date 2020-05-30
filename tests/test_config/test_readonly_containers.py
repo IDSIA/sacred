@@ -29,8 +29,8 @@ def _check_serializable(obj):
             # JSON coerces () into []. So we won't expect equality.
             # However, it's still nice to check if we can load and save.
             continue
-        assert obj == obj_loaded, f"{format.__name__} serialization failed"
-        assert obj_loaded == obj, f"{format.__name__} serialization failed"
+        assert obj == obj_loaded, format.__name__ + " serialization failed"
+        assert obj_loaded == obj, format.__name__ + " serialization failed"
 
 
 def _check_read_only_dict(d):
