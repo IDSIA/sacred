@@ -184,9 +184,9 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, seq, message=None):
+    def __init__(self, d, message=None):
         ReadOnlyContainer.__init__(self, message)
-        dict.__init__(self, seq)
+        dict.__init__(self, d)
 
     def __reduce__(self):
         return ReadOnlyDict, (dict(self), self.message)
@@ -213,9 +213,9 @@ class ReadOnlyList(ReadOnlyContainer, list):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, seq, message=None):
+    def __init__(self, lst, message=None):
         ReadOnlyContainer.__init__(self, message)
-        list.__init__(self, seq)
+        list.__init__(self, lst)
 
     def __reduce__(self):
         return ReadOnlyList, (list(self), self.message)
