@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+import pytest
+import tempfile
+import hashlib
 import os.path
 import re
 import shlex
@@ -80,6 +82,27 @@ def pytest_addoption(parser):
         default="sqlite://",
         help="Name of the database to connect to",
     )
+
+
+@pytest.fixture
+def tmpfile():
+    # NOTE: instead of using a with block and delete=True we are creating and
+    # manually deleting the file, such that we can close it before running the
+    # tests. This is necessary since on Windows we can not open the same file
+    # twice, so for the FileStorageObserver to read it, we need to close it.
+    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+
+    f.content = "import sacred\n"
+    f.write(f.content.encode())
+    f.flush()
+    f.seek(0)
+    f.md5sum = hashlib.md5(f.read()).hexdigest()
+
+    f.close()
+
+    yield f
+
+    os.remove(f.name)
 
 
 # Deactivate GPU info to speed up tests

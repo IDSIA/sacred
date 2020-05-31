@@ -16,7 +16,7 @@ from tinydb import TinyDB
 from hashfs import HashFS
 
 from sacred.dependencies import get_digest
-from sacred.observers.tinydb_hashfs import TinyDbObserver, TinyDbOption
+from sacred.observers.tinydb_hashfs import TinyDbObserver, tiny_db_option
 from sacred.observers.tinydb_hashfs_bases import BufferedReaderWrapper
 
 from sacred import optional as opt
@@ -365,14 +365,10 @@ def test_serialisation_of_pandas_dataframe(tmpdir):
     assert (returned_doc["nested"]["ones"] == series).all()
 
 
-def test_parse_tinydb_arg():
-    assert TinyDbOption.parse_tinydb_arg("foo") == "foo"
-
-
 def test_parse_tinydboption_apply(tmpdir):
 
     exp = Experiment()
     args = os.path.join(tmpdir.strpath)
 
-    TinyDbOption.apply(args, exp)
+    tiny_db_option(args, exp)
     assert type(exp.observers[0]) == TinyDbObserver

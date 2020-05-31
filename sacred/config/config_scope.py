@@ -95,7 +95,7 @@ def get_function_body(func):
     arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
     arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
     func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
+        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*(?:#[^\n]*)?\n".format(
             func.__name__, arguments
         ),
         flags=re.MULTILINE,

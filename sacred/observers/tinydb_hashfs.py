@@ -10,7 +10,7 @@ from collections import OrderedDict
 import warnings
 
 from sacred.__about__ import __version__
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.observers import RunObserver
 
 
@@ -175,20 +175,14 @@ class TinyDbObserver(RunObserver):
         return False
 
 
-class TinyDbOption(CommandLineOption):
-    """Add a TinyDB Observer to the experiment."""
+@cli_option("-t", "--tiny_db")
+def tiny_db_option(args, run):
+    """Add a TinyDB Observer to the experiment.
 
-    arg = "BASEDIR"
-
-    @classmethod
-    def apply(cls, args, run):
-        location = cls.parse_tinydb_arg(args)
-        tinydb_obs = TinyDbObserver(path=location)
-        run.observers.append(tinydb_obs)
-
-    @classmethod
-    def parse_tinydb_arg(cls, args):
-        return args
+    The argument is the path to be given to the TinyDbObserver.
+    """
+    tinydb_obs = TinyDbObserver(path=args)
+    run.observers.append(tinydb_obs)
 
 
 class TinyDbReader:

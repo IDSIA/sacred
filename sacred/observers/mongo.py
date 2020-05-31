@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding=utf-8
-
+from typing import Optional
 import mimetypes
 import os.path
 import pickle
@@ -11,17 +9,20 @@ from tempfile import NamedTemporaryFile
 import warnings
 
 import sacred.optional as opt
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
-from sacred.utils import ObserverError
+from sacred.utils import ObserverError, PathType
+import pkg_resources
 
 DEFAULT_MONGO_PRIORITY = 30
 
 # This ensures consistent mimetype detection across platforms.
-mimetypes.init(files=[])
+mimetype_detector = mimetypes.MimeTypes(
+    filenames=[pkg_resources.resource_filename("sacred", "data/mime.types")]
+)
 
 
 def force_valid_bson_key(key):
@@ -77,30 +78,39 @@ class MongoObserver(RunObserver):
 
     def __init__(
         self,
-        url=None,
-        db_name="sacred",
-        collection="runs",
-        overwrite=None,
-        priority=DEFAULT_MONGO_PRIORITY,
-        client=None,
-        failure_dir=None,
+        url: Optional[str] = None,
+        db_name: str = "sacred",
+        collection: str = "runs",
+        collection_prefix: str = "",
+        overwrite: Optional[bool] = None,
+        priority: int = DEFAULT_MONGO_PRIORITY,
+        client: Optional["pymongo.MongoClient"] = None,
+        failure_dir: Optional[PathType] = None,
         **kwargs
     ):
-        """Factory method for MongoObserver.
+        """Initializer for MongoObserver.
 
         Parameters
         ----------
-        url: Mongo URI to connect to.
-        db_name: Database to connect to.
-        collection: Collection to write the runs to. (default: "runs").
-        overwrite: _id of a run that should be overwritten.
-        priority: (default 30)
-        client: Client to connect to. Do not use client and URL together.
-        failure_dir: Directory to save the run of a failed observer to.
-
-        Returns
-        -------
-        An instantiated MongoObserver.
+        url
+            Mongo URI to connect to.
+        db_name
+            Database to connect to.
+        collection
+            Collection to write the runs to. (default: "runs").
+            **DEPRECATED**, please use collection_prefix instead.
+        collection_prefix
+            Prefix the runs and metrics collection,
+            i.e. runs will be stored to PREFIX_runs, metrics to PREFIX_metrics.
+            If empty runs are stored to 'runs', metrics to 'metrics'.
+        overwrite
+            _id of a run that should be overwritten.
+        priority
+            (default 30)
+        client
+            Client to connect to. Do not use client and URL together.
+        failure_dir
+            Directory to save the run of a failed observer to.
         """
         import pymongo
         import gridfs
@@ -115,14 +125,42 @@ class MongoObserver(RunObserver):
                 raise ValueError("Cannot pass both a client and a url.")
         else:
             client = pymongo.MongoClient(url, **kwargs)
+
         database = client[db_name]
-        if collection in MongoObserver.COLLECTION_NAME_BLACKLIST:
+        if collection != "runs":
+            # the 'old' way of setting a custom collection name
+            # still works as before for backward compatibility
+            warnings.warn(
+                'Argument "collection" is deprecated. '
+                'Please use "collection_prefix" instead.',
+                DeprecationWarning,
+            )
+            if collection_prefix != "":
+                raise ValueError("Cannot pass both collection and a collection prefix.")
+            runs_collection_name = collection
+            metrics_collection_name = "metrics"
+        else:
+            if collection_prefix != "":
+                # separate prefix from 'runs' / 'collections' by an underscore.
+                collection_prefix = "{}_".format(collection_prefix)
+
+            runs_collection_name = "{}runs".format(collection_prefix)
+            metrics_collection_name = "{}metrics".format(collection_prefix)
+
+        if runs_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
             raise KeyError(
                 'Collection name "{}" is reserved. '
-                "Please use a different one.".format(collection)
+                "Please use a different one.".format(runs_collection_name)
             )
-        runs_collection = database[collection]
-        metrics_collection = database["metrics"]
+
+        if metrics_collection_name in MongoObserver.COLLECTION_NAME_BLACKLIST:
+            raise KeyError(
+                'Collection name "{}" is reserved. '
+                "Please use a different one.".format(metrics_collection_name)
+            )
+
+        runs_collection = database[runs_collection_name]
+        metrics_collection = database[metrics_collection_name]
         fs = gridfs.GridFS(database)
         self.initialize(
             runs_collection,
@@ -275,7 +313,7 @@ class MongoObserver(RunObserver):
 
     @staticmethod
     def _try_to_detect_content_type(filename):
-        mime_type, _ = mimetypes.guess_type(filename)
+        mime_type, _ = mimetype_detector.guess_type(filename)
         if mime_type is not None:
             print(
                 "Added {} as content-type of artifact {}.".format(mime_type, filename)
@@ -325,7 +363,9 @@ class MongoObserver(RunObserver):
             if autoinc_key:
                 c = self.runs.find({}, {"_id": 1})
                 c = c.sort("_id", pymongo.DESCENDING).limit(1)
-                self.run_entry["_id"] = c.next()["_id"] + 1 if c.count() else 1
+                self.run_entry["_id"] = (
+                    c.next()["_id"] + 1 if self.runs.count_documents({}, limit=1) else 1
+                )
             try:
                 self.runs.insert_one(self.run_entry)
                 return
@@ -412,82 +452,82 @@ class MongoObserver(RunObserver):
         return False
 
 
-class MongoDbOption(CommandLineOption):
-    """Add a MongoDB Observer to the experiment."""
+@cli_option("-m", "--mongo_db")
+def mongo_db_option(args, run):
+    """Add a MongoDB Observer to the experiment.
 
-    arg = "DB"
-    arg_description = (
-        "Database specification. Can be "
-        "[host:port:]db_name[.collection[:id]][!priority]"
-    )
+    The argument value is the database specification.
+    Should be in the form:
 
-    RUN_ID_PATTERN = r"(?P<overwrite>\d{1,12})"
-    PORT1_PATTERN = r"(?P<port1>\d{1,5})"
-    PORT2_PATTERN = r"(?P<port2>\d{1,5})"
-    PRIORITY_PATTERN = r"(?P<priority>-?\d+)?"
-    DB_NAME_PATTERN = r"(?P<db_name>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
-    COLL_NAME_PATTERN = (
+    `[host:port:]db_name[.collection[:id]][!priority]`
+    """
+    kwargs = parse_mongo_db_arg(args)
+    mongo = MongoObserver(**kwargs)
+    run.observers.append(mongo)
+
+
+def get_pattern():
+    run_id_pattern = r"(?P<overwrite>\d{1,12})"
+    port1_pattern = r"(?P<port1>\d{1,5})"
+    port2_pattern = r"(?P<port2>\d{1,5})"
+    priority_pattern = r"(?P<priority>-?\d+)?"
+    db_name_pattern = r"(?P<db_name>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
+    coll_name_pattern = (
         r"(?P<collection>[_A-Za-z]" r"[0-9A-Za-z#%&'()+\-;=@\[\]^_{}]{0,63})"
     )
-    HOSTNAME1_PATTERN = (
+    hostname1_pattern = (
         r"(?P<host1>"
         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
         r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
         r"[0-9A-Za-z])?)*)"
     )
-    HOSTNAME2_PATTERN = (
+    hostname2_pattern = (
         r"(?P<host2>"
         r"[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?"
         r"(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}"
         r"[0-9A-Za-z])?)*)"
     )
 
-    HOST_ONLY = r"^(?:{host}:{port})$".format(
-        host=HOSTNAME1_PATTERN, port=PORT1_PATTERN
+    host_only = r"^(?:{host}:{port})$".format(
+        host=hostname1_pattern, port=port1_pattern
     )
-    FULL = (
+    full = (
         r"^(?:{host}:{port}:)?{db}(?:\.{collection}(?::{rid})?)?"
         r"(?:!{priority})?$".format(
-            host=HOSTNAME2_PATTERN,
-            port=PORT2_PATTERN,
-            db=DB_NAME_PATTERN,
-            collection=COLL_NAME_PATTERN,
-            rid=RUN_ID_PATTERN,
-            priority=PRIORITY_PATTERN,
+            host=hostname2_pattern,
+            port=port2_pattern,
+            db=db_name_pattern,
+            collection=coll_name_pattern,
+            rid=run_id_pattern,
+            priority=priority_pattern,
         )
     )
 
-    PATTERN = r"{host_only}|{full}".format(host_only=HOST_ONLY, full=FULL)
+    return r"{host_only}|{full}".format(host_only=host_only, full=full)
 
-    @classmethod
-    def apply(cls, args, run):
-        kwargs = cls.parse_mongo_db_arg(args)
-        mongo = MongoObserver(**kwargs)
-        run.observers.append(mongo)
 
-    @classmethod
-    def parse_mongo_db_arg(cls, mongo_db):
-        g = re.match(cls.PATTERN, mongo_db).groupdict()
-        if g is None:
-            raise ValueError(
-                'mongo_db argument must have the form "db_name" '
-                'or "host:port[:db_name]" but was {}'.format(mongo_db)
-            )
+def parse_mongo_db_arg(mongo_db):
+    g = re.match(get_pattern(), mongo_db).groupdict()
+    if g is None:
+        raise ValueError(
+            'mongo_db argument must have the form "db_name" '
+            'or "host:port[:db_name]" but was {}'.format(mongo_db)
+        )
 
-        kwargs = {}
-        if g["host1"]:
-            kwargs["url"] = "{}:{}".format(g["host1"], g["port1"])
-        elif g["host2"]:
-            kwargs["url"] = "{}:{}".format(g["host2"], g["port2"])
+    kwargs = {}
+    if g["host1"]:
+        kwargs["url"] = "{}:{}".format(g["host1"], g["port1"])
+    elif g["host2"]:
+        kwargs["url"] = "{}:{}".format(g["host2"], g["port2"])
 
-        if g["priority"] is not None:
-            kwargs["priority"] = int(g["priority"])
+    if g["priority"] is not None:
+        kwargs["priority"] = int(g["priority"])
 
-        for p in ["db_name", "collection", "overwrite"]:
-            if g[p] is not None:
-                kwargs[p] = g[p]
+    for p in ["db_name", "collection", "overwrite"]:
+        if g[p] is not None:
+            kwargs[p] = g[p]
 
-        return kwargs
+    return kwargs
 
 
 class QueueCompatibleMongoObserver(MongoObserver):
@@ -524,10 +564,10 @@ class QueueCompatibleMongoObserver(MongoObserver):
             self.runs.update_one(
                 {"_id": self.run_entry["_id"]}, {"$set": self.run_entry}
             )
-        except pymongo.errors.InvalidDocument:
+        except pymongo.errors.InvalidDocument as exc:
             raise ObserverError(
-                "Run contained an unserializable entry." "(most likely in the info)"
-            )
+                "Run contained an unserializable entry. (most likely in the info)"
+            ) from exc
 
     def final_save(self, attempts):
         import pymongo
@@ -562,6 +602,8 @@ class QueueCompatibleMongoObserver(MongoObserver):
 
 
 class QueuedMongoObserver(QueueObserver):
+    """MongoObserver that uses a fault-tolerant background process."""
+
     @classmethod
     def create(cls, *args, **kwargs):
         warnings.warn(
@@ -573,16 +615,39 @@ class QueuedMongoObserver(QueueObserver):
 
     def __init__(
         self,
-        interval=20,
-        retry_interval=10,
-        url=None,
-        db_name="sacred",
-        collection="runs",
-        overwrite=None,
-        priority=DEFAULT_MONGO_PRIORITY,
-        client=None,
+        interval: float = 20.0,
+        retry_interval: float = 10.0,
+        url: Optional[str] = None,
+        db_name: str = "sacred",
+        collection: str = "runs",
+        overwrite: Optional[bool] = None,
+        priority: int = DEFAULT_MONGO_PRIORITY,
+        client: Optional["pymongo.MongoClient"] = None,
         **kwargs
     ):
+        """Initializer for MongoObserver.
+
+        Parameters
+        ----------
+        interval
+            The interval in seconds at which the background thread is woken up to process new events.
+        retry_interval
+            The interval in seconds to wait if an event failed to be processed.
+        url
+            Mongo URI to connect to.
+        db_name
+            Database to connect to.
+        collection
+            Collection to write the runs to. (default: "runs").
+        overwrite
+            _id of a run that should be overwritten.
+        priority
+            (default 30)
+        client
+            Client to connect to. Do not use client and URL together.
+        failure_dir
+            Directory to save the run of a failed observer to.
+        """
         super().__init__(
             QueueCompatibleMongoObserver(
                 url=url,

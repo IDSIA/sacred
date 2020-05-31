@@ -5,7 +5,7 @@ import json
 from threading import Lock
 import warnings
 
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
 
@@ -41,7 +41,7 @@ class SqlObserver(RunObserver):
 
     @classmethod
     def create_from(cls, engine, session, priority=DEFAULT_SQL_PRIORITY):
-        """Instantiate a SqlObserver with an existing engine and session"""
+        """Instantiate a SqlObserver with an existing engine and session."""
         self = cls.__new__(cls)  # skip __init__ call
         self.engine = engine
         self.session = session
@@ -156,14 +156,10 @@ class SqlObserver(RunObserver):
 # ######################## Commandline Option ############################### #
 
 
-class SqlOption(CommandLineOption):
-    """Add a SQL Observer to the experiment."""
+@cli_option("-s", "--sql")
+def sql_option(args, run):
+    """Add a SQL Observer to the experiment.
 
-    arg = "DB_URL"
-    arg_description = (
-        "The typical form is: dialect://username:password@host:port/database"
-    )
-
-    @classmethod
-    def apply(cls, args, run):
-        run.observers.append(SqlObserver.create(args))
+    The typical form is: dialect://username:password@host:port/database
+    """
+    run.observers.append(SqlObserver(args))

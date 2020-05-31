@@ -22,8 +22,8 @@ This can be especially useful together with the  :ref:`cmdline_enforce_clean`
 experiment immediately fails with an error if started on a dirty repository.
 
 .. note::
-    Depends on the `GitPython <https://github.com/gitpython-developers/GitPython>`_ package.
-    Install with ``pip install GitPython``.
+    Git integration can be disabled with ``save_git_info`` flag in the
+    ``Experiment`` or ``Ingredient`` constructor.
 
 
 Optional Observers

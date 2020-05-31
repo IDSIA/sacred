@@ -10,7 +10,7 @@ import warnings
 
 from shutil import copyfile
 
-from sacred.commandline_options import CommandLineOption
+from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred import optional as opt
@@ -195,7 +195,16 @@ class FileStorageObserver(RunObserver):
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        copyfile(filename, os.path.join(self.dir, target_name))
+        blacklist = ["run.json", "config.json", "cout.txt", "metrics.json"]
+        blacklist = [os.path.join(self.dir, x) for x in blacklist]
+        dest_file = os.path.join(self.dir, target_name)
+        if dest_file in blacklist:
+            raise FileExistsError(
+                "You are trying to overwrite a file necessary for the "
+                "FileStorageObserver. "
+                "The list of blacklisted files is: {}".format(blacklist)
+            )
+        copyfile(filename, dest_file)
 
     def save_cout(self):
         with open(os.path.join(self.dir, "cout.txt"), "ab") as f:
@@ -260,8 +269,7 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.run_entry, "run.json")
 
     def log_metrics(self, metrics_by_name, info):
-        """Store new measurements into metrics.json.
-        """
+        """Store new measurements into metrics.json."""
         try:
             metrics_path = os.path.join(self.dir, "metrics.json")
             with open(metrics_path, "r") as f:
@@ -295,13 +303,11 @@ class FileStorageObserver(RunObserver):
         return False
 
 
-class FileStorageOption(CommandLineOption):
-    """Add a file-storage observer to the experiment."""
+@cli_option("-F", "--file_storage")
+def file_storage_option(args, run):
+    """Add a file-storage observer to the experiment.
 
-    short_flag = "F"
-    arg = "BASEDIR"
-    arg_description = "Base-directory to write the runs to"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.observers.append(FileStorageObserver(args))
+    The value of the arguement should be the
+    base-directory to write the runs to
+    """
+    run.observers.append(FileStorageObserver(args))

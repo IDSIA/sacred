@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 import datetime
 import os
 from glob import glob
@@ -12,6 +9,11 @@ from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
+
+import gridfs
+from mongomock.gridfs import enable_gridfs_integration
+
+enable_gridfs_integration()
 from .failing_mongo_mock import FailingMongoClient
 
 from sacred.dependencies import get_digest
@@ -34,25 +36,60 @@ def test_create_should_raise_error_on_both_client_and_url():
         MongoObserver(client=real_client, url="mymongourl")
 
 
+def test_create_should_raise_error_on_both_prefix_and_runs():
+    real_client = pymongo.MongoClient()
+    with pytest.raises(
+        ValueError, match="Cannot pass both collection and a collection prefix."
+    ):
+        MongoObserver(
+            client=real_client,
+            collection_prefix="myprefix",
+            collection="some_collection",
+        )
+
+
 @pytest.fixture
 def mongo_obs():
     db = mongomock.MongoClient().db
     runs = db.runs
     metrics = db.metrics
-    fs = mock.MagicMock()
+    fs = gridfs.GridFS(db)
     return MongoObserver.create_from(runs, fs, metrics_collection=metrics)
+
+
+@pytest.fixture
+def mongo_obs_with_prefix():
+    # create a mongo observer with a collection prefix
+    real_client = pymongo.MongoClient()
+    return MongoObserver(collection_prefix="testing", client=real_client)
+
+
+@pytest.fixture
+def mongo_obs_without_prefix():
+    # create a mongo observer without a collection prefix
+    # i.e. should default to collections 'runs' and 'metrics'
+    real_client = pymongo.MongoClient()
+    return MongoObserver(client=real_client)
+
+
+@pytest.fixture
+def mongo_obs_with_collection():
+    # old, deprecated way of creating a mongo observer
+    # should use 'my_collection' for runs and 'metrics' for metrics
+    real_client = pymongo.MongoClient()
+    return MongoObserver(client=real_client, collection="my_collection")
 
 
 @pytest.fixture
 def failing_mongo_observer():
     db = FailingMongoClient(
         max_calls_before_failure=2,
-        # exception_to_raise=pymongo.errors.AutoReconnect
         exception_to_raise=pymongo.errors.ServerSelectionTimeoutError,
     ).db
+
     runs = db.runs
     metrics = db.metrics
-    fs = mock.MagicMock()
+    fs = gridfs.GridFS(db)
     return MongoObserver.create_from(runs, fs, metrics_collection=metrics)
 
 
@@ -78,7 +115,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
     sample_run["_id"] = None
     _id = mongo_obs.started_event(**sample_run)
     assert _id is not None
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run == {
         "_id": _id,
@@ -101,7 +138,7 @@ def test_mongo_observer_started_event_creates_run(mongo_obs, sample_run):
 def test_mongo_observer_started_event_uses_given_id(mongo_obs, sample_run):
     _id = mongo_obs.started_event(**sample_run)
     assert _id == sample_run["_id"]
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["_id"] == sample_run["_id"]
 
@@ -124,7 +161,7 @@ def test_mongo_observer_heartbeat_event_updates_run(mongo_obs, sample_run):
     outp = "some output"
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=1337)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["heartbeat"] == T2
     assert db_run["result"] == 1337
@@ -170,7 +207,7 @@ def test_mongo_observer_completed_event_updates_run(mongo_obs, sample_run):
 
     mongo_obs.completed_event(stop_time=T2, result=42)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["result"] == 42
@@ -182,7 +219,7 @@ def test_mongo_observer_interrupted_event_updates_run(mongo_obs, sample_run):
 
     mongo_obs.interrupted_event(interrupt_time=T2, status="INTERRUPTED")
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "INTERRUPTED"
@@ -194,7 +231,7 @@ def test_mongo_observer_failed_event_updates_run(mongo_obs, sample_run):
     fail_trace = "lots of errors and\nso\non..."
     mongo_obs.failed_event(fail_time=T2, fail_trace=fail_trace)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "FAILED"
@@ -209,8 +246,8 @@ def test_mongo_observer_artifact_event(mongo_obs, sample_run):
 
     mongo_obs.artifact_event(name, filename)
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["filename"].endswith(name)
+    [file] = mongo_obs.fs.list()
+    assert file.endswith(name)
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -224,12 +261,8 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
 
     mongo_obs.resource_event(filename)
 
-    assert mongo_obs.fs.exists.called
-    mongo_obs.fs.exists.assert_any_call(filename=filename)
-
     db_run = mongo_obs.runs.find_one()
-
-    assert db_run["resources"] == [(filename, md5)]
+    assert db_run["resources"] == [[filename, md5]]
 
 
 def test_force_bson_encodable_doesnt_change_valid_document():
@@ -312,7 +345,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
 
     # There should be only one run stored
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     # ... and the info dictionary should contain a list of created metrics
     assert "metrics" in db_run["info"]
@@ -320,7 +353,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
 
     # The metrics, stored in the metrics collection,
     # should be two (training.loss and training.accuracy)
-    assert mongo_obs.metrics.count() == 2
+    assert mongo_obs.metrics.count_documents({}) == 2
     # Read the training.loss metric and make sure it references the correct run
     # and that the run (in the info dictionary) references the correct metric record.
     loss = mongo_obs.metrics.find_one(
@@ -349,13 +382,13 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=0)
 
-    assert mongo_obs.runs.count() == 1
+    assert mongo_obs.runs.count_documents({}) == 1
     db_run = mongo_obs.runs.find_one()
     assert "metrics" in db_run["info"]
 
     # The newly added metrics belong to the same run and have the same names, so the total number
     # of metrics should not change.
-    assert mongo_obs.metrics.count() == 2
+    assert mongo_obs.metrics.count_documents({}) == 2
     loss = mongo_obs.metrics.find_one(
         {"name": "training.loss", "run_id": db_run["_id"]}
     )
@@ -385,9 +418,9 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
     # A new run has been created
-    assert mongo_obs.runs.count() == 2
+    assert mongo_obs.runs.count_documents({}) == 2
     # Another 2 metrics have been created
-    assert mongo_obs.metrics.count() == 4
+    assert mongo_obs.metrics.count_documents({}) == 4
 
 
 def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):
@@ -399,8 +432,8 @@ def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run)
 
     mongo_obs.artifact_event(name, filename)
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["content_type"] == "text/x-python"
+    file = mongo_obs.fs.find_one({})
+    assert file.content_type == "text/x-python"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -417,8 +450,8 @@ def test_mongo_observer_artifact_event_content_type_not_overwritten(
 
     mongo_obs.artifact_event(name, filename, content_type="application/json")
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["content_type"] == "application/json"
+    file = mongo_obs.fs.find_one({})
+    assert file.content_type == "application/json"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
@@ -433,8 +466,32 @@ def test_mongo_observer_artifact_event_metadata(mongo_obs, sample_run):
 
     mongo_obs.artifact_event(name, filename, metadata={"comment": "the setup file"})
 
-    assert mongo_obs.fs.put.called
-    assert mongo_obs.fs.put.call_args[1]["metadata"]["comment"] == "the setup file"
+    file = mongo_obs.fs.find_one({})
+    assert file.metadata["comment"] == "the setup file"
 
     db_run = mongo_obs.runs.find_one()
     assert db_run["artifacts"]
+
+
+def test_mongo_observer_created_with_prefix(mongo_obs_with_prefix):
+    print("with_prefix_test")
+    runs_collection = mongo_obs_with_prefix.runs
+    metrics_collection = mongo_obs_with_prefix.metrics
+    assert runs_collection.name == "testing_runs"
+    assert metrics_collection.name == "testing_metrics"
+
+
+def test_mongo_observer_created_without_prefix(mongo_obs_without_prefix):
+    print("without_prefix_test")
+    runs_collection = mongo_obs_without_prefix.runs
+    metrics_collection = mongo_obs_without_prefix.metrics
+    assert runs_collection.name == "runs"
+    assert metrics_collection.name == "metrics"
+
+
+def test_mongo_observer_created_with_collection(mongo_obs_with_collection):
+    print("with_collection_test")
+    runs_collection = mongo_obs_with_collection.runs
+    metrics_collection = mongo_obs_with_collection.metrics
+    assert runs_collection.name == "my_collection"
+    assert metrics_collection.name == "metrics"

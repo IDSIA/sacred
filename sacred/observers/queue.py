@@ -1,23 +1,48 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 from collections import namedtuple
 from queue import Queue
 from sacred.observers.base import RunObserver
 from sacred.utils import IntervalTimer
+import traceback
+import logging
 
+logger = logging.getLogger(__name__)
 
 WrappedEvent = namedtuple("WrappedEvent", "name args kwargs")
 
 
 class QueueObserver(RunObserver):
-    def __init__(self, covered_observer, interval=20, retry_interval=10):
+    """Wraps any observer and puts processing of events in the background.
+
+    If the covered observer fails to process an event, the queue observer
+    will retry until it works. This is useful for observers that rely on
+    external services like databases that might become temporarily
+    unavailable.
+    """
+
+    def __init__(
+        self,
+        covered_observer: RunObserver,
+        interval: float = 20.0,
+        retry_interval: float = 10.0,
+    ):
+        """Initialize QueueObserver.
+
+        Parameters
+        ----------
+        covered_observer
+            The real observer that is being wrapped.
+        interval
+            The interval in seconds at which the background thread is woken up to process new events.
+        retry_interval
+            The interval in seconds to wait if an event failed to be processed.
+        """
         self._covered_observer = covered_observer
         self._retry_interval = retry_interval
         self._interval = interval
         self._queue = None
         self._worker = None
         self._stop_worker_event = None
+        logger.debug("just testing")
 
     def queued_event(self, *args, **kwargs):
         self._queue.put(WrappedEvent("queued_event", args, kwargs))
@@ -84,6 +109,14 @@ class QueueObserver(RunObserver):
                             # Something went wrong during the processing of
                             # the event so wait for some time and
                             # then try again.
+                            logger.debug(
+                                "Error while processing event. Trying again.\n{}".format(
+                                    traceback.format_exc()
+                                )
+                            )
+                            # logging.debug(f"""Error while processing event. Trying again.
+                            # {traceback.format_exc()}""")
+
                             self._stop_worker_event.wait(self._retry_interval)
                             continue
                         else:

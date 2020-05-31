@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from moto import mock_s3
-
 import datetime
-import os
 import pytest
 import json
 
 from sacred.observers import S3Observer
-import tempfile
-import hashlib
 
-import boto3
-from botocore.exceptions import ClientError
+moto = pytest.importorskip("moto")
+boto3 = pytest.importorskip("boto3")
+pytest.importorskip("botocore")
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
 T2 = datetime.datetime(1999, 5, 5, 5, 5, 5, 5)
@@ -50,28 +46,9 @@ def observer():
     return S3Observer(bucket=BUCKET, basedir=BASEDIR, region=REGION)
 
 
-@pytest.fixture
-def tmpfile():
-    # NOTE: instead of using a with block and delete=True we are creating and
-    # manually deleting the file, such that we can close it before running the
-    # tests. This is necessary since on Windows we can not open the same file
-    # twice, so for the FileStorageObserver to read it, we need to close it.
-    f = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
-
-    f.content = "import sacred\n"
-    f.write(f.content.encode())
-    f.flush()
-    f.seek(0)
-    f.md5sum = hashlib.md5(f.read()).hexdigest()
-
-    f.close()
-
-    yield f
-
-    os.remove(f.name)
-
-
 def _bucket_exists(bucket_name):
+    from botocore.exceptions import ClientError
+
     s3 = boto3.resource("s3")
     try:
         s3.meta.client.head_bucket(Bucket=bucket_name)
@@ -96,7 +73,7 @@ def _get_file_data(bucket_name, key):
     return s3.Object(bucket_name, key).get()["Body"].read()
 
 
-@mock_s3
+@moto.mock_s3
 def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     _id = observer.started_event(**sample_run)
     run_dir = s3_join(BASEDIR, str(_id))
@@ -121,7 +98,7 @@ def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     }
 
 
-@mock_s3
+@moto.mock_s3
 def test_fs_observer_started_event_increments_run_id(observer, sample_run):
     _id = observer.started_event(**sample_run)
     _id2 = observer.started_event(**sample_run)
@@ -138,7 +115,7 @@ def test_s3_observer_equality():
     assert obs_one != different_bucket
 
 
-@mock_s3
+@moto.mock_s3
 def test_raises_error_on_duplicate_id_directory(observer, sample_run):
     observer.started_event(**sample_run)
     sample_run["_id"] = 1
@@ -146,7 +123,7 @@ def test_raises_error_on_duplicate_id_directory(observer, sample_run):
         observer.started_event(**sample_run)
 
 
-@mock_s3
+@moto.mock_s3
 def test_completed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -164,7 +141,7 @@ def test_completed_event_updates_run_json(observer, sample_run):
     assert run["status"] == "COMPLETED"
 
 
-@mock_s3
+@moto.mock_s3
 def test_interrupted_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -182,7 +159,7 @@ def test_interrupted_event_updates_run_json(observer, sample_run):
     assert run["status"] == "SERVER_EXPLODED"
 
 
-@mock_s3
+@moto.mock_s3
 def test_failed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -200,7 +177,7 @@ def test_failed_event_updates_run_json(observer, sample_run):
     assert run["status"] == "FAILED"
 
 
-@mock_s3
+@moto.mock_s3
 def test_queued_event_updates_run_json(observer, sample_run):
     del sample_run["start_time"]
     sample_run["queue_time"] = T2
@@ -213,7 +190,7 @@ def test_queued_event_updates_run_json(observer, sample_run):
     assert run["status"] == "QUEUED"
 
 
-@mock_s3
+@moto.mock_s3
 def test_artifact_event_works(observer, sample_run, tmpfile):
     observer.started_event(**sample_run)
     observer.artifact_event("test_artifact.py", tmpfile.name)

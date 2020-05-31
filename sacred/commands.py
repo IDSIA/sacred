@@ -5,6 +5,7 @@
 import pprint
 import pydoc
 import re
+import sys
 from collections import namedtuple, OrderedDict
 
 from colorama import Fore, Style
@@ -58,9 +59,14 @@ def _non_unicode_repr(objekt, context, maxlevels, level):
 
     E.g.: 'John' instead of u'John'.
     """
-    repr_string, isreadable, isrecursive = pprint._safe_repr(
-        objekt, context, maxlevels, level
-    )
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+        repr_string, isreadable, isrecursive = pprint._safe_repr(
+            objekt, context, maxlevels, level, sort_dicts=None
+        )
+    else:
+        repr_string, isreadable, isrecursive = pprint._safe_repr(
+            objekt, context, maxlevels, level
+        )
     if repr_string.startswith('u"') or repr_string.startswith("u'"):
         repr_string = repr_string[1:]
     return repr_string, isreadable, isrecursive
@@ -108,15 +114,18 @@ def _format_named_configs(named_configs, indent=2):
     return "\n".join(lines)
 
 
-def print_named_configs(ingredient):
-    """
-    Returns a command function that prints the available named configs for the
-     ingredient and all sub-ingredients and exits.
+def print_named_configs(ingredient):  # noqa: D202
+    """Returns a command that prints named configs recursively.
 
-     The output is highlighted:
-       white: config names
-       grey:  doc
-     """
+    The command function prints the available named configs for the
+    ingredient and all sub-ingredients and exits.
+
+    Example
+    -------
+    The output is highlighted:
+        white: config names
+        grey:  doc
+    """
 
     def print_named_configs():
         """Print the available named configs and exit."""

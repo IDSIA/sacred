@@ -1,6 +1,34 @@
 Release History
 ---------------
 
+0.8.1 (2019-11-27)
+++++++++++++++++++
+* Feature: added Google Cloud Storage Observer (thanks @wohlert)
+* Bugfix: revert accidental renaming of --unobserved commandline option
+
+
+0.8.0 (2019-10-14)
+++++++++++++++++++
+Major release with several breaking changes.
+
+* API change: Dropped support for Python 2
+* API change: Gathering of git information gathering is now enabled by default #595
+* API change: Switched constructor from Observer.create(...) to Observer(...) for all observers.
+* API change: Changed the interface for collecting custom host-information #569
+* API change: Changed interface for defining CLI options. #572
+* Feature: Added new S3 file observer #542
+* Feature: added `started_text` option to TelegramObserver #494
+* Feature: added copy/deepcopy support to read-only containers #500
+* Bugfix: FileStorage Observer is more reliable under parallel execution #503
+* Bugfix: FileStorageObserver now raises an error when an artifact would overwrite an important file #647
+* Bugfix: fixed inconsistent config nesting behavior #409 #505
+* Bugfix: Several fixes for tensorflow integration
+* Bugfix: Fixed crash due to missing brand-key on some machines # 512
+* Internal: Migrated CI server to Azure
+* Internal: Added pre-commit hooks for pep 8 checks and python black for automated code formatting
+* Internal: Started using pathlib.Path instead of os.path in many places
+
+
 0.7.5 (2019-06-20)
 ++++++++++++++++++
 Last release to support Python 2.7.

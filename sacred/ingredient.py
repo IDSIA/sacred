@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding=utf-8
-
+from typing import Generator, Tuple, Union
 import inspect
 import os.path
 from sacred.utils import PathType
@@ -51,6 +49,7 @@ class Ingredient:
         interactive: bool = False,
         _caller_globals: Optional[dict] = None,
         base_dir: Optional[PathType] = None,
+        save_git_info: bool = True,
     ):
         self.path = path
         self.config_hooks = []
@@ -67,12 +66,15 @@ class Ingredient:
         _caller_globals = _caller_globals or inspect.stack()[1][0].f_globals
         mainfile_dir = os.path.dirname(_caller_globals.get("__file__", "."))
         self.base_dir = os.path.abspath(base_dir or mainfile_dir)
+        self.save_git_info = save_git_info
         self.doc = _caller_globals.get("__doc__", "")
         (
             self.mainfile,
             self.sources,
             self.dependencies,
-        ) = gather_sources_and_dependencies(_caller_globals, self.base_dir)
+        ) = gather_sources_and_dependencies(
+            _caller_globals, save_git_info, self.base_dir
+        )
         if self.mainfile is None and not interactive:
             raise RuntimeError(
                 "Defining an experiment in interactive mode! "
@@ -276,7 +278,7 @@ class Ingredient:
         :param filename: filename of the source to be added as dependency
         :type filename: str
         """
-        self.sources.add(Source.create(filename))
+        self.sources.add(Source.create(filename, self.save_git_info))
 
     def add_package_dependency(self, package_name, version):
         """
@@ -292,7 +294,7 @@ class Ingredient:
         self.dependencies.add(PackageDependency(package_name, version))
 
     def post_process_name(self, name, ingredient):
-        """ Can be overridden to change the command name."""
+        """Can be overridden to change the command name."""
         return name
 
     def gather_commands(self):
@@ -311,15 +313,16 @@ class Ingredient:
                 cmd_name = self.post_process_name(cmd_name, ingredient)
                 yield cmd_name, command
 
-    def gather_named_configs(self):
-        """Collect all named configs from this ingredient and its
-        sub-ingredients.
+    def gather_named_configs(
+        self,
+    ) -> Generator[Tuple[str, Union[ConfigScope, ConfigDict, str]], None, None]:
+        """Collect all named configs from this ingredient and its sub-ingredients.
 
         Yields
         ------
-        config_name: str
+        config_name
             The full (dotted) name of the named config.
-        config: ConfigScope or ConfigDict or basestring
+        config
             The corresponding named config.
         """
         for ingredient, _ in self.traverse_ingredients():

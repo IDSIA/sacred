@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# coding=utf-8
 """
-This module contains the command-line parsing and help for experiments.
+Contains the command-line parsing and help for experiments.
 
 The command-line interface of sacred is built on top of ``docopt``, which
 constructs a command-line parser from a usage text. Curiously in sacred we
@@ -16,6 +14,7 @@ from shlex import quote
 from sacred.serializer import restore
 from sacred.settings import SETTINGS
 from sacred.utils import set_by_dotted_path
+from sacred.commandline_options import CLIOption
 
 
 __all__ = ("get_config_updates", "format_usage")
@@ -96,11 +95,13 @@ def _format_options_usage(options):
         else:
             flag = "{short} {long}".format(short=short, long=long)
 
+        if isinstance(op, CLIOption):
+            doc = op.get_description()
+        else:
+            # legacy
+            doc = inspect.cleandoc(op.__doc__)
         wrapped_description = textwrap.wrap(
-            inspect.cleandoc(op.__doc__),
-            width=79,
-            initial_indent=" " * 32,
-            subsequent_indent=" " * 32,
+            doc, width=79, initial_indent=" " * 32, subsequent_indent=" " * 32
         )
         wrapped_description = "\n".join(wrapped_description).strip()
 

@@ -1,21 +1,17 @@
-#!/usr/bin/env python
-# coding=utf-8
-"""This module defines the Experiment class, which is central to sacred."""
-
+"""The Experiment class, which is central to sacred."""
 import inspect
 import os.path
 import sys
+import warnings
 from collections import OrderedDict
 from typing import Sequence, Optional, List
 
 from docopt import docopt, printable_usage
 
+from sacred import SETTINGS
 from sacred.arg_parser import format_usage, get_config_updates
-from sacred.commandline_options import (
-    ForceOption,
-    gather_command_line_options,
-    LoglevelOption,
-)
+from sacred import commandline_options
+from sacred.commandline_options import CLIOption
 from sacred.commands import (
     help_for_command,
     print_config,
@@ -23,9 +19,14 @@ from sacred.commands import (
     save_config,
     print_named_configs,
 )
+from sacred.observers.file_storage import file_storage_option
+from sacred.observers.s3_observer import s3_option
 from sacred.config.signature import Signature
 from sacred.ingredient import Ingredient
 from sacred.initialize import create_run
+from sacred.observers.sql import sql_option
+from sacred.observers.tinydb_hashfs import tiny_db_option
+from sacred.run import Run
 from sacred.host_info import check_additional_host_info, HostInfoGetter
 from sacred.utils import (
     print_filtered_stacktrace,
@@ -33,7 +34,9 @@ from sacred.utils import (
     SacredError,
     format_sacred_error,
     PathType,
+    get_inheritors,
 )
+from sacred.observers.mongo import mongo_db_option
 
 __all__ = ("Experiment",)
 
@@ -55,37 +58,48 @@ class Experiment(Ingredient):
         ingredients: Sequence[Ingredient] = (),
         interactive: bool = False,
         base_dir: Optional[PathType] = None,
-        additional_host_info: List[HostInfoGetter] = None,
+        additional_host_info: Optional[List[HostInfoGetter]] = None,
+        additional_cli_options: Optional[Sequence[CLIOption]] = None,
+        save_git_info: bool = True,
     ):
         """
         Create a new experiment with the given name and optional ingredients.
 
         Parameters
         ----------
-        name : str, optional
+        name
             Optional name of this experiment, defaults to the filename.
             (Required in interactive mode)
 
         ingredients : list[sacred.Ingredient], optional
             A list of ingredients to be used with this experiment.
 
-        interactive : bool, optional
+        interactive
             If set to True will allow the experiment to be run in interactive
             mode (e.g. IPython or Jupyter notebooks).
             However, this mode is discouraged since it won't allow storing the
             source-code or reliable reproduction of the runs.
 
-        base_dir : str, optional
+        base_dir
             Optional full path to the base directory of this experiment. This
             will set the scope for automatic source file discovery.
 
-        additional_host_info : optional
+        additional_host_info
             Optional dictionary containing as keys the names of the pieces of
             host info you want to collect, and as
             values the functions collecting those pieces of information.
+
+        save_git_info:
+            Optionally save the git commit hash and the git state
+            (clean or dirty) for all source files. This requires the GitPython
+            package.
         """
         self.additional_host_info = additional_host_info or []
         check_additional_host_info(self.additional_host_info)
+        self.additional_cli_options = additional_cli_options or []
+        self.all_cli_options = (
+            gather_command_line_options() + self.additional_cli_options
+        )
         caller_globals = inspect.stack()[1][0].f_globals
         if name is None:
             if interactive:
@@ -108,6 +122,7 @@ class Experiment(Ingredient):
             interactive=interactive,
             base_dir=base_dir,
             _caller_globals=caller_globals,
+            save_git_info=save_git_info,
         )
         self.default_command = None
         self.command(print_config, unobserved=True)
@@ -146,7 +161,9 @@ class Experiment(Ingredient):
         The method decorated by this should be last in the file because is
         equivalent to:
 
-        .. code-block:: python
+        Example
+        -------
+        ::
 
             @ex.main
             def my_main():
@@ -182,12 +199,13 @@ class Experiment(Ingredient):
         dictionary. That is, the dictionary of commandline options used for
         this run.
 
-        .. note::
-            The decorated function MUST have an argument called options.
+        Notes
+        -----
+        The decorated function MUST have an argument called options.
 
-            The options also contain ``'COMMAND'`` and ``'UPDATE'`` entries,
-            but changing them has no effect. Only modification on
-            flags (entries starting with ``'--'``) are considered.
+        The options also contain ``'COMMAND'`` and ``'UPDATE'`` entries,
+        but changing them has no effect. Only modification on
+        flags (entries starting with ``'--'``) are considered.
         """
         sig = Signature(function)
         if "options" not in sig.arguments:
@@ -206,12 +224,13 @@ class Experiment(Ingredient):
             program_name or sys.argv[0] or "Dummy", self.base_dir
         )
         commands = OrderedDict(self.gather_commands())
-        options = gather_command_line_options()
-        long_usage = format_usage(program_name, self.doc, commands, options)
+        long_usage = format_usage(
+            program_name, self.doc, commands, self.all_cli_options
+        )
         # internal usage is a workaround because docopt cannot handle spaces
         # in program names. So for parsing we use 'dummy' as the program name.
         # for printing help etc. we want to use the actual program name.
-        internal_usage = format_usage("dummy", self.doc, commands, options)
+        internal_usage = format_usage("dummy", self.doc, commands, self.all_cli_options)
         short_usage = printable_usage(long_usage)
         return short_usage, long_usage, internal_usage
 
@@ -223,35 +242,33 @@ class Experiment(Ingredient):
         info: Optional[dict] = None,
         meta_info: Optional[dict] = None,
         options: Optional[dict] = None,
-    ):
+    ) -> Run:
         """
         Run the main function of the experiment or a given command.
 
         Parameters
         ----------
-        command_name : str, optional
+        command_name
             Name of the command to be run. Defaults to main function.
 
-        config_updates : dict, optional
+        config_updates
             Changes to the configuration as a nested dictionary
 
-        named_configs : list[str], optional
+        named_configs
             list of names of named_configs to use
 
-        info : dict, optional
+        info
             Additional information for this run.
 
-        meta_info : dict, optional
+        meta_info
             Additional meta information for this run.
 
-        options : dict, optional
+        options
             Dictionary of options to use
 
         Returns
         -------
-        sacred.run.Run
-            the Run object corresponding to the finished run
-
+        The Run object corresponding to the finished run.
         """
         run = self._create_run(
             command_name, config_updates, named_configs, info, meta_info, options
@@ -259,7 +276,7 @@ class Experiment(Ingredient):
         run()
         return run
 
-    def run_commandline(self, argv=None):
+    def run_commandline(self, argv=None) -> Optional[Run]:
         """
         Run the command-line interface of this experiment.
 
@@ -267,13 +284,12 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        argv : list[str] or str, optional
+        argv
             Command-line as string or list of strings like ``sys.argv``.
 
         Returns
         -------
-        sacred.run.Run
-            The Run object corresponding to the finished run.
+        The Run object corresponding to the finished run.
 
         """
         argv = ensure_wellformed_argv(argv)
@@ -312,7 +328,7 @@ class Experiment(Ingredient):
                 debug = args.get("--debug", False)
 
             if debug:
-                # Debug: Don't change behaviour, just re-raise exception
+                # Debug: Don't change behavior, just re-raise exception
                 raise
             elif self.current_run and self.current_run.pdb:
                 # Print exception and attach pdb debugger
@@ -347,21 +363,19 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        filename: str or Path
+        filename
             name of the file that should be opened
-        mode : str
+        mode
             mode that file will be open
 
         Returns
         -------
-        file
-            the opened file-object
-
+        The opened file-object.
         """
         assert self.current_run is not None, "Can only be called during a run."
         return self.current_run.open_resource(filename, mode)
 
-    def add_resource(self, filename: PathType):
+    def add_resource(self, filename: PathType) -> None:
         """Add a file as a resource.
 
         In Sacred terminology a resource is a file that the experiment needed
@@ -374,7 +388,7 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        filename : str
+        filename
             name of the file to be stored as a resource
         """
         assert self.current_run is not None, "Can only be called during a run."
@@ -386,7 +400,7 @@ class Experiment(Ingredient):
         name: Optional[str] = None,
         metadata: Optional[dict] = None,
         content_type: Optional[str] = None,
-    ):
+    ) -> None:
         """Add a file as an artifact.
 
         In Sacred terminology an artifact is a file produced by the experiment
@@ -398,15 +412,15 @@ class Experiment(Ingredient):
 
         Parameters
         ----------
-        filename : str
+        filename
             name of the file to be stored as artifact
-        name : str, optional
+        name
             optionally set the name of the artifact.
             Defaults to the relative file-path.
-        metadata: dict, optional
+        metadata
             optionally attach metadata to the artifact.
             This only has an effect when using the MongoObserver.
-        content_type: str, optional
+        content_type
             optionally attach a content-type to the artifact.
             This only has an effect when using the MongoObserver.
         """
@@ -414,12 +428,14 @@ class Experiment(Ingredient):
         self.current_run.add_artifact(filename, name, metadata, content_type)
 
     @property
-    def info(self):
+    def info(self) -> dict:
         """Access the info-dict for storing custom information.
 
         Only works during a run and is essentially a shortcut to:
 
-        .. code-block:: python
+        Example
+        -------
+        ::
 
             @ex.capture
             def my_captured_function(_run):
@@ -428,7 +444,7 @@ class Experiment(Ingredient):
         """
         return self.current_run.info
 
-    def log_scalar(self, name: str, value: float, step: Optional[int] = None):
+    def log_scalar(self, name: str, value: float, step: Optional[int] = None) -> None:
         """
         Add a new measurement.
 
@@ -436,11 +452,17 @@ class Experiment(Ingredient):
         during a heartbeat event.
         Other observers are not yet supported.
 
-        :param name: The name of the metric, e.g. training.loss
-        :param value: The measured value
-        :param step: The step number (integer), e.g. the iteration number
-                    If not specified, an internal counter for each metric
-                    is used, incremented by one.
+
+        Parameters
+        ----------
+        name
+            The name of the metric, e.g. training.loss
+        value
+            The measured value
+        step
+            The step number (integer), e.g. the iteration number
+            If not specified, an internal counter for each metric
+            is used, incremented by one.
         """
         # Method added in change https://github.com/chovanecm/sacred/issues/4
         # The same as Run.log_scalar
@@ -454,20 +476,31 @@ class Experiment(Ingredient):
             return name[len(self.path) + 1 :]
         return name
 
-    def get_default_options(self):
+    def get_default_options(self) -> dict:
         """Get a dictionary of default options as used with run.
 
         Returns
         -------
-        dict
-            A dictionary containing option keys of the form '--beat_interval'.
-            Their values are boolean if the option is a flag, otherwise None or
-            its default value.
+        A dictionary containing option keys of the form '--beat_interval'.
+        Their values are boolean if the option is a flag, otherwise None or
+        its default value.
 
         """
-        _, _, internal_usage = self.get_usage()
-        args = docopt(internal_usage, [])
-        return {k: v for k, v in args.items() if k.startswith("--")}
+        default_options = {}
+        for option in self.all_cli_options:
+            if isinstance(option, CLIOption):
+                if option.is_flag:
+                    default_value = False
+                else:
+                    default_value = None
+            else:  # legacy, should be removed later on.
+                if option.arg is None:
+                    default_value = False
+                else:
+                    default_value = None
+            default_options[option.get_flag()] = default_value
+
+        return default_options
 
     # =========================== Internal Interface ==========================
 
@@ -501,8 +534,8 @@ class Experiment(Ingredient):
             command_name,
             config_updates,
             named_configs=named_configs,
-            force=options.get(ForceOption.get_flag(), False),
-            log_level=options.get(LoglevelOption.get_flag(), None),
+            force=options.get(commandline_options.force_option.get_flag(), False),
+            log_level=options.get(commandline_options.loglevel_option.get_flag(), None),
         )
         if info is not None:
             run.info.update(info)
@@ -513,7 +546,8 @@ class Experiment(Ingredient):
         if meta_info:
             run.meta_info.update(meta_info)
 
-        for option in gather_command_line_options():
+        options_list = gather_command_line_options() + self.additional_cli_options
+        for option in options_list:
             option_value = options.get(option.get_flag(), False)
             if option_value:
                 option.apply(option_value, run)
@@ -546,3 +580,47 @@ class Experiment(Ingredient):
                 print(help_for_command(commands[args["COMMAND"]]))
                 return True
         return False
+
+
+def gather_command_line_options(filter_disabled=None):
+    """Get a sorted list of all CommandLineOption subclasses."""
+    if filter_disabled is None:
+        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
+
+    options = []
+    for opt in get_inheritors(commandline_options.CommandLineOption):
+        warnings.warn(
+            "Subclassing `CommandLineOption` is deprecated. Please "
+            "use the `sacred.cli_option` decorator and pass the function "
+            "to the Experiment constructor."
+        )
+        if filter_disabled and not opt._enabled:
+            continue
+        options.append(opt)
+
+    options += DEFAULT_COMMAND_LINE_OPTIONS
+
+    return sorted(options, key=commandline_options.get_name)
+
+
+DEFAULT_COMMAND_LINE_OPTIONS = [
+    s3_option,
+    commandline_options.pdb_option,
+    commandline_options.debug_option,
+    file_storage_option,
+    commandline_options.loglevel_option,
+    mongo_db_option,
+    sql_option,
+    commandline_options.capture_option,
+    commandline_options.help_option,
+    commandline_options.print_config_option,
+    commandline_options.name_option,
+    commandline_options.priority_option,
+    commandline_options.unobserved_option,
+    commandline_options.beat_interval_option,
+    commandline_options.queue_option,
+    commandline_options.force_option,
+    commandline_options.comment_option,
+    commandline_options.enforce_clean_option,
+    tiny_db_option,
+]

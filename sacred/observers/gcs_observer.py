@@ -1,59 +1,61 @@
 import json
 import os
 import os.path
+import re
+from typing import Optional
 
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
 from sacred.observers.base import RunObserver
 from sacred.serializer import flatten
-import re
-import socket
+from sacred.utils import PathType
 
-DEFAULT_S3_PRIORITY = 20
+DEFAULT_GCS_PRIORITY = 20
 
 
-def _is_valid_bucket(bucket_name):
-    # See https://docs.aws.amazon.com/awscloudtrail/latest/userguide/
-    # cloudtrail-s3-bucket-naming-requirements.html
+def _is_valid_bucket(bucket_name: str):
+    """Validates correctness of bucket naming.
+
+    Reference: https://cloud.google.com/storage/docs/naming
+    """
+    if bucket_name.startswith("gs://"):
+        return False
+
     if len(bucket_name) < 3 or len(bucket_name) > 63:
         return False
 
-    labels = bucket_name.split(".")
-    # A bucket name consists of "labels" separated by periods
-    for label in labels:
-        if len(label) == 0 or label[0] == "-" or label[-1] == "-":
-            # Labels must be of nonzero length,
-            # and cannot begin or end with a hyphen
-            return False
-        for char in label:
-            # Labels can only contain digits, lowercase letters, or hyphens.
-            # Anything else will fail here
-            if not (char.isdigit() or char.islower() or char == "-"):
-                return False
-    try:
-        # If a name is a valid IP address, it cannot be a bucket name
-        socket.inet_aton(bucket_name)
-    except socket.error:
-        return True
+    # IP address
+    if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", bucket_name):
+        return False
+
+    if not re.fullmatch(r"([^A-Z]|-|_|[.]|)+", bucket_name):
+        return False
+
+    if ".." in bucket_name:
+        return False
+
+    if "goog" in bucket_name or "g00g" in bucket_name:
+        return False
+
+    return True
 
 
-def s3_join(*args):
+def gcs_join(*args):
     return "/".join(args)
 
 
-class S3Observer(RunObserver):
-    VERSION = "S3Observer-0.1.0"
+class GoogleCloudStorageObserver(RunObserver):
+    VERSION = "GoogleCloudStorageObserver-0.1.0"
 
     def __init__(
         self,
-        bucket,
-        basedir,
-        resource_dir=None,
-        source_dir=None,
-        priority=DEFAULT_S3_PRIORITY,
-        region=None,
+        bucket: str,
+        basedir: PathType,
+        resource_dir: Optional[PathType] = None,
+        source_dir: Optional[PathType] = None,
+        priority: Optional[int] = DEFAULT_GCS_PRIORITY,
     ):
-        """Constructor for a S3Observer object.
+        """Constructor for a GoogleCloudStorageObserver object.
 
         Run when the object is first created,
         before it's used within an experiment.
@@ -62,7 +64,7 @@ class S3Observer(RunObserver):
         ----------
         bucket
             The name of the bucket you want to store results in.
-            Doesn't need to contain `s3://`, but needs to be a valid bucket name
+            Needs to be a valid bucket name without 'gs://'
         basedir
             The relative path inside your bucket where you want this experiment to store results
         resource_dir
@@ -74,23 +76,17 @@ class S3Observer(RunObserver):
         priority
             The priority to assign to this observer if
             multiple observers are present
-        region
-            The AWS region in which you want to create and access
-            buckets. Needs to be either set here or configured in your AWS
         """
-        import boto3
-
         if not _is_valid_bucket(bucket):
             raise ValueError(
-                "Your chosen bucket name doesn't follow AWS bucket naming rules"
+                "Your chosen bucket name doesn't follow Google Cloud Storage bucket naming rules"
             )
         resource_dir = resource_dir or "/".join([basedir, "_resources"])
         source_dir = source_dir or "/".join([basedir, "_sources"])
 
         self.basedir = basedir
-        self.bucket = bucket
-        # Keeping the convention of referring to locations in S3 as `dir`
-        # because that is a useful mental model and there isn't a better word
+        self.bucket_id = bucket
+
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.priority = priority
@@ -101,76 +97,50 @@ class S3Observer(RunObserver):
         self.cout = ""
         self.cout_write_cursor = 0
         self.saved_metrics = {}
-        if region is not None:
-            self.region = region
-            self.s3 = boto3.resource("s3", region_name=region)
-        else:
-            session = boto3.session.Session()
-            if session.region_name is not None:
-                self.region = session.region_name
-                self.s3 = boto3.resource("s3")
-            else:
-                raise ValueError(
-                    "You must either pass in an AWS region name, or have a "
-                    "region name specified in your AWS config file"
-                )
+
+        from google.cloud import storage
+        import google.auth.exceptions
+
+        try:
+            client = storage.Client()
+        except google.auth.exceptions.DefaultCredentialsError:
+            raise ConnectionError(
+                "Could not create Google Cloud Storage observer, are you "
+                "sure that you have set environment variable GOOGLE_APPLICATION_CREDENTIALS?"
+            )
+
+        self.bucket = client.bucket(bucket)
 
     def _objects_exist_in_dir(self, prefix):
         # This should be run after you've confirmed the bucket
         # exists, and will error out if it does not exist
+        all_blobs = [blob for blob in self.bucket.list_blobs(prefix=prefix)]
+        return len(all_blobs) > 0
 
-        bucket = self.s3.Bucket(self.bucket)
-        all_keys = [el.key for el in bucket.objects.filter(Prefix=prefix)]
-        return len(all_keys) > 0
-
-    def _bucket_exists(self):
-        from botocore.errorfactory import ClientError
-
-        try:
-            self.s3.meta.client.head_bucket(Bucket=self.bucket)
-        except ClientError as er:
-            if er.response["Error"]["Code"] == "404":
-                return False
-        return True
-
-    def _list_s3_subdirs(self, prefix=None):
+    def _list_gcs_subdirs(self, prefix=None):
         if prefix is None:
             prefix = self.basedir
-        bucket = self.s3.Bucket(self.bucket)
-        all_keys = [obj.key for obj in bucket.objects.filter(Prefix=prefix)]
-        subdir_match = r"{prefix}\/(.*)\/".format(prefix=prefix)
-        subdirs = []
-        for key in all_keys:
-            match_obj = re.match(subdir_match, key)
-            if match_obj is None:
-                continue
-            else:
-                subdirs.append(match_obj.groups()[0])
-        distinct_subdirs = set(subdirs)
-        return list(distinct_subdirs)
 
-    def _create_bucket(self):
-        bucket_response = self.s3.create_bucket(
-            Bucket=self.bucket,
-            CreateBucketConfiguration={"LocationConstraint": self.region},
-        )
-        return bucket_response
+        iterator = self.bucket.list_blobs(prefix=prefix, delimiter="/")
+        prefixes = set()
+        for page in iterator.pages:
+            prefixes.update(page.prefixes)
+
+        return list(prefixes)
 
     def _determine_run_dir(self, _id):
         if _id is None:
-            bucket_exists = self._bucket_exists()
-            if not bucket_exists:
-                self._create_bucket()
-                bucket_path_subdirs = []
-            else:
-                bucket_path_subdirs = self._list_s3_subdirs()
+            basepath = os.path.join(self.basedir, "")
+            bucket_path_subdirs = self._list_gcs_subdirs(prefix=basepath)
 
             if not bucket_path_subdirs:
                 max_run_id = 0
             else:
-                integer_directories = [
-                    int(d) for d in bucket_path_subdirs if d.isdigit()
+                relative_paths = [
+                    path.replace(self.basedir, "").strip("/")
+                    for path in bucket_path_subdirs
                 ]
+                integer_directories = [int(d) for d in relative_paths if d.isdigit()]
                 if not integer_directories:
                     max_run_id = 0
                 else:
@@ -180,9 +150,9 @@ class S3Observer(RunObserver):
 
             _id = max_run_id + 1
 
-        self.dir = s3_join(self.basedir, str(_id))
+        self.dir = gcs_join(self.basedir, str(_id))
         if self._objects_exist_in_dir(self.dir):
-            raise FileExistsError("S3 dir at {} already exists".format(self.dir))
+            raise FileExistsError("GCS dir at {} already exists".format(self.dir))
         return _id
 
     def queued_event(
@@ -251,46 +221,48 @@ class S3Observer(RunObserver):
         source_name, ext = os.path.splitext(os.path.basename(filename))
         md5sum = get_digest(filename)
         store_name = source_name + "_" + md5sum + ext
-        store_path = s3_join(store_dir, store_name)
-        if len(self._list_s3_subdirs(prefix=store_path)) == 0:
-            self.save_file(filename, store_path)
+        store_path = gcs_join(store_dir, store_name)
+        if len(self._list_gcs_subdirs(prefix=store_path)) == 0:
+            self.save_file_to_base(filename, store_path)
         return store_path, md5sum
 
     def put_data(self, key, binary_data):
-        self.s3.Object(self.bucket, key).put(Body=binary_data)
+        blob = self.bucket.blob(key)
+        blob.upload_from_file(binary_data)
 
     def save_json(self, obj, filename):
-        key = s3_join(self.dir, filename)
-        self.put_data(key, json.dumps(flatten(obj), sort_keys=True, indent=2))
+        key = gcs_join(self.dir, filename)
+        blob = self.bucket.blob(key)
+        blob.upload_from_string(
+            json.dumps(flatten(obj), sort_keys=True, indent=2), content_type="text/json"
+        )
 
     def save_file(self, filename, target_name=None):
         target_name = target_name or os.path.basename(filename)
-        key = s3_join(self.dir, target_name)
+        key = gcs_join(self.dir, target_name)
         self.put_data(key, open(filename, "rb"))
 
-    def save_directory(self, source_dir, target_name):
-        import boto3
+    def save_file_to_base(self, filename, target_name=None):
+        target_name = target_name or os.path.basename(filename)
+        self.put_data(target_name, open(filename, "rb"))
 
-        # Stolen from:
-        # https://github.com/boto/boto3/issues/358#issuecomment-346093506
+    def save_directory(self, source_dir, target_name):
         target_name = target_name or os.path.basename(source_dir)
         all_files = []
         for root, dirs, files in os.walk(source_dir):
             all_files += [os.path.join(root, f) for f in files]
-        s3_resource = boto3.resource("s3")
 
         for filename in all_files:
-            file_location = s3_join(
+            file_location = gcs_join(
                 self.dir, target_name, os.path.relpath(filename, source_dir)
             )
-            s3_resource.Object(self.bucket, file_location).put(
-                Body=open(filename, "rb")
-            )
+            self.put_data(file_location, open(filename, "rb"))
 
     def save_cout(self):
         binary_data = self.cout[self.cout_write_cursor :].encode("utf-8")
-        key = s3_join(self.dir, "cout.txt")
-        self.put_data(key, binary_data)
+        key = gcs_join(self.dir, "cout.txt")
+        blob = self.bucket.blob(key)
+        blob.upload_from_string(binary_data, content_type="text/plain")
         self.cout_write_cursor = len(self.cout)
 
     def heartbeat_event(self, info, captured_out, beat_time, result):
@@ -351,24 +323,24 @@ class S3Observer(RunObserver):
         self.save_json(self.saved_metrics, "metrics.json")
 
     def __eq__(self, other):
-        if isinstance(other, S3Observer):
-            return self.bucket == other.bucket and self.basedir == other.basedir
+        if isinstance(other, GoogleCloudStorageObserver):
+            return self.bucket_id == other.bucket_id and self.basedir == other.basedir
         else:
             return False
 
 
-@cli_option("-S", "--s3")
-def s3_option(args, run):
-    """Add a S3 File observer to the experiment.
+@cli_option("-G", "--gcs")
+def gcs_option(args, run):
+    """Add a Google Cloud Storage File observer to the experiment.
 
-    The argument value should be `s3://<bucket>/path/to/exp`.
+    The argument value should be `gs://<bucket>/path/to/exp`.
     """
-    match_obj = re.match(r"s3:\/\/([^\/]*)\/(.*)", args)
+    match_obj = re.match(r"gs:\/\/([^\/]*)\/(.*)", args)
     if match_obj is None or len(match_obj.groups()) != 2:
         raise ValueError(
             "Valid bucket specification not found. "
             "Enter bucket and directory path like: "
-            "s3://<bucket>/path/to/exp"
+            "gs://<bucket>/path/to/exp"
         )
     bucket, basedir = match_obj.groups()
-    run.observers.append(S3Observer(bucket=bucket, basedir=basedir))
+    run.observers.append(GoogleCloudStorageObserver(bucket=bucket, basedir=basedir))

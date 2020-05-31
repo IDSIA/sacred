@@ -47,36 +47,6 @@ def test_serialize_non_str_keys():
 
 
 @pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
-@pytest.mark.parametrize(
-    "typename",
-    [
-        "bool_",
-        "int_",
-        "intc",
-        "intp",
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "uint8",
-        "uint16",
-        "uint32",
-        "uint64",
-        "float_",
-        "float16",
-        "float32",
-        "float64",
-    ],
-)
-def test_flatten_normalizes_numpy_scalars(typename):
-    dtype = getattr(opt.np, typename)
-    a = 1
-    b = flatten(dtype(a))
-    assert a == b
-    assert isinstance(b, (int, bool, float))
-
-
-@pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
 def test_serialize_numpy_arrays():
     a = opt.np.array([[1, 2, 3], [4, 5, 6]], dtype=opt.np.float32)
     b = restore(flatten(a))
@@ -98,9 +68,3 @@ def test_serialize_pandas_dataframes():
     b = restore(flatten(df))
     assert np.all(df == b)
     assert np.all(df.dtypes == b.dtypes)
-
-
-# def test_serialize_datetime():
-#     from datetime import datetime
-#     t = datetime.utcnow()
-#     assert restore(flatten(t)) == t

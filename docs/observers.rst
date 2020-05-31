@@ -9,7 +9,7 @@ Observers have a ``priority`` attribute, and are run in order of descending
 priority. The first observer determines the ``_id`` of the run.
 
 
-At the moment there are five observers that are shipped with Sacred:
+At the moment there are seven observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
@@ -22,6 +22,12 @@ At the moment there are five observers that are shipped with Sacred:
    relevant information there.
  * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
    a given prefix/directory
+ * The :ref:`gcs_observer` stores run information in a provided Google Cloud
+   Storage bucket, within a given prefix/directory
+ * The :ref:`queue_observer` can be used to wrap any of the above observers.
+   It will put the processing of observed events on a fault-tolerant 
+   queue in a background process. This is useful for observers that rely
+   on external services such as a database that might be temporarily unavailable.
 
 
 But if you want the run information stored some other way, it is easy to write
@@ -637,6 +643,43 @@ created in ascending order, and each run directory will contain the files specif
 FileStorageObserver Directory Structure documentation above.
 
 
+Google Cloud Storage Observer
+============
+
+.. note::
+    Requires the `google cloud storage <https://cloud.google.com/storage/docs/reference/libraries/>`_ package.
+    Install with ``pip install google-cloud-storage``.
+
+The Google Cloud Storage Observer allows for experiments to be logged into cloud storage buckets
+provided by Google. In order to use this observer, the user must have created a bucket on the service
+prior to the running an experiment using this observer.
+
+
+Adding a GoogleCloudStorageObserver
+--------------------
+
+To create an GoogleCloudStorageObserver in Python:
+
+.. code-block:: python
+
+    from sacred.observers import GoogleCloudStorageObserver
+    ex.observers.append(GoogleCloudStorageObserver(bucket='bucket-name',
+                                                   basedir='/experiment-name/'))
+
+In order for the observer to correctly connect to the provided bucket, The environment variable
+`` GOOGLE_APPLICATION_CREDENTIALS``  needs to be set by the user. This variable should point to a
+valid JSON file containing Google authorisation credentials
+(see: `Google Cloud authentication <https://cloud.google.com/docs/authentication/getting-started/>`_).
+
+Directory Structure
+--------------------
+
+GoogleCloudStorageObserver follow the same conventions as FileStorageObservers when it comes to directory
+structure within a bucket: within ``gs://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
+
+
 Slack Observer
 ==============
 
@@ -658,6 +701,9 @@ of adding a SlackObserver is from a configuration file:
 
     slack_obs = SlackObserver.from_config('slack.json')
     ex.observers.append(slack_obs)
+
+    # You can also instantiate it directly without a config file:
+     slack_obs = SlackObserver(my_webhook_url)
 
 Where ``slack.json`` at least specifies the ``webhook_url``::
 
@@ -727,7 +773,7 @@ or pickle file containing...
   * optionally: ``username`` for proxy.
   * optionally: ``password`` for proxy.
 
-The observer is then added to the experment like this:
+The observer is then added to the experiment like this:
 
 .. code-block:: python
 
@@ -768,6 +814,55 @@ You simply need to initialize it with your project name and (optionally) api tok
     It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
     To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
     line to your `~/.bashrc` or `~/.bash_profile` files.
+
+.. _queue_observer:
+
+Queue Observer
+==============
+
+The `QueueObserver` can be used on top of other existing observers.
+It runs in a background thread. Observed events
+are buffered in a queue and the background thread is woken up to process
+new events at a fixed interval of 20 seconds be default.
+If the processing of an event fails, the event is put back on the queue
+and processed next time. This is useful for observers that rely on
+external services like databases that might become temporarily
+unavailable. Normally, the experiment would fail at this point,
+which could result in long running experiments being unnecessarily
+aborted. The `QueueObserver` can tolerate such temporary problems.
+
+
+However, the `QueueObserver` has currently no way
+of declaring an event as finally failed, so if the failure is not
+due to a temporary unavailability of an external service, the observer
+will try forever.
+
+Adding a Queue Observer
+-------------------------
+
+The ``QueueObserver`` can be used to wrap any other instantiated observer.
+For example, the ``FileStorageObserver`` can be made to use a queue like so
+
+.. code-block:: python
+
+    from sacred.observers import FileStorageObserver, QueueObserver
+
+    fs_observer = FileStorageObserver('my_runs', template='/custom/template.txt')
+    ex.observers.append(QueueObserver(fs_observer)
+
+
+
+For wrapping the :ref:`mongo_observer` a convenience class is provided
+to instantiate the queue based version.
+
+.. code-block:: python
+
+    from sacred.observers import QueuedMongoObserver
+
+    ex.observers.append(
+        QueuedMongoObserver(url="my.server.org:27017", db_name="MY_DB")
+    )
+
 
 Events
 ======

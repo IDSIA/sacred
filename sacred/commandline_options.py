@@ -1,17 +1,80 @@
-#!/usr/bin/env python
-# coding=utf-8
 """
-This module provides the basis for all command-line options (flags) in sacred.
+Provides the basis for all command-line options (flags) in sacred.
 
 It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
 
-import warnings
+from typing import Callable
+import inspect
+import re
 
+from sacred.run import Run
 from sacred.commands import print_config
-from sacred.settings import SETTINGS
-from sacred.utils import convert_camel_case_to_snake_case, get_inheritors
+from sacred.utils import convert_camel_case_to_snake_case
+
+
+CLIFunction = Callable[[str, Run], None]
+
+
+class CLIOption:
+    def __init__(
+        self,
+        apply_function: CLIFunction,
+        short_flag: str,
+        long_flag: str,
+        is_flag: bool,
+    ):
+
+        if not re.match(r"-\w$", short_flag):
+            raise ValueError(
+                "Short flag malformed. " "One correct short flag would be: `-j`."
+            )
+        if not re.match(r"--[\w-]+\w$", long_flag):
+            raise ValueError(
+                "Long flag malformed. One correct long flag "
+                "would be: `--my-pretty-flag`"
+            )
+        self.apply_function = apply_function
+        self.short_flag = short_flag
+        self.long_flag = long_flag
+        self.is_flag = is_flag
+
+        # trick for backward compatibility:
+        self.arg = None if is_flag else "VALUE"
+        self.arg_description = None if is_flag else ""
+
+    def __call__(self, *args, **kwargs):
+        return self.apply_function(*args, **kwargs)
+
+    def get_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.long_flag
+
+    def get_short_flag(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag
+
+    def get_flags(self):
+        """Legacy function. Should be removed at some point."""
+        return self.short_flag, self.long_flag
+
+    def apply(self, args, run):
+        """Legacy function. Should be removed at some point."""
+        return self.apply_function(args, run)
+
+    def get_name(self):
+        return self.apply_function.__name__
+
+    def get_description(self):
+        return inspect.getdoc(self.apply_function) or ""
+
+
+def cli_option(short_flag: str, long_flag: str, is_flag=False):
+    def wrapper(f: CLIFunction):
+        return CLIOption(f, short_flag, long_flag, is_flag)
+
+    return wrapper
 
 
 class CommandLineOption:
@@ -101,193 +164,142 @@ class CommandLineOption:
         pass
 
 
-def gather_command_line_options(filter_disabled=None):
-    """Get a sorted list of all CommandLineOption subclasses."""
-    if filter_disabled is None:
-        filter_disabled = not SETTINGS.COMMAND_LINE.SHOW_DISABLED_OPTIONS
-    options = [
-        opt
-        for opt in get_inheritors(CommandLineOption)
-        if not filter_disabled or opt._enabled
-    ]
-    return sorted(options, key=lambda opt: opt.__name__)
+def get_name(option):
+    if isinstance(option, CLIOption):
+        return option.get_name()
+    else:
+        return option.__name__
 
 
-class HelpOption(CommandLineOption):
+@cli_option("-h", "--help", is_flag=True)
+def help_option(args, run):
     """Print this help message and exit."""
+    pass
 
 
-class DebugOption(CommandLineOption):
+@cli_option("-d", "--debug", is_flag=True)
+def debug_option(args, run):
     """
+    Set this run to debug mode.
+
     Suppress warnings about missing observers and don't filter the stacktrace.
-
-    Also enables usage with ipython --pdb.
+    Also enables usage with ipython `--pdb`.
     """
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to debug mode."""
-        run.debug = True
+    run.debug = True
 
 
-class PDBOption(CommandLineOption):
+@cli_option("-D", "--pdb", is_flag=True)
+def pdb_option(args, run):
     """Automatically enter post-mortem debugging with pdb on failure."""
-
-    short_flag = "D"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.pdb = True
+    run.pdb = True
 
 
-class LoglevelOption(CommandLineOption):
-    """Adjust the loglevel."""
+@cli_option("-l", "--loglevel")
+def loglevel_option(args, run):
+    """
+    Set the LogLevel.
 
-    arg = "LEVEL"
-    arg_description = (
-        "Loglevel either as 0 - 50 or as string: DEBUG(10), "
-        "INFO(20), WARNING(30), ERROR(40), CRITICAL(50)"
-    )
+    Loglevel either as 0 - 50 or as string: DEBUG(10),
+    INFO(20), WARNING(30), ERROR(40), CRITICAL(50)
+    """
+    # TODO: sacred.initialize.create_run already takes care of this
 
-    @classmethod
-    def apply(cls, args, run):
-        """Adjust the loglevel of the root-logger of this run."""
-        # TODO: sacred.initialize.create_run already takes care of this
-
-        try:
-            lvl = int(args)
-        except ValueError:
-            lvl = args
-        run.root_logger.setLevel(lvl)
+    try:
+        lvl = int(args)
+    except ValueError:
+        lvl = args
+    run.root_logger.setLevel(lvl)
 
 
-class CommentOption(CommandLineOption):
-    """Adds a message to the run."""
-
-    arg = "COMMENT"
-    arg_description = "A comment that should be stored along with the run."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add a comment to this run."""
-        run.meta_info["comment"] = args
+@cli_option("-c", "--comment")
+def comment_option(args, run):
+    """Add a comment to this run."""
+    run.meta_info["comment"] = args
 
 
-class BeatIntervalOption(CommandLineOption):
-    """Control the rate of heartbeat events."""
+@cli_option("-b", "--beat-interval")
+def beat_interval_option(args, run):
+    """
+    Set the heart-beat interval for this run.
 
-    arg = "BEAT_INTERVAL"
-    arg_description = "Time between two heartbeat events measured in seconds."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set the heart-beat interval for this run."""
-        run.beat_interval = float(args)
+    Time between two heartbeat events is measured in seconds.
+    """
+    run.beat_interval = float(args)
 
 
-class UnobservedOption(CommandLineOption):
+@cli_option("-u", "--unobserved", is_flag=True)
+def unobserved_option(args, run):
     """Ignore all observers for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to unobserved mode."""
-        run.unobserved = True
+    run.unobserved = True
 
 
-class QueueOption(CommandLineOption):
+@cli_option("-q", "--queue", is_flag=True)
+def queue_option(args, run):
     """Only queue this run, do not start it."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to queue only mode."""
-        run.queue_only = True
+    run.queue_only = True
 
 
-class ForceOption(CommandLineOption):
+@cli_option("-f", "--force", is_flag=True)
+def force_option(args, run):
     """Disable warnings about suspicious changes for this run."""
-
-    @classmethod
-    def apply(cls, args, run):
-        """Set this run to not warn about suspicous changes."""
-        run.force = True
+    run.force = True
 
 
-class PriorityOption(CommandLineOption):
-    """Sets the priority for a queued up experiment."""
+@cli_option("-P", "--priority")
+def priority_option(args, run):
+    """Sets the priority for a queued up experiment.
 
-    short_flag = "P"
-    arg = "PRIORITY"
-    arg_description = "The (numeric) priority for this run."
-
-    @classmethod
-    def apply(cls, args, run):
-        """Add priority info for this run."""
-        try:
-            priority = float(args)
-        except ValueError:
-            raise ValueError(
-                "The PRIORITY argument must be a number! " "(but was '{}')".format(args)
-            )
-        run.meta_info["priority"] = priority
+    `--priority=NUMBER`
+    The number represent the priority for this run.
+    """
+    try:
+        priority = float(args)
+    except ValueError:
+        raise ValueError(
+            "The PRIORITY argument must be a number! (but was '{}')".format(args)
+        )
+    run.meta_info["priority"] = priority
 
 
-class EnforceCleanOption(CommandLineOption):
+@cli_option("-e", "--enforce_clean", is_flag=True)
+def enforce_clean_option(args, run):
     """Fail if any version control repository is dirty."""
-
-    @classmethod
-    def apply(cls, args, run):
-        try:
-            import git  # NOQA
-        except ImportError:
-            warnings.warn(
-                "GitPython must be installed to use the " "--enforce-clean option."
-            )
-            raise
-        repos = run.experiment_info["repositories"]
-        if not repos:
-            raise RuntimeError(
-                "No version control detected. "
-                "Cannot enforce clean repository.\n"
-                "Make sure that your sources under VCS and the "
-                "corresponding python package is installed."
-            )
-        else:
-            for repo in repos:
-                if repo["dirty"]:
-                    raise RuntimeError(
-                        "EnforceClean: Uncommited changes in "
-                        'the "{}" repository.'.format(repo)
-                    )
+    repos = run.experiment_info["repositories"]
+    if not repos:
+        raise RuntimeError(
+            "No version control detected. "
+            "Cannot enforce clean repository.\n"
+            "Make sure that your sources under VCS and the "
+            "corresponding python package is installed."
+        )
+    else:
+        for repo in repos:
+            if repo["dirty"]:
+                raise RuntimeError(
+                    "EnforceClean: Uncommited changes in "
+                    'the "{}" repository.'.format(repo)
+                )
 
 
-class PrintConfigOption(CommandLineOption):
+@cli_option("-p", "--print-config", is_flag=True)
+def print_config_option(args, run):
     """Always print the configuration first."""
-
-    @classmethod
-    def apply(cls, args, run):
-        print_config(run)
-        print("-" * 79)
+    print_config(run)
+    print("-" * 79)
 
 
-class NameOption(CommandLineOption):
+@cli_option("-n", "--name")
+def name_option(args, run):
     """Set the name for this run."""
-
-    arg = "NAME"
-    arg_description = "Name for this run."
-
-    @classmethod
-    def apply(cls, args, run):
-        run.experiment_info["name"] = args
-        run.run_logger = run.root_logger.getChild(args)
+    run.experiment_info["name"] = args
+    run.run_logger = run.root_logger.getChild(args)
 
 
-class CaptureOption(CommandLineOption):
-    """Control the way stdout and stderr are captured."""
+@cli_option("-C", "--capture")
+def capture_option(args, run):
+    """
+    Control the way stdout and stderr are captured.
 
-    short_flag = "C"
-    arg = "CAPTURE_MODE"
-    arg_description = "stdout/stderr capture mode. One of [no, sys, fd]"
-
-    @classmethod
-    def apply(cls, args, run):
-        run.capture_mode = args
+    The argument value must be one of [no, sys, fd]
+    """
+    run.capture_mode = args
