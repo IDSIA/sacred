@@ -195,11 +195,12 @@ class Experiment(Base):
             Source.get_or_create(s, md5sum, session, ex_info["base_dir"])
             for s, md5sum in ex_info["sources"]
         ]
-        repositories = []
+        repositories = set()
         for r in ex_info["repositories"]:
             repository = Repository.get_or_create(r["url"], r["commit"], r["dirty"], session)
             session.add(repository)
-            repositories.append(repository)
+            repositories.add(repository)
+        repositories = list(repositories)
 
         return cls(
             name=name,
