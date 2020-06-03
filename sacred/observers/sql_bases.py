@@ -39,6 +39,27 @@ class Source(Base):
         return {"filename": self.filename, "md5sum": self.md5sum}
 
 
+class Repository(Base):
+    __tablename__ = "repository"
+
+    @classmethod
+    def get_or_create(cls, url, commit, dirty, session):
+        instance = (
+            session.query(cls).filter_by(url=url, commit=commit, dirty=dirty).first()
+        )
+        if instance:
+            return instance
+        return cls(url=url, commit=commit, dirty=dirty)
+
+    repository_id = sa.Column(sa.Integer, primary_key=True)
+    url = sa.Column(sa.String(2048))
+    commit = sa.Column(sa.String(40))
+    dirty = sa.Column(sa.Boolean)
+
+    def to_json(self):
+        return {"url": self.url, "commit": self.commit, "dirty": self.dirty}
+
+
 class Dependency(Base):
     __tablename__ = "dependency"
 
@@ -138,6 +159,13 @@ experiment_source_association = sa.Table(
     sa.Column("source_id", sa.Integer, sa.ForeignKey("source.source_id")),
 )
 
+experiment_repository_association = sa.Table(
+    "experiments_repositories",
+    Base.metadata,
+    sa.Column("experiment_id", sa.Integer, sa.ForeignKey("experiment.experiment_id")),
+    sa.Column("repository_id", sa.Integer, sa.ForeignKey("repository.repository_id")),
+)
+
 experiment_dependency_association = sa.Table(
     "experiments_dependencies",
     Base.metadata,
@@ -167,11 +195,17 @@ class Experiment(Base):
             Source.get_or_create(s, md5sum, session, ex_info["base_dir"])
             for s, md5sum in ex_info["sources"]
         ]
+        repositories = []
+        for r in ex_info["repositories"]:
+            repository = Repository.get_or_create(r["url"], r["commit"], r["dirty"], session)
+            session.add(repository)
+            repositories.append(repository)
 
         return cls(
             name=name,
             dependencies=dependencies,
             sources=sources,
+            repositories=repositories,
             md5sum=md5,
             base_dir=ex_info["base_dir"],
         )
@@ -183,6 +217,9 @@ class Experiment(Base):
     sources = sa.orm.relationship(
         "Source", secondary=experiment_source_association, backref="experiments"
     )
+    repositories = sa.orm.relationship(
+        "Repository", secondary=experiment_repository_association, backref="experiments"
+    )
     dependencies = sa.orm.relationship(
         "Dependency", secondary=experiment_dependency_association, backref="experiments"
     )
@@ -192,6 +229,7 @@ class Experiment(Base):
             "name": self.name,
             "base_dir": self.base_dir,
             "sources": [s.to_json() for s in self.sources],
+            "repositories": [r.to_json() for r in self.repositories],
             "dependencies": [d.to_json() for d in self.dependencies],
         }
 

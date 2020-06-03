@@ -50,7 +50,7 @@ def sql_obs(session, engine):
 
 @pytest.fixture
 def sample_run():
-    exp = {"name": "test_exp", "sources": [], "dependencies": [], "base_dir": "/tmp"}
+    exp = {"name": "test_exp", "sources": [], "repositories": [], "dependencies": [], "base_dir": "/tmp"}
     host = {
         "hostname": "test_host",
         "cpu": "Intel",
