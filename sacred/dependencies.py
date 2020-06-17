@@ -462,9 +462,7 @@ class Source:
 
     def to_json(self, base_dir=None):
         if base_dir:
-            p_base = Path(base_dir)
-            p_file = Path(self.filename)
-            return os.path.relpath(p_file.resolve(), p_base.resolve()), self.digest
+            return os.path.relpath(os.path.realpath(self.filename), os.path.realpath(base_dir)), self.digest
         else:
             return self.filename, self.digest
 
