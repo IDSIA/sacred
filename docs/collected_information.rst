@@ -159,7 +159,7 @@ default mode is ``sys`` which only captures outputs made from within python.
 Note that, the captured output behaves differently from a console in that
 it doesn't by default interpret control characters like backspace
 (``'\b'``) or carriage return (``'\r'``).
-As an effect, some updating progressbars or the like might me more verbose
+As an effect, some updating progressbars or the like might be more verbose
 than intended. This behavior can be changed by adding a custom filter to the
 captured output. To interpret control characters like a console this would do:
 
