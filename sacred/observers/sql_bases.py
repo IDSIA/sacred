@@ -197,7 +197,9 @@ class Experiment(Base):
         ]
         repositories = set()
         for r in ex_info["repositories"]:
-            repository = Repository.get_or_create(r["url"], r["commit"], r["dirty"], session)
+            repository = Repository.get_or_create(
+                r["url"], r["commit"], r["dirty"], session
+            )
             session.add(repository)
             repositories.add(repository)
         repositories = list(repositories)
