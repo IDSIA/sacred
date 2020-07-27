@@ -234,14 +234,16 @@ class Run:
             with capture_stdout() as self._output_file:
                 self._emit_started()
                 self._start_heartbeat()
-                self._execute_pre_run_hooks()
-                self.result = self.main_function(*args)
-                self._execute_post_run_hooks()
-                if self.result is not None:
-                    self.run_logger.info("Result: {}".format(self.result))
-                elapsed_time = self._stop_time()
-                self.run_logger.info("Completed after %s", elapsed_time)
-                self._get_captured_output()
+                try
+                    self._execute_pre_run_hooks()
+                    self.result = self.main_function(*args)
+                    self._execute_post_run_hooks()
+                    if self.result is not None:
+                        self.run_logger.info("Result: {}".format(self.result))
+                    elapsed_time = self._stop_time()
+                    self.run_logger.info("Completed after %s", elapsed_time)
+                finally:
+                    self._get_captured_output()
             self._stop_heartbeat()
             self._emit_completed(self.result)
         except (SacredInterrupt, KeyboardInterrupt) as e:
