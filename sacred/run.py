@@ -234,7 +234,7 @@ class Run:
             with capture_stdout() as self._output_file:
                 self._emit_started()
                 self._start_heartbeat()
-                try
+                try:
                     self._execute_pre_run_hooks()
                     self.result = self.main_function(*args)
                     self._execute_post_run_hooks()
