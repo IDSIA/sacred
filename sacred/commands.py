@@ -162,13 +162,14 @@ def print_dependencies(_run):
     print("")
 
 
-def save_config(_config, _log, config_filename="config.json"):
+def save_config(_run, _log, config_filename="config.json"):
     """
     Store the updated configuration in a file.
 
     By default uses the filename "config.json", but that can be changed by
     setting the config_filename config entry.
     """
+    _config = _run.config
     if "config_filename" in _config:
         del _config["config_filename"]
     _log.info('Saving config to "{}"'.format(config_filename))
