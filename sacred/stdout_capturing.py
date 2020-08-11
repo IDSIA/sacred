@@ -67,7 +67,7 @@ class CapturedStdout:
         return self.buffer.flush()
 
     def get(self):
-        if self.final is None:
+        if not self.closed:
             self.buffer.seek(self.read_position)
             value = self.buffer.read()
             self.read_position = self.buffer.tell()
