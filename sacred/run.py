@@ -263,9 +263,9 @@ class Run:
         return self.result
 
     def _get_captured_output(self):
-        if self._output_file.closed:
-            return
         text = self._output_file.get()
+        if self._output_file.closed and text is None:
+            return
         if isinstance(text, bytes):
             text = text.decode("utf-8", "replace")
         if self.captured_out:
