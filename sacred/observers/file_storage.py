@@ -224,7 +224,7 @@ class FileStorageObserver(RunObserver):
                 cout=self.cout,
                 savedir=self.dir,
             )
-            ext = self.template.suffix
+            _, ext = os.path.splitext(self.template)
             with open(os.path.join(self.dir, "report" + ext), "w") as f:
                 f.write(report)
 
