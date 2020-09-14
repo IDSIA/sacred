@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 import mimetypes
 import os.path
 import pickle
@@ -82,7 +82,7 @@ class MongoObserver(RunObserver):
         db_name: str = "sacred",
         collection: str = "runs",
         collection_prefix: str = "",
-        overwrite: Optional[bool] = None,
+        overwrite: Optional[Union[int, str]] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
         failure_dir: Optional[PathType] = None,
@@ -620,7 +620,7 @@ class QueuedMongoObserver(QueueObserver):
         url: Optional[str] = None,
         db_name: str = "sacred",
         collection: str = "runs",
-        overwrite: Optional[bool] = None,
+        overwrite: Optional[Union[int, str]] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
         **kwargs
