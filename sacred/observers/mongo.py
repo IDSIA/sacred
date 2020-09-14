@@ -183,7 +183,7 @@ class MongoObserver(RunObserver):
         self.runs = runs_collection
         self.metrics = metrics_collection
         self.fs = fs
-        if isinstance(overwrite, (int, str)):
+        if overwrite is not None:
             overwrite = int(overwrite)
             run = self.runs.find_one({"_id": overwrite})
             if run is None:
