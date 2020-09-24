@@ -80,7 +80,7 @@ class TelegramObserver(RunObserver):
         chat_id,
         silent_completion=False,
         priority=DEFAULT_TELEGRAM_PRIORITY,
-        **kwargs,
+        **kwargs
     ):
         self.silent_completion = silent_completion
         self.chat_id = chat_id

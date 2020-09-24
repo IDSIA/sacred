@@ -86,7 +86,7 @@ class MongoObserver(RunObserver):
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
         failure_dir: Optional[PathType] = None,
-        **kwargs,
+        **kwargs
     ):
         """Initializer for MongoObserver.
 
@@ -623,7 +623,7 @@ class QueuedMongoObserver(QueueObserver):
         overwrite: Optional[bool] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
-        **kwargs,
+        **kwargs
     ):
         """Initializer for MongoObserver.
 
