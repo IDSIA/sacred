@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """Defines the stock-commands that every sacred experiment ships with."""
+import copy
 
 import pprint
 import pydoc
@@ -169,6 +170,7 @@ def save_config(_config, _log, config_filename="config.json"):
     By default uses the filename "config.json", but that can be changed by
     setting the config_filename config entry.
     """
+    _config = copy.copy(_config)
     if "config_filename" in _config:
         del _config["config_filename"]
     _log.info('Saving config to "{}"'.format(config_filename))
