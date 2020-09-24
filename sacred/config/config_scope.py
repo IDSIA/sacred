@@ -183,11 +183,11 @@ def find_doc_for(ast_entry, body_lines):
     line_io = io.BytesIO(body_lines[lineno].encode())
     try:
         tokens = tokenize(line_io.readline) or []
-        line_comments = [t.string for t in tokens if t.type == COMMENT]
+        line_comments = [token.string for token in tokens if token.type == COMMENT]
 
         if line_comments:
-            formatted_lcs = [l[1:].strip() for l in line_comments]
-            filtered_lcs = [l for l in formatted_lcs if not is_ignored(l)]
+            formatted_lcs = [line[1:].strip() for line in line_comments]
+            filtered_lcs = [line for line in formatted_lcs if not is_ignored(line)]
             if filtered_lcs:
                 return filtered_lcs[0]
     except TokenError:
