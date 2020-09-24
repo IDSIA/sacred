@@ -295,8 +295,7 @@ def test_config_hook_updates_config(ex):
 
 
 def test_info_kwarg_updates_info(ex):
-    """ Tests that the info kwarg of Experiment.create_run is used to update Run.info
-    """
+    """Tests that the info kwarg of Experiment.create_run is used to update Run.info"""
 
     @ex.automain
     def foo():
@@ -307,8 +306,7 @@ def test_info_kwarg_updates_info(ex):
 
 
 def test_info_kwargs_default_behavior(ex):
-    """ Tests the default behavior of Experiment.create_run when the info kwarg is not specified.
-    """
+    """Tests the default behavior of Experiment.create_run when the info kwarg is not specified."""
 
     @ex.automain
     def foo(_run):
