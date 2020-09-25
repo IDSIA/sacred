@@ -170,7 +170,8 @@ def save_config(_config, _log, config_filename="config.json"):
     By default uses the filename "config.json", but that can be changed by
     setting the config_filename config entry.
     """
-    _config = copy.copy(_config)
+    # Copy the config to make it mutable
+    _config = copy.deepcopy(_config)
     if "config_filename" in _config:
         del _config["config_filename"]
     _log.info('Saving config to "{}"'.format(config_filename))
