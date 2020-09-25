@@ -210,8 +210,8 @@ In any case, the numbers should form an increasing sequence.
             time.sleep(ms_to_wait/1000)
             # This will add an entry for training.loss metric in every second iteration.
             # The resulting sequence of steps for training.loss will be 0, 2, 4, ...
-             if counter % 2 == 0:
-                _run.log_scalar("training.loss", value * 1.5, counter)
+            if counter % 2 == 0:
+               _run.log_scalar("training.loss", value * 1.5, counter)
             # Implicit step counter (0, 1, 2, 3, ...)
             # incremented with each call for training.accuracy:
             _run.log_scalar("training.accuracy", value * 2)
