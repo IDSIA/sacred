@@ -96,7 +96,7 @@ def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
     func_code = "".join(func_code_lines)
     arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
-    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
+    arguments = r"{0}(?:\s*,\s*{0})*,?".format(arg)
     func_def = re.compile(
         r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*(?:#[^\n]*)?\n".format(
             func.__name__, arguments
