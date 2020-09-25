@@ -12,6 +12,7 @@ from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
+from sacred.utils import ConfigError
 
 
 class ConfigScope:
@@ -68,7 +69,9 @@ class ConfigScope:
                 fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
-        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+
+        with ConfigError.track(cfg_locals):
+            eval(self._body_code, copy(self._func.__globals__), cfg_locals)
 
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(
