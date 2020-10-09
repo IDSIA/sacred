@@ -365,9 +365,11 @@ def find_best_match(path, prefixes):
     return "", path
 
 
-def distribute_presets(prefixes, scaffolding, config_updates):
+def distribute_presets(sc_path, prefixes, scaffolding, config_updates):
     for path, value in iterate_flattened(config_updates):
-        scaffold_name, suffix = find_best_match(path, prefixes)
+        if sc_path:
+            path = sc_path + "." + path
+        scaffold_name, suffix = find_best_match(sc_path + "." + path, prefixes)
         scaff = scaffolding[scaffold_name]
         set_by_dotted_path(scaff.presets, suffix, value)
 
@@ -424,7 +426,7 @@ def create_run(
         scaff, cfg_name = get_scaffolding_and_config_name(ncfg, scaffolding)
         scaff.gather_fallbacks()
         ncfg_updates = scaff.run_named_config(cfg_name)
-        distribute_presets(prefixes, scaffolding, ncfg_updates)
+        distribute_presets(scaff.path, prefixes, scaffolding, ncfg_updates)
         for ncfg_key, value in iterate_flattened(ncfg_updates):
             set_by_dotted_path(config_updates, join_paths(scaff.path, ncfg_key), value)
 
