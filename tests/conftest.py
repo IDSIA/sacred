@@ -27,14 +27,14 @@ def get_calls_from_doc(doc):
     outputs = []
     out = []
     block_indent = 2
-    for l in doc.split("\n"):
-        if BLOCK_START.match(l):
-            block_indent = l.find("$")
-            calls.append(shlex.split(l[block_indent + 1 :]))
+    for line in doc.split("\n"):
+        if BLOCK_START.match(line):
+            block_indent = line.find("$")
+            calls.append(shlex.split(line[block_indent + 1 :]))
             out = []
             outputs.append(out)
-        elif l.startswith(" " * block_indent):
-            out.append(l[block_indent:])
+        elif line.startswith(" " * block_indent):
+            out.append(line[block_indent:])
         else:
             out = []
 

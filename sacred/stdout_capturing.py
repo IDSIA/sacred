@@ -117,12 +117,17 @@ def tee_output_python():
 @contextmanager
 def tee_output_fd():
     """Duplicate stdout and stderr to a file on the file descriptor level."""
-    with NamedTemporaryFile(mode="w+") as target:
+    get_temp_file = (
+        lambda: NamedTemporaryFile(mode="w+", newline="")
+        if sys.version_info >= (3,)
+        else NamedTemporaryFile(mode="w+")
+    )
+    with get_temp_file() as target:
         original_stdout_fd = 1
         original_stderr_fd = 2
         target_fd = target.fileno()
 
-        # Save a copy of the original stdout and stderr file descriptors
+        # Save a copy of the original stdout and stderr file descriptors)
         saved_stdout_fd = os.dup(original_stdout_fd)
         saved_stderr_fd = os.dup(original_stderr_fd)
 

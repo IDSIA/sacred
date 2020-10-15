@@ -318,15 +318,15 @@ def logged_metrics():
 def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     """
     Test storing scalar measurements
-    
+
     Test whether measurements logged using _run.metrics.log_scalar_metric
     are being stored in the 'metrics' collection
-    and that the experiment 'info' dictionary contains a valid reference 
+    and that the experiment 'info' dictionary contains a valid reference
     to the metrics collection for each of the metric.
-    
-    Metrics are identified by name (e.g.: 'training.loss') and by the 
+
+    Metrics are identified by name (e.g.: 'training.loss') and by the
     experiment run that produced them. Each metric contains a list of x values
-    (e.g. iteration step), y values (measured values) and timestamps of when 
+    (e.g. iteration step), y values (measured values) and timestamps of when
     each of the measurements was taken.
     """
 

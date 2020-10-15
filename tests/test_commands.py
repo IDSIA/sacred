@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+import os
+import sys
+import tempfile
 import pprint
+import json
 from collections import OrderedDict
 
 import pytest
@@ -24,6 +27,7 @@ from sacred.commands import (
 )
 from sacred.config import ConfigScope
 from sacred.config.config_summary import ConfigSummary
+import sacred.optional as opt
 
 
 def test_non_unicode_repr():
@@ -236,3 +240,38 @@ def test_format_named_configs():
     assert "# named config with doc" in named_configs_text
     assert "ingred.named_config1" in named_configs_text
     assert "ingred.dict_config" in named_configs_text
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows machines on azure don't support temporary directories",
+)
+def test_save_config():
+    ex = Experiment(name="experiment")
+
+    config = {"a": 1, "b": 2, "seed": 42}
+    ex.add_config(config)
+
+    @ex.main
+    def main():
+        pass
+
+    cwd = os.getcwd()
+    try:
+        with tempfile.TemporaryDirectory() as dirname:
+            os.chdir(dirname)
+
+            ex.run("save_config")
+
+            with open(os.path.join(dirname, "config.json")) as f:
+                saved_config = json.load(f)
+                assert config == saved_config
+
+            if opt.has_yaml:
+                ex.run("save_config", {"config_filename": "config.yaml"})
+
+                with open(os.path.join(dirname, "config.yaml")) as f:
+                    saved_config = opt.yaml.load(f)
+                    assert config == saved_config
+    finally:
+        os.chdir(cwd)

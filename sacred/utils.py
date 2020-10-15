@@ -174,17 +174,16 @@ class ConfigError(SacredError):
 
     @classmethod
     @contextlib.contextmanager
-    def track(cls, wrapped):
+    def track(cls, config, prefix=None):
         try:
             yield
         except ConfigError as e:
             if not e.__prefix_handled__:
-                if wrapped.prefix:
+                if prefix:
                     e.__conflicting_configs__ = (
-                        join_paths(wrapped.prefix, str(c))
-                        for c in e.__conflicting_configs__
+                        join_paths(prefix, str(c)) for c in e.__conflicting_configs__
                     )
-                e.__config__ = wrapped.config
+                e.__config__ = config
                 e.__prefix_handled__ = True
             raise e
 
