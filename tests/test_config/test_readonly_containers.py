@@ -49,7 +49,7 @@ def _check_read_only_dict(d):
     # Check serialization
     _check_serializable(d)
 
-    raises_dict = pytest.raises(SacredError, match="This container is read-only")
+    raises_dict = pytest.raises(SacredError, match="read-only")
 
     if len(d) > 0:
         # Test removal of entries and overwrite an already present entry
@@ -96,7 +96,7 @@ def _check_read_only_list(lst):
     # Check serialization
     _check_serializable(lst)
 
-    raises_list = pytest.raises(SacredError, match="This container is read-only")
+    raises_list = pytest.raises(SacredError, match="read-only")
 
     if len(lst):
         with raises_list:
