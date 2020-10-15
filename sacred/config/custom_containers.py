@@ -187,9 +187,6 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
 
-    def __init__(self, d):
-        dict.__init__(self, d)
-
     def __copy__(self):
         return {**self}
 
@@ -211,9 +208,6 @@ class ReadOnlyList(ReadOnlyContainer, list):
     sort = ReadOnlyContainer._readonly
     __setitem__ = ReadOnlyContainer._readonly
     __delitem__ = ReadOnlyContainer._readonly
-
-    def __init__(self, lst):
-        list.__init__(self, lst)
 
     def __copy__(self):
         return [*self]

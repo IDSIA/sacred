@@ -202,11 +202,7 @@ class Scaffold:
 
             # Make configuration read only if enabled in settings
             if SETTINGS.CONFIG.READ_ONLY_CONFIG:
-                cfunc.config = make_read_only(
-                    cfunc.config,
-                    error_message="The configuration is read-only in a "
-                    "captured function!",
-                )
+                cfunc.config = make_read_only(cfunc.config)
 
         if not run.force:
             self._warn_about_suspicious_changes()
