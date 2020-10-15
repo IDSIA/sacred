@@ -12,6 +12,7 @@ from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
+from sacred.utils import ConfigError
 
 
 class ConfigScope:
@@ -68,7 +69,9 @@ class ConfigScope:
                 fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
-        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+
+        with ConfigError.track(cfg_locals):
+            eval(self._body_code, copy(self._func.__globals__), cfg_locals)
 
         added = cfg_locals.revelation()
         config_summary = ConfigSummary(
@@ -93,7 +96,7 @@ def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
     func_code = "".join(func_code_lines)
     arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
-    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
+    arguments = r"{0}(?:\s*,\s*{0})*,?".format(arg)
     func_def = re.compile(
         r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*(?:#[^\n]*)?\n".format(
             func.__name__, arguments
@@ -183,11 +186,11 @@ def find_doc_for(ast_entry, body_lines):
     line_io = io.BytesIO(body_lines[lineno].encode())
     try:
         tokens = tokenize(line_io.readline) or []
-        line_comments = [t.string for t in tokens if t.type == COMMENT]
+        line_comments = [token.string for token in tokens if token.type == COMMENT]
 
         if line_comments:
-            formatted_lcs = [lc[1:].strip() for lc in line_comments]
-            filtered_lcs = [lc for lc in formatted_lcs if not is_ignored(lc)]
+            formatted_lcs = [line[1:].strip() for line in line_comments]
+            filtered_lcs = [line for line in formatted_lcs if not is_ignored(line)]
             if filtered_lcs:
                 return filtered_lcs[0]
     except TokenError:

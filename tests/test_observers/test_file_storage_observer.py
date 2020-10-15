@@ -116,7 +116,7 @@ def test_fs_observer_started_event_creates_rundir_with_filesystem_delay(
 def test_fs_observer_started_event_raises_file_exists_error(
     dir_obs, sample_run, monkeypatch
 ):
-    """ Assumes some problem with the filesystem exists
+    """Assumes some problem with the filesystem exists
     therefore run dir creation should stop after some re-tries
     """
 
@@ -329,7 +329,7 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     Test whether measurements logged using _run.metrics.log_scalar_metric
     are being stored in the metrics.json file.
 
-    Metrics are stored as a json with each metric indexed by a name 
+    Metrics are stored as a json with each metric indexed by a name
     (e.g.: 'training.loss'). Each metric for the given name is then
     stored as three lists: iteration step(steps), the values logged(values)
     and the timestamp at which the measurement was taken(timestamps)

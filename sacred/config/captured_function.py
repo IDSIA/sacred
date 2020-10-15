@@ -38,7 +38,7 @@ def captured_function(wrapped, instance, args, kwargs):
         wrapped.logger.debug("Started")
         start_time = time.time()
     # =================== run actual function =================================
-    with ConfigError.track(wrapped):
+    with ConfigError.track(wrapped.config, wrapped.prefix):
         result = wrapped(*args, **kwargs)
     # =========================================================================
     if wrapped.logger is not None:
