@@ -166,10 +166,13 @@ class DogmaticList(list):
 
 class ReadOnlyContainer:
     def __init__(self, message=None):
-        self.message = message or "This container is read-only!"
+        self.__message = message or "This container is read-only!"
+
+    def __reduce__(self):
+        return self.__class__, (self.__copy__(), self.__message)
 
     def _readonly(self, *args, **kwargs):
-        raise SacredError(self.message, filter_traceback="always")
+        raise SacredError(self.__message, filter_traceback="always")
 
 
 class ReadOnlyDict(ReadOnlyContainer, dict):
@@ -187,9 +190,6 @@ class ReadOnlyDict(ReadOnlyContainer, dict):
     def __init__(self, d, message=None):
         ReadOnlyContainer.__init__(self, message)
         dict.__init__(self, d)
-
-    def __reduce__(self):
-        return ReadOnlyDict, (dict(self), self.message)
 
     def __copy__(self):
         return {**self}
@@ -216,9 +216,6 @@ class ReadOnlyList(ReadOnlyContainer, list):
     def __init__(self, lst, message=None):
         ReadOnlyContainer.__init__(self, message)
         list.__init__(self, lst)
-
-    def __reduce__(self):
-        return ReadOnlyList, (list(self), self.message)
 
     def __copy__(self):
         return [*self]
