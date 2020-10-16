@@ -1,3 +1,5 @@
+import json
+import pickle
 import pytest
 from copy import copy, deepcopy
 
@@ -5,10 +7,49 @@ from sacred.config.custom_containers import make_read_only, ReadOnlyList, ReadOn
 from sacred.utils import SacredError
 
 
+def _contains_tuple(json_compat_obj):
+    x = json_compat_obj
+    if isinstance(x, tuple):
+        return True
+    elif isinstance(x, list):
+        return any(map(_contains_tuple, x))
+    elif isinstance(x, dict):
+        # Don't check keys since we are assuming x is JSON-compatible.
+        # JSON-compatible keys are either number or string.
+        return any(map(_contains_tuple, x.values()))
+    else:
+        return False
+
+
+def _check_serializable(obj):
+    for format in [json, pickle]:
+        blob = format.dumps(obj)
+        obj_loaded = format.loads(blob)
+        if format is json and _contains_tuple(obj):
+            # JSON coerces () into []. So we won't expect equality.
+            # However, it's still nice to check if we can load and save.
+            continue
+        assert obj == obj_loaded, format.__name__ + " serialization failed"
+        assert obj_loaded == obj, format.__name__ + " serialization failed"
+
+
 def _check_read_only_dict(d):
     assert isinstance(d, ReadOnlyDict)
 
-    raises_dict = pytest.raises(SacredError, match="This ReadOnlyDict is read-only!")
+    # Check __eq__
+    assert d == d
+    assert d == ReadOnlyDict(d)
+
+    # Check __contains__ and __iter__
+    for k in d.keys():
+        assert k in d
+    for k in d:
+        assert k in d
+
+    # Check serialization
+    _check_serializable(d)
+
+    raises_dict = pytest.raises(SacredError, match="read-only")
 
     if len(d) > 0:
         # Test removal of entries and overwrite an already present entry
@@ -44,7 +85,18 @@ def _check_read_only_dict(d):
 def _check_read_only_list(lst):
     assert isinstance(lst, ReadOnlyList)
 
-    raises_list = pytest.raises(SacredError, match="This ReadOnlyList is read-only!")
+    # Check __eq__
+    assert lst == lst
+    assert lst == ReadOnlyList(lst)
+
+    # Check __contains__ and __iter__
+    for x in lst:
+        assert x in lst
+
+    # Check serialization
+    _check_serializable(lst)
+
+    raises_list = pytest.raises(SacredError, match="read-only")
 
     if len(lst):
         with raises_list:
@@ -224,6 +276,7 @@ def test_deepcopy_on_nested_readonly_list():
     lst = [1, [2, [3, [4]]]]
     lst = make_read_only(lst)
     copied_l = deepcopy(lst)
+    assert lst == copied_l
     for v, v_copied in zip(lst, copied_l):
         assert v == v_copied
 
