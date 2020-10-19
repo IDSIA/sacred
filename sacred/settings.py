@@ -26,14 +26,18 @@ class FrozenKeyMunch(Munch):
 
         # Don't allow unknown keys
         if key not in self:
-            raise error_cls(f"Unknown setting: {key}. Possible keys are: {self.keys()}")
+            raise error_cls(
+                "Unknown setting: {key}. Possible keys are: {keys}".format(
+                    key=key, keys=list(self.keys())
+                )
+            )
 
         # Don't allow setting keys that represent nested settings
         if isinstance(self[key], Munch) and not isinstance(value, Mapping):
             # We don't want to overwrite a munch mapping
             raise error_cls(
-                f'Can\'t set this setting ("{key}") to a scalar value '
-                f"{value}, it is a nested setting!"
+                "Can't set this setting ({key}) to a scalar value "
+                "{value}, it is a nested setting!".format(key=key, value=value)
             )
 
     def __setitem__(self, key, value):
