@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import platform
+from collections import Mapping
 import sacred.optional as opt
 from munch import munchify, Munch
 from packaging import version
@@ -28,7 +29,7 @@ class FrozenKeyMunch(Munch):
             raise error_cls(f"Unknown setting: {key}. Possible keys are: {self.keys()}")
 
         # Don't allow setting keys that represent nested settings
-        if isinstance(self[key], Munch) and not isinstance(value, Munch):
+        if isinstance(self[key], Munch) and not isinstance(value, Mapping):
             # We don't want to overwrite a munch mapping
             raise error_cls(
                 f'Can\'t set this setting ("{key}") to a scalar value '
@@ -37,14 +38,33 @@ class FrozenKeyMunch(Munch):
 
     def __setitem__(self, key, value):
         self._check_can_set(key, value, KeyError)
-        super().__setitem__(key, value)
+
+        if key in self and isinstance(self[key], Munch) and isinstance(value, Mapping):
+            for k, v in value.items():
+                self[key][k] = v
+        else:
+            super().__setitem__(key, value)
 
     def __setattr__(self, key, value):
         self._check_can_set(key, value, AttributeError)
-        super().__setattr__(key, value)
+
+        if key in self and isinstance(self[key], Munch) and isinstance(value, Mapping):
+            for k, v in value.items():
+                setattr(self[key], k, v)
+        else:
+            super().__setattr__(key, value)
+
+    @classmethod
+    def fromDict(cls, d):  # noqa: N802
+        m = munchify(d, cls)
+        m.freeze_keys()
+        return m
+
+    def __deepcopy__(self, memodict=None):
+        return self.__class__.fromDict(self.toDict())
 
 
-SETTINGS = munchify(
+SETTINGS = FrozenKeyMunch.fromDict(
     {
         "CONFIG": {
             # make sure all config keys are compatible with MongoDB
@@ -94,6 +114,4 @@ SETTINGS = munchify(
         # configure how source-files are discovered. [none, imported, sys, dir]
         "DISCOVER_SOURCES": "imported",
     },
-    FrozenKeyMunch,
 )
-SETTINGS.freeze_keys()
