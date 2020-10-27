@@ -234,6 +234,22 @@ def make_read_only(o):
         return o
 
 
+if opt.has_yaml:
+    # Register read-only containers for yaml
+    def read_only_dict_representer(dumper, data):
+        """Saves `ReadOnlyDict` as `dict`."""
+        return dumper.represent_dict(data)
+
+    def read_only_list_representer(dumper, data):
+        """Saves `ReadOnlyList` as `list`."""
+        return dumper.represent_list(data)
+
+    opt.yaml.add_representer(ReadOnlyDict, read_only_dict_representer)
+    opt.yaml.add_representer(ReadOnlyList, read_only_list_representer)
+    opt.yaml.SafeDumper.add_representer(ReadOnlyDict, read_only_dict_representer)
+    opt.yaml.SafeDumper.add_representer(ReadOnlyList, read_only_list_representer)
+
+
 SIMPLIFY_TYPE = {
     type(None): type(None),
     bool: bool,
