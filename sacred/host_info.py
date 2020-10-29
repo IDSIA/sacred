@@ -153,7 +153,9 @@ def _gpus():
         return
 
     try:
-        xml = subprocess.check_output(["nvidia-smi", "-q", "-x"]).decode("utf-8", 'replace')
+        xml = subprocess.check_output(["nvidia-smi", "-q", "-x"]).decode(
+            "utf-8", "replace"
+        )
     except (FileNotFoundError, OSError, subprocess.CalledProcessError):
         raise IgnoreHostInfo()
 
