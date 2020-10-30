@@ -152,7 +152,7 @@ def test_considers_prefix_for_fail_on_unused_config(ex):
         ex.run(config_updates={"a": {"c": 5}})
 
 
-def test_non_existing_prefix_is_treatet_as_empty_dict(ex):
+def test_non_existing_prefix_is_treated_as_empty_dict(ex):
     @ex.capture(prefix="nonexisting")
     def transmogrify(b=10):
         return b
@@ -170,15 +170,22 @@ def test_using_a_named_config(ex):
         a = 1
 
     @ex.named_config
-    def ncfg():
+    def ncfg_first():
         a = 10
+
+    @ex.named_config
+    def ncfg_second(a):
+        a = a * 2
 
     @ex.main
     def run(a):
         return a
 
     assert ex.run().result == 1
-    assert ex.run(named_configs=["ncfg"]).result == 10
+    assert ex.run(named_configs=["ncfg_first"]).result == 10
+    assert ex.run(named_configs=["ncfg_first", "ncfg_second"]).result == 20
+    with pytest.raises(KeyError, match=r".*not in preset for ConfigScope"):
+        ex.run(named_configs=["ncfg_second", "ncfg_first"])
 
 
 def test_empty_dict_named_config(ex):

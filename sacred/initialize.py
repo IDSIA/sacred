@@ -365,7 +365,7 @@ def distribute_presets(sc_path, prefixes, scaffolding, config_updates):
     for path, value in iterate_flattened(config_updates):
         if sc_path:
             path = sc_path + "." + path
-        scaffold_name, suffix = find_best_match(sc_path + "." + path, prefixes)
+        scaffold_name, suffix = find_best_match(path, prefixes)
         scaff = scaffolding[scaffold_name]
         set_by_dotted_path(scaff.presets, suffix, value)
 
