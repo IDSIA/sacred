@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+from packaging import version
 import random
 
 import sacred.optional as opt
@@ -12,7 +13,10 @@ SEEDRANGE = (1, int(1e9))
 def get_seed(rnd=None):
     if rnd is None:
         return random.randint(*SEEDRANGE)
-    return rnd.randint(*SEEDRANGE)
+    elif type(rnd) == opt.np.random.Generator:
+        return rnd.integers(*SEEDRANGE, dtype=int)
+    else:
+        return rnd.randint(*SEEDRANGE)
 
 
 def create_rnd(seed):
@@ -20,14 +24,18 @@ def create_rnd(seed):
         repr(seed), type(seed)
     )
     if opt.has_numpy:
-        return opt.np.random.RandomState(seed)
+        if version.parse(opt.np.__version__) >= version.parse('1.19'):
+            return opt.np.random.default_rng(seed)
+        else:
+            return opt.np.random.RandomState(seed)
     else:
         return random.Random(seed)
 
 
 def set_global_seed(seed):
     random.seed(seed)
-    if opt.has_numpy:
+    if opt.has_numpy and \
+            version.parse(opt.np.__version__) >= version.parse('1.19'):
         opt.np.random.seed(seed)
     if module_is_in_cache("tensorflow"):
         tf = opt.get_tensorflow()
