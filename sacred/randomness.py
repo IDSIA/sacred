@@ -24,7 +24,7 @@ def create_rnd(seed):
         repr(seed), type(seed)
     )
     if opt.has_numpy:
-        if version.parse(opt.np.__version__) >= version.parse('1.19'):
+        if version.parse(opt.np.__version__) >= version.parse("1.19"):
             return opt.np.random.default_rng(seed)
         else:
             return opt.np.random.RandomState(seed)
@@ -34,8 +34,7 @@ def create_rnd(seed):
 
 def set_global_seed(seed):
     random.seed(seed)
-    if opt.has_numpy and \
-            version.parse(opt.np.__version__) >= version.parse('1.19'):
+    if opt.has_numpy and version.parse(opt.np.__version__) <= version.parse("1.19"):
         opt.np.random.seed(seed)
     if module_is_in_cache("tensorflow"):
         tf = opt.get_tensorflow()
