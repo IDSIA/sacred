@@ -13,10 +13,11 @@ SEEDRANGE = (1, int(1e9))
 def get_seed(rnd=None):
     if rnd is None:
         return random.randint(*SEEDRANGE)
-    elif type(rnd) == opt.np.random.Generator:
-        return rnd.integers(*SEEDRANGE, dtype=int)
     else:
-        return rnd.randint(*SEEDRANGE)
+        try:
+            return rnd.integers(*SEEDRANGE, dtype=int)
+        except Exception:
+            return rnd.randint(*SEEDRANGE)
 
 
 def create_rnd(seed):
