@@ -1,6 +1,25 @@
 Release History
 ---------------
 
+0.8.2 (2020-11-26)
+++++++++++++++++++
+
+Minor bugfix release that resolves some bugs for Python 3.8+ and issues with the read-only container types.
+
+* Feature: Added support for pickling and YAML serialization to the read-only containers (#775, #737)
+* Feature: Added git integration to SqlObserver (#741)
+* Feature: Added support for a collection prefix in MongoObserver (#704)
+* Bugfix: Fix print_config command for Python 3.8 (#719)
+* Bugfix: Fix save_config command (#765)
+* Bugfix: Named config updates are now distributed correctly during the configuration creation process (#769, #777)
+* Bugfix: Parsing of the nvidia_smi output now also works with non-Unicode (e.g., Chinese) characters in process names (#776)
+* Bugfix: Fix type annotations of MongoObserver (#762)
+* Bugfix: Terminate tee on timeout. This is a workaround that prevents program crashes caused by output capturing (#740)
+* Bugfix: Improve parsing of config scopes (#699, #764)
+* Bugfix: Fix error tracking of ConfigErrors when raised in a config scope (#733)
+* Bugfix: Made git import optional (#724)
+
+
 0.8.1 (2019-11-27)
 ++++++++++++++++++
 * Feature: added Google Cloud Storage Observer (thanks @wohlert)
