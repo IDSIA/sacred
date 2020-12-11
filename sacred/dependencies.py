@@ -445,7 +445,7 @@ def get_commit_if_possible(filename, save_git_info):
 @functools.total_ordering
 class Source:
     def __init__(self, filename, digest, repo, commit, isdirty):
-        self.filename = filename
+        self.filename = os.path.realpath(filename)
         self.digest = digest
         self.repo = repo
         self.commit = commit
@@ -462,7 +462,10 @@ class Source:
 
     def to_json(self, base_dir=None):
         if base_dir:
-            return os.path.relpath(self.filename, base_dir), self.digest
+            return (
+                os.path.relpath(self.filename, os.path.realpath(base_dir)),
+                self.digest,
+            )
         else:
             return self.filename, self.digest
 
