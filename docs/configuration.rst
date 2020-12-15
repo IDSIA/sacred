@@ -19,6 +19,14 @@ Through :ref:`config_scopes`, :ref:`config_dictionaries`, and
     If absolutely necessary, these restrictions can be configured in
     ``sacred.settings.SETTINGS.CONFIG``.
 
+.. note::
+    Also note - because objects are internally converted to JSON before
+    database storage, python ``tuple`` objects will be converted to ``list``
+    objects when they are stored in a configuration object.
+    Please see `Issue #115`_ for the latest information on this.
+
+.. _`Issue #115`: https://github.com/IDSIA/sacred/issues/115
+
 Defining a Configuration
 ========================
 Sacred provides several ways to define a configuration for an experiment.
