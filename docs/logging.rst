@@ -6,8 +6,8 @@ for you to integrate that logging with your code.
 
 .. _log_levels:
 
-Adjusting Log-Levels
-====================
+Adjusting Log-Levels from command line
+======================================
 If you run the hello_world example you will see the following output::
 
     >> python hello_world.py
@@ -18,7 +18,7 @@ If you run the hello_world example you will see the following output::
 
 The lines starting with ``INFO`` are logging outputs. They can be suppressed by
 adjusting the loglevel. This can be done via the command-line like with the
-``-l`` option::
+``--loglevel`` (``-l`` for short) option::
 
     >> python hello_world -l ERROR
     Hello world!
@@ -40,6 +40,17 @@ The specified level can be either a string or an integer:
 +----------+---------------+
 | NOTSET   | 0             |
 +----------+---------------+
+
+Adjusting Log-Levels from python
+================================
+
+If you prefer, you can also adjust the logging level from python when
+running an experiment by passing the long version of the log level
+command line parameter as an option;
+
+.. code-block:: python
+    
+    ex.run(options={'--loglevel': 'ERROR'})
 
 Integrate Logging Into Your Experiment
 ======================================
