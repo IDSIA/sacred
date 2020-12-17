@@ -46,11 +46,14 @@ Adjusting Log-Levels from python
 
 If you prefer, you can also adjust the logging level from python when
 running an experiment by passing the long version of the log level
-command line parameter as an option;
+command line parameter as an option, as follows:
 
 .. code-block:: python
     
     ex.run(options={'--loglevel': 'ERROR'})
+
+Note that this can only be done when using ``Experiment.run``, not when using
+``Experiment.main`` or ``Experiment.automain``.
 
 Integrate Logging Into Your Experiment
 ======================================
