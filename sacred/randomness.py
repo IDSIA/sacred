@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from packaging import version
 import random
 
 import sacred.optional as opt
 from sacred.utils import module_is_in_cache
 
 SEEDRANGE = (1, int(1e9))
+SEEDSEQUENCE = None
 
 
 def get_seed(rnd=None):
@@ -25,8 +25,8 @@ def create_rnd(seed):
         repr(seed), type(seed)
     )
     if opt.has_numpy:
-        if version.parse(opt.np.__version__) >= version.parse("1.19"):
-            return opt.np.random.default_rng(seed)
+        if SEEDSEQUENCE:
+            return opt.np.random.default_rng(SEEDSEQUENCE.spawn(1)[0])
         else:
             return opt.np.random.RandomState(seed)
     else:
@@ -34,9 +34,15 @@ def create_rnd(seed):
 
 
 def set_global_seed(seed):
+    global SEEDSEQUENCE
+
     random.seed(seed)
-    if opt.has_numpy and version.parse(opt.np.__version__) <= version.parse("1.19"):
+    if opt.has_numpy:
         opt.np.random.seed(seed)
+        try:
+            SEEDSEQUENCE = np.random.SeedSequence(seed)
+        except Exception:
+            pass
     if module_is_in_cache("tensorflow"):
         tf = opt.get_tensorflow()
         tf.set_random_seed(seed)
