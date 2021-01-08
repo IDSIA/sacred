@@ -15,7 +15,7 @@ from sacred.config import (
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.custom_containers import make_read_only
 from sacred.host_info import get_host_info
-from sacred.randomness import create_rnd, get_seed
+from sacred.randomness import SeedGenerator
 from sacred.run import Run
 from sacred.utils import (
     convert_to_nested_dict,
@@ -60,7 +60,7 @@ class Scaffold:
         self.fixture = None  # TODO: rename
         self.logger = None
         self.seed = None
-        self.rnd = None
+        self.seed_generator = None
         self._captured_functions = captured_functions
         self.commands = commands
         self.config_mods = None
@@ -72,15 +72,15 @@ class Scaffold:
         }
         self.captured_args.add("__doc__")  # allow setting the config docstring
 
-    def set_up_seed(self, rnd=None):
+    def set_up_seed(self, seed_generator=None):
         if self.seed is not None:
             return
 
         self.seed = self.config.get("seed")
         if self.seed is None:
-            self.seed = get_seed(rnd)
+            self.seed = next(seed_generator if seed_generator else SeedGenerator())
 
-        self.rnd = create_rnd(self.seed)
+        self.seed_generator = SeedGenerator(self.seed)
 
         if self.generate_seed:
             self.config["seed"] = self.seed
@@ -92,7 +92,7 @@ class Scaffold:
         # Hierarchically set the seed of proper subrunners
         for subrunner_path, subrunner in reversed(list(self.subrunners.items())):
             if is_prefix(self.path, subrunner_path):
-                subrunner.set_up_seed(self.rnd)
+                subrunner.set_up_seed(self.seed_generator)
 
     def gather_fallbacks(self):
         fallback = {"_log": self.logger}
@@ -188,13 +188,12 @@ class Scaffold:
         # configuration process
         if "seed" in self.config:
             self.seed = self.config["seed"]
-        self.rnd = create_rnd(self.seed)
+        self.seed_generator = SeedGenerator(self.seed)
 
         for cfunc in self._captured_functions:
             # Setup the captured function
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            seed = get_seed(self.rnd)
-            cfunc.rnd = create_rnd(seed)
+            cfunc.seed_generator = SeedGenerator(next(self.seed_generator))
             cfunc.run = run
             cfunc.config = get_by_dotted_path(
                 self.get_fixture(), cfunc.prefix, default={}

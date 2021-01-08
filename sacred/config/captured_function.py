@@ -7,7 +7,7 @@ from datetime import timedelta
 import wrapt
 from sacred.config.custom_containers import fallback_dict
 from sacred.config.signature import Signature
-from sacred.randomness import create_rnd, get_seed
+from sacred.randomness import create_rng
 from sacred.utils import ConfigError
 
 
@@ -17,7 +17,7 @@ def create_captured_function(function, prefix=None):
     function.uses_randomness = "_seed" in sig.arguments or "_rnd" in sig.arguments
     function.logger = None
     function.config = {}
-    function.rnd = None
+    function.seed_generator = None
     function.run = None
     function.prefix = prefix
     return captured_function(function)
@@ -29,8 +29,8 @@ def captured_function(wrapped, instance, args, kwargs):
         wrapped.config, _config=wrapped.config, _log=wrapped.logger, _run=wrapped.run
     )
     if wrapped.uses_randomness:  # only generate _seed and _rnd if needed
-        options["_seed"] = get_seed(wrapped.rnd)
-        options["_rnd"] = create_rnd(options["_seed"])
+        options["_seed"] = next(wrapped.seed_generator)
+        options["_rnd"] = create_rng(options["_seed"])
 
     bound = instance is not None
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options, bound)
