@@ -15,7 +15,7 @@ from sacred.config import (
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.custom_containers import make_read_only
 from sacred.host_info import get_host_info
-from sacred.randomness import SeedGenerator
+from sacred.randomness import create_rnd, get_seed
 from sacred.run import Run
 from sacred.utils import (
     convert_to_nested_dict,
@@ -60,7 +60,7 @@ class Scaffold:
         self.fixture = None  # TODO: rename
         self.logger = None
         self.seed = None
-        self.seed_generator = None
+        self.rnd = None
         self._captured_functions = captured_functions
         self.commands = commands
         self.config_mods = None
@@ -72,15 +72,15 @@ class Scaffold:
         }
         self.captured_args.add("__doc__")  # allow setting the config docstring
 
-    def set_up_seed(self, seed_generator=None):
+    def set_up_seed(self, rnd=None):
         if self.seed is not None:
             return
 
         self.seed = self.config.get("seed")
         if self.seed is None:
-            self.seed = next(seed_generator if seed_generator else SeedGenerator())
+            self.seed = get_seed(rnd)
 
-        self.seed_generator = SeedGenerator(self.seed)
+        self.rnd = create_rnd(self.seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
 
         if self.generate_seed:
             self.config["seed"] = self.seed
@@ -92,7 +92,7 @@ class Scaffold:
         # Hierarchically set the seed of proper subrunners
         for subrunner_path, subrunner in reversed(list(self.subrunners.items())):
             if is_prefix(self.path, subrunner_path):
-                subrunner.set_up_seed(self.seed_generator)
+                subrunner.set_up_seed(self.rnd)
 
     def gather_fallbacks(self):
         fallback = {"_log": self.logger}
@@ -188,12 +188,14 @@ class Scaffold:
         # configuration process
         if "seed" in self.config:
             self.seed = self.config["seed"]
-        self.seed_generator = SeedGenerator(self.seed)
+        self.rnd = create_rnd(self.seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
 
         for cfunc in self._captured_functions:
             # Setup the captured function
             cfunc.logger = self.logger.getChild(cfunc.__name__)
-            cfunc.seed_generator = SeedGenerator(next(self.seed_generator))
+            seed = get_seed(self.rnd)
+            cfunc.rnd = create_rnd(seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
+            cfunc.numpy_random_legacy_api = SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API
             cfunc.run = run
             cfunc.config = get_by_dotted_path(
                 self.get_fixture(), cfunc.prefix, default={}

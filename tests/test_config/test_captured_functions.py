@@ -5,7 +5,6 @@ import datetime
 import mock
 import random
 from sacred.config.captured_function import create_captured_function
-from sacred.randomness import SeedGenerator
 
 
 def test_create_captured_function():
@@ -47,14 +46,14 @@ def test_captured_function_randomness():
     cf = create_captured_function(foo)
     assert cf.uses_randomness
     cf.logger = mock.MagicMock()
-    cf.seed_generator = SeedGenerator(1234)
+    cf.rnd = random.Random(1234)
 
     nr1, seed1 = cf()
     nr2, seed2 = cf()
     assert nr1 != nr2
     assert seed1 != seed2
 
-    cf.seed_generator = SeedGenerator(1234)
+    cf.rnd = random.Random(1234)
 
     assert cf() == (nr1, seed1)
     assert cf() == (nr2, seed2)
