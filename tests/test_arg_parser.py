@@ -44,6 +44,7 @@ from sacred.experiment import gather_command_line_options
                 "--loglevel": "30",
             },
         ),
+        ("--id=1", {"--id": "1"}),
     ],
 )
 def test_parse_individual_arguments(argv, expected):
