@@ -195,7 +195,6 @@ class Scaffold:
             cfunc.logger = self.logger.getChild(cfunc.__name__)
             seed = get_seed(self.rnd)
             cfunc.rnd = create_rnd(seed)
-            cfunc.numpy_random_legacy_api = SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API
             cfunc.run = run
             cfunc.config = get_by_dotted_path(
                 self.get_fixture(), cfunc.prefix, default={}
