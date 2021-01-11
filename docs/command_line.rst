@@ -176,8 +176,8 @@ indentation. So lets say we added the dictionary from above to the
     INFO - hello_config - Completed after 0:00:00
 
 This command is especially helpful to see how ``with config=update`` statements
-affect the configuration. It will highlight modified entries in **green**, added
-entries in **blue** and entries whose type has changed in **red**:
+affect the configuration. It will highlight modified entries in **blue**, added
+entries in **green** and entries whose type has changed in **red**:
 
     ===========  =====
     Change       Color
