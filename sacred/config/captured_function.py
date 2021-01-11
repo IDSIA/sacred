@@ -18,7 +18,6 @@ def create_captured_function(function, prefix=None):
     function.logger = None
     function.config = {}
     function.rnd = None
-    function.numpy_random_legacy_api = False
     function.run = None
     function.prefix = prefix
     return captured_function(function)
@@ -31,7 +30,7 @@ def captured_function(wrapped, instance, args, kwargs):
     )
     if wrapped.uses_randomness:  # only generate _seed and _rnd if needed
         options["_seed"] = get_seed(wrapped.rnd)
-        options["_rnd"] = create_rnd(options["_seed"], wrapped.numpy_random_legacy_api)
+        options["_rnd"] = create_rnd(options["_seed"])
 
     bound = instance is not None
     args, kwargs = wrapped.signature.construct_arguments(args, kwargs, options, bound)

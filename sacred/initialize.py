@@ -80,7 +80,7 @@ class Scaffold:
         if self.seed is None:
             self.seed = get_seed(rnd)
 
-        self.rnd = create_rnd(self.seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
+        self.rnd = create_rnd(self.seed)
 
         if self.generate_seed:
             self.config["seed"] = self.seed
@@ -188,13 +188,13 @@ class Scaffold:
         # configuration process
         if "seed" in self.config:
             self.seed = self.config["seed"]
-        self.rnd = create_rnd(self.seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
+        self.rnd = create_rnd(self.seed)
 
         for cfunc in self._captured_functions:
             # Setup the captured function
             cfunc.logger = self.logger.getChild(cfunc.__name__)
             seed = get_seed(self.rnd)
-            cfunc.rnd = create_rnd(seed, SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API)
+            cfunc.rnd = create_rnd(seed)
             cfunc.numpy_random_legacy_api = SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API
             cfunc.run = run
             cfunc.config = get_by_dotted_path(
