@@ -39,6 +39,14 @@ jobs:
         IMAGE_NAME: 'ubuntu-16.04'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
+      Linux numpy_118:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'numpy-118'
+      Linux numpy_119:
+        IMAGE_NAME: 'ubuntu-16.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'numpy-119'
       Linux tensorflow_112:
         IMAGE_NAME: 'ubuntu-16.04'
         PYTHON_VERSION: '3.6'
