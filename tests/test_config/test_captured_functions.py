@@ -4,7 +4,9 @@
 import datetime
 import mock
 import random
+import sacred.optional as opt
 from sacred.config.captured_function import create_captured_function
+from sacred.settings import SETTINGS
 
 
 def test_create_captured_function():
@@ -38,7 +40,10 @@ def test_call_captured_function():
 
 def test_captured_function_randomness():
     def foo(_rnd, _seed):
-        return _rnd.randint(0, 1000), _seed
+        try:
+            return _rnd.integers(0, 1000), _seed
+        except Exception:
+            return _rnd.randint(0, 1000), _seed
 
     cf = create_captured_function(foo)
     assert cf.uses_randomness
@@ -54,6 +59,27 @@ def test_captured_function_randomness():
 
     assert cf() == (nr1, seed1)
     assert cf() == (nr2, seed2)
+
+
+def test_captured_function_numpy_randomness():
+    def foo(_rnd, _seed):
+        return _rnd, _seed
+
+    cf = create_captured_function(foo)
+    assert cf.uses_randomness
+    cf.logger = mock.MagicMock()
+    cf.rnd = random.Random(1234)
+
+    SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API = False
+    rnd, seed = cf()
+    if opt.has_numpy:
+        assert type(rnd) == opt.np.random.Generator
+
+        SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API = True
+        rnd, seed = cf()
+        assert type(rnd) == opt.np.random.RandomState
+    else:
+        assert type(rnd) == random.Random
 
 
 def test_captured_function_magic_logger_argument():

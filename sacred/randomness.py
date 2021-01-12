@@ -4,6 +4,7 @@
 import random
 
 import sacred.optional as opt
+from sacred.settings import SETTINGS
 from sacred.utils import module_is_in_cache
 
 SEEDRANGE = (1, int(1e9))
@@ -12,7 +13,11 @@ SEEDRANGE = (1, int(1e9))
 def get_seed(rnd=None):
     if rnd is None:
         return random.randint(*SEEDRANGE)
-    return rnd.randint(*SEEDRANGE)
+    else:
+        try:
+            return rnd.integers(*SEEDRANGE, dtype=int)
+        except Exception:
+            return rnd.randint(*SEEDRANGE)
 
 
 def create_rnd(seed):
@@ -20,7 +25,10 @@ def create_rnd(seed):
         repr(seed), type(seed)
     )
     if opt.has_numpy:
-        return opt.np.random.RandomState(seed)
+        if SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API:
+            return opt.np.random.RandomState(seed)
+        else:
+            return opt.np.random.default_rng(seed)
     else:
         return random.Random(seed)
 

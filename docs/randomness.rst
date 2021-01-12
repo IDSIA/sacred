@@ -20,10 +20,10 @@ all other seeds and PRNGs depend on it in a deterministic way.
 Global Seeds
 ============
 Upon starting the experiment, sacred automatically sets the global seed of
-``random`` and (if installed) ``numpy.random``, ``tensorflow.set_random_seed``, 
-``pytorch.manual_seed`` to the auto-generated root-seed of the experiment. 
-This means that even if you don't take any further steps, at least the randomness 
-stemming from those two libraries is properly seeded.
+``random`` and (if installed) ``numpy.random`` (which is with v1.19 mark as legacy),
+``tensorflow.set_random_seed``,  ``pytorch.manual_seed`` to the auto-generated
+root-seed of the experiment. This means that even if you don't take any further
+steps, at least the randomness stemming from those two libraries is properly seeded.
 
 If you rely on any other library that you want to seed globally you should do
 so manually first thing inside your main function. For this you can either take
@@ -47,7 +47,7 @@ You can just accept them as a parameters in any captured function:
 Likewise ``_rnd`` is a PRNG that you can directly use to generate random numbers.
 
 .. note::
-    If ``numpy`` is installed ``_rnd`` will be a `numpy.random.RandomState <http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html>`_ object.
+    If ``numpy`` is installed ``_rnd`` will either be a `numpy.random.Generator <https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator>`_ object or a `numpy.random.RandomState <https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState>`_ object. Default behavior is dependen on the numpy version, i. e. with version `v1.19` `numpy.random.RandomState` is marked as legacy. To use the legacy numpy random API regardless of the numpy version set `NUMPY_RANDOM_LEGACY_API` to `True`.
     Otherwise it will be `random.Random <https://docs.python.org/2/library/random.html>`_ object.
 
 All ``_seed`` and ``_rnd`` instances depend deterministically on the root-seed
