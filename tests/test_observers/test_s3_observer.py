@@ -4,6 +4,7 @@
 import datetime
 import pytest
 import json
+import os
 
 from sacred.observers import S3Observer
 
@@ -18,6 +19,9 @@ BUCKET = "pytest-s3-observer-bucket"
 BASEDIR = "some-tests"
 REGION = "us-west-2"
 
+os.environ["AWS_ACCESS_KEY_ID"] = "test"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+
 
 def s3_join(*args):
     return "/".join(args)
@@ -26,7 +30,7 @@ def s3_join(*args):
 @pytest.fixture()
 def sample_run():
     exp = {"name": "test_exp", "sources": [], "doc": "", "base_dir": "/tmp"}
-    host = {"hostname": "test_host", "cpu_count": 1, "python_version": "3.4"}
+    host = {"hostname": "test_host", "cpu_count": 1, "python_version": "3.9"}
     config = {"config": "True", "foo": "bar", "answer": 42}
     command = "run"
     meta_info = {"comment": "test run"}
