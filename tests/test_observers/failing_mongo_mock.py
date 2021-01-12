@@ -1,7 +1,6 @@
 import mongomock
 import pymongo
 import pymongo.errors
-from mongomock.store import DatabaseStore
 
 
 class FailingMongoClient(mongomock.MongoClient):
@@ -9,7 +8,7 @@ class FailingMongoClient(mongomock.MongoClient):
         self,
         max_calls_before_failure=2,
         exception_to_raise=pymongo.errors.AutoReconnect,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self._max_calls_before_failure = max_calls_before_failure

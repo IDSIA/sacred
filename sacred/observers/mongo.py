@@ -86,7 +86,7 @@ class MongoObserver(RunObserver):
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
         failure_dir: Optional[PathType] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initializer for MongoObserver.
 
@@ -623,14 +623,15 @@ class QueuedMongoObserver(QueueObserver):
         overwrite: Optional[Union[int, str]] = None,
         priority: int = DEFAULT_MONGO_PRIORITY,
         client: Optional["pymongo.MongoClient"] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initializer for MongoObserver.
 
         Parameters
         ----------
         interval
-            The interval in seconds at which the background thread is woken up to process new events.
+            The interval in seconds at which the background thread is woken up to
+            process new events.
         retry_interval
             The interval in seconds to wait if an event failed to be processed.
         url
