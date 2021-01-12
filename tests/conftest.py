@@ -8,7 +8,7 @@ import re
 import shlex
 import sys
 import warnings
-from imp import reload
+from importlib import reload
 
 from sacred.settings import SETTINGS
 

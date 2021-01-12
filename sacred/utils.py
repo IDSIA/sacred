@@ -342,7 +342,7 @@ def recursive_update(d, u):
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
     """
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = recursive_update(d.get(k, {}), v)
             d[k] = r
         else:
@@ -565,14 +565,18 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
             yield tb._context_message
     yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-    current_tb = tb_exception.exc_traceback
-    while current_tb is not None:
-        if not _is_sacred_frame(current_tb.tb_frame):
-            stack = tb.StackSummary.extract(
-                tb.walk_tb(current_tb), limit=1, lookup_lines=True, capture_locals=False
-            )
-            yield from stack.format()
-        current_tb = current_tb.tb_next
+    if hasattr(tb_exception, "exec_traceback"):
+        current_tb = tb_exception.exc_traceback
+        while current_tb is not None:
+            if not _is_sacred_frame(current_tb.tb_frame):
+                stack = tb.StackSummary.extract(
+                    tb.walk_tb(current_tb),
+                    limit=1,
+                    lookup_lines=True,
+                    capture_locals=False,
+                )
+                yield from stack.format()
+            current_tb = current_tb.tb_next
     yield from tb_exception.format_exception_only()
 
 

@@ -70,14 +70,14 @@ def test_format_filtered_stacktrace_true():
 
     try:
         f()
-    except:
+    except Exception:
         st = format_filtered_stacktrace(filter_traceback="default")
         assert "captured_function" not in st
         assert "WITHOUT Sacred internals" in st
 
     try:
         f()
-    except:
+    except Exception:
         st = format_filtered_stacktrace(filter_traceback="always")
         assert "captured_function" not in st
         assert "WITHOUT Sacred internals" in st
