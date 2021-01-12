@@ -55,8 +55,8 @@ def test_log_file_writer(ex, tf):
     """
     Tests whether logdir is stored into the info dictionary when creating a new FileWriter object.
     """
-    TEST_LOG_DIR = "/dev/null"
-    TEST_LOG_DIR2 = "/tmp/sacred_test"
+    TEST_LOG_DIR = "/tmp/sacred_test1"
+    TEST_LOG_DIR2 = "/tmp/sacred_test2"
 
     @ex.main
     @LogFileWriter(ex)
@@ -77,8 +77,8 @@ def test_log_summary_writer_as_context_manager(ex, tf):
     """
     Check that Tensorflow log directory is captured by LogFileWriter context manager.
     """
-    TEST_LOG_DIR = "/dev/null"
-    TEST_LOG_DIR2 = "/tmp/sacred_test"
+    TEST_LOG_DIR = "/tmp/sacred_test1"
+    TEST_LOG_DIR2 = "/tmp/sacred_test2"
 
     @ex.main
     def run_experiment(_run):
@@ -138,8 +138,8 @@ def test_log_summary_writer_class(ex, tf):
     Tests whether logdir is stored into the info dictionary when creating a new FileWriter object,
     but this time on a method of a class.
     """
-    TEST_LOG_DIR = "/dev/null"
-    TEST_LOG_DIR2 = "/tmp/sacred_test"
+    TEST_LOG_DIR = "/tmp/sacred_test1"
+    TEST_LOG_DIR2 = "/tmp/sacred_test2"
 
     class FooClass:
         def __init__(self):
