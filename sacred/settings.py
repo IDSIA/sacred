@@ -2,7 +2,9 @@
 # coding=utf-8
 
 import platform
+import sacred.optional as opt
 from munch import munchify
+from packaging import version
 
 __all__ = ("SETTINGS",)
 
@@ -31,7 +33,8 @@ SETTINGS = munchify(
             # if true uses the numpy legacy API, i.e. _rnd in captured functions is
             # a numpy.random.RandomState rather than numpy.random.Generator.
             # numpy.random.RandomState became legacy with numpy v1.19.
-            "NUMPY_RANDOM_LEGACY_API": False,
+            "NUMPY_RANDOM_LEGACY_API": version.parse(opt.np.__version__)
+            < version.parse("1.19"),
         },
         "HOST_INFO": {
             # Collect information about GPUs using the nvidia-smi tool

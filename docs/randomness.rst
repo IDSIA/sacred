@@ -47,7 +47,7 @@ You can just accept them as a parameters in any captured function:
 Likewise ``_rnd`` is a PRNG that you can directly use to generate random numbers.
 
 .. note::
-    If ``numpy`` is installed ``_rnd`` will be a `numpy.random.Generator <https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator>`_ object. To support the legacy numpy random API set `NUMPY_RANDOM_LEGACY_API` to `True` and `_rnd` will be a `numpy.random.RandomState <https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState>`_ object.
+    If ``numpy`` is installed ``_rnd`` will either be a `numpy.random.Generator <https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator>`_ object or a `numpy.random.RandomState <https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState>`_ object. Default behavior is dependen on the numpy version, i. e. with version `v1.19` `numpy.random.RandomState` is marked as legacy. To use the legacy numpy random API regardless of the numpy version set `NUMPY_RANDOM_LEGACY_API` to `True`.
     Otherwise it will be `random.Random <https://docs.python.org/2/library/random.html>`_ object.
 
 All ``_seed`` and ``_rnd`` instances depend deterministically on the root-seed
