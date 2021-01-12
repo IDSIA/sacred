@@ -58,7 +58,7 @@ class TinyDbObserver(RunObserver):
     def save(self):
         """Insert or update the current run entry."""
         if self.db_run_id:
-            self.runs.update(self.run_entry, eids=[self.db_run_id])
+            self.runs.update(self.run_entry, doc_ids=[self.db_run_id])
         else:
             db_run_id = self.runs.insert(self.run_entry)
             self.db_run_id = db_run_id
@@ -329,11 +329,11 @@ Outputs:
     def fetch_metadata(self, exp_name=None, query=None, indices=None):
         """Return all metadata for matching experiment name, index or query."""
         from tinydb import Query
-        from tinydb.queries import QueryImpl
+        from tinydb.queries import QueryInstance
 
         if exp_name or query:
             if query:
-                assert type(query), QueryImpl
+                assert type(query), QueryInstance
                 q = query
             elif exp_name:
                 q = Query().experiment.name.search(exp_name)
