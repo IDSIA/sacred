@@ -615,6 +615,7 @@ DEFAULT_COMMAND_LINE_OPTIONS = [
     commandline_options.help_option,
     commandline_options.print_config_option,
     commandline_options.name_option,
+    commandline_options.id_option,
     commandline_options.priority_option,
     commandline_options.unobserved_option,
     commandline_options.beat_interval_option,
