@@ -3,10 +3,6 @@ jobs:
 - job: test
   strategy:
     matrix:
-      Windows py35:
-        IMAGE_NAME: 'vs2017-win2016'
-        PYTHON_VERSION: '3.5'
-        TOX_CMD: 'py35'
       Windows py36:
         IMAGE_NAME: 'vs2017-win2016'
         PYTHON_VERSION: '3.6'
@@ -15,10 +11,14 @@ jobs:
         IMAGE_NAME: 'vs2017-win2016'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
-      OSX py35:
-        IMAGE_NAME: 'macos-10.15'
-        PYTHON_VERSION: '3.5'
-        TOX_CMD: 'py35'
+      Windows py38:
+        IMAGE_NAME: 'vs2017-win2016'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'py38'
+      Windows py39:
+        IMAGE_NAME: 'vs2017-win2016'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'py39'
       OSX py36:
         IMAGE_NAME: 'macos-10.15'
         PYTHON_VERSION: '3.6'
@@ -27,61 +27,81 @@ jobs:
         IMAGE_NAME: 'macos-10.15'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
-      Linux py35:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.5'
-        TOX_CMD: 'py35'
+      OSX py38:
+        IMAGE_NAME: 'macos-10.15'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'py38'
+      OSX py39:
+        IMAGE_NAME: 'macos-10.15'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'py39'
       Linux py36:
-        IMAGE_NAME: 'ubuntu-16.04'
+        IMAGE_NAME: 'ubuntu-20.04'
         PYTHON_VERSION: '3.6'
         TOX_CMD: 'py36'
       Linux py37:
-        IMAGE_NAME: 'ubuntu-16.04'
+        IMAGE_NAME: 'ubuntu-20.04'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
+      Linux py38:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'py38'
+      Linux py39:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'py39'
       Linux numpy_117:
-        IMAGE_NAME: 'ubuntu-16.04'
+        IMAGE_NAME: 'ubuntu-20.04'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'numpy-117'
       Linux numpy_118:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.7'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.8'
         TOX_CMD: 'numpy-118'
       Linux numpy_119:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.7'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
         TOX_CMD: 'numpy-119'
-      Linux tensorflow_112:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.6'
-        TOX_CMD: 'tensorflow-112'
-      Linux tensorflow_113:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.6'
-        TOX_CMD: 'tensorflow-113'
-      Linux tensorflow-114:
-        IMAGE_NAME: 'ubuntu-16.04'
+      Linux tensorflow_115:
+        IMAGE_NAME: 'ubuntu-20.04'
         PYTHON_VERSION: '3.7'
-        TOX_CMD: 'tensorflow-114'
-      Linux tensorflow_2:
-        IMAGE_NAME: 'ubuntu-16.04'
+        TOX_CMD: 'tensorflow-115'
+      Linux tensorflow_20:
+        IMAGE_NAME: 'ubuntu-20.04'
         PYTHON_VERSION: '3.7'
-        TOX_CMD: 'tensorflow-2'
+        TOX_CMD: 'tensorflow-20'
+      Linux tensorflow-21:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.7'
+        TOX_CMD: 'tensorflow-21'
+      Linux tensorflow_22:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'tensorflow-22'
+      Linux tensorflow_23:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'tensorflow-23'
+      Linux tensorflow_24:
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'tensorflow-24'
       Linux setup:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.7'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
         TOX_CMD: 'setup'
       Linux flake8:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.7'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
         TOX_CMD: 'flake8'
       Linux black:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.6'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
         TOX_CMD: 'black'
       Linux coverage:
-        IMAGE_NAME: 'ubuntu-16.04'
-        PYTHON_VERSION: '3.7'
+        IMAGE_NAME: 'ubuntu-20.04'
+        PYTHON_VERSION: '3.9'
         TOX_CMD: 'coverage'
   pool:
     vmImage: $(IMAGE_NAME)
@@ -93,9 +113,9 @@ jobs:
     - bash: tox -e $TOX_CMD
 - job: test_pre_commit
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-20.04'
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.6'
+        versionSpec: '3.9'
     - bash: bash ./tests/check_pre_commit.sh
