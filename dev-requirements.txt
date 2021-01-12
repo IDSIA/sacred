@@ -10,10 +10,10 @@ mock==2.0.0
 mongomock==3.18.0
 munch==2.0.4
 packaging>=18.0
-pandas==0.24.2
+pandas~=1.2.0
 pbr==2.0.0
 # tests/test_utils.py depends on that pytest version is exactly 4.3.0
-pytest==4.3.0
+pytest==6.2.1
 python-dateutil==2.6.0
 pytz==2016.10
 PyYAML>=4.2b1

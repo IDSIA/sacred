@@ -4,35 +4,35 @@ jobs:
   strategy:
     matrix:
       Windows py36:
-        IMAGE_NAME: 'vs2017-win2016'
+        IMAGE_NAME: 'windows-latest'
         PYTHON_VERSION: '3.6'
         TOX_CMD: 'py36'
       Windows py37:
-        IMAGE_NAME: 'vs2017-win2016'
+        IMAGE_NAME: 'windows-latest'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
       Windows py38:
-        IMAGE_NAME: 'vs2017-win2016'
+        IMAGE_NAME: 'windows-latest'
         PYTHON_VERSION: '3.8'
         TOX_CMD: 'py38'
       Windows py39:
-        IMAGE_NAME: 'vs2017-win2016'
+        IMAGE_NAME: 'windows-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'py39'
       OSX py36:
-        IMAGE_NAME: 'macos-10.15'
+        IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.6'
         TOX_CMD: 'py36'
       OSX py37:
-        IMAGE_NAME: 'macos-10.15'
+        IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.7'
         TOX_CMD: 'py37'
       OSX py38:
-        IMAGE_NAME: 'macos-10.15'
+        IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.8'
         TOX_CMD: 'py38'
       OSX py39:
-        IMAGE_NAME: 'macos-10.15'
+        IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'py39'
       Linux py36:
