@@ -565,7 +565,7 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
             yield tb._context_message
     yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-    if hasattr(tb_exception, "exec_traceback"):
+    if hasattr(tb_exception, "exc_traceback"):
         current_tb = tb_exception.exc_traceback
         while current_tb is not None:
             if not _is_sacred_frame(current_tb.tb_frame):
