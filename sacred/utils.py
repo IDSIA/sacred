@@ -486,6 +486,7 @@ def convert_to_nested_dict(dotted_dict):
 
 
 def _is_sacred_frame(frame):
+    print(type(frame))
     return frame.f_globals["__name__"].split(".")[0] == "sacred"
 
 
@@ -565,18 +566,17 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
             yield tb._context_message
     yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-    if hasattr(tb_exception, "exc_traceback"):
-        current_tb = tb_exception.exc_traceback
-        while current_tb is not None:
-            if not _is_sacred_frame(current_tb.tb_frame):
-                stack = tb.StackSummary.extract(
-                    tb.walk_tb(current_tb),
-                    limit=1,
-                    lookup_lines=True,
-                    capture_locals=False,
-                )
-                yield from stack.format()
-            current_tb = current_tb.tb_next
+
+    import sacred
+
+    yield from tb.StackSummary.from_list(
+        [
+            sf
+            for sf in tb_exception.stack
+            if not sf.filename.startswith(sacred.__path__[0])
+        ]
+    ).format()
+
     yield from tb_exception.format_exception_only()
 
 
