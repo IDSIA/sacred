@@ -341,7 +341,7 @@ class FilteredTracebackException(tb.TracebackException):
         while tb is not None:
             if not _is_sacred_frame(tb.tb_frame):
                 filtered_exc_traceback.append(
-                    traceback(tb.tb_frame, tb.tb_lasti, tb.tb_lineno, tb.tb_next)
+                    Traceback(tb.tb_frame, tb.tb_lasti, tb.tb_lineno, tb.tb_next)
                 )
                 if len(filtered_exc_traceback) >= 2:
                     filtered_exc_traceback[-2].tb_next = filtered_exc_traceback[-1]
