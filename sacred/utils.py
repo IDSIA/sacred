@@ -315,6 +315,40 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
+class FilteredTracebackException(tb.TracebackException):
+    def __init__(
+        self,
+        exc_type,
+        exc_value,
+        exc_traceback,
+        *,
+        limit=None,
+        lookup_lines=True,
+        capture_locals=False,
+        _seen=None,
+    ):
+        super().__init__(
+            exc_type,
+            exc_value,
+            exc_traceback,
+            limit=limit,
+            lookup_lines=lookup_lines,
+            capture_locals=capture_locals,
+            _seen=_seen,
+        )
+
+        self.stack = tb.StackSummary.extract(
+            (
+                (tb_frame, tb_lineno)
+                for tb_frame, tb_lineno in tb.walk_tb(exc_traceback)
+                if not _is_sacred_frame(tb_frame)
+            ),
+            limit=limit,
+            lookup_lines=lookup_lines,
+            capture_locals=capture_locals,
+        )
+
+
 def create_basic_stream_logger():
     """Sets up a basic stream logger.
 
@@ -486,7 +520,6 @@ def convert_to_nested_dict(dotted_dict):
 
 
 def _is_sacred_frame(frame):
-    print(type(frame))
     return frame.f_globals["__name__"].split(".")[0] == "sacred"
 
 
@@ -523,7 +556,7 @@ def format_filtered_stacktrace(filter_traceback="default"):
     elif filter_traceback in ("default", "always"):
         # print filtered stacktrace
         if sys.version_info >= (3, 5):
-            tb_exception = tb.TracebackException(
+            tb_exception = FilteredTracebackException(
                 exc_type, exc_value, exc_traceback, limit=None
             )
             return "".join(filtered_traceback_format(tb_exception))
@@ -566,17 +599,6 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
             yield tb._context_message
     yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-
-    import sacred
-
-    yield from tb.StackSummary.from_list(
-        [
-            sf
-            for sf in tb_exception.stack
-            if not sf.filename.startswith(sacred.__path__[0])
-        ]
-    ).format()
-
     yield from tb_exception.format_exception_only()
 
 
