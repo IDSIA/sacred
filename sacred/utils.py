@@ -315,6 +315,14 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
+class Traceback:
+    def __init__(self, tb_frame, tb_lasti, tb_lineno, tb_next):
+        self.tb_frame = tb_frame
+        self.tb_lasti = tb_lasti
+        self.tb_lineno = tb_lineno
+        self.tb_next = tb_next
+
+
 class FilteredTracebackException(tb.TracebackException):
     def __init__(
         self,
@@ -327,26 +335,35 @@ class FilteredTracebackException(tb.TracebackException):
         capture_locals=False,
         _seen=None,
     ):
+
+        filtered_exc_traceback = []
+        tb = exc_traceback
+        while tb is not None:
+            if not _is_sacred_frame(tb.tb_frame):
+                filtered_exc_traceback.append(
+                    traceback(tb.tb_frame, tb.tb_lasti, tb.tb_lineno, tb.tb_next)
+                )
+                if len(filtered_exc_traceback) >= 2:
+                    filtered_exc_traceback[-2].tb_next = filtered_exc_traceback[-1]
+            tb = tb.tb_next
+
         super().__init__(
             exc_type,
             exc_value,
-            exc_traceback,
+            filtered_exc_traceback[0],
             limit=limit,
             lookup_lines=lookup_lines,
             capture_locals=capture_locals,
             _seen=_seen,
         )
 
-        self.stack = tb.StackSummary.extract(
-            (
-                (tb_frame, tb_lineno)
-                for tb_frame, tb_lineno in tb.walk_tb(exc_traceback)
-                if not _is_sacred_frame(tb_frame)
-            ),
-            limit=limit,
-            lookup_lines=lookup_lines,
-            capture_locals=capture_locals,
-        )
+    def format(self, *, chain=True):
+        for line in super().format(chain=chain):
+            print(line, type(line))
+            if line == "Traceback (most recent call last):\n":
+                yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
+            else:
+                yield line
 
 
 def create_basic_stream_logger():
@@ -559,7 +576,7 @@ def format_filtered_stacktrace(filter_traceback="default"):
             tb_exception = FilteredTracebackException(
                 exc_type, exc_value, exc_traceback, limit=None
             )
-            return "".join(filtered_traceback_format(tb_exception))
+            return "".join(tb_exception.format())
         else:
             s = "Traceback (most recent calls WITHOUT Sacred internals):"
             current_tb = exc_traceback
@@ -585,22 +602,6 @@ def format_sacred_error(e, short_usage):
     else:
         lines.append("\n".join(tb.format_exception_only(type(e), e)))
     return "\n".join(lines)
-
-
-def filtered_traceback_format(tb_exception, chain=True):
-    if chain:
-        if tb_exception.__cause__ is not None:
-            yield from filtered_traceback_format(tb_exception.__cause__, chain=chain)
-            yield tb._cause_message
-        elif (
-            tb_exception.__context__ is not None
-            and not tb_exception.__suppress_context__
-        ):
-            yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
-            yield tb._context_message
-    yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-    yield from tb.StackSummary.from_list([sf for sf in tb_exception.stack]).format()
-    yield from tb_exception.format_exception_only()
 
 
 # noinspection PyUnusedLocal
