@@ -599,6 +599,7 @@ def filtered_traceback_format(tb_exception, chain=True):
             yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
             yield tb._context_message
     yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
+    yield from tb.StackSummary.from_list([sf for sf in tb_exception.stack]).format()
     yield from tb_exception.format_exception_only()
 
 
