@@ -572,20 +572,10 @@ def format_filtered_stacktrace(filter_traceback="default"):
         return "".join(header + texts[1:]).strip()
     elif filter_traceback in ("default", "always"):
         # print filtered stacktrace
-        if sys.version_info >= (3, 5):
-            tb_exception = FilteredTracebackException(
-                exc_type, exc_value, exc_traceback, limit=None
-            )
-            return "".join(tb_exception.format())
-        else:
-            s = "Traceback (most recent calls WITHOUT Sacred internals):"
-            current_tb = exc_traceback
-            while current_tb is not None:
-                if not _is_sacred_frame(current_tb.tb_frame):
-                    tb.print_tb(current_tb, 1)
-                current_tb = current_tb.tb_next
-            s += "\n".join(tb.format_exception_only(exc_type, exc_value)).strip()
-            return s
+        tb_exception = FilteredTracebackException(
+            exc_type, exc_value, exc_traceback, limit=None
+        )
+        return "".join(tb_exception.format())
     elif filter_traceback == "never":
         # print full stacktrace
         return "\n".join(tb.format_exception(exc_type, exc_value, exc_traceback))
