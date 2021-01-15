@@ -140,3 +140,18 @@ def test_format_sacred_error(print_traceback, filter_traceback, print_usage, exp
     except SacredError as e:
         st = format_sacred_error(e, "usage")
         assert re.match(expected, st, re.MULTILINE)
+
+
+def test_chained_error():
+    try:
+        try:
+            print(1 / 0)
+        except Exception as e:
+            raise SacredError("Something bad happened") from e
+    except SacredError as e:
+        st = format_sacred_error(e, "usage")
+        assert re.match(
+            r"Traceback \(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?test_exceptions.py\", line 148, in test_chained_error\n    print\(1 / 0\)\nZeroDivisionError: division by zero\n\nThe above exception was the direct cause of the following exception:\n\nTraceback \(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?test_exceptions.py\", line 150, in test_chained_error\n    raise SacredError\(\"Something bad happened\"\) from e\nsacred.utils.SacredError: Something bad happened\n",
+            st,
+            re.MULTILINE,
+        )

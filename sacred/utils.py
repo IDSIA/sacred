@@ -13,6 +13,7 @@ import threading
 import traceback as tb
 from functools import partial
 from packaging import version
+from types import TracebackType
 from typing import Union
 from pathlib import Path
 
@@ -315,14 +316,6 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
-class Traceback:
-    def __init__(self, tb_frame, tb_lasti, tb_lineno, tb_next):
-        self.tb_frame = tb_frame
-        self.tb_lasti = tb_lasti
-        self.tb_lineno = tb_lineno
-        self.tb_next = tb_next
-
-
 class FilteredTracebackException(tb.TracebackException):
     def __init__(
         self,
@@ -335,31 +328,40 @@ class FilteredTracebackException(tb.TracebackException):
         capture_locals=False,
         _seen=None,
     ):
-
-        filtered_exc_traceback = []
-        tb = exc_traceback
-        while tb is not None:
-            if not _is_sacred_frame(tb.tb_frame):
-                filtered_exc_traceback.append(
-                    Traceback(tb.tb_frame, tb.tb_lasti, tb.tb_lineno, tb.tb_next)
-                )
-                if len(filtered_exc_traceback) >= 2:
-                    filtered_exc_traceback[-2].tb_next = filtered_exc_traceback[-1]
-            tb = tb.tb_next
+        exc_traceback = self._filter_tb(exc_traceback)
+        if exc_value.__cause__:
+            exc_value.__cause__.__traceback__ = self._filter_tb(
+                exc_value.__cause__.__traceback__
+            )
+        if exc_value.__context__:
+            exc_value.__context__.__traceback__ = self._filter_tb(
+                exc_value.__context__.__traceback__
+            )
 
         super().__init__(
             exc_type,
             exc_value,
-            filtered_exc_traceback[0],
+            exc_traceback,
             limit=limit,
             lookup_lines=lookup_lines,
             capture_locals=capture_locals,
             _seen=_seen,
         )
 
+    def _filter_tb(self, tb):
+        filtered_tb = []
+        while tb is not None:
+            if not _is_sacred_frame(tb.tb_frame):
+                filtered_tb.append(
+                    TracebackType(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
+                )
+                if len(filtered_tb) >= 2:
+                    filtered_tb[-2].tb_next = filtered_tb[-1]
+            tb = tb.tb_next
+        return filtered_tb[0]
+
     def format(self, *, chain=True):
         for line in super().format(chain=chain):
-            print(line, type(line))
             if line == "Traceback (most recent call last):\n":
                 yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
             else:
