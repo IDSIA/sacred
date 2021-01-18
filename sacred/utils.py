@@ -317,7 +317,7 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
-class TracebackTypeP36(TracebackType):
+class TracebackTypeP36:
     def __init__(self, tb_next, tb_frame, tb_lasti, tb_lineno):
         self.tb_next = tb_next
         self.tb_frame = tb_frame
