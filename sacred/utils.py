@@ -13,11 +13,22 @@ import threading
 import traceback as tb
 from functools import partial
 from packaging import version
-from types import TracebackType
 from typing import Union
 from pathlib import Path
 
 import wrapt
+
+if sys.version_info > (3, 6):
+    from types import TracebackType
+else:
+
+    class TracebackType:
+        def __init__(self, tb_next, tb_frame, tb_lasti, tb_lineno):
+            self.tb_next = tb_next
+            self.tb_frame = tb_frame
+            self.tb_lasti = tb_lasti
+            self.tb_lineno = tb_lineno
+
 
 __all__ = [
     "NO_LOGGER",
@@ -329,14 +340,7 @@ class FilteredTracebackException(tb.TracebackException):
         _seen=None,
     ):
         exc_traceback = self._filter_tb(exc_traceback)
-        if exc_value.__cause__:
-            exc_value.__cause__.__traceback__ = self._filter_tb(
-                exc_value.__cause__.__traceback__
-            )
-        if exc_value.__context__:
-            exc_value.__context__.__traceback__ = self._filter_tb(
-                exc_value.__context__.__traceback__
-            )
+        self._walk_value(exc_value)
 
         super().__init__(
             exc_type,
@@ -347,6 +351,16 @@ class FilteredTracebackException(tb.TracebackException):
             capture_locals=capture_locals,
             _seen=_seen,
         )
+
+    def _walk_value(self, obj):
+        if obj.__cause__:
+            obj.__cause__.__traceback__ = self._filter_tb(obj.__cause__.__traceback__)
+            self._walk_value(obj.__cause__)
+        if obj.__context__:
+            obj.__context__.__traceback__ = self._filter_tb(
+                obj.__context__.__traceback__
+            )
+            self._walk_value(obj.__context__)
 
     def _filter_tb(self, tb):
         filtered_tb = []
