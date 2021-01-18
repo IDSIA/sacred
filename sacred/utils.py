@@ -366,7 +366,7 @@ class FilteredTracebackException(tb.TracebackException):
             if not _is_sacred_frame(tb.tb_frame):
                 filtered_tb.append(
                     TracebackType(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
-                    if sys.version_info > (3, 6)
+                    if sys.version_info[1] > 6
                     else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
                 )
                 if len(filtered_tb) >= 2:
