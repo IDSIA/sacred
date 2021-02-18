@@ -369,7 +369,7 @@ class FilteredTracebackException(tb.TracebackException):
                     if sys.version_info[1] > 6
                     else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
                 )
-                if sys.version_info[1] > 6:
+                if sys.version_info[1] == 6:
                     filtered_tb[-1].__class__ = TracebackType
                 if len(filtered_tb) >= 2:
                     filtered_tb[-2].tb_next = filtered_tb[-1]
