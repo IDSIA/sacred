@@ -198,7 +198,7 @@ class FileStorageObserver(RunObserver):
 
     def find_or_save(self, filename, store_dir: Path):
         try:
-            Path(filename).relative_to(self.basedir)
+            Path(filename).resolve().relative_to(Path(self.basedir).resolve())
             is_relative_to = True
         except ValueError:
             is_relative_to = False
