@@ -416,7 +416,7 @@ def test_blacklist_paths(tmpdir, dir_obs, sample_run):
 
 
 def test_no_duplicate(tmpdir, sample_run):
-    obs = FileStorageObserver(tmpdir, no_duplicate=True)
+    obs = FileStorageObserver(tmpdir, copy_artifacts=False)
     file = Path(str(tmpdir / "koko.txt"))
     file.touch()
     obs.started_event(**sample_run)
@@ -424,7 +424,7 @@ def test_no_duplicate(tmpdir, sample_run):
     assert not os.path.exists(tmpdir / "_resources")
 
     # Test the test: that the resource would otherwise have been created.
-    obs = FileStorageObserver(tmpdir, no_duplicate=False)
+    obs = FileStorageObserver(tmpdir, copy_artifacts=True)
     sample_run["_id"] = sample_run["_id"] + "_2"
     obs.started_event(**sample_run)
     obs.resource_event(str(file))

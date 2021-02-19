@@ -40,7 +40,7 @@ class FileStorageObserver(RunObserver):
         source_dir: Optional[PathType] = None,
         template: Optional[PathType] = None,
         priority: int = DEFAULT_FILE_STORAGE_PRIORITY,
-        no_duplicate: bool = False,
+        copy_artifacts: bool = True,
         should_save_sources: bool = True,
     ):
         basedir = Path(basedir)
@@ -61,7 +61,7 @@ class FileStorageObserver(RunObserver):
             source_dir,
             template,
             priority,
-            no_duplicate,
+            copy_artifacts,
             should_save_sources,
         )
 
@@ -72,7 +72,7 @@ class FileStorageObserver(RunObserver):
         source_dir,
         template,
         priority=DEFAULT_FILE_STORAGE_PRIORITY,
-        no_duplicate=False,
+        copy_artifacts=True,
         should_save_sources=True,
     ):
         self.basedir = str(basedir)
@@ -80,7 +80,7 @@ class FileStorageObserver(RunObserver):
         self.source_dir = source_dir
         self.template = template
         self.priority = priority
-        self.no_duplicate = no_duplicate
+        self.copy_artifacts = copy_artifacts
         self.should_save_sources = should_save_sources
         self.dir = None
         self.run_entry = None
@@ -203,10 +203,10 @@ class FileStorageObserver(RunObserver):
         except ValueError:
             is_relative_to = False
 
-        if self.no_duplicate and is_relative_to:
+        if is_relative_to and not self.copy_artifacts:
             return filename
         else:
-            os.makedirs(str(store_dir), exist_ok=True)
+            store_dir.mkdir(parents=True, exist_ok=True)
             source_name, ext = os.path.splitext(os.path.basename(filename))
             md5sum = get_digest(filename)
             store_name = source_name + "_" + md5sum + ext

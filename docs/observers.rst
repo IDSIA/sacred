@@ -292,7 +292,7 @@ Storing source-code in this way can be disabled by passing
 ``should_save_sources=False`` when creating the FileStorageObserver. Copying any
 :ref:`resources` that are already present in `my_runs/`, but not present in
 `my_runs/_resources/` (for example, a resource that is the output of another
-run), can be disabled my passing ``no_duplicate=True`` when creating the
+run), can be disabled my passing ``copy_artifacts=False`` when creating the
 FileStorageObserver.
 
 Template Rendering
