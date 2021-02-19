@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 import warnings
 
-from shutil import SameFileError, copyfile
+from shutil import copyfile, SameFileError
 
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
@@ -198,7 +198,7 @@ class FileStorageObserver(RunObserver):
 
     def find_or_save(self, filename, store_dir: Path):
         try:
-            Path(filename).relative_to(store_dir)
+            Path(filename).relative_to(self.basedir)
             is_relative_to = True
         except ValueError:
             is_relative_to = False
