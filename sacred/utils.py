@@ -368,13 +368,11 @@ class FilteredTracebackException(tb.TracebackException):
                     # if sys.version_info[1] > 6
                     # else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti,tb.tb_lineno)
                 )
-                if len(filtered_tb) >= 2:
-                    filtered_tb[-2].tb_next = filtered_tb[-1]
             tb = tb.tb_next
         if len(filtered_tb) >= 2:
             for i in range(1, len(filtered_tb)):
-                filtered_tb[i - 1].next = filtered_tb[i]
-        filtered_tb[-1].next = None
+                filtered_tb[i - 1].tb_next = filtered_tb[i]
+        filtered_tb[-1].tb_next = None
         return filtered_tb[0]
 
     def format(self, *, chain=True):
