@@ -373,10 +373,8 @@ class FilteredTracebackException(tb.TracebackException):
             tb = tb.tb_next
         if len(filtered_tb) >= 2:
             for i in range(1, len(filtered_tb)):
-                filtered_tb[i - 1].__dict__["next"] = filtered_tb[i]
-            filtered_tb[-1].__dict__["next"] = None
-        else:
-            filtered_tb[0].__dict__["next"] = None
+                filtered_tb[i - 1].next = filtered_tb[i]
+        filtered_tb[-1].next = None
         return filtered_tb[0]
 
     def format(self, *, chain=True):
