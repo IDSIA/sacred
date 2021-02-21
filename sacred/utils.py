@@ -13,7 +13,6 @@ import threading
 import traceback as tb
 from functools import partial
 from packaging import version
-from types import TracebackType
 from typing import Union
 from pathlib import Path
 
@@ -339,76 +338,15 @@ class FilteredTracebackException(tb.TracebackException):
     ):
         exc_traceback = self._filter_tb(exc_traceback)
         self._walk_value(exc_value)
-        if sys.version_info[1] > 6:
-            super().__init__(
-                exc_type,
-                exc_value,
-                exc_traceback,
-                limit=limit,
-                lookup_lines=lookup_lines,
-                capture_locals=capture_locals,
-                _seen=_seen,
-            )
-        else:
-            if _seen is None:
-                _seen = set()
-            _seen.add(id(exc_value))
-            if (
-                exc_value
-                and exc_value.__cause__ is not None
-                and id(exc_value.__cause__) not in _seen
-            ):
-                cause = TracebackException(
-                    type(exc_value.__cause__),
-                    exc_value.__cause__,
-                    exc_value.__cause__.__traceback__,
-                    limit=limit,
-                    lookup_lines=False,
-                    capture_locals=capture_locals,
-                    _seen=_seen,
-                )
-            else:
-                cause = None
-            if (
-                exc_value
-                and exc_value.__context__ is not None
-                and id(exc_value.__context__) not in _seen
-            ):
-                context = TracebackException(
-                    type(exc_value.__context__),
-                    exc_value.__context__,
-                    exc_value.__context__.__traceback__,
-                    limit=limit,
-                    lookup_lines=False,
-                    capture_locals=capture_locals,
-                    _seen=_seen,
-                )
-            else:
-                context = None
-            self.exc_traceback = exc_traceback
-            self.__cause__ = cause
-            self.__context__ = context
-            self.__suppress_context__ = (
-                exc_value.__suppress_context__ if exc_value else False
-            )
-            # This here filters the traceback
-            self.stack = tb.StackSummary.extract(
-                walk_tb_filtered(exc_traceback),
-                limit=limit,
-                lookup_lines=lookup_lines,
-                capture_locals=capture_locals,
-            )
-            self.exc_type = exc_type
-            self._str = tb._some_str(exc_value)
-            if exc_type and issubclass(exc_type, SyntaxError):
-                # Handle SyntaxError's specially
-                self.filename = exc_value.filename
-                self.lineno = str(exc_value.lineno)
-                self.text = exc_value.text
-                self.offset = exc_value.offset
-                self.msg = exc_value.msg
-            if lookup_lines:
-                self._load_lines()
+        super().__init__(
+            exc_type,
+            exc_value,
+            exc_traceback,
+            limit=limit,
+            lookup_lines=lookup_lines,
+            capture_locals=capture_locals,
+            _seen=_seen,
+        )
 
     def _walk_value(self, obj):
         if obj.__cause__:
@@ -425,9 +363,10 @@ class FilteredTracebackException(tb.TracebackException):
         while tb is not None:
             if not _is_sacred_frame(tb.tb_frame):
                 filtered_tb.append(
-                    TracebackType(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
-                    if sys.version_info[1] > 6
-                    else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
+                    tb
+                    # TracebackType(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
+                    # if sys.version_info[1] > 6
+                    # else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti,tb.tb_lineno)
                 )
                 if len(filtered_tb) >= 2:
                     filtered_tb[-2].tb_next = filtered_tb[-1]
