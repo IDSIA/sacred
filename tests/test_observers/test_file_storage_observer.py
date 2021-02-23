@@ -433,13 +433,13 @@ def test_no_duplicate(tmpdir, sample_run):
 
 
 def test_no_sources(tmpdir, tmpfile, sample_run):
-    obs = FileStorageObserver(tmpdir, should_save_sources=False)
+    obs = FileStorageObserver(tmpdir, copy_sources=False)
     sample_run["ex_info"]["sources"] = [[tmpfile.name, tmpfile.md5sum]]
     obs.started_event(**sample_run)
     assert not os.path.exists(tmpdir / "_sources")
 
     # Test the test: that the source would otherwise have been created.
-    obs = FileStorageObserver(tmpdir, should_save_sources=True)
+    obs = FileStorageObserver(tmpdir, copy_sources=True)
     sample_run["_id"] = sample_run["_id"] + "_2"
     obs.started_event(**sample_run)
     name, _ = os.path.splitext(os.path.basename(tmpfile.name))

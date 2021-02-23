@@ -41,7 +41,7 @@ class FileStorageObserver(RunObserver):
         template: Optional[PathType] = None,
         priority: int = DEFAULT_FILE_STORAGE_PRIORITY,
         copy_artifacts: bool = True,
-        should_save_sources: bool = True,
+        copy_sources: bool = True,
     ):
         basedir = Path(basedir)
         resource_dir = resource_dir or basedir / "_resources"
@@ -62,7 +62,7 @@ class FileStorageObserver(RunObserver):
             template,
             priority,
             copy_artifacts,
-            should_save_sources,
+            copy_sources,
         )
 
     def initialize(
@@ -73,7 +73,7 @@ class FileStorageObserver(RunObserver):
         template,
         priority=DEFAULT_FILE_STORAGE_PRIORITY,
         copy_artifacts=True,
-        should_save_sources=True,
+        copy_sources=True,
     ):
         self.basedir = str(basedir)
         self.resource_dir = resource_dir
@@ -81,7 +81,7 @@ class FileStorageObserver(RunObserver):
         self.template = template
         self.priority = priority
         self.copy_artifacts = copy_artifacts
-        self.should_save_sources = should_save_sources
+        self.copy_sources = copy_sources
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -148,7 +148,7 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.run_entry, "run.json")
         self.save_json(self.config, "config.json")
 
-        if self.should_save_sources:
+        if self.copy_sources:
             for s, _ in ex_info["sources"]:
                 self.save_file(s)
 
@@ -159,7 +159,7 @@ class FileStorageObserver(RunObserver):
         source_info = []
         for s, _ in ex_info["sources"]:
             abspath = os.path.join(base_dir, s)
-            if self.should_save_sources:
+            if self.copy_sources:
                 store_path = self.find_or_save(abspath, self.source_dir)
             else:
                 store_path = abspath

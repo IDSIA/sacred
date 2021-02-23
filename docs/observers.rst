@@ -289,7 +289,7 @@ Their filenames are stored in the ``run.json`` file such that the corresponding
 files can be easily linked to their respective run.
 
 Storing source-code in this way can be disabled by passing
-``should_save_sources=False`` when creating the FileStorageObserver. Copying any
+``copy_sources=False`` when creating the FileStorageObserver. Copying any
 :ref:`resources` that are already present in `my_runs/`, but not present in
 `my_runs/_resources/` (for example, a resource that is the output of another
 run), can be disabled my passing ``copy_artifacts=False`` when creating the
