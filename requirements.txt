@@ -1,5 +1,5 @@
 docopt>=0.3, <1.0
-jsonpickle>=1.2, <2.0
+jsonpickle>=1.2
 munch>=2.0.2, <3.0
 wrapt>=1.0, <2.0
 py-cpuinfo>=4.0
