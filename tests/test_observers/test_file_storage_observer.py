@@ -413,3 +413,35 @@ def test_blacklist_paths(tmpdir, dir_obs, sample_run):
     other_file.touch()
     with pytest.raises(FileExistsError):
         obs.save_file(str(other_file), "cout.txt")
+
+
+def test_no_duplicate(tmpdir, sample_run):
+    obs = FileStorageObserver(tmpdir, copy_artifacts=False)
+    file = Path(str(tmpdir / "koko.txt"))
+    file.touch()
+    obs.started_event(**sample_run)
+    obs.resource_event(str(file))
+    assert not os.path.exists(tmpdir / "_resources")
+
+    # Test the test: that the resource would otherwise have been created.
+    obs = FileStorageObserver(tmpdir, copy_artifacts=True)
+    sample_run["_id"] = sample_run["_id"] + "_2"
+    obs.started_event(**sample_run)
+    obs.resource_event(str(file))
+    assert os.path.exists(tmpdir / "_resources")
+    assert any(x.startswith("koko") for x in os.listdir(tmpdir / "_resources"))
+
+
+def test_no_sources(tmpdir, tmpfile, sample_run):
+    obs = FileStorageObserver(tmpdir, copy_sources=False)
+    sample_run["ex_info"]["sources"] = [[tmpfile.name, tmpfile.md5sum]]
+    obs.started_event(**sample_run)
+    assert not os.path.exists(tmpdir / "_sources")
+
+    # Test the test: that the source would otherwise have been created.
+    obs = FileStorageObserver(tmpdir, copy_sources=True)
+    sample_run["_id"] = sample_run["_id"] + "_2"
+    obs.started_event(**sample_run)
+    name, _ = os.path.splitext(os.path.basename(tmpfile.name))
+    assert os.path.exists(tmpdir / "_sources")
+    assert any(x.startswith(name) for x in os.listdir(tmpdir / "_sources"))
