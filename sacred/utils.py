@@ -316,14 +316,6 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
-class TracebackTypeP36:
-    def __init__(self, tb_next, tb_frame, tb_lasti, tb_lineno):
-        self.tb_next = tb_next
-        self.tb_frame = tb_frame
-        self.tb_lasti = tb_lasti
-        self.tb_lineno = tb_lineno
-
-
 class FilteredTracebackException(tb.TracebackException):
     def __init__(
         self,
@@ -362,12 +354,7 @@ class FilteredTracebackException(tb.TracebackException):
         filtered_tb = []
         while tb is not None:
             if not _is_sacred_frame(tb.tb_frame):
-                filtered_tb.append(
-                    tb
-                    # TracebackType(None, tb.tb_frame, tb.tb_lasti, tb.tb_lineno)
-                    # if sys.version_info[1] > 6
-                    # else TracebackTypeP36(None, tb.tb_frame, tb.tb_lasti,tb.tb_lineno)
-                )
+                filtered_tb.append(tb)
             tb = tb.tb_next
         if len(filtered_tb) >= 2:
             for i in range(1, len(filtered_tb)):
