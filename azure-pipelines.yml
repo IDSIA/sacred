@@ -51,6 +51,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'numpy-119'
+      Linux numpy_119:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'numpy-120'
       Linux tensorflow_115:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.7'
