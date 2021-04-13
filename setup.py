@@ -8,7 +8,6 @@ Development Status :: 5 - Production/Stable
 Intended Audience :: Science/Research
 Natural Language :: English
 Operating System :: OS Independent
-Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
@@ -40,7 +39,7 @@ setup(
     package_data={"sacred": [os.path.join("data", "*")]},
     scripts=[],
     install_requires=Path("requirements.txt").read_text().splitlines(),
-    tests_require=["mock>=0.8, <3.0", "pytest==6.2.1"],
+    tests_require=["mock>=3.0, <5.0", "pytest==6.2.3"],
     classifiers=list(filter(None, classifiers.split("\n"))),
     description="Facilitates automated and reproducible experimental research",
     long_description=Path("README.rst").read_text(encoding="utf-8"),
