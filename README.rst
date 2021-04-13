@@ -105,6 +105,7 @@ Update pyptest version
 ++++++++++++++++++++++
 
 In the following files the pytest version needs to be changed:
+
 - ``dev-requirements.txt``
 - ``tox.ini``
 - ``test/test_utils.py``
