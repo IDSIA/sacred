@@ -28,7 +28,7 @@ class TinyDbObserver(RunObserver):
         return cls(path, overwrite)
 
     def __init__(self, path="./runs_db", overwrite=None):
-        from .tinydb_hashfs_bases import get_db_file_manager
+        from .bases import get_db_file_manager
 
         root_dir = os.path.abspath(path)
         os.makedirs(root_dir, exist_ok=True)
@@ -58,13 +58,13 @@ class TinyDbObserver(RunObserver):
     def save(self):
         """Insert or update the current run entry."""
         if self.db_run_id:
-            self.runs.update(self.run_entry, eids=[self.db_run_id])
+            self.runs.update(self.run_entry, doc_ids=[self.db_run_id])
         else:
             db_run_id = self.runs.insert(self.run_entry)
             self.db_run_id = db_run_id
 
     def save_sources(self, ex_info):
-        from .tinydb_hashfs_bases import BufferedReaderWrapper
+        from .bases import BufferedReaderWrapper
 
         source_info = []
         for source_name, md5 in ex_info["sources"]:
@@ -148,7 +148,7 @@ class TinyDbObserver(RunObserver):
         self.save()
 
     def resource_event(self, filename):
-        from .tinydb_hashfs_bases import BufferedReaderWrapper
+        from .bases import BufferedReaderWrapper
 
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, "rb"))
@@ -159,7 +159,7 @@ class TinyDbObserver(RunObserver):
             self.save()
 
     def artifact_event(self, name, filename, metadata=None, content_type=None):
-        from .tinydb_hashfs_bases import BufferedReaderWrapper
+        from .bases import BufferedReaderWrapper
 
         id_ = self.fs.put(filename).id
         handle = BufferedReaderWrapper(open(filename, "rb"))
@@ -187,7 +187,7 @@ def tiny_db_option(args, run):
 
 class TinyDbReader:
     def __init__(self, path):
-        from .tinydb_hashfs_bases import get_db_file_manager
+        from .bases import get_db_file_manager
 
         root_dir = os.path.abspath(path)
         if not os.path.exists(root_dir):
@@ -329,11 +329,9 @@ Outputs:
     def fetch_metadata(self, exp_name=None, query=None, indices=None):
         """Return all metadata for matching experiment name, index or query."""
         from tinydb import Query
-        from tinydb.queries import QueryImpl
 
         if exp_name or query:
             if query:
-                assert type(query), QueryImpl
                 q = query
             elif exp_name:
                 q = Query().experiment.name.search(exp_name)
