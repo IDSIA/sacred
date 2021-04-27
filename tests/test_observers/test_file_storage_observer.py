@@ -100,7 +100,7 @@ def test_fs_observer_started_event_creates_rundir(dir_obs, sample_run):
 def test_fs_observer_started_event_creates_rundir_with_filesystem_delay(
     dir_obs, sample_run, monkeypatch
 ):
-    """ Assumes listdir doesn't show existing file (e.g. due to caching or delay of network storage) """
+    """Assumes listdir doesn't show existing file (e.g. due to caching or delay of network storage)"""
     basedir, obs = dir_obs
     sample_run["_id"] = None
     _id = obs.started_event(**sample_run)
