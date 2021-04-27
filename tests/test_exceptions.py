@@ -151,7 +151,14 @@ def test_chained_error():
     except SacredError as e:
         st = format_sacred_error(e, "usage")
         assert re.match(
-            r"Traceback \(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?test_exceptions.py\", line 148, in test_chained_error\n    print\(1 / 0\)\nZeroDivisionError: division by zero\n\nThe above exception was the direct cause of the following exception:\n\nTraceback \(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?test_exceptions.py\", line 150, in test_chained_error\n    raise SacredError\(\"Something bad happened\"\) from e\nsacred.utils.SacredError: Something bad happened\n",
+            r"Traceback \(most recent calls WITHOUT Sacred internals\):\n  File "
+            + r"\"[^\"]+?test_exceptions.py\", line \d+, in test_chained_error\n    "
+            + r"print\(1 / 0\)\nZeroDivisionError: division by zero\n\nThe above "
+            + r"exception was the direct cause of the following exception:\n\nTraceback "
+            + r"\(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?"
+            + r"test_exceptions.py\", line \d+, in test_chained_error\n    raise "
+            + r"SacredError\(\"Something bad happened\"\) from e\nsacred.utils."
+            + r"SacredError: Something bad happened\n",
             st,
             re.MULTILINE,
         )
