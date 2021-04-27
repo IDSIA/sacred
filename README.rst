@@ -104,7 +104,7 @@ can automatically run the tests for various python versions like this:
 Update pyptest version
 ++++++++++++++++++++++
 
-In the following files the pytest version needs to be changed:
+If you update or change the pytest version, the following files need to be changed:
 
 - ``dev-requirements.txt``
 - ``tox.ini``
