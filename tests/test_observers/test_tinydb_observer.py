@@ -64,7 +64,7 @@ def test_tinydb_observer_started_event_creates_run(tinydb_obs, sample_run):
     _id = tinydb_obs.started_event(**sample_run)
     assert _id is not None
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run == {
         "_id": _id,
         "experiment": sample_run["ex_info"],
@@ -87,7 +87,7 @@ def test_tinydb_observer_started_event_uses_given_id(tinydb_obs, sample_run):
     _id = tinydb_obs.started_event(**sample_run)
     assert _id == sample_run["_id"]
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["_id"] == sample_run["_id"]
 
 
@@ -100,7 +100,7 @@ def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs, sample_ru
 
     assert _id is not None
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
 
     # Check all but the experiment section
     db_run_copy = db_run.copy()
@@ -130,7 +130,7 @@ def test_tinydb_observer_started_event_saves_given_sources(tinydb_obs, sample_ru
     tinydb_obs.db_run_id = None
     tinydb_obs.started_event(**sample_run)
     assert len(tinydb_obs.runs) == 2
-    db_run2 = tinydb_obs.runs.get(eid=2)
+    db_run2 = tinydb_obs.runs.get(doc_id=2)
 
     assert (
         db_run["experiment"]["sources"][0][:2]
@@ -188,7 +188,7 @@ def test_tinydb_observer_heartbeat_event_updates_run(tinydb_obs, sample_run):
     tinydb_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=42)
 
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["heartbeat"] == T2
     assert db_run["result"] == 42
     assert db_run["info"] == info
@@ -201,7 +201,7 @@ def test_tinydb_observer_completed_event_updates_run(tinydb_obs, sample_run):
     tinydb_obs.completed_event(stop_time=T2, result=42)
 
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["stop_time"] == T2
     assert db_run["result"] == 42
     assert db_run["status"] == "COMPLETED"
@@ -213,7 +213,7 @@ def test_tinydb_observer_interrupted_event_updates_run(tinydb_obs, sample_run):
     tinydb_obs.interrupted_event(interrupt_time=T2, status="INTERRUPTED")
 
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "INTERRUPTED"
 
@@ -225,7 +225,7 @@ def test_tinydb_observer_failed_event_updates_run(tinydb_obs, sample_run):
     tinydb_obs.failed_event(fail_time=T2, fail_trace=fail_trace)
 
     assert len(tinydb_obs.runs) == 1
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["stop_time"] == T2
     assert db_run["status"] == "FAILED"
     assert db_run["fail_trace"] == fail_trace
@@ -241,7 +241,7 @@ def test_tinydb_observer_artifact_event(tinydb_obs, sample_run):
 
     assert tinydb_obs.fs.exists(filename)
 
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["artifacts"][0][0] == name
 
     with open(filename, "rb") as f:
@@ -259,7 +259,7 @@ def test_tinydb_observer_resource_event(tinydb_obs, sample_run):
 
     assert tinydb_obs.fs.exists(filename)
 
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["resources"][0][:2] == [filename, md5]
 
     with open(filename, "rb") as f:
@@ -278,7 +278,7 @@ def test_tinydb_observer_resource_event_when_resource_present(tinydb_obs, sample
 
     tinydb_obs.resource_event(filename)
 
-    db_run = tinydb_obs.runs.get(eid=1)
+    db_run = tinydb_obs.runs.get(doc_id=1)
     assert db_run["resources"][0][:2] == [filename, md5]
 
 
