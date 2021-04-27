@@ -18,6 +18,7 @@ from pathlib import Path
 
 import wrapt
 
+
 __all__ = [
     "NO_LOGGER",
     "PYTHON_IDENTIFIER",
@@ -315,6 +316,62 @@ class SignatureError(SacredError, TypeError):
         super().__init__(message, print_traceback, filter_traceback, print_usage)
 
 
+class FilteredTracebackException(tb.TracebackException):
+    """Filter out sacred internal tracebacks from an exception traceback."""
+
+    def __init__(
+        self,
+        exc_type,
+        exc_value,
+        exc_traceback,
+        *,
+        limit=None,
+        lookup_lines=True,
+        capture_locals=False,
+        _seen=None,
+    ):
+        exc_traceback = self._filter_tb(exc_traceback)
+        self._walk_value(exc_value)
+        super().__init__(
+            exc_type,
+            exc_value,
+            exc_traceback,
+            limit=limit,
+            lookup_lines=lookup_lines,
+            capture_locals=capture_locals,
+            _seen=_seen,
+        )
+
+    def _walk_value(self, obj):
+        if obj.__cause__:
+            obj.__cause__.__traceback__ = self._filter_tb(obj.__cause__.__traceback__)
+            self._walk_value(obj.__cause__)
+        if obj.__context__:
+            obj.__context__.__traceback__ = self._filter_tb(
+                obj.__context__.__traceback__
+            )
+            self._walk_value(obj.__context__)
+
+    def _filter_tb(self, tb):
+        filtered_tb = []
+        while tb is not None:
+            if not _is_sacred_frame(tb.tb_frame):
+                filtered_tb.append(tb)
+            tb = tb.tb_next
+        if len(filtered_tb) >= 2:
+            for i in range(1, len(filtered_tb)):
+                filtered_tb[i - 1].tb_next = filtered_tb[i]
+        filtered_tb[-1].tb_next = None
+        return filtered_tb[0]
+
+    def format(self, *, chain=True):
+        for line in super().format(chain=chain):
+            if line == "Traceback (most recent call last):\n":
+                yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
+            else:
+                yield line
+
+
 def create_basic_stream_logger():
     """Sets up a basic stream logger.
 
@@ -342,7 +399,7 @@ def recursive_update(d, u):
     => {'a': {'b': 1, 'd': 3}, 'c': 2}
     """
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = recursive_update(d.get(k, {}), v)
             d[k] = r
         else:
@@ -521,20 +578,10 @@ def format_filtered_stacktrace(filter_traceback="default"):
         return "".join(header + texts[1:]).strip()
     elif filter_traceback in ("default", "always"):
         # print filtered stacktrace
-        if sys.version_info >= (3, 5):
-            tb_exception = tb.TracebackException(
-                exc_type, exc_value, exc_traceback, limit=None
-            )
-            return "".join(filtered_traceback_format(tb_exception))
-        else:
-            s = "Traceback (most recent calls WITHOUT Sacred internals):"
-            current_tb = exc_traceback
-            while current_tb is not None:
-                if not _is_sacred_frame(current_tb.tb_frame):
-                    tb.print_tb(current_tb, 1)
-                current_tb = current_tb.tb_next
-            s += "\n".join(tb.format_exception_only(exc_type, exc_value)).strip()
-            return s
+        tb_exception = FilteredTracebackException(
+            exc_type, exc_value, exc_traceback, limit=None
+        )
+        return "".join(tb_exception.format())
     elif filter_traceback == "never":
         # print full stacktrace
         return "\n".join(tb.format_exception(exc_type, exc_value, exc_traceback))
@@ -551,29 +598,6 @@ def format_sacred_error(e, short_usage):
     else:
         lines.append("\n".join(tb.format_exception_only(type(e), e)))
     return "\n".join(lines)
-
-
-def filtered_traceback_format(tb_exception, chain=True):
-    if chain:
-        if tb_exception.__cause__ is not None:
-            yield from filtered_traceback_format(tb_exception.__cause__, chain=chain)
-            yield tb._cause_message
-        elif (
-            tb_exception.__context__ is not None
-            and not tb_exception.__suppress_context__
-        ):
-            yield from filtered_traceback_format(tb_exception.__context__, chain=chain)
-            yield tb._context_message
-    yield "Traceback (most recent calls WITHOUT Sacred internals):\n"
-    current_tb = tb_exception.exc_traceback
-    while current_tb is not None:
-        if not _is_sacred_frame(current_tb.tb_frame):
-            stack = tb.StackSummary.extract(
-                tb.walk_tb(current_tb), limit=1, lookup_lines=True, capture_locals=False
-            )
-            yield from stack.format()
-        current_tb = current_tb.tb_next
-    yield from tb_exception.format_exception_only()
 
 
 # noinspection PyUnusedLocal

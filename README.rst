@@ -101,6 +101,16 @@ can automatically run the tests for various python versions like this:
 
     tox
 
+Update pyptest version
+++++++++++++++++++++++
+
+If you update or change the pytest version, the following files need to be changed:
+
+- ``dev-requirements.txt``
+- ``tox.ini``
+- ``test/test_utils.py``
+- ``setup.py``
+
 Contributing
 ------------
 If you find a bug, have a feature request or want to discuss something general you are welcome to open an
@@ -229,8 +239,8 @@ This project is released under the terms of the `MIT license <http://opensource.
 
 Citing Sacred
 -------------
-`K. Greff, A. Klein, M. Chovanec, F. Hutter, and J. Schmidhuber, ‘The Sacred Infrastructure for Computational Research’, 
-in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Texas, 2017, pp. 49–56 
+`K. Greff, A. Klein, M. Chovanec, F. Hutter, and J. Schmidhuber, ‘The Sacred Infrastructure for Computational Research’,
+in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Texas, 2017, pp. 49–56
 <http://conference.scipy.org/proceedings/scipy2017/klaus_greff.html>`_.
 
 

@@ -70,14 +70,14 @@ def test_format_filtered_stacktrace_true():
 
     try:
         f()
-    except:
+    except Exception:
         st = format_filtered_stacktrace(filter_traceback="default")
         assert "captured_function" not in st
         assert "WITHOUT Sacred internals" in st
 
     try:
         f()
-    except:
+    except Exception:
         st = format_filtered_stacktrace(filter_traceback="always")
         assert "captured_function" not in st
         assert "WITHOUT Sacred internals" in st
@@ -140,3 +140,25 @@ def test_format_sacred_error(print_traceback, filter_traceback, print_usage, exp
     except SacredError as e:
         st = format_sacred_error(e, "usage")
         assert re.match(expected, st, re.MULTILINE)
+
+
+def test_chained_error():
+    try:
+        try:
+            print(1 / 0)
+        except Exception as e:
+            raise SacredError("Something bad happened") from e
+    except SacredError as e:
+        st = format_sacred_error(e, "usage")
+        assert re.match(
+            r"Traceback \(most recent calls WITHOUT Sacred internals\):\n  File "
+            + r"\"[^\"]+?test_exceptions.py\", line \d+, in test_chained_error\n    "
+            + r"print\(1 / 0\)\nZeroDivisionError: division by zero\n\nThe above "
+            + r"exception was the direct cause of the following exception:\n\nTraceback "
+            + r"\(most recent calls WITHOUT Sacred internals\):\n  File \"[^\"]+?"
+            + r"test_exceptions.py\", line \d+, in test_chained_error\n    raise "
+            + r"SacredError\(\"Something bad happened\"\) from e\nsacred.utils."
+            + r"SacredError: Something bad happened\n",
+            st,
+            re.MULTILINE,
+        )

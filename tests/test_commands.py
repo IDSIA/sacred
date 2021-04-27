@@ -271,7 +271,7 @@ def test_save_config():
                 ex.run("save_config", {"config_filename": "config.yaml"})
 
                 with open(os.path.join(dirname, "config.yaml")) as f:
-                    saved_config = opt.yaml.load(f)
+                    saved_config = opt.yaml.load(f, Loader=opt.yaml.FullLoader)
                     assert config == saved_config
     finally:
         os.chdir(cwd)

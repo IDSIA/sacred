@@ -1,7 +1,7 @@
 fail_fast: true
 repos:
 -   repo: https://github.com/psf/black
-    rev: stable
+    rev: 21.4b0
     hooks:
     - id: black
       language_version: python3
