@@ -616,6 +616,8 @@ including modifications (like the :ref:`print_config` command) before running
 the main method.
 
 
+.. _cmdline_name:
+
 Name
 ----
 +-----------------+---------------------------------------------------+
@@ -625,6 +627,20 @@ Name
 +-----------------+---------------------------------------------------+
 
 This option changes the name of the experiment before starting the run.
+
+
+.. _cmdline_id:
+
+Id
+----
++-----------------+---------------------------------------------------+
+| ``-i ID``       |  Set the id for this run.                         |
++-----------------+                                                   |
+| ``--id=ID``     |                                                   |
++-----------------+---------------------------------------------------+
+
+This option changes the id of the experiment before starting the run.
+
 
 .. _cmdline_capture:
 

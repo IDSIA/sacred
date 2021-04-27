@@ -2,6 +2,8 @@ import datetime as dt
 import json
 import os
 from io import BufferedReader, FileIO
+from pathlib import Path
+from typing import Tuple
 
 from hashfs import HashFS
 from tinydb import TinyDB
@@ -98,8 +100,9 @@ class FileSerializer(Serializer):
         return file_reader
 
 
-def get_db_file_manager(root_dir):
-    fs = HashFS(os.path.join(root_dir, "hashfs"), depth=3, width=2, algorithm="md5")
+def get_db_file_manager(root_dir) -> Tuple[TinyDB, HashFS]:
+    root_dir = Path(root_dir)
+    fs = HashFS(root_dir / "hashfs", depth=3, width=2, algorithm="md5")
 
     # Setup Serialisation object for non list/dict objects
     serialization_store = SerializationMiddleware()

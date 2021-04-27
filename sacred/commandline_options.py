@@ -288,6 +288,12 @@ def print_config_option(args, run):
     print("-" * 79)
 
 
+@cli_option("-i", "--id")
+def id_option(args, run):
+    """Set the id for this run."""
+    run._id = args
+
+
 @cli_option("-n", "--name")
 def name_option(args, run):
     """Set the name for this run."""

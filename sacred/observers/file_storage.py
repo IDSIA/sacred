@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 import warnings
 
-from shutil import copyfile
+from shutil import copyfile, SameFileError
 
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
@@ -40,6 +40,8 @@ class FileStorageObserver(RunObserver):
         source_dir: Optional[PathType] = None,
         template: Optional[PathType] = None,
         priority: int = DEFAULT_FILE_STORAGE_PRIORITY,
+        copy_artifacts: bool = True,
+        copy_sources: bool = True,
     ):
         basedir = Path(basedir)
         resource_dir = resource_dir or basedir / "_resources"
@@ -53,7 +55,15 @@ class FileStorageObserver(RunObserver):
             template = basedir / "template.html"
             if not template.exists():
                 template = None
-        self.initialize(basedir, resource_dir, source_dir, template, priority)
+        self.initialize(
+            basedir,
+            resource_dir,
+            source_dir,
+            template,
+            priority,
+            copy_artifacts,
+            copy_sources,
+        )
 
     def initialize(
         self,
@@ -62,12 +72,16 @@ class FileStorageObserver(RunObserver):
         source_dir,
         template,
         priority=DEFAULT_FILE_STORAGE_PRIORITY,
+        copy_artifacts=True,
+        copy_sources=True,
     ):
         self.basedir = str(basedir)
         self.resource_dir = resource_dir
         self.source_dir = source_dir
         self.template = template
         self.priority = priority
+        self.copy_artifacts = copy_artifacts
+        self.copy_sources = copy_sources
         self.dir = None
         self.run_entry = None
         self.config = None
@@ -134,18 +148,21 @@ class FileStorageObserver(RunObserver):
         self.save_json(self.run_entry, "run.json")
         self.save_json(self.config, "config.json")
 
-        for s, m in ex_info["sources"]:
-            self.save_file(s)
+        if self.copy_sources:
+            for s, _ in ex_info["sources"]:
+                self.save_file(s)
 
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def save_sources(self, ex_info):
         base_dir = ex_info["base_dir"]
         source_info = []
-        for s, m in ex_info["sources"]:
+        for s, _ in ex_info["sources"]:
             abspath = os.path.join(base_dir, s)
-            store_path, md5sum = self.find_or_save(abspath, self.source_dir)
-            # assert m == md5sum
+            if self.copy_sources:
+                store_path = self.find_or_save(abspath, self.source_dir)
+            else:
+                store_path = abspath
             relative_source = os.path.relpath(str(store_path), self.basedir)
             source_info.append([s, relative_source])
         return source_info
@@ -180,14 +197,23 @@ class FileStorageObserver(RunObserver):
         return os.path.relpath(self.dir, self.basedir) if _id is None else _id
 
     def find_or_save(self, filename, store_dir: Path):
-        os.makedirs(str(store_dir), exist_ok=True)
-        source_name, ext = os.path.splitext(os.path.basename(filename))
-        md5sum = get_digest(filename)
-        store_name = source_name + "_" + md5sum + ext
-        store_path = store_dir / store_name
-        if not store_path.exists():
-            copyfile(filename, str(store_path))
-        return store_path, md5sum
+        try:
+            Path(filename).resolve().relative_to(Path(self.basedir).resolve())
+            is_relative_to = True
+        except ValueError:
+            is_relative_to = False
+
+        if is_relative_to and not self.copy_artifacts:
+            return filename
+        else:
+            store_dir.mkdir(parents=True, exist_ok=True)
+            source_name, ext = os.path.splitext(os.path.basename(filename))
+            md5sum = get_digest(filename)
+            store_name = source_name + "_" + md5sum + ext
+            store_path = store_dir / store_name
+            if not store_path.exists():
+                copyfile(filename, str(store_path))
+            return store_path
 
     def save_json(self, obj, filename):
         with open(os.path.join(self.dir, filename), "w") as f:
@@ -205,7 +231,10 @@ class FileStorageObserver(RunObserver):
                 "FileStorageObserver. "
                 "The list of blacklisted files is: {}".format(blacklist)
             )
-        copyfile(filename, dest_file)
+        try:
+            copyfile(filename, dest_file)
+        except SameFileError:
+            pass
 
     def save_cout(self):
         with open(os.path.join(self.dir, "cout.txt"), "ab") as f:
@@ -260,7 +289,7 @@ class FileStorageObserver(RunObserver):
         self.render_template()
 
     def resource_event(self, filename):
-        store_path, md5sum = self.find_or_save(filename, self.resource_dir)
+        store_path = self.find_or_save(filename, self.resource_dir)
         self.run_entry["resources"].append([filename, str(store_path)])
         self.save_json(self.run_entry, "run.json")
 
