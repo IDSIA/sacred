@@ -317,6 +317,8 @@ class SignatureError(SacredError, TypeError):
 
 
 class FilteredTracebackException(tb.TracebackException):
+    """Filter out sacred internal tracebacks from an exception traceback."""
+
     def __init__(
         self,
         exc_type,
