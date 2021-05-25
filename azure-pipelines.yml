@@ -79,6 +79,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.8'
         TOX_CMD: 'tensorflow-24'
+      Linux tensorflow_25:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.8'
+        TOX_CMD: 'tensorflow-25'
       Linux setup:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
