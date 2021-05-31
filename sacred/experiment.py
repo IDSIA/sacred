@@ -542,6 +542,9 @@ class Experiment(Ingredient):
 
         run.meta_info["command"] = command_name
         run.meta_info["options"] = options
+        run.meta_info["named_configs"] = list(named_configs)
+        if config_updates is not None:
+            run.meta_info["config_updates"] = config_updates
 
         if meta_info:
             run.meta_info.update(meta_info)
