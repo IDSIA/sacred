@@ -74,7 +74,7 @@ it from there and run it like this:
 
 
 The ``run`` function accepts ``config_updates`` to specify how the configuration
-should be changed for this run. It should be (possibly nested) dictionary
+should be changed for this run. It should be a (possibly nested) dictionary
 containing all the values that you wish to update. For more information see
 :doc:`configuration`:
 
