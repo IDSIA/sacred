@@ -2,70 +2,63 @@
 # coding=utf-8
 
 import platform
-from collections import Mapping
+from sacred.utils import SacredError
 import sacred.optional as opt
-from munch import munchify, Munch
+from munch import Munch
 from packaging import version
 
-__all__ = ("SETTINGS",)
+__all__ = ("SETTINGS", "SettingError")
+
+
+class SettingError(SacredError):
+    """Error for invalid settings."""
 
 
 class FrozenKeyMunch(Munch):
     __frozen_keys = False
 
     def freeze_keys(self):
+        if self.__frozen_keys:
+            return
         self.__frozen_keys = True
         for v in self.values():
             if isinstance(v, FrozenKeyMunch):
                 v.freeze_keys()
 
-    def _check_can_set(self, key, value, error_cls):
+    def _check_can_set(self, key, value):
         if not self.__frozen_keys:
-            # Anything is allowed before freezing
             return
 
         # Don't allow unknown keys
         if key not in self:
-            raise error_cls(
-                "Unknown setting: {key}. Possible keys are: {keys}".format(
-                    key=key, keys=list(self.keys())
-                )
+            raise SettingError(
+                f"Unknown setting: {key}. Possible keys are: " f"{list(self.keys())}"
             )
 
         # Don't allow setting keys that represent nested settings
-        if isinstance(self[key], Munch) and not isinstance(value, Mapping):
-            # We don't want to overwrite a munch mapping
-            raise error_cls(
-                "Can't set this setting ({key}) to a scalar value "
-                "{value}, it is a nested setting!".format(key=key, value=value)
+        if isinstance(self[key], Munch) and not isinstance(value, Munch):
+            # We don't want to overwrite a munch mapping. This is the easiest
+            # solution and closest to the original implementation where setting
+            # a setting with a dict would likely at some point cause an
+            # exception
+            raise SettingError(
+                f"Can't set this setting ({key}) to a non-munch value "
+                f"{value}, it is a nested setting!"
             )
 
     def __setitem__(self, key, value):
-        self._check_can_set(key, value, KeyError)
-
-        if key in self and isinstance(self[key], Munch) and isinstance(value, Mapping):
-            for k, v in value.items():
-                self[key][k] = v
-        else:
-            super().__setitem__(key, value)
+        self._check_can_set(key, value)
+        super().__setitem__(key, value)
 
     def __setattr__(self, key, value):
-        self._check_can_set(key, value, AttributeError)
-
-        if key in self and isinstance(self[key], Munch) and isinstance(value, Mapping):
-            for k, v in value.items():
-                setattr(self[key], k, v)
-        else:
-            super().__setattr__(key, value)
-
-    @classmethod
-    def fromDict(cls, d):  # noqa: N802
-        m = munchify(d, cls)
-        m.freeze_keys()
-        return m
+        self._check_can_set(key, value)
+        super().__setattr__(key, value)
 
     def __deepcopy__(self, memodict=None):
-        return self.__class__.fromDict(self.toDict())
+        obj = self.__class__.fromDict(self.toDict())
+        if self.__frozen_keys:
+            obj.freeze_keys()
+        return obj
 
 
 SETTINGS = FrozenKeyMunch.fromDict(
@@ -119,3 +112,4 @@ SETTINGS = FrozenKeyMunch.fromDict(
         "DISCOVER_SOURCES": "imported",
     },
 )
+SETTINGS.freeze_keys()
