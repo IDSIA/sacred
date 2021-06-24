@@ -9,7 +9,7 @@ Mako
 MarkupSafe
 mock
 mongomock
-munch
+munch>=2.5
 packaging
 pandas
 pbr
