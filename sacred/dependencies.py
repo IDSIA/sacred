@@ -709,14 +709,14 @@ def get_dependencies_from_pkg(globs, base_path):
 
 
 source_discovery_strategies = {
-    "none": lambda globs, path: set(),
+    "none": lambda *_, **__: set(),
     "imported": get_sources_from_imported_modules,
     "sys": get_sources_from_sys_modules,
     "dir": get_sources_from_local_dir,
 }
 
 dependency_discovery_strategies = {
-    "none": lambda globs, path: set(),
+    "none": lambda *_, **__: set(),
     "imported": get_dependencies_from_imported_modules,
     "sys": get_dependencies_from_sys_modules,
     "pkg": get_dependencies_from_pkg,

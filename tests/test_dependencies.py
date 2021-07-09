@@ -3,6 +3,7 @@
 
 import os.path
 import os
+from pathlib import Path
 
 import mock
 import pytest
@@ -138,8 +139,35 @@ def test_package_dependency_repr():
     assert repr(pd) == "<PackageDependency: pytest=12.4>"
 
 
-def test_gather_sources_and_dependencies():
+@pytest.mark.parametrize(
+    "discover_sources, expected_sources", [
+        ('imported', {
+            Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
+        }),
+        ('sys', {
+            Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "conftest.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "test_dependencies.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
+            Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
+        }),
+        ('dir', {
+            # This list would be too long to explicitly insert here
+            Source.create(str(path)) for path in Path(TEST_DIRECTORY).rglob('*.py')
+        }),
+        ('none', {
+            Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
+        }),
+    ]
+)
+def test_gather_sources_and_dependencies(discover_sources, expected_sources):
     from tests.dependency_example import some_func
+    from sacred import SETTINGS
+    SETTINGS.DISCOVER_SOURCES = discover_sources
 
     main, sources, deps = gather_sources_and_dependencies(
         some_func.__globals__, save_git_info=False
@@ -148,12 +176,6 @@ def test_gather_sources_and_dependencies():
     assert isinstance(sources, set)
     assert isinstance(deps, set)
     assert main == Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py"))
-    expected_sources = {
-        Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
-        Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
-    }
     assert sources == expected_sources
 
     assert PackageDependency.create(pytest) in deps
@@ -165,6 +187,9 @@ def test_gather_sources_and_dependencies():
         assert len(deps) == 3
     else:
         assert len(deps) == 2
+
+    # Reset to default to prevent side-effects
+    SETTINGS.DISCOVER_SOURCES = 'imported'
 
 
 def test_custom_base_dir():
