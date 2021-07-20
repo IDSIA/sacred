@@ -163,19 +163,13 @@ def test_package_dependency_repr():
             },
         ),
         (
-            "dir",
-            {
-                # This list would be too long to explicitly insert here
-                Source.create(str(path.resolve()))
-                for path in Path(TEST_DIRECTORY).rglob("*.py")
-            },
-        ),
-        (
             "none",
             {
                 Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
             },
         ),
+        # dir is not tested because it would require a too long list of
+        # dependencies here
     ],
 )
 def test_gather_sources_and_dependencies(discover_sources, expected_sources):
