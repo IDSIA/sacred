@@ -152,14 +152,11 @@ def test_package_dependency_repr():
             },
         ),
         (
-            "sys",
+            "dir",
             {
-                Source.create(os.path.join(TEST_DIRECTORY, "__init__.py")),
-                Source.create(os.path.join(TEST_DIRECTORY, "conftest.py")),
-                Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
-                Source.create(os.path.join(TEST_DIRECTORY, "test_dependencies.py")),
-                Source.create(os.path.join(TEST_DIRECTORY, "foo", "__init__.py")),
-                Source.create(os.path.join(TEST_DIRECTORY, "foo", "bar.py")),
+                # This list would be too long to explicitly insert here
+                Source.create(str(path.resolve()))
+                for path in Path(TEST_DIRECTORY).rglob("*.py")
             },
         ),
         (
@@ -168,8 +165,8 @@ def test_package_dependency_repr():
                 Source.create(os.path.join(TEST_DIRECTORY, "dependency_example.py")),
             },
         ),
-        # dir is not tested because it would require a too long list of
-        # dependencies here
+        # "sys" is not tested here because it depends on the environment. Can't
+        # make it work consistently on my local machine and azure
     ],
 )
 def test_gather_sources_and_dependencies(discover_sources, expected_sources):
