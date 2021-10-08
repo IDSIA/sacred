@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 
 classifiers = """
@@ -35,7 +35,7 @@ setup(
     author=about["__author__"],
     author_email=about["__author_email__"],
     url=about["__url__"],
-    packages=["sacred", "sacred.observers", "sacred.config", "sacred.stflow"],
+    packages=find_packages(include=["sacred", "sacred.*"]),
     package_data={"sacred": [os.path.join("data", "*")]},
     scripts=[],
     install_requires=Path("requirements.txt").read_text().splitlines(),
