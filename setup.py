@@ -36,7 +36,7 @@ setup(
     author_email=about["__author_email__"],
     url=about["__url__"],
     packages=find_packages(include=["sacred", "sacred.*"]),
-    package_data={"sacred": [os.path.join("data", "*")]},
+    package_data={"sacred": [os.path.join("data", "*"), "py.typed"]},
     scripts=[],
     install_requires=Path("requirements.txt").read_text().splitlines(),
     tests_require=["mock>=3.0, <5.0", "pytest==6.2.3"],
