@@ -268,13 +268,12 @@ SIMPLIFY_TYPE = {
 if opt.has_numpy:
     from sacred.optional import np
 
-    NP_FLOATS = ["float", "float16", "float32", "float64", "float128"]
+    NP_FLOATS = ["float16", "float32", "float64", "float128"]
     for npf in NP_FLOATS:
         if hasattr(np, npf):
             SIMPLIFY_TYPE[getattr(np, npf)] = float
 
     NP_INTS = [
-        "int",
         "int8",
         "int16",
         "int32",
