@@ -796,13 +796,13 @@ Note that ``/setuserpic`` requires a *minimum* picture size.
 
 Neptune Observer
 ================
-Neptune observer sends all the experiment metadata to the Neptune app.
-It requires the `neptune-contrib <https://neptune-contrib.readthedocs.io/index.html/>`_ package to be installed.
+Neptune observer sends all the experiment metadata to the Neptune UI.
+It requires the `neptune-sacred <https://docs.neptune.ai/integrations-and-supported-tools/experiment-tracking/sacred>`_ package to be installed.
 You can install it by running:
 
 .. code-block:: bash
 
-    pip install neptune-contrib
+    pip install neptune-client neptune-sacred
 
 Adding a Neptune Observer
 -------------------------
@@ -812,9 +812,9 @@ You simply need to initialize it with your project name and (optionally) api tok
 
 .. code-block:: python
 
-    from neptunecontrib.monitoring.sacred import NeptuneObserver
-    ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
-                                        project_name='USER_NAME/PROJECT_NAME'))
+    from neptune.new.integrations.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='<YOUR_API_TOKEN>',
+                                        project='<YOUR_WORKSPACE/YOUR_PROJECT>'))
 
 .. warning::
 
