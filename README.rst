@@ -165,9 +165,9 @@ In order to log your sacred experiments to Neptune, all you need to do is add an
 
 .. code-block:: python
 
-    from neptunecontrib.monitoring.sacred import NeptuneObserver
-    ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
-                                        project='YOUR_WORKSPACE/PROJECT_NAME'))
+    from neptune.new.integrations.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='<YOUR_API_TOKEN>',
+                                        project='<YOUR_WORKSPACE/YOUR_PROJECT>'))
 
 For more info, check the `Neptune + Sacred integration guide <https://docs.neptune.ai/integrations-and-supported-tools/experiment-tracking/sacred>`_.
 
