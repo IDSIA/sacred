@@ -151,14 +151,13 @@ in Jupyter notebooks.
 Sacredboard is a web-based dashboard interface to the sacred runs stored in a
 MongoDB.
 
-`Neptune <https://neptune.ml/>`_
+`Neptune <https://neptune.ai/>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .. image:: docs/images/neptune-compare.png
 .. image:: docs/images/neptune-collaboration.png
 
-Neptune is a web service that lets you visualize, organize and compare your experiment runs.
-Once things are logged to Neptune you can share it with others, add comments and even access objects via
-experiment API:
+Neptune is a metadata store for MLOps, built for teams that run a lot of experiments.
+It gives you a single place to log, store, display, organize, compare, and query all your model-building metadata via API available for both Python and R programming languages:
 
 .. image:: docs/images/neptune-query-api.png
 
@@ -168,9 +167,9 @@ In order to log your runs to Neptune, all you need to do is add an observer:
 
     from neptunecontrib.monitoring.sacred import NeptuneObserver
     ex.observers.append(NeptuneObserver(api_token='YOUR_API_TOKEN',
-                                        project_name='USER_NAME/PROJECT_NAME'))
+                                        project='YOUR_WORKSPACE/PROJECT_NAME'))
 
-For more info, check the `neptune-contrib library <https://neptune-contrib.readthedocs.io/examples/observer_sacred.html>`_.
+For more info, check the `neptune+sacred integration guide <https://docs.neptune.ai/integrations-and-supported-tools/experiment-tracking/sacred>`_.
 
 `SacredBrowser <https://github.com/michaelwand/SacredBrowser>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
