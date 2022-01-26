@@ -157,11 +157,12 @@ MongoDB.
 .. image:: docs/images/neptune-collaboration.png
 
 Neptune is a metadata store for MLOps, built for teams that run a lot of experiments.
+
 It gives you a single place to log, store, display, organize, compare, and query all your model-building metadata via API available for both Python and R programming languages:
 
 .. image:: docs/images/neptune-query-api.png
 
-In order to log your runs to Neptune, all you need to do is add an observer:
+In order to log your sacred experiments to Neptune, all you need to do is add an observer:
 
 .. code-block:: python
 
