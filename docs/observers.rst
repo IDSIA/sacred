@@ -802,7 +802,7 @@ You can install it by running:
 
 .. code-block:: bash
 
-    pip install neptune-sacred
+    pip install neptune-client neptune-sacred
 
 Adding a Neptune Observer
 -------------------------
