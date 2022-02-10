@@ -185,7 +185,7 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.join()
 
     db_run = mongo_obs.runs.find_one()
-    assert db_run["resources"] == [[filename, md5]]
+    assert db_run["resources"][0] == [filename, md5]
 
 
 @pytest.fixture
