@@ -1,4 +1,3 @@
-import hashlib
 from typing import Optional, Union
 import mimetypes
 import os.path
