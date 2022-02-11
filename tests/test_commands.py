@@ -21,20 +21,12 @@ from sacred.commands import (
     _format_entry,
     help_for_command,
     _iterate_marked,
-    _non_unicode_repr,
     _format_named_configs,
     _format_named_config,
 )
 from sacred.config import ConfigScope
 from sacred.config.config_summary import ConfigSummary
 import sacred.optional as opt
-
-
-def test_non_unicode_repr():
-    p = pprint.PrettyPrinter()
-    p.format = _non_unicode_repr
-    # make sure there is no u' in the representation
-    assert p.pformat("HelloWorld") == "'HelloWorld'"
 
 
 @pytest.fixture
