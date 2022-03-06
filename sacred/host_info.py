@@ -165,11 +165,14 @@ def _gpus():
             gpu_info["driver_version"] = child.text
         if child.tag != "gpu":
             continue
+        fb_memory_usage = child.find("fb_memory_usage").find("total").text
+        if fb_memory_usage == "Insufficient Permissions":
+            # for Multi-Instance GPU (MIG) instances
+            mig = child.find("mig_devices").find("mig_device")
+            fb_memory_usage = mig.find("fb_memory_usage").find("total").text
         gpu = {
             "model": child.find("product_name").text,
-            "total_memory": int(
-                child.find("fb_memory_usage").find("total").text.split()[0]
-            ),
+            "total_memory": int(fb_memory_usage.split()[0]),
             "persistence_mode": (child.find("persistence_mode").text == "Enabled"),
         }
         gpu_info["gpus"].append(gpu)
