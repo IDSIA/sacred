@@ -24,10 +24,10 @@ tinydb
 tinydb-serialization
 wrapt
 scikit-learn
-pymongo
+pymongo<4.0
 py-cpuinfo
 boto3
 moto
-google-compute-engine>
+google-compute-engine
 google-cloud-storage
 pre-commit
