@@ -1,4 +1,4 @@
-pytest==7.0.0 # tests/test_utils.py depends on that pytest version is exactly 6.2.3
+pytest==7.0.0 # tests/test_utils.py depends on that pytest version is exactly 7.0.0
 colorama
 docopt
 gitdb2
