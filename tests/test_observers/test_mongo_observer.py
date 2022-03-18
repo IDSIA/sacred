@@ -1,9 +1,17 @@
 import datetime
 import os
+import sys
 from glob import glob
 
 import mock
 import pytest
+
+if sys.version_info >= (3, 10):
+    pytest.skip(
+        "Skip pymongo tests for Python 3.10 because mongomock doesn't "
+        "support Python 3.10",
+        allow_module_level=True,
+    )
 
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 

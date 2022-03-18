@@ -24,7 +24,7 @@ tinydb
 tinydb-serialization
 wrapt
 scikit-learn
-pymongo<4.0
+pymongo
 py-cpuinfo
 boto3
 moto
