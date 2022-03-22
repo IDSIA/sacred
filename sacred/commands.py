@@ -6,7 +6,6 @@ import copy
 import pprint
 import pydoc
 import re
-import sys
 from collections import namedtuple, OrderedDict
 
 from colorama import Fore, Style
@@ -54,27 +53,7 @@ ConfigEntry = namedtuple("ConfigEntry", "key value added modified typechanged do
 PathEntry = namedtuple("PathEntry", "key added modified typechanged doc")
 
 
-def _non_unicode_repr(objekt, context, maxlevels, level):
-    """
-    Used to override the pprint format method to get rid of unicode prefixes.
-
-    E.g.: 'John' instead of u'John'.
-    """
-    if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
-        repr_string, isreadable, isrecursive = pprint._safe_repr(
-            objekt, context, maxlevels, level, sort_dicts=None
-        )
-    else:
-        repr_string, isreadable, isrecursive = pprint._safe_repr(
-            objekt, context, maxlevels, level
-        )
-    if repr_string.startswith('u"') or repr_string.startswith("u'"):
-        repr_string = repr_string[1:]
-    return repr_string, isreadable, isrecursive
-
-
 PRINTER = pprint.PrettyPrinter()
-PRINTER.format = _non_unicode_repr
 
 
 def print_config(_run):

@@ -291,9 +291,9 @@ class MongoObserver(RunObserver):
                     self.run_entry["resources"].append(resource)
                     self.save()
                 return
-        with open(filename, "rb") as f:
-            file_id = self.fs.put(f, filename=filename)
-        md5hash = self.fs.get(file_id).md5
+        # Pymongo 4.0: GridFS removed support for md5, we now have to compute
+        # it manually
+        md5hash = get_digest(filename)
         self.run_entry["resources"].append((filename, md5hash))
         self.save()
 

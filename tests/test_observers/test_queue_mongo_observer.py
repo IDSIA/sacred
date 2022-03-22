@@ -2,6 +2,14 @@ import datetime
 from sacred.observers.queue import QueueObserver
 import mock
 import pytest
+import sys
+
+if sys.version_info >= (3, 10):
+    pytest.skip(
+        "Skip pymongo tests for Python 3.10 because mongomock doesn't "
+        "support Python 3.10",
+        allow_module_level=True,
+    )
 
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
@@ -185,7 +193,7 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     mongo_obs.join()
 
     db_run = mongo_obs.runs.find_one()
-    assert db_run["resources"] == [[filename, md5]]
+    assert db_run["resources"][0] == [filename, md5]
 
 
 @pytest.fixture
