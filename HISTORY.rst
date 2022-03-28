@@ -1,6 +1,23 @@
 Release History
 ---------------
 
+0.8.3 (2022-03-25)
+++++++++++++++++++
+
+A minor release with many small improvements and support for Python 3.10.
+
+* Feature: Support for the new numpy random API (`np.random.Generator`); deprecate old `np.random.RandomState` for np 1.19+ (#779, thanks @jnphilipp)
+* Feature: Add `py.typed` file for typecheckers like mypy (#849, thanks @neophnx)
+* Feature: Validate sacred settings (#774)
+* Feature: Update CLI options: Change run ID from command line (#798, thanks @jnphilipp)
+* Feature: Log named configs and config updates (#823)
+* Feature: Options to save sources and copy resources in FileStorageObserver (#806, thanks @patrick-kidger)
+* Feature: Support for NVIDIA Multi-Instance GPU (#865, thanks @j3soon)
+* Bugfix: Updated testcases to py3.6+; updated dependencies (e.g., tinydb 4+, pytest 6.2.1, pymongo 4.0) (#799, #819, #821, thanks a lot @jnphilipp)
+* Bugfix: Fixes for handling symlinks (#791, thanks @MaxSchambach)
+* Bugfix: Fix docker example (#829, thanks @ahallermed)
+* Doc: Some fixes and update of the documentation (#778, #792, #793, #797, #804, #842, #856, thanks @daliasen @aaronsnoswell @schmitts @Blaizzy)
+
 0.8.2 (2020-11-26)
 ++++++++++++++++++
 
