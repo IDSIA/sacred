@@ -360,3 +360,11 @@ def test_get_function_body():
 def test_config_scope_can_deal_with_indentation_madness():
     # assert_no_raise:
     ConfigScope(evil_indentation_func)
+    
+def test_conf_scope_with_type_info():
+    @ConfigScope
+    def conf_scope(a: int) -> None:
+        answer = 2 * a
+
+    cfg = conf_scope(preset={'a': 21})
+    assert cfg['answer'] == 42

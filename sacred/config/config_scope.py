@@ -14,6 +14,8 @@ from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
+import textwrap
+import token
 
 
 class ConfigScope(object):
@@ -93,16 +95,36 @@ class ConfigScope(object):
 def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
     func_code = ''.join(func_code_lines)
-    arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
-    arguments = r"{0}(?:\s*,\s*{0})*".format(arg)
-    func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*\n".format(
-            func.__name__, arguments), flags=re.MULTILINE)
-    defs = list(re.finditer(func_def, func_code))
-    assert defs
-    line_offset = start_idx + func_code[:defs[0].end()].count('\n') - 1
-    func_body = func_code[defs[0].end():]
-    return func_body, line_offset
+    func_ast = ast.parse(textwrap.dedent(func_code))
+    line_offset = func_ast.body[0].body[0].lineno - 1
+    
+    # Add also previous empty / comment lines
+    acceptable_tokens = {
+        token.NEWLINE,
+        token.INDENT,
+        token.DEDENT,
+        token.COMMENT,
+        token.ENDMARKER,
+    }
+    last_token_type_acceptable = True
+    line_offset_fixed = 0
+    iterator = iter(func_code_lines[:line_offset])
+    for parsed_token in generate_tokens(lambda: next(iterator)):
+        
+        token_acceptable = (
+            parsed_token.type in acceptable_tokens
+            or (parsed_token.type == token.NL and last_token_type_acceptable)
+        )
+        
+        if not token_acceptable:
+            line_offset_fixed = parsed_token.end[0]
+        
+        last_token_type_acceptable = token_acceptable
+    
+    
+    func_body = ''.join(func_code_lines[line_offset_fixed:])
+
+    return func_body, start_idx + line_offset_fixed
 
 
 def is_empty_or_comment(line):
