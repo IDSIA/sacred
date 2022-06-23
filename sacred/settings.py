@@ -82,13 +82,6 @@ SETTINGS = FrozenKeyMunch.fromDict(
             # regex patterns to filter out certain IDE or linter directives
             # from inline comments in the documentation
             "IGNORED_COMMENTS": ["^pylint:", "^noinspection"],
-            # if true uses the numpy legacy API, i.e. _rnd in captured functions is
-            # a numpy.random.RandomState rather than numpy.random.Generator.
-            # numpy.random.RandomState became legacy with numpy v1.19.
-            "NUMPY_RANDOM_LEGACY_API": version.parse(opt.np.__version__)
-            < version.parse("1.19")
-            if opt.has_numpy
-            else False,
         },
         "HOST_INFO": {
             # Collect information about GPUs using the nvidia-smi tool
