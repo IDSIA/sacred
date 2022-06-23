@@ -107,11 +107,19 @@ jobs:
         versionSpec: $(PYTHON_VERSION)
     - bash: pip install tox
     - bash: tox -e $TOX_CMD
-- job: test_pre_commit
+- job: test_pre_commit_39
   pool:
     vmImage: 'ubuntu-latest'
   steps:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.9'
+    - bash: bash ./tests/check_pre_commit.sh
+- job: test_pre_commit_310
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'
     - bash: bash ./tests/check_pre_commit.sh
