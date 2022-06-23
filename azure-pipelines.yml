@@ -51,22 +51,22 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'py310'
-      Linux numpy_117:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.7'
-        TOX_CMD: 'numpy-117'
-      Linux numpy_118:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.8'
-        TOX_CMD: 'numpy-118'
-      Linux numpy_119:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.9'
-        TOX_CMD: 'numpy-119'
       Linux numpy_120:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'numpy-120'
+      Linux numpy_121:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'numpy-121'
+      Linux numpy_122:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'numpy-122'
+      Linux numpy_123:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'numpy-123'
       Linux tensorflow_115:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.7'
