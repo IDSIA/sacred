@@ -11,6 +11,7 @@ Operating System :: OS Independent
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Topic :: Utilities
 Topic :: Scientific/Engineering
 Topic :: Scientific/Engineering :: Artificial Intelligence
@@ -39,7 +40,7 @@ setup(
     package_data={"sacred": [os.path.join("data", "*"), "py.typed"]},
     scripts=[],
     install_requires=Path("requirements.txt").read_text().splitlines(),
-    tests_require=["mock>=3.0, <5.0", "pytest==7.0.0"],
+    tests_require=["mock>=3.0, <5.0", "pytest==7.1.2"],
     classifiers=list(filter(None, classifiers.split("\n"))),
     description="Facilitates automated and reproducible experimental research",
     long_description=Path("README.rst").read_text(encoding="utf-8"),
