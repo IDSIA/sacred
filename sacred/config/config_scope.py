@@ -7,15 +7,15 @@ import inspect
 import io
 import re
 import sys
-from tokenize import generate_tokens, tokenize, TokenError, COMMENT
-from copy import copy
+import textwrap
+import token
 
+from copy import copy
 from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
-import textwrap
-import token
+from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 
 
 class ConfigScope(object):
