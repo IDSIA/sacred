@@ -1,6 +1,105 @@
 Release History
 ---------------
 
+0.8.3 (2022-03-25)
+++++++++++++++++++
+
+A minor release with many small improvements and support for Python 3.10.
+
+* Feature: Support for the new numpy random API (`np.random.Generator`); deprecate old `np.random.RandomState` for np 1.19+ (#779, thanks @jnphilipp)
+* Feature: Add `py.typed` file for typecheckers like mypy (#849, thanks @neophnx)
+* Feature: Validate sacred settings (#774)
+* Feature: Update CLI options: Change run ID from command line (#798, thanks @jnphilipp)
+* Feature: Log named configs and config updates (#823)
+* Feature: Options to save sources and copy resources in FileStorageObserver (#806, thanks @patrick-kidger)
+* Feature: Support for NVIDIA Multi-Instance GPU (#865, thanks @j3soon)
+* Bugfix: Updated testcases to py3.6+; updated dependencies (e.g., tinydb 4+, pytest 6.2.1, pymongo 4.0) (#799, #819, #821, thanks a lot @jnphilipp)
+* Bugfix: Fixes for handling symlinks (#791, thanks @MaxSchambach)
+* Bugfix: Fix docker example (#829, thanks @ahallermed)
+* Doc: Some fixes and update of the documentation (#778, #792, #793, #797, #804, #842, #856, thanks @daliasen @aaronsnoswell @schmitts @Blaizzy)
+
+0.8.2 (2020-11-26)
+++++++++++++++++++
+
+Minor bugfix release that resolves some bugs for Python 3.8+ and issues with the read-only container types.
+
+* Feature: Added support for pickling and YAML serialization to the read-only containers (#775, #737)
+* Feature: Added git integration to SqlObserver (#741)
+* Feature: Added support for a collection prefix in MongoObserver (#704)
+* Bugfix: Fix print_config command for Python 3.8 (#719)
+* Bugfix: Fix save_config command (#765)
+* Bugfix: Named config updates are now distributed correctly during the configuration creation process (#769, #777)
+* Bugfix: Parsing of the nvidia_smi output now also works with non-Unicode (e.g., Chinese) characters in process names (#776)
+* Bugfix: Fix type annotations of MongoObserver (#762)
+* Bugfix: Terminate tee on timeout. This is a workaround that prevents program crashes caused by output capturing (#740)
+* Bugfix: Improve parsing of config scopes (#699, #764)
+* Bugfix: Fix error tracking of ConfigErrors when raised in a config scope (#733)
+* Bugfix: Made git import optional (#724)
+
+
+0.8.1 (2019-11-27)
+++++++++++++++++++
+* Feature: added Google Cloud Storage Observer (thanks @wohlert)
+* Bugfix: revert accidental renaming of --unobserved commandline option
+
+
+0.8.0 (2019-10-14)
+++++++++++++++++++
+Major release with several breaking changes.
+
+* API change: Dropped support for Python 2
+* API change: Gathering of git information gathering is now enabled by default #595
+* API change: Switched constructor from Observer.create(...) to Observer(...) for all observers.
+* API change: Changed the interface for collecting custom host-information #569
+* API change: Changed interface for defining CLI options. #572
+* Feature: Added new S3 file observer #542
+* Feature: added `started_text` option to TelegramObserver #494
+* Feature: added copy/deepcopy support to read-only containers #500
+* Bugfix: FileStorage Observer is more reliable under parallel execution #503
+* Bugfix: FileStorageObserver now raises an error when an artifact would overwrite an important file #647
+* Bugfix: fixed inconsistent config nesting behavior #409 #505
+* Bugfix: Several fixes for tensorflow integration
+* Bugfix: Fixed crash due to missing brand-key on some machines # 512
+* Internal: Migrated CI server to Azure
+* Internal: Added pre-commit hooks for pep 8 checks and python black for automated code formatting
+* Internal: Started using pathlib.Path instead of os.path in many places
+
+
+0.7.5 (2019-06-20)
+++++++++++++++++++
+Last release to support Python 2.7.
+
+* Feature: major improvements to error reporting (thanks @thequilo)
+* Feature: added print_named_configs command
+* Feature: added option to add metadata to artifacts (thanks @jarnoRFB)
+* Feature: content type detection for artifacts (thanks @jarnoRFB)
+* Feature: automatic seeding for pytorch (thanks @srossi93)
+* Feature: add proxy support to telegram observer (thanks @brickerino)
+* Feature: made MongoObserver fail dump dir configurable (thanks @jarnoRFB)
+* Feature: added queue-based observer that better handles unreliable connections (thanks @jarnoRFB)
+* Bugfix: some fixes to stdout capturing
+* Bugfix: FileStorageObserver now creates directories only when starting a run (#329; thanks @thomasjpfan)
+* Bugfix: Fixed config_hooks (#326; thanks @thomasjpfan)
+* Bugfix: Fixed a crash when overwriting non-dict config entries with dicts (#325; thanks @thomasjpfan)
+* Bugfix: fixed problem with running in conda environment (#341)
+* Bugfix: numpy aware config change detection (#344)
+* Bugfix: allow dependencies to be compiled libraries (thanks @jnphilipp)
+* Bugfix: output colorization now works on 256 and 16 color terminals (thanks @bosr)
+* Bugfix: fixed problem with tinydb observer logging (#327; thanks @michalgregor)
+* Bugfix: ignore folders that have the same name as a named_config (thanks @boeddeker)
+* Bugfix: setup no longer overwrites pre-configured root logger (thanks @thequilo)
+* Bugfix: compatibility with tensorflow 2.0 (thanks @tarik, @gabrieldemarmiesse)
+* Bugfix: fixed exception when no tee is available for stdout capturing (thanks @greg-farquhar)
+* Bugfix: fixed concurrency issue with FileStorageObserver (thanks @dekuenstle)
+
+
+0.7.4 (2018-06-12)
+++++++++++++++++++
+* Bugfix: fixed problem with postgres backend of SQLObserver (thanks @bensternlieb)
+* Bugfix: fixed a problem with the interaction of ingredients and named configs
+* Feature: added metrics logging to the FileStorageObserver (thanks @ummavi)
+
+
 0.7.3 (2018-05-06)
 ++++++++++++++++++
 * Feature: support custom experiment base directory (thanks @anibali)

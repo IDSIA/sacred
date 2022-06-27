@@ -19,6 +19,14 @@ Through :ref:`config_scopes`, :ref:`config_dictionaries`, and
     If absolutely necessary, these restrictions can be configured in
     ``sacred.settings.SETTINGS.CONFIG``.
 
+.. note::
+    Also note - because objects are internally converted to JSON before
+    database storage, python ``tuple`` objects will be converted to ``list``
+    objects when they are stored in a configuration object.
+    Please see `Issue #115`_ for the latest information on this.
+
+.. _`Issue #115`: https://github.com/IDSIA/sacred/issues/115
+
 Defining a Configuration
 ========================
 Sacred provides several ways to define a configuration for an experiment.
@@ -65,7 +73,7 @@ This config scope would return the following configuration, and in fact, if you
 want to play around with this you can just execute ``my_config``::
 
     >>> my_config()
-    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 11.5}
+    {'foo': {'bar': 'my_string10', 'a_squared': 100}, 'a': 10, 'e': 5}
 
 Or use the ``print_config`` command from the :doc:`command_line`::
 
@@ -201,12 +209,12 @@ dictionary:
 
     >>> r = ex.run(config_updates={'a': 23})
     >>> r.config
-    {'foo': {'bar': 'my_string23', 'a_squared': 529}, 'a': 23, 'e': 5}
+    {'foo': {'bar': 'my_string23', 'a_squared': 529}, 'a': 23, 'e': 11.5}
 
 
 Using the :doc:`command_line` we can achieve the same thing::
 
-    $ config_demo.py print_config with a=6
+    $ python config_demo.py print_config with a=6
     INFO - config_demo - Running command 'print_config'
     INFO - config_demo - Started
     Configuration (modified, added, typechanged, doc):
@@ -401,6 +409,14 @@ You will still get an appropriate error in the following cases:
     Be careful with naming your parameters, because configuration injection can
     hide some missing value errors from you, by (unintentionally) filling them
     in from the configuration.
+
+.. note::
+    Configuration values should not be changed in a captured function
+    because those changes cannot be recorded by the sacred experiment and can
+    lead to confusing and unintended behaviour.
+    Sacred will raise an Exception if you try to write to a nested
+    configuration item. You can disable this (not recommended) by setting
+    ``SETTINGS.CONFIG.READ_ONLY_CONFIG = False``.
 
 .. _special_values:
 

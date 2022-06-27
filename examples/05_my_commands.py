@@ -40,15 +40,14 @@ Commands also appear in the help text, and you can get additional information
 about all commands using ``./05_my_commands.py help [command]``.
 """
 
-from __future__ import division, print_function, unicode_literals
 from sacred import Experiment
 
-ex = Experiment('my_commands')
+ex = Experiment("my_commands")
 
 
 @ex.config
 def cfg():
-    name = 'John'
+    name = "John"
 
 
 @ex.command
@@ -58,7 +57,7 @@ def greet(name):
 
     Uses the name from config.
     """
-    print('Hello {}! Nice to greet you!'.format(name))
+    print("Hello {}! Nice to greet you!".format(name))
 
 
 @ex.command
@@ -66,9 +65,9 @@ def shout():
     """
     Shout slang question for "what is up?"
     """
-    print('WHAZZZUUUUUUUUUUP!!!????')
+    print("WHAZZZUUUUUUUUUUP!!!????")
 
 
 @ex.automain
 def main():
-    print('This is just the main command. Try greet or shout.')
+    print("This is just the main command. Try greet or shout.")

@@ -23,7 +23,7 @@ additional logging. The log-level can be controlled using the ``-l`` argument::
 If you want to learn more about the command-line interface try
 ``help`` or ``-h``.
 """
-from __future__ import division, print_function, unicode_literals
+
 from sacred import Experiment
 
 # Create an Experiment instance
@@ -33,4 +33,4 @@ ex = Experiment()
 # This function should be executed so we are decorating it with @ex.automain
 @ex.automain
 def main():
-    print('Hello world!')
+    print("Hello world!")

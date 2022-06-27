@@ -1,0 +1,3 @@
+sphinx
+sphinx-rtd-theme
+doc8

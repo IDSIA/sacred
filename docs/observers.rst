@@ -6,10 +6,11 @@ Sacred helps you doing that by providing an *Observer Interface* for your
 experiments. By attaching an Observer you can gather all the information about
 the run even while it is still running.
 Observers have a ``priority`` attribute, and are run in order of descending
-priority. The first observer determines the ``_id`` of the run.
+priority. The first observer determines the ``_id`` of the run, or it can be
+set by the command line option ``--id``.
 
 
-At the moment there are four observers that are shipped with Sacred:
+At the moment there are seven observers that are shipped with Sacred:
 
  * The main one is the :ref:`mongo_observer` which stores all information in a
    `MongoDB <http://www.mongodb.org/>`_.
@@ -17,9 +18,18 @@ At the moment there are four observers that are shipped with Sacred:
    directory and will therefore only work locally.
  * The :ref:`tinydb_observer` provides another local way of observing experiments
    by using `tinydb <http://tinydb.readthedocs.io>`_
-   to store run information in a JSON file. 
+   to store run information in a JSON file.
  * The :ref:`sql_observer` connects to any SQL database and will store the
    relevant information there.
+ * The :ref:`s3_observer` stores run information in an AWS S3 bucket, within
+   a given prefix/directory
+ * The :ref:`gcs_observer` stores run information in a provided Google Cloud
+   Storage bucket, within a given prefix/directory
+ * The :ref:`queue_observer` can be used to wrap any of the above observers.
+   It will put the processing of observed events on a fault-tolerant
+   queue in a background process. This is useful for observers that rely
+   on external services such as a database that might be temporarily unavailable.
+
 
 But if you want the run information stored some other way, it is easy to write
 your own :ref:`custom_observer`.
@@ -62,7 +72,7 @@ You can also add it from code like this:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create())
+    ex.observers.append(MongoObserver())
 
 
 
@@ -72,12 +82,15 @@ Or with server and port:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(url='my.server.org:27017',
-                                             db_name='MY_DB'))
+    ex.observers.append(MongoObserver(url='my.server.org:27017',
+                                      db_name='MY_DB'))
 
 This assumes you either have a local MongoDB running or have access to it over
 network without authentication.
 (See `here <http://docs.mongodb.org/manual/installation/>`_ on how to install)
+
+You can setup MongoDB easily with Docker. See the instructions
+in  :ref:`docker_setup` .
 
 Authentication
 --------------
@@ -90,7 +103,7 @@ you want to use. If it can be done by just using the ``MongoDB URI`` then just p
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url='mongodb://user:password@example.com/the_database?authMechanism=SCRAM-SHA-1',
         db_name='MY_DB'))
 
@@ -100,7 +113,7 @@ If additional arguments need to be passed to the MongoClient they can just be in
 
 .. code-block:: python
 
-    ex.observers.append(MongoObserver.create(
+    ex.observers.append(MongoObserver(
         url="mongodb://<X.509 derived username>@example.com/?authMechanism=MONGODB-X509",
         db_name='MY_DB',
         ssl=True,
@@ -210,7 +223,7 @@ You can, of course, also add it from code like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs'))
+    ex.observers.append(FileStorageObserver('my_runs'))
 
 
 Directory Structure
@@ -275,6 +288,13 @@ The FileStorageObserver also stores a snapshot of the source-code in a separate
 Their filenames are stored in the ``run.json`` file such that the corresponding
 files can be easily linked to their respective run.
 
+Storing source-code in this way can be disabled by passing
+``copy_sources=False`` when creating the FileStorageObserver. Copying any
+:ref:`resources` that are already present in `my_runs/`, but not present in
+`my_runs/_resources/` (for example, a resource that is the output of another
+run), can be disabled my passing ``copy_artifacts=False`` when creating the
+FileStorageObserver.
+
 Template Rendering
 ------------------
 In addition to these basic files, the FileStorageObserver can also generate a
@@ -288,7 +308,7 @@ the FileStorageObserver like this:
 
     from sacred.observers import FileStorageObserver
 
-    ex.observers.append(FileStorageObserver.create('my_runs', template='/custom/template.txt'))
+    ex.observers.append(FileStorageObserver('my_runs', template='/custom/template.txt'))
 
 The FileStorageObserver will then render that template into a
 ``report.html``/``report.txt`` file in the respective run directory.
@@ -307,25 +327,25 @@ TinyDB Observer
     and `hashfs <https://github.com/dgilland/hashfs>`_ packages installed.
 
 The TinyDbObserver uses the `tinydb <http://tinydb.readthedocs.io>`_
-library to provides an alternative to storing results in MongoDB whilst still 
-allowing results to be stored in a document like database. This observer 
-uses TinyDB to store the metadata about an observed run in a JSON file. 
+library to provides an alternative to storing results in MongoDB whilst still
+allowing results to be stored in a document like database. This observer
+uses TinyDB to store the metadata about an observed run in a JSON file.
 
 The TinyDbObserver also makes use of the hashfs `hashfs <https://github.com/dgilland/hashfs>`_
-library to store artifacts, resources and source code files associated with a run. 
+library to store artifacts, resources and source code files associated with a run.
 Storing results like this provides an easy way to lookup associated files for a run
-bases on their hash, and ensures no duplicate files are stored. 
+bases on their hash, and ensures no duplicate files are stored.
 
-The main drawback of storing files in this way is that they are not easy to manually 
+The main drawback of storing files in this way is that they are not easy to manually
 inspect, as their path names are now the hash of their content. Therefore, to aid in
-retrieving data and files stored by the TinyDbObserver, a TinyDbReader class is 
+retrieving data and files stored by the TinyDbObserver, a TinyDbReader class is
 provided to allow for easier querying and retrieval of the results. This ability to
 store metadata and files in a way that can be queried locally is the main advantage
-of the TinyDbObserver observer compared to the FileStorageObserver.  
+of the TinyDbObserver observer compared to the FileStorageObserver.
 
-The TinyDbObserver is designed to be a simple, scalable way to store and query 
+The TinyDbObserver is designed to be a simple, scalable way to store and query
 results as a single user on a local file system, either for personal experimentation
-or when setting up a larger database configuration is not desirable.  
+or when setting up a larger database configuration is not desirable.
 
 Adding a TinyDbObserver
 -----------------------
@@ -335,10 +355,10 @@ The TinyDbObserver can be added from the command-line via the
     >> ./my_experiment.py -t BASEDIR
     >> ./my_experiment.py --tiny_db=BASEDIR
 
-Here ``BASEDIR`` specifies the directory in which the TinyDB JSON file and 
+Here ``BASEDIR`` specifies the directory in which the TinyDB JSON file and
 hashfs filesytem will be created. All intermediate directories are created with
-the default being to create a directory called ``runs_db`` in the current 
-directory. 
+the default being to create a directory called ``runs_db`` in the current
+directory.
 
 Alternatively, you can also add the observer from code like this:
 
@@ -346,7 +366,11 @@ Alternatively, you can also add the observer from code like this:
 
     from sacred.observers import TinyDbObserver
 
-    ex.observers.append(TinyDbObserver.create('my_runs'))
+    ex.observers.append(TinyDbObserver('my_runs'))
+
+    # You can also create this observer from a HashFS and
+    # TinyDB object directly with:
+    ex.observers.append(TinyDbObserver.create_from(my_db, my_fs))
 
 
 Directory Structure
@@ -357,7 +381,7 @@ The TinyDbObserver creates a directory structure as follows::
         metadata.json
         hashfs/
 
-``metadata.json`` contains the JSON-serialized metadata in the TinyDB format.  
+``metadata.json`` contains the JSON-serialized metadata in the TinyDB format.
 Each entry is very similar to the database entries from the :ref:`mongo_observer`::
 
     {
@@ -411,14 +435,14 @@ Each entry is very similar to the database entries from the :ref:`mongo_observer
 The elements in the above example are taken from a generated JSON file, where
 those prefixed with ``{TinyData}`` will be converted into python datetime
 objects upon reading them back in. Likewise those prefixed with ``{TinyFile}``
-will be converted into a file object opened in read mode for the associated 
-source, artifact or resource file. 
+will be converted into a file object opened in read mode for the associated
+source, artifact or resource file.
 
-The files referenced in either the sources, artifacts or resources sections 
-are stored in a location according to the hash of their contents under the 
-``hashfs/`` directory. The hashed file system is setup to create three 
+The files referenced in either the sources, artifacts or resources sections
+are stored in a location according to the hash of their contents under the
+``hashfs/`` directory. The hashed file system is setup to create three
 directories from the first 6 characters of the hash, with the rest of
-the hash making up the file name. The stored source file is therefore 
+the hash making up the file name. The stored source file is therefore
 located at ::
 
     my_runs/
@@ -429,16 +453,16 @@ located at ::
                     16/
                         5b3579a1869399b4838be2a125
 
-A file handle, serialised with the tag ``{TinyFile}`` in the JSON file, is 
-included in the metadata alongside individual source files, artifacts or 
-resources as a convenient way to access the file content. 
+A file handle, serialised with the tag ``{TinyFile}`` in the JSON file, is
+included in the metadata alongside individual source files, artifacts or
+resources as a convenient way to access the file content.
 
 The TinyDB Reader
 -----------------
 
-To make querying and stored results easier, a TinyDbReader class is provided. 
-Create a class instance by passing the path to the root directory of the 
-TinyDbObserver.  
+To make querying and stored results easier, a TinyDbReader class is provided.
+Create a class instance by passing the path to the root directory of the
+TinyDbObserver.
 
 .. code-block:: python
 
@@ -446,29 +470,29 @@ TinyDbObserver.
 
     reader = TinyDbReader('my_runs')
 
-The TinyDbReader class provides three main methods for retrieving data: 
+The TinyDbReader class provides three main methods for retrieving data:
 
-* ``.fetch_metadata()`` will return all metadata associated with an experiment. 
-* ``.fetch_files()`` will return a dictionary of file handles for the sources, 
+* ``.fetch_metadata()`` will return all metadata associated with an experiment.
+* ``.fetch_files()`` will return a dictionary of file handles for the sources,
   artifacts and resources.
-* ``.fetch_report()`` will will return all metadata rendered in a summary report. 
+* ``.fetch_report()`` will will return all metadata rendered in a summary report.
 
-All three provide a similar API, allowing the search for records by index, 
+All three provide a similar API, allowing the search for records by index,
 by experiment name, or by using a TinyDB search query.
-To do so specify one of the following arguments to the above methods: 
+To do so specify one of the following arguments to the above methods:
 
 * ``indices`` accepts either a single integer or a list of integers and works like
-  list indexing, retrieving experiments in the order they were run. e.g. 
-  ``indices=0`` will get the first or oldest experiment, and ``indices=-1`` will 
-  get the latest experiment to run. 
+  list indexing, retrieving experiments in the order they were run. e.g.
+  ``indices=0`` will get the first or oldest experiment, and ``indices=-1`` will
+  get the latest experiment to run.
 * ``exp_name`` accepts a string and retrieves any experiment that contains that
-  string in its name. Also works with regular expressions. 
-* ``query`` accepts a TinyDB query object and returns all experiments that match it. 
-  Refer to the `TinyDB documentation <http://tinydb.readthedocs.io/en/latest/usage.html>`_ 
-  for details on the API.  
-  
+  string in its name. Also works with regular expressions.
+* ``query`` accepts a TinyDB query object and returns all experiments that match it.
+  Refer to the `TinyDB documentation <http://tinydb.readthedocs.io/en/latest/usage.html>`_
+  for details on the API.
 
-Retrieving Files 
+
+Retrieving Files
 ^^^^^^^^^^^^^^^^
 
 To get the files from the last experimental run:
@@ -477,9 +501,9 @@ To get the files from the last experimental run:
 
     results = reader.fetch_files(indices=-1)
 
-The results object is a list of dictionaries, each containing the date the experiment 
-started, the experiment id, the experiment name, as well as nested dictionaries for 
-the sources, artifacts and resources if they are present for the experiment. For each 
+The results object is a list of dictionaries, each containing the date the experiment
+started, the experiment id, the experiment name, as well as nested dictionaries for
+the sources, artifacts and resources if they are present for the experiment. For each
 of these nested dictionaries, the key is the file name, and the value is a file handle
 opened for reading that file. ::
 
@@ -488,7 +512,7 @@ opened for reading that file. ::
       'exp_name': 'iris_rbf_svm',
       'sources': {'test_exp.py': <BufferedReaderWrapper name='...'>}}]
 
-Individual files can therefore be accessed with, 
+Individual files can therefore be accessed with,
 
 .. code-block:: python
 
@@ -496,18 +520,18 @@ Individual files can therefore be accessed with,
     f = results[0]['sources']['test_exp.py']
     f.read()
 
-Depending on whether the file contents is text or binary data, it can then either be 
-printed to console or visualised in an appropriate library e.g. 
-`Pillow <https://python-pillow.org/>`_ for images. The content can also be written 
-back out to disk and inspected in an external program. 
+Depending on whether the file contents is text or binary data, it can then either be
+printed to console or visualised in an appropriate library e.g.
+`Pillow <https://python-pillow.org/>`_ for images. The content can also be written
+back out to disk and inspected in an external program.
 
 
-Summary Report 
+Summary Report
 ^^^^^^^^^^^^^^
 
 Often you may want to see a high level summary of an experimental run,
 such as the config used the results, and any inputs, dependencies and other artifacts
-generated. The ``.fetch_report()`` method is designed to provide these rendered as a 
+generated. The ``.fetch_report()`` method is designed to provide these rendered as a
 simple text based report.
 
 To get the report for the last experiment simple run,
@@ -517,7 +541,7 @@ To get the report for the last experiment simple run,
     results = reader.fetch_report(indices=-1)
     print(results[0])
 
-:: 
+::
 
     -------------------------------------------------
     Experiment: iris_rbf_svm
@@ -580,13 +604,88 @@ To add a SqlObserver from python code do:
 
     from sacred.observers import SqlObserver
 
-    ex.observers.append(SqlObserver.create('sqlite:///foo.db'))
+    ex.observers.append(SqlObserver('sqlite:///foo.db'))
+
+    # It's also possible to instantiate a SqlObserver with an existing
+    # engine and session with:
+    ex.observers.append(SqlObserver.create_from(my_engine, my_session))
 
 
 Schema
 ------
 .. image:: images/sql_schema.png
 
+
+.. _s3_observer:
+
+S3 Observer
+============
+The S3Observer stores run information in a designated prefix location within a S3 bucket, either by
+using an existing bucket, or creating a new one. Using the S3Observer requires that boto3 be
+installed, and also that an AWS config file is created with a user's Access Key and Secret Key.
+An easy way to do this is by installing AWS command line tools (``pip install awscli``) and
+running ``aws configure``.
+
+Adding a S3Observer
+--------------------
+
+To create an S3Observer in Python:
+
+.. code-block:: python
+
+    from sacred.observers import S3Observer
+    ex.observers.append(S3Observer(bucket='my-awesome-bucket',
+                                   basedir='/my-project/my-cool-experiment/'))
+
+By default, an S3Observer will use the region that is set in your AWS config file, but if you'd
+prefer to pass in a specific region, you can use the ``region`` parameter of create to do so.
+If you try to create an S3Observer without this parameter, and with region not set in your config
+file, it will error out at the point of the observer object being created.
+
+Directory Structure
+--------------------
+
+S3Observers follow the same conventions as FileStorageObservers when it comes to directory
+structure within a S3 bucket: within ``s3://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
+
+
+Google Cloud Storage Observer
+============
+
+.. note::
+    Requires the `google cloud storage <https://cloud.google.com/storage/docs/reference/libraries/>`_ package.
+    Install with ``pip install google-cloud-storage``.
+
+The Google Cloud Storage Observer allows for experiments to be logged into cloud storage buckets
+provided by Google. In order to use this observer, the user must have created a bucket on the service
+prior to the running an experiment using this observer.
+
+
+Adding a GoogleCloudStorageObserver
+--------------------
+
+To create an GoogleCloudStorageObserver in Python:
+
+.. code-block:: python
+
+    from sacred.observers import GoogleCloudStorageObserver
+    ex.observers.append(GoogleCloudStorageObserver(bucket='bucket-name',
+                                                   basedir='/experiment-name/'))
+
+In order for the observer to correctly connect to the provided bucket, The environment variable
+`` GOOGLE_APPLICATION_CREDENTIALS``  needs to be set by the user. This variable should point to a
+valid JSON file containing Google authorisation credentials
+(see: `Google Cloud authentication <https://cloud.google.com/docs/authentication/getting-started/>`_).
+
+Directory Structure
+--------------------
+
+GoogleCloudStorageObserver follow the same conventions as FileStorageObservers when it comes to directory
+structure within a bucket: within ``gs://<bucket>/basedir/`` numeric run directories will be
+created in ascending order, and each run directory will contain the files specified within the
+FileStorageObserver Directory Structure documentation above.
 
 
 Slack Observer
@@ -610,6 +709,9 @@ of adding a SlackObserver is from a configuration file:
 
     slack_obs = SlackObserver.from_config('slack.json')
     ex.observers.append(slack_obs)
+
+    # You can also instantiate it directly without a config file:
+     slack_obs = SlackObserver(my_webhook_url)
 
 Where ``slack.json`` at least specifies the ``webhook_url``::
 
@@ -672,8 +774,14 @@ or pickle file containing...
   * optionally: a boolean for ``silent_completion``. If set to true, regular experiment completions
     will use no or less intrusive notifications, depending on the receiving device's platform.
     Experiment starts will always be sent silently, interruptions and failures always with full notifications.
+  * optionally: a string for ``proxy_url``. Specify this field, if Telegram is blocked in the local network or
+    in the country, and you want to use proxy server.
+    Format: ``PROTOCOL://PROXY_HOST:[PROXY_PORT]/``. Socks5 and HTTP protocols are supported.
+    These settings also could be received from ``HTTPS_PROXY`` or ``https_proxy`` environment variable.
+  * optionally: ``username`` for proxy.
+  * optionally: ``password`` for proxy.
 
-The observer is then added to the experment like this:
+The observer is then added to the experiment like this:
 
 .. code-block:: python
 
@@ -685,6 +793,84 @@ The observer is then added to the experment like this:
 
 To set the bot's profile photo and description, use @BotFather's commands ``/setuserpic`` and ``/setdescription``.
 Note that ``/setuserpic`` requires a *minimum* picture size.
+
+Neptune Observer
+================
+Neptune observer sends all the experiment metadata to the Neptune UI.
+It requires the `neptune-sacred <https://docs.neptune.ai/integrations-and-supported-tools/experiment-tracking/sacred>`_ package to be installed.
+You can install it by running:
+
+.. code-block:: bash
+
+    pip install neptune-client neptune-sacred
+
+Adding a Neptune Observer
+-------------------------
+
+NeptuneObserver can only be added from the Python code.
+You simply need to initialize it with your project name and (optionally) api token.
+
+.. code-block:: python
+
+    from neptune.new.integrations.sacred import NeptuneObserver
+    ex.observers.append(NeptuneObserver(api_token='<YOUR_API_TOKEN>',
+                                        project='<YOUR_WORKSPACE/YOUR_PROJECT>'))
+
+.. warning::
+
+    Always keep your API token secret - it is like password to the application.
+    It is recommended to pass your token via the environment variable `NEPTUNE_API_TOKEN`.
+    To make things simple you can put `export NEPTUNE_API_TOKEN=YOUR_LONG_API_TOKEN`
+    line to your `~/.bashrc` or `~/.bash_profile` files.
+
+.. _queue_observer:
+
+Queue Observer
+==============
+
+The `QueueObserver` can be used on top of other existing observers.
+It runs in a background thread. Observed events
+are buffered in a queue and the background thread is woken up to process
+new events at a fixed interval of 20 seconds be default.
+If the processing of an event fails, the event is put back on the queue
+and processed next time. This is useful for observers that rely on
+external services like databases that might become temporarily
+unavailable. Normally, the experiment would fail at this point,
+which could result in long running experiments being unnecessarily
+aborted. The `QueueObserver` can tolerate such temporary problems.
+
+
+However, the `QueueObserver` has currently no way
+of declaring an event as finally failed, so if the failure is not
+due to a temporary unavailability of an external service, the observer
+will try forever.
+
+Adding a Queue Observer
+-------------------------
+
+The ``QueueObserver`` can be used to wrap any other instantiated observer.
+For example, the ``FileStorageObserver`` can be made to use a queue like so
+
+.. code-block:: python
+
+    from sacred.observers import FileStorageObserver, QueueObserver
+
+    fs_observer = FileStorageObserver('my_runs', template='/custom/template.txt')
+    ex.observers.append(QueueObserver(fs_observer)
+
+
+
+For wrapping the :ref:`mongo_observer` a convenience class is provided
+to instantiate the queue based version.
+
+.. code-block:: python
+
+    from sacred.observers import QueuedMongoObserver
+
+    ex.observers.append(
+        QueuedMongoObserver(url="my.server.org:27017", db_name="MY_DB")
+    )
+
 
 Events
 ======

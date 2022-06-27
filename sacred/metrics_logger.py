@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 import datetime
-import sys
 import sacred.optional as opt
 
-if sys.version_info[0] == 2:
-    from Queue import Queue, Empty
-else:
-    from queue import Queue, Empty
+from queue import Queue, Empty
 
 
-class MetricsLogger(object):
+class MetricsLogger:
     """MetricsLogger collects metrics measured during experiments.
 
     MetricsLogger is the (only) part of the Metrics API.
@@ -43,13 +39,14 @@ class MetricsLogger(object):
         if opt.has_numpy:
             np = opt.np
             if isinstance(value, np.generic):
-                value = np.asscalar(value)
+                value = value.item()
+            if isinstance(step, np.generic):
+                step = step.item()
         if step is None:
             step = self._metric_step_counter.get(metric_name, -1) + 1
         self._logged_metrics.put(
-            ScalarMetricLogEntry(metric_name, step,
-                                 datetime.datetime.utcnow(),
-                                 value))
+            ScalarMetricLogEntry(metric_name, step, datetime.datetime.utcnow(), value)
+        )
         self._metric_step_counter[metric_name] = step
 
     def get_last_metrics(self):
@@ -67,7 +64,7 @@ class MetricsLogger(object):
         return messages
 
 
-class ScalarMetricLogEntry():
+class ScalarMetricLogEntry:
     """Container for measurements of scalar metrics.
 
     There is exactly one ScalarMetricLogEntry per logged scalar metric value.
@@ -100,12 +97,9 @@ def linearize_metrics(logged_metrics):
                 "steps": [],
                 "values": [],
                 "timestamps": [],
-                "name": metric_entry.name
+                "name": metric_entry.name,
             }
-        metrics_by_name[metric_entry.name]["steps"] \
-            .append(metric_entry.step)
-        metrics_by_name[metric_entry.name]["values"] \
-            .append(metric_entry.value)
-        metrics_by_name[metric_entry.name]["timestamps"] \
-            .append(metric_entry.timestamp)
+        metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
+        metrics_by_name[metric_entry.name]["values"].append(metric_entry.value)
+        metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
     return metrics_by_name

@@ -94,3 +94,4 @@ com_crashlytics_export_strings.xml
 *~
 
 /.pytest_cache/
+pip-wheel-metadata/

@@ -1,0 +1,13 @@
+fail_fast: true
+repos:
+-   repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+    - id: black
+      language_version: python3
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+    -   id: flake8
+        exclude: ^(tests|examples|docs)/.*
+        additional_dependencies: [pep8-naming, flake8-docstrings]

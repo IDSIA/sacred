@@ -7,7 +7,7 @@ This page provides a short description of these optional features.
 
 Git Integration
 ===============
-If the experiment sources as maintained in a git repository, then Sacred can
+If the experiment sources are maintained in a git repository, then Sacred can
 extract information about the current state of the repository. More
 specifically it will collect the following information, which is stored by the
 observers as part of the experiment info:
@@ -22,8 +22,8 @@ This can be especially useful together with the  :ref:`cmdline_enforce_clean`
 experiment immediately fails with an error if started on a dirty repository.
 
 .. note::
-    Depends on the `GitPython <https://github.com/gitpython-developers/GitPython>`_ package.
-    Install with ``pip install GitPython``.
+    Git integration can be disabled with ``save_git_info`` flag in the
+    ``Experiment`` or ``Ingredient`` constructor.
 
 
 Optional Observers

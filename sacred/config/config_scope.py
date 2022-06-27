@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import ast
 import inspect
@@ -15,23 +14,21 @@ from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
+from sacred.utils import ConfigError
 from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 
 
-class ConfigScope(object):
+class ConfigScope:
     def __init__(self, func):
-        super(ConfigScope, self).__init__()
         self.args, vararg_name, kw_wildcard, _, kwargs = get_argspec(func)
-        assert vararg_name is None, \
-            "*args not allowed for ConfigScope functions"
-        assert kw_wildcard is None, \
-            "**kwargs not allowed for ConfigScope functions"
-        assert not kwargs, \
-            "default values are not allowed for ConfigScope functions"
+        assert vararg_name is None, "*args not allowed for ConfigScope functions"
+        assert kw_wildcard is None, "**kwargs not allowed for ConfigScope functions"
+        assert not kwargs, "default values are not allowed for ConfigScope functions"
 
         self._func = func
         self._body_code = get_function_body_code(func)
         self._var_docs = get_config_comments(func)
+        self.__doc__ = self._func.__doc__
 
     def __call__(self, fixed=None, preset=None, fallback=None):
         """
@@ -65,22 +62,28 @@ class ConfigScope(object):
 
         for arg in self.args:
             if arg not in available_entries:
-                raise KeyError("'{}' not in preset for ConfigScope. "
-                               "Available options are: {}"
-                               .format(arg, available_entries))
+                raise KeyError(
+                    "'{}' not in preset for ConfigScope. "
+                    "Available options are: {}".format(arg, available_entries)
+                )
             if arg in preset:
                 cfg_locals[arg] = preset[arg]
             else:  # arg in fallback
                 fallback_view[arg] = fallback[arg]
 
         cfg_locals.fallback = fallback_view
-        eval(self._body_code, copy(self._func.__globals__), cfg_locals)
+
+        with ConfigError.track(cfg_locals):
+            eval(self._body_code, copy(self._func.__globals__), cfg_locals)
 
         added = cfg_locals.revelation()
-        config_summary = ConfigSummary(added, cfg_locals.modified,
-                                       cfg_locals.typechanges,
-                                       cfg_locals.fallback_writes,
-                                       docs=self._var_docs)
+        config_summary = ConfigSummary(
+            added,
+            cfg_locals.modified,
+            cfg_locals.typechanges,
+            cfg_locals.fallback_writes,
+            docs=self._var_docs,
+        )
         # fill in the unused presets
         recursive_fill_in(cfg_locals, preset)
 
@@ -94,7 +97,7 @@ class ConfigScope(object):
 
 def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
-    func_code = ''.join(func_code_lines)
+    func_code = "".join(func_code_lines)
     func_ast = ast.parse(textwrap.dedent(func_code))
     line_offset = func_ast.body[0].body[0].lineno - 1
     
@@ -129,11 +132,11 @@ def get_function_body(func):
 
 def is_empty_or_comment(line):
     sline = line.strip()
-    return sline == '' or sline.startswith('#')
+    return sline == "" or sline.startswith("#")
 
 
 def iscomment(line):
-    return line.strip().startswith('#')
+    return line.strip().startswith("#")
 
 
 def dedent_line(line, indent):
@@ -147,18 +150,18 @@ def dedent_line(line, indent):
 
 
 def dedent_function_body(body):
-    lines = body.split('\n')
+    lines = body.split("\n")
     # find indentation by first line
-    indent = ''
+    indent = ""
     for line in lines:
         if is_empty_or_comment(line):
             continue
         else:
-            indent = re.match('^\s*', line).group()
+            indent = re.match(r"^\s*", line).group()
             break
 
     out_lines = [dedent_line(line, indent) for line in lines]
-    return '\n'.join(out_lines)
+    return "\n".join(out_lines)
 
 
 def get_function_body_code(func):
@@ -172,14 +175,20 @@ def get_function_body_code(func):
     except SyntaxError as e:
         if e.args[0] == "'return' outside function":
             filename, lineno, _, statement = e.args[1]
-            raise SyntaxError('No return statements allowed in ConfigScopes\n'
-                              '(\'{}\' in File "{}", line {})'.format(
-                                  statement.strip(), filename, lineno))
+            raise SyntaxError(
+                "No return statements allowed in ConfigScopes\n"
+                "('{}' in File \"{}\", line {})".format(
+                    statement.strip(), filename, lineno
+                )
+            )
         elif e.args[0] == "'yield' outside function":
             filename, lineno, _, statement = e.args[1]
-            raise SyntaxError('No yield statements allowed in ConfigScopes\n'
-                              '(\'{}\' in File "{}", line {})'.format(
-                                  statement.strip(), filename, lineno))
+            raise SyntaxError(
+                "No yield statements allowed in ConfigScopes\n"
+                "('{}' in File \"{}\", line {})".format(
+                    statement.strip(), filename, lineno
+                )
+            )
         else:
             raise
     return body_code
@@ -196,15 +205,12 @@ def find_doc_for(ast_entry, body_lines):
     lineno = ast_entry.lineno - 1
     line_io = io.BytesIO(body_lines[lineno].encode())
     try:
-        if sys.version_info[0] >= 3:
-            tokens = tokenize(line_io.readline) or []
-            line_comments = [t.string for t in tokens if t.type == COMMENT]
-        else:  # sys.version[0] == 2:
-            tokens = generate_tokens(line_io.readline)
-            line_comments = [s for (t, s, _, _, _) in tokens if t == COMMENT]
+        tokens = tokenize(line_io.readline) or []
+        line_comments = [token.string for token in tokens if token.type == COMMENT]
+
         if line_comments:
-            formatted_lcs = [l[1:].strip() for l in line_comments]
-            filtered_lcs = [l for l in formatted_lcs if not is_ignored(l)]
+            formatted_lcs = [line[1:].strip() for line in line_comments]
+            filtered_lcs = [line for line in formatted_lcs if not is_ignored(line)]
             if filtered_lcs:
                 return filtered_lcs[0]
     except TokenError:
@@ -213,10 +219,10 @@ def find_doc_for(ast_entry, body_lines):
     lineno -= 1
     while lineno >= 0:
         if iscomment(body_lines[lineno]):
-            comment = body_lines[lineno].strip('# ')
+            comment = body_lines[lineno].strip("# ")
             if not is_ignored(comment):
                 return comment
-        if not body_lines[lineno].strip() == '':
+        if not body_lines[lineno].strip() == "":
             return None
         lineno -= 1
     return None
@@ -243,9 +249,9 @@ def get_config_comments(func):
     func_body, line_offset = get_function_body(func)
     body_source = dedent_function_body(func_body)
     body_code = compile(body_source, filename, "exec", ast.PyCF_ONLY_AST)
-    body_lines = body_source.split('\n')
+    body_lines = body_source.split("\n")
 
-    variables = {'seed': 'the random seed for this experiment'}
+    variables = {"seed": "the random seed for this experiment"}
 
     for ast_root in body_code.body:
         for ast_entry in [ast_root] + list(ast.iter_child_nodes(ast_root)):

@@ -1,32 +1,29 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
 
 import pytest
-from sacred.optional import MissingDependencyMock, optional_import
-
-
-def test_missing_dependency_mock_raises_on_access():
-    MongoObserver = MissingDependencyMock('pymongo')
-    with pytest.raises(ImportError) as e:
-        MongoObserver.create(db_name='db_name', url='url')
-    assert 'pymongo' in e.value.args[0]
-
-
-def test_missing_dependency_mock_raises_on_call():
-    MongoObserver = MissingDependencyMock('pymongo')
-    with pytest.raises(ImportError) as e:
-        MongoObserver('some', params='passed')
-    assert 'pymongo' in e.value.args[0]
+from sacred.optional import optional_import, get_tensorflow, modules_exist
 
 
 def test_optional_import():
-    has_pytest, pyt = optional_import('pytest')
+    has_pytest, pyt = optional_import("pytest")
     assert has_pytest
     assert pyt == pytest
 
 
 def test_optional_import_nonexisting():
-    has_nonex, nonex = optional_import('clearlynonexistingpackage')
+    has_nonex, nonex = optional_import("clearlynonexistingpackage")
     assert not has_nonex
     assert nonex is None
+
+
+def test_get_tensorflow():
+    """Test that get_tensorflow() runs without error."""
+    pytest.importorskip("tensorflow")
+    get_tensorflow()
+
+
+def test_module_exists_for_tensorflow():
+    """Check that module_exist returns true if tf is there."""
+    pytest.importorskip("tensorflow")
+    assert modules_exist("tensorflow")

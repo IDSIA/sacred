@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import division, print_function, unicode_literals
+
 import datetime
 import mock
 import random
+import sacred.optional as opt
 from sacred.config.captured_function import create_captured_function
+from sacred.settings import SETTINGS
 
 
 def test_create_captured_function():
@@ -14,8 +16,8 @@ def test_create_captured_function():
 
     cf = create_captured_function(foo)
 
-    assert cf.__name__ == 'foo'
-    assert cf.__doc__ == 'my docstring'
+    assert cf.__name__ == "foo"
+    assert cf.__doc__ == "my docstring"
     assert cf.prefix is None
     assert cf.config == {}
     assert not cf.uses_randomness
@@ -28,17 +30,20 @@ def test_call_captured_function():
 
     cf = create_captured_function(foo)
     cf.logger = mock.MagicMock()
-    cf.config = {'a': 11, 'b': 12, 'd': 14}
+    cf.config = {"a": 11, "b": 12, "d": 14}
 
     assert cf(21, c=23, f=26) == (21, 12, 23, 14, 5, 26)
-    cf.logger.debug.assert_has_calls([
-        mock.call("Started"),
-        mock.call("Finished after %s.", datetime.timedelta(0))])
+    cf.logger.debug.assert_has_calls(
+        [mock.call("Started"), mock.call("Finished after %s.", datetime.timedelta(0))]
+    )
 
 
 def test_captured_function_randomness():
     def foo(_rnd, _seed):
-        return _rnd.randint(0, 1000), _seed
+        try:
+            return _rnd.integers(0, 1000), _seed
+        except Exception:
+            return _rnd.randint(0, 1000), _seed
 
     cf = create_captured_function(foo)
     assert cf.uses_randomness
@@ -54,6 +59,27 @@ def test_captured_function_randomness():
 
     assert cf() == (nr1, seed1)
     assert cf() == (nr2, seed2)
+
+
+def test_captured_function_numpy_randomness():
+    def foo(_rnd, _seed):
+        return _rnd, _seed
+
+    cf = create_captured_function(foo)
+    assert cf.uses_randomness
+    cf.logger = mock.MagicMock()
+    cf.rnd = random.Random(1234)
+
+    SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API = False
+    rnd, seed = cf()
+    if opt.has_numpy:
+        assert type(rnd) == opt.np.random.Generator
+
+        SETTINGS.CONFIG.NUMPY_RANDOM_LEGACY_API = True
+        rnd, seed = cf()
+        assert type(rnd) == opt.np.random.RandomState
+    else:
+        assert type(rnd) == random.Random
 
 
 def test_captured_function_magic_logger_argument():
@@ -72,7 +98,7 @@ def test_captured_function_magic_config_argument():
 
     cf = create_captured_function(foo)
     cf.logger = mock.MagicMock()
-    cf.config = {'a': 2, 'b': 2}
+    cf.config = {"a": 2, "b": 2}
 
     assert cf() == cf.config
 
@@ -97,6 +123,6 @@ def test_captured_function_call_doesnt_modify_kwargs():
     cf.logger = mock.MagicMock()
     cf.run = mock.MagicMock()
 
-    d = {'a': 7}
+    d = {"a": 7}
     assert cf(**d) == 7
-    assert d == {'a': 7}
+    assert d == {"a": 7}

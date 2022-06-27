@@ -23,15 +23,13 @@ argument::
   Ciao world!
   INFO - 02_hello_config_dict - Completed after 0:00:00
 """
-from __future__ import division, print_function, unicode_literals
+
 from sacred import Experiment
 
 ex = Experiment()
 
 # We add message to the configuration of the experiment here
-ex.add_config({
-    "message": "Hello world!"
-})
+ex.add_config({"message": "Hello world!"})
 # Equivalent:
 # ex.add_config(
 #     message="Hello world!"

@@ -74,7 +74,7 @@ it from there and run it like this:
 
 
 The ``run`` function accepts ``config_updates`` to specify how the configuration
-should be changed for this run. It should be (possibly nested) dictionary
+should be changed for this run. It should be a (possibly nested) dictionary
 containing all the values that you wish to update. For more information see
 :doc:`configuration`:
 
@@ -129,7 +129,7 @@ and possibly overwrite each others values.
 Capture Functions
 =================
 To use a configuration value all you have to do is *capture* a function and
-accept it as a parameter. Whenever you now call that function Sacred will
+accept the configuration value as a parameter. Whenever you now call that function Sacred will
 try to fill in missing parameters from the configuration.
 To see how that works we need to *capture* some function:
 
@@ -182,9 +182,9 @@ add an observer like this:
 
     from sacred.observers import MongoObserver
 
-    ex.observers.append(MongoObserver.create())
+    ex.observers.append(MongoObserver())
 
-At the moment ``MongoObserver`` is the only observer shipped with Sacred.
+``MongoObserver`` is one of the default observers shipped with Sacred.
 It connects to a MongoDB and puts all these information into a document in a
 collection called ``experiments``. You can also add this observer from the
 :doc:`command_line` like this::
@@ -208,7 +208,7 @@ behaviour if no observers are added to the experiment.
 If the capture mode is set to ``sys`` then sacred captures all outputs written
 to ``sys.stdout`` and ``sys.stderr`` such as ``print`` statements, stacktraces
 and logging. In this mode outputs by system-calls, C-extensions or subprocesses
-are likely *not captured*. This behaviour is default for windows.
+are likely *not captured*. This behaviour is default for Windows.
 
 Finally, the ``fd`` mode captures outputs on the file descriptor level, and
 should include all outputs made by the program or any child-processes.
