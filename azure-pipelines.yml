@@ -51,50 +51,38 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'py310'
-      Linux numpy_117:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.7'
-        TOX_CMD: 'numpy-117'
-      Linux numpy_118:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.8'
-        TOX_CMD: 'numpy-118'
-      Linux numpy_119:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.9'
-        TOX_CMD: 'numpy-119'
       Linux numpy_120:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'numpy-120'
-      Linux tensorflow_115:
+      Linux numpy_121:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'numpy-121'
+      Linux numpy_122:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'numpy-122'
+      Linux numpy_123:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'numpy-123'
+      Linux tensorflow_26:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.7'
-        TOX_CMD: 'tensorflow-115'
-      Linux tensorflow_20:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.7'
-        TOX_CMD: 'tensorflow-20'
-      Linux tensorflow-21:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.7'
-        TOX_CMD: 'tensorflow-21'
-      Linux tensorflow_22:
+        TOX_CMD: 'tensorflow-26'
+      Linux tensorflow_27:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.8'
-        TOX_CMD: 'tensorflow-22'
-      Linux tensorflow_23:
+        TOX_CMD: 'tensorflow-27'
+      Linux tensorflow-28:
         IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.8'
-        TOX_CMD: 'tensorflow-23'
-      Linux tensorflow_24:
+        PYTHON_VERSION: '3.9'
+        TOX_CMD: 'tensorflow-28'
+      Linux tensorflow_29:
         IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.8'
-        TOX_CMD: 'tensorflow-24'
-      Linux tensorflow_25:
-        IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.8'
-        TOX_CMD: 'tensorflow-25'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'tensorflow-29'
       Linux setup:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
@@ -119,11 +107,19 @@ jobs:
         versionSpec: $(PYTHON_VERSION)
     - bash: pip install tox
     - bash: tox -e $TOX_CMD
-- job: test_pre_commit
+- job: test_pre_commit_39
   pool:
     vmImage: 'ubuntu-latest'
   steps:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.9'
+    - bash: bash ./tests/check_pre_commit.sh
+- job: test_pre_commit_310
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'
     - bash: bash ./tests/check_pre_commit.sh

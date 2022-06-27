@@ -190,7 +190,7 @@ def test_module_is_in_cache():
 
 def test_get_package_version():
     package_version = get_package_version("pytest")
-    assert str(package_version) == "7.0.0"
+    assert str(package_version) == "7.1.2"
 
 
 def test_parse_version():
@@ -200,7 +200,7 @@ def test_parse_version():
 
 def test_get_package_version_comparison():
     package_version = get_package_version("pytest")
-    current_version = parse_version("7.0.0")
+    current_version = parse_version("7.1.2")
     old_version = parse_version("6.2.0")
     new_version = parse_version("7.2.4")
     assert package_version == current_version
