@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import annotations
 
+from logging import Logger
 import time
 from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Callable
 
 import wrapt
 from sacred.config.custom_containers import fallback_dict
@@ -10,8 +13,23 @@ from sacred.config.signature import Signature
 from sacred.randomness import create_rnd, get_seed
 from sacred.utils import ConfigError
 
+if TYPE_CHECKING:
+    from sacred.run import Run
 
-def create_captured_function(function, prefix=None):
+
+class CapturedFunction(Callable[..., Any]):
+    signature: Signature
+    uses_randomness: bool
+    logger: Logger
+    config: dict
+    rnd: Any
+    run: Run
+    prefix: Any
+
+
+def create_captured_function(
+    function: Callable[..., Any], prefix=None
+) -> CapturedFunction:
     sig = Signature(function)
     function.signature = sig
     function.uses_randomness = "_seed" in sig.arguments or "_rnd" in sig.arguments

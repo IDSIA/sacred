@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import annotations
 
 import datetime
+import logging
 import os.path
 import sys
 import traceback as tb
+from typing import Any, Callable
 
 from sacred import metrics_logger
+from sacred.config.captured_function import CapturedFunction
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
 from sacred.utils import SacredInterrupt, join_paths, IntervalTimer
 from sacred.stdout_capturing import get_stdcapturer
+from sacred.observers import RunObserver
+from sacred.config import ConfigDict
 
 
 class Run:
@@ -18,16 +24,16 @@ class Run:
 
     def __init__(
         self,
-        config,
+        config: ConfigDict,
         config_modifications,
-        main_function,
-        observers,
-        root_logger,
-        run_logger,
-        experiment_info,
-        host_info,
-        pre_run_hooks,
-        post_run_hooks,
+        main_function: CapturedFunction,
+        observers: list[RunObserver],
+        root_logger: logging.Logger,
+        run_logger: logging.Logger,
+        experiment_info: dict,
+        host_info: dict,
+        pre_run_hooks: list[Callable[[], Any]],
+        post_run_hooks: list[Callable[[], Any]],
         captured_out_filter=None,
     ):
 
