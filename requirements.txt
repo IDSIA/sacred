@@ -6,3 +6,4 @@ py-cpuinfo>=4.0
 colorama>=0.4
 packaging>=18.0
 GitPython
+pint>=0.10

@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import annotations
+from dataclasses import dataclass
+
 import datetime
+from typing import Any
 import sacred.optional as opt
 
 from queue import Queue, Empty
+import pint
 
 
 class MetricsLogger:
@@ -56,7 +61,7 @@ class MetricsLogger:
         """
         read_up_to = self._logged_metrics.qsize()
         messages = []
-        for i in range(read_up_to):
+        for _ in range(read_up_to):
             try:
                 messages.append(self._logged_metrics.get_nowait())
             except Empty:
@@ -64,20 +69,20 @@ class MetricsLogger:
         return messages
 
 
+@dataclass
 class ScalarMetricLogEntry:
     """Container for measurements of scalar metrics.
 
     There is exactly one ScalarMetricLogEntry per logged scalar metric value.
     """
 
-    def __init__(self, name, step, timestamp, value):
-        self.name = name
-        self.step = step
-        self.timestamp = timestamp
-        self.value = value
+    name: str
+    step: Any
+    timestamp: datetime.datetime
+    value: Any
 
 
-def linearize_metrics(logged_metrics):
+def linearize_metrics(logged_metrics: list[ScalarMetricLogEntry]):
     """
     Group metrics by name.
 
@@ -87,10 +92,10 @@ def linearize_metrics(logged_metrics):
     :param logged_metrics: A list of ScalarMetricLogEntries
     :return: Measured values grouped by the metric name:
     {"metric_name1": {"steps": [0,1,2], "values": [4, 5, 6],
-    "timestamps": [datetime, datetime, datetime]},
+    "timestamps": [datetime, datetime, datetime], units: "meter"},
     "metric_name2": {...}}
     """
-    metrics_by_name = {}
+    metrics_by_name: dict[str, dict[str, list]] = {}
     for metric_entry in logged_metrics:
         if metric_entry.name not in metrics_by_name:
             metrics_by_name[metric_entry.name] = {
@@ -98,8 +103,37 @@ def linearize_metrics(logged_metrics):
                 "values": [],
                 "timestamps": [],
                 "name": metric_entry.name,
+                "units": None,
             }
         metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
-        metrics_by_name[metric_entry.name]["values"].append(metric_entry.value)
+        if isinstance(metric_entry.value, pint.Quantity):
+            metric_entry_value_base = metric_entry.value.to_base_units()
+            metrics_by_name[metric_entry.name]["values"].append(
+                metric_entry_value_base.magnitude
+            )
+
+            if metrics_by_name[metric_entry.name]["units"] is None:
+                metrics_by_name[metric_entry.name]["units"] = str(
+                    metric_entry_value_base.units
+                )
+            elif metrics_by_name[metric_entry.name]["units"] != str(
+                metric_entry_value_base.units
+            ):
+                raise MetricLinearizationError(
+                    metric_entry
+                ) from pint.DimensionalityError(
+                    metrics_by_name[metric_entry.name]["units"],
+                    metric_entry_value_base.units,
+                )
+        else:
+            metrics_by_name[metric_entry.name]["values"].append(metric_entry.value)
         metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
     return metrics_by_name
+
+
+class MetricLinearizationError(Exception):
+    def __init__(self, metric: ScalarMetricLogEntry):
+        self.metric = metric
+
+    def __str__(self) -> str:
+        return f"Error while linearizing {self.metric}"

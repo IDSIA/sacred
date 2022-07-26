@@ -186,6 +186,7 @@ You might want to measure various values during your experiments, such as
 the progress of prediction accuracy over training steps.
 
 Sacred supports tracking of numerical series (e.g. int, float) using the Metrics API.
+If the value is a `pint.Quantity https://pint.readthedocs.io/en/stable/`_, the units will also be tracked.
 To access the API in experiments, the experiment must be running and the variable referencing the current experiment
 or run must be available in the scope. The ``_run.log_scalar(metric_name, value, step)`` method takes
 a metric name (e.g. "training.loss"), the measured value and the iteration step in which the value was taken.
@@ -220,7 +221,14 @@ In any case, the numbers should form an increasing sequence.
             ex.log_scalar("training.diff", value * 2)
 
 
-Currently, the information is collected only by two observers: the :ref:`mongo_observer` and the :ref:`file_observer`. For the Mongo Observer, metrics are stored in the ``metrics`` collection of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to. For the :ref:`file_observer`, metrics are stored in the file ``metrics.json`` in the run id's directory and are organized by metric name (e.g. "training.loss").
+Currently, the information is collected only by the following observers:
+
+* :ref:`mongo_observer`
+    * Metrics are stored in the ``metrics`` collection of MongoDB and are identified by their name (e.g. "training.loss") and the experiment run id they belong to.
+* :ref:`file_observer`
+    * metrics are stored in the file ``metrics.json`` in the run id's directory and are organized by metric name (e.g. "training.loss").
+* :ref:`google_cloud_storage_observer`
+* :ref:`s3_observer`
 
 
 Metrics Records
@@ -238,9 +246,10 @@ the step number can be found in ``metric["steps"][i]`` and the time of the measu
     ``_id``             Unique identifier
     ``name``            The name of the metric (e.g. training.loss)
     ``run_id``          The identifier of the run (``_id`` in the runs collection)
-    ``steps``               Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
-    ``values``               Array of measured values
+    ``steps``           Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
+    ``values``          Array of measured values
     ``timestamps``      Array of times of capturing the individual measurements
+    ``units``           Base units of the measurement (or None)
     ==================  =======================================================
 
 

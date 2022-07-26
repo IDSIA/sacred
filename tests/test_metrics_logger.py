@@ -2,9 +2,14 @@
 # coding=utf-8
 
 import datetime
+import pint
 import pytest
 from sacred import Experiment
-from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+from sacred.metrics_logger import (
+    MetricLinearizationError,
+    ScalarMetricLogEntry,
+    linearize_metrics,
+)
 
 
 @pytest.fixture()
@@ -122,12 +127,22 @@ def test_linearize_metrics():
         ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
         ScalarMetricLogEntry("training.accuracy", 15, datetime.datetime.utcnow(), 150),
         ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
+        ScalarMetricLogEntry(
+            "training.units", 1, datetime.datetime.utcnow(), pint.Quantity(1, "meter")
+        ),
+        ScalarMetricLogEntry(
+            "training.units",
+            2,
+            datetime.datetime.utcnow(),
+            pint.Quantity(2, "centimeter"),
+        ),
     ]
     linearized = linearize_metrics(entries)
     assert type(linearized) == dict
-    assert len(linearized.keys()) == 2
+    assert len(linearized.keys()) == 3
     assert "training.loss" in linearized
     assert "training.accuracy" in linearized
+    assert "training.units" in linearized
     assert len(linearized["training.loss"]["steps"]) == 2
     assert len(linearized["training.loss"]["values"]) == 2
     assert len(linearized["training.loss"]["timestamps"]) == 2
@@ -138,3 +153,22 @@ def test_linearize_metrics():
     assert linearized["training.accuracy"]["values"] == [50, 100, 150, 300]
     assert linearized["training.loss"]["steps"] == [10, 20]
     assert linearized["training.loss"]["values"] == [100, 200]
+    assert linearized["training.units"]["steps"] == [1, 2]
+    assert linearized["training.units"]["values"] == [1, 0.02]
+
+    entries = [
+        ScalarMetricLogEntry(
+            "training.units_mismatch",
+            1,
+            datetime.datetime.utcnow(),
+            pint.Quantity(1, "meter"),
+        ),
+        ScalarMetricLogEntry(
+            "training.units_mismatch",
+            2,
+            datetime.datetime.utcnow(),
+            pint.Quantity(1, "hertz"),
+        ),
+    ]
+    with pytest.raises(MetricLinearizationError):
+        linearize_metrics(entries)
