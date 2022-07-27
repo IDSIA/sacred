@@ -216,6 +216,9 @@ In any case, the numbers should form an increasing sequence.
             # Implicit step counter (0, 1, 2, 3, ...)
             # incremented with each call for training.accuracy:
             _run.log_scalar("training.accuracy", value * 2)
+            # Log an entry with units
+            ureg = pint.UnitRegistry()
+            _run.log_scalar("training.distance", value * 2 * ureg.meter)
             # Another option is to use the Experiment object (must be running)
             # The training.diff has its own step counter (0, 1, 2, ...) too
             ex.log_scalar("training.diff", value * 2)
@@ -249,7 +252,7 @@ the step number can be found in ``metric["steps"][i]`` and the time of the measu
     ``steps``           Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
     ``values``          Array of measured values
     ``timestamps``      Array of times of capturing the individual measurements
-    ``units``           Base units of the measurement (or None)
+    ``units``           Units of the measurement (or None)
     ==================  =======================================================
 
 

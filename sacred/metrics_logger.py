@@ -36,7 +36,8 @@ class MetricsLogger:
         Other observers are not yet supported.
 
         :param metric_name: The name of the metric, e.g. training.loss.
-        :param value: The measured value.
+        :param value: The measured value. If the value is a `pint.Quantity` then units
+                    information will be sent to the observer.
         :param step: The step number (integer), e.g. the iteration number
                     If not specified, an internal counter for each metric
                     is used, incremented by one.
@@ -82,18 +83,36 @@ class ScalarMetricLogEntry:
     value: Any
 
 
-def linearize_metrics(logged_metrics: list[ScalarMetricLogEntry]):
-    """
-    Group metrics by name.
+def linearize_metrics(
+    logged_metrics: list[ScalarMetricLogEntry],
+) -> dict[str, dict[str, list]]:
+    """Group metrics by name.
 
     Takes a list of individual measurements, possibly belonging
     to different metrics and groups them by name.
 
-    :param logged_metrics: A list of ScalarMetricLogEntries
-    :return: Measured values grouped by the metric name:
-    {"metric_name1": {"steps": [0,1,2], "values": [4, 5, 6],
-    "timestamps": [datetime, datetime, datetime], units: "meter"},
-    "metric_name2": {...}}
+    Parameters
+    ----------
+    logged_metrics : list[ScalarMetricLogEntry]
+
+    Returns
+    -------
+    dict[str, dict[str, list]]
+        Measured values grouped by the metric name:
+        {
+            "metric_name1": {
+                "steps": [0,1,2],
+                "values": [4, 5, 6],
+                "timestamps": [datetime, datetime, datetime],
+                units: "meter"
+            },
+            "metric_name2": {...}
+        }
+
+    Raises
+    ------
+    MetricLinearizationError
+        A metric has been logged with incompatible units.
     """
     metrics_by_name: dict[str, dict[str, list]] = {}
     for metric_entry in logged_metrics:
@@ -106,32 +125,45 @@ def linearize_metrics(logged_metrics: list[ScalarMetricLogEntry]):
                 "units": None,
             }
         metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
-        if isinstance(metric_entry.value, pint.Quantity):
-            metric_entry_value_base = metric_entry.value.to_base_units()
-            metrics_by_name[metric_entry.name]["values"].append(
-                metric_entry_value_base.magnitude
+        try:
+            magnitude, units = linearize_value(
+                metric_entry.value, metrics_by_name[metric_entry.name]["units"]
             )
-
-            if metrics_by_name[metric_entry.name]["units"] is None:
-                metrics_by_name[metric_entry.name]["units"] = str(
-                    metric_entry_value_base.units
-                )
-            elif metrics_by_name[metric_entry.name]["units"] != str(
-                metric_entry_value_base.units
-            ):
-                raise MetricLinearizationError(
-                    metric_entry
-                ) from pint.DimensionalityError(
-                    metrics_by_name[metric_entry.name]["units"],
-                    metric_entry_value_base.units,
-                )
-        else:
-            metrics_by_name[metric_entry.name]["values"].append(metric_entry.value)
+        except pint.DimensionalityError as exc:
+            raise MetricLinearizationError(metric_entry) from exc
+        metrics_by_name[metric_entry.name]["values"].append(magnitude)
+        metrics_by_name[metric_entry.name]["units"] = units
         metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
     return metrics_by_name
 
 
+def linearize_value(
+    value: Any | pint.Quantity, expected_units: str | None
+) -> tuple[Any, str | None]:
+    """Converts `value` to `expected_units` and breaks it into tuple of `(magnitude, units_str)`.
+
+    Parameters
+    ----------
+    value : Any | pint.Quantity
+        Value to linearize
+    expected_units : str | None
+        Units to convert to (if any)
+
+    Returns
+    -------
+    tuple[Any, str | None]
+        (magnitude, units_str)
+    """
+    if not isinstance(value, pint.Quantity):
+        return value, None
+    if expected_units is not None:
+        value = value.to(expected_units)
+    return value.magnitude, value.units
+
+
 class MetricLinearizationError(Exception):
+    """Error thrown when a metric cannot be linearized."""
+
     def __init__(self, metric: ScalarMetricLogEntry):
         self.metric = metric
 
