@@ -158,7 +158,7 @@ def linearize_value(
         return value, None
     if expected_units is not None:
         value = value.to(expected_units)
-    return value.magnitude, value.units
+    return value.magnitude, str(value.units)
 
 
 class MetricLinearizationError(Exception):

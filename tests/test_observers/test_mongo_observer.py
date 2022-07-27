@@ -4,6 +4,7 @@ import sys
 from glob import glob
 
 import mock
+import pint
 import pytest
 
 if sys.version_info >= (3, 10):
@@ -429,6 +430,28 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     assert mongo_obs.runs.count_documents({}) == 2
     # Another 2 metrics have been created
     assert mongo_obs.metrics.count_documents({}) == 4
+    db_run = mongo_obs.runs.find_one({"_id": "NEWID"})
+
+    # Attempt to insert a metric with units
+    mongo_obs.log_metrics(
+        linearize_metrics(
+            [
+                ScalarMetricLogEntry(
+                    "training.units",
+                    1,
+                    datetime.datetime.utcnow(),
+                    pint.Quantity(1, "meter"),
+                )
+            ]
+        ),
+        info,
+    )
+    mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
+    units = mongo_obs.metrics.find_one(
+        {"name": "training.units", "run_id": db_run["_id"]}
+    )
+    assert units["values"][0] == 1
+    assert units["units"] == "meter"
 
 
 def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):

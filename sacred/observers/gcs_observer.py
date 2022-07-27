@@ -312,6 +312,7 @@ class GoogleCloudStorageObserver(RunObserver):
                     "values": [],
                     "steps": [],
                     "timestamps": [],
+                    "units": None,
                 }
 
             self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
@@ -319,6 +320,7 @@ class GoogleCloudStorageObserver(RunObserver):
 
             timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
             self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
+            self.saved_metrics[metric_name]["units"] = metric_ptr["units"]
 
         self.save_json(self.saved_metrics, "metrics.json")
 

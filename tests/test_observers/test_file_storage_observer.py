@@ -4,6 +4,7 @@
 import datetime
 import os
 from copy import copy
+import pint
 import pytest
 import json
 from pathlib import Path
@@ -396,6 +397,26 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     accuracy = metrics["training.accuracy"]
     assert accuracy["steps"] == [10, 20, 30]
     assert accuracy["values"] == [100, 200, 300]
+
+    # Attempt to insert a metric with units
+    obs.log_metrics(
+        linearize_metrics(
+            [
+                ScalarMetricLogEntry(
+                    "training.units",
+                    1,
+                    datetime.datetime.utcnow(),
+                    pint.Quantity(1, "meter"),
+                )
+            ]
+        ),
+        info,
+    )
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
+    # Reload the new metrics
+    metrics = json.loads(run_dir.join("metrics.json").read())
+    assert metrics["training.units"]["values"][0] == 1
+    assert metrics["training.units"]["units"] == "meter"
 
 
 def test_observer_equality(tmpdir):
