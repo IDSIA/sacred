@@ -1,0 +1,21 @@
+# https://github.com/marketplace/actions/pypi-github-auto-release
+
+name: Auto-publish
+
+on: [push, workflow_dispatch]
+
+jobs:
+  # Auto-publish when version is increased
+  publish-job:
+    # Only publish on `master` branch
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:  # Don't forget permissions
+      contents: write
+
+    steps:
+    - uses: etils-actions/pypi-auto-publish@v1
+      with:
+        pypi-token: ${{ secrets.PYPI_API_TOKEN }}
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
+        parse-changelog: false   # requires CHANGELOG.md in appropriate format
