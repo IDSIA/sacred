@@ -158,6 +158,10 @@ def linearize_value(
         return value, None
     if expected_units is not None:
         value = value.to(expected_units)
+    if opt.has_numpy:
+        np = opt.np
+        if isinstance(value.magnitude, np.generic):
+            return value.magnitude.item(), str(value.units)
     return value.magnitude, str(value.units)
 
 
