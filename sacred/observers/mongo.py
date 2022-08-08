@@ -344,7 +344,13 @@ class MongoObserver(RunObserver):
                 "values": {"$each": metrics_by_name[key]["values"]},
                 "timestamps": {"$each": metrics_by_name[key]["timestamps"]},
             }
-            update = {"$push": push, "$set": {"units": metrics_by_name[key]["units"]}}
+            update = {
+                "$push": push,
+                "$set": {
+                    "units": metrics_by_name[key]["units"],
+                    "depends_on": metrics_by_name[key]["depends_on"],
+                },
+            }
             result = self.metrics.update_one(query, update, upsert=True)
             if result.upserted_id is not None:
                 # This is the first time we are storing this metric

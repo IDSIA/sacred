@@ -308,19 +308,14 @@ class GoogleCloudStorageObserver(RunObserver):
         for metric_name, metric_ptr in metrics_by_name.items():
 
             if metric_name not in self.saved_metrics:
-                self.saved_metrics[metric_name] = {
-                    "values": [],
-                    "steps": [],
-                    "timestamps": [],
-                    "units": None,
-                }
-
-            self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
-            self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
-
-            timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
-            self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
-            self.saved_metrics[metric_name]["units"] = metric_ptr["units"]
+                self.saved_metrics[metric_name] = metric_ptr.copy()
+            else:
+                self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
+                self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
+                timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
+                self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
+                self.saved_metrics[metric_name]["units"] = metric_ptr["units"]
+                self.saved_metrics[metric_name]["depends_on"] = metric_ptr["depends_on"]
 
         self.save_json(self.saved_metrics, "metrics.json")
 

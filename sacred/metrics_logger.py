@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import datetime
 from typing import Any
@@ -26,21 +26,37 @@ class MetricsLogger:
         self._logged_metrics = Queue()
         self._metric_step_counter = {}
         """Remembers the last number of each metric."""
+        self._initial_metrics: dict[str, ScalarMetricLogEntry] = {}
+        """Stores information about the first log entry of each metric."""
 
-    def log_scalar_metric(self, metric_name, value, step=None):
-        """
-        Add a new measurement.
+    def log_scalar_metric(
+        self,
+        metric_name: str,
+        value: Any,
+        step: Any = None,
+        depends_on: list[str] = None,
+    ):
+        """Add a new measurement.
 
         The measurement will be processed by the MongoDB observer
         during a heartbeat event.
+
         Other observers are not yet supported.
 
-        :param metric_name: The name of the metric, e.g. training.loss.
-        :param value: The measured value. If the value is a `pint.Quantity` then units
-                    information will be sent to the observer.
-        :param step: The step number (integer), e.g. the iteration number
-                    If not specified, an internal counter for each metric
-                    is used, incremented by one.
+        Parameters
+        ----------
+        metric_name : str
+            The name of the metric, e.g. training.loss.
+        value : Any
+            The measured value. If the value is a `pint.Quantity` then units
+            information will be sent to the observer.
+        step : Any, optional
+            The step number (integer), e.g. the iteration number
+            If not specified, an internal counter for each metric
+            is used, incremented by one. By default None
+        depends_on : list[str], optional
+            Metrics that this metric depends on, by default None.
+            Use this metadata to indicate what your indepenedant variables depend on.
         """
         if opt.has_numpy:
             np = opt.np
@@ -48,14 +64,29 @@ class MetricsLogger:
                 value = value.item()
             if isinstance(step, np.generic):
                 step = step.item()
+        if depends_on is None:
+            depends_on = set()
+        else:
+            depends_on = set(depends_on)
         if step is None:
             step = self._metric_step_counter.get(metric_name, -1) + 1
-        self._logged_metrics.put(
-            ScalarMetricLogEntry(metric_name, step, datetime.datetime.utcnow(), value)
+        metric_log_entry = ScalarMetricLogEntry(
+            metric_name, step, datetime.datetime.utcnow(), value, depends_on
         )
+        if metric_name not in self._initial_metrics:
+            self._initial_metrics[metric_name] = metric_log_entry
+        elif self._initial_metrics[metric_name].depends_on != depends_on:
+            raise MetricDependencyError(
+                metric_log_entry, self._initial_metrics[metric_name].depends_on
+            )
+        if any(dependency not in self._initial_metrics for dependency in depends_on):
+            raise MetricDependencyError(
+                metric_log_entry, self._initial_metrics[metric_name].depends_on
+            )
+        self._logged_metrics.put(metric_log_entry)
         self._metric_step_counter[metric_name] = step
 
-    def get_last_metrics(self):
+    def get_last_metrics(self) -> list[ScalarMetricLogEntry]:
         """Read all measurement events since last call of the method.
 
         :return List[ScalarMetricLogEntry]
@@ -81,6 +112,7 @@ class ScalarMetricLogEntry:
     step: Any
     timestamp: datetime.datetime
     value: Any
+    depends_on: set[str] = field(default_factory=set)
 
 
 def linearize_metrics(
@@ -123,6 +155,7 @@ def linearize_metrics(
                 "timestamps": [],
                 "name": metric_entry.name,
                 "units": None,
+                "depends_on": list(metric_entry.depends_on),
             }
         metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
         try:
@@ -166,10 +199,32 @@ def linearize_value(
 
 
 class MetricLinearizationError(Exception):
-    """Error thrown when a metric cannot be linearized."""
+    """Error raised when a metric cannot be linearized."""
 
-    def __init__(self, metric: ScalarMetricLogEntry):
+    def __init__(self, metric: ScalarMetricLogEntry, *args: object):
+        super().__init__(*args)
         self.metric = metric
 
     def __str__(self) -> str:
         return f"Error while linearizing {self.metric}"
+
+
+class MetricDependencyError(Exception):
+    """Error raised when a metric declares a different depenedency than previously."""
+
+    def __init__(
+        self,
+        metric: ScalarMetricLogEntry,
+        expected_depends_on: list[str],
+        *args: object,
+    ) -> None:
+        super().__init__(*args)
+        self.metric = metric
+        self.expected_depends_on = expected_depends_on
+
+    def __str__(self) -> str:
+        return (
+            f"Error while linearizing {self.metric}."
+            + f" Expected: {self.expected_depends_on},"
+            + f" Actual: {self.metric.depends_on}"
+        )

@@ -418,6 +418,27 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     assert metrics["training.units"]["values"][0] == 1
     assert metrics["training.units"]["units"] == "meter"
 
+    # Attempt to insert a metric with that depends on another metric
+    obs.log_metrics(
+        linearize_metrics(
+            [
+                ScalarMetricLogEntry(
+                    "training.depend_on_units",
+                    1,
+                    datetime.datetime.utcnow(),
+                    pint.Quantity(1, "meter"),
+                    ["training.units"],
+                )
+            ]
+        ),
+        info,
+    )
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
+    # Reload the new metrics
+    metrics = json.loads(run_dir.join("metrics.json").read())
+    assert metrics["training.depend_on_units"]["values"][0] == 1
+    assert metrics["training.depend_on_units"]["depends_on"] == ["training.units"]
+
 
 def test_observer_equality(tmpdir):
     observer_1 = FileStorageObserver(str(tmpdir / "a"))

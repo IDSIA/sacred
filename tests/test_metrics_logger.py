@@ -6,7 +6,9 @@ import pint
 import pytest
 from sacred import Experiment
 from sacred.metrics_logger import (
+    MetricDependencyError,
     MetricLinearizationError,
+    MetricsLogger,
     ScalarMetricLogEntry,
     linearize_metrics,
 )
@@ -117,6 +119,31 @@ def test_log_scalar_metrics_with_implicit_step(ex):
         assert tr_acc_messages[i].step < tr_acc_messages[i + 1].step
         assert tr_acc_messages[i].step == i
         assert tr_acc_messages[i].timestamp <= tr_acc_messages[i + 1].timestamp
+
+
+def test_log_scalar_metric_with_depends_on():
+    mlogger = MetricsLogger()
+    mlogger.log_scalar_metric("training.independent", 1)
+    mlogger.log_scalar_metric(
+        "training.dependent", 1, depends_on=["training.independent"]
+    )
+    metrics = mlogger.get_last_metrics()
+    assert metrics[0].depends_on == set()
+    assert metrics[1].depends_on == {"training.independent"}
+
+    mlogger.log_scalar_metric("training.independent2", 1)
+    with pytest.raises(MetricDependencyError):
+        mlogger.log_scalar_metric(
+            "training.dependent",
+            1,
+            depends_on=["training.independent", "training.independent2"],
+        )
+
+    mlogger = MetricsLogger()
+    with pytest.raises(MetricDependencyError):
+        mlogger.log_scalar_metric(
+            "training.dependent", 1, depends_on=["training.does_not_exist"]
+        )
 
 
 def test_linearize_metrics():

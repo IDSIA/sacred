@@ -311,21 +311,19 @@ class FileStorageObserver(RunObserver):
         for metric_name, metric_ptr in metrics_by_name.items():
 
             if metric_name not in saved_metrics:
-                saved_metrics[metric_name] = {
-                    "values": [],
-                    "steps": [],
-                    "timestamps": [],
-                    "units": None,
-                }
+                saved_metrics[metric_name] = metric_ptr.copy()
+                timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
+                saved_metrics[metric_name]["timestamps"] = timestamps_norm
+            else:
+                saved_metrics[metric_name]["values"] += metric_ptr["values"]
+                saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
 
-            saved_metrics[metric_name]["values"] += metric_ptr["values"]
-            saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
-
-            # Manually convert them to avoid passing a datetime dtype handler
-            # when we're trying to convert into json.
-            timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
-            saved_metrics[metric_name]["timestamps"] += timestamps_norm
-            saved_metrics[metric_name]["units"] = metric_ptr["units"]
+                # Manually convert them to avoid passing a datetime dtype handler
+                # when we're trying to convert into json.
+                timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
+                saved_metrics[metric_name]["timestamps"] += timestamps_norm
+                saved_metrics[metric_name]["units"] = metric_ptr["units"]
+                saved_metrics[metric_name]["depends_on"] = metric_ptr["depends_on"]
 
         self.save_json(saved_metrics, "metrics.json")
 
