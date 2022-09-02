@@ -322,8 +322,7 @@ class FileStorageObserver(RunObserver):
                 # when we're trying to convert into json.
                 timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
                 saved_metrics[metric_name]["timestamps"] += timestamps_norm
-                saved_metrics[metric_name]["units"] = metric_ptr["units"]
-                saved_metrics[metric_name]["depends_on"] = metric_ptr["depends_on"]
+                saved_metrics[metric_name]["meta"] = metric_ptr["meta"]
 
         self.save_json(saved_metrics, "metrics.json")
 

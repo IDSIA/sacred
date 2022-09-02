@@ -14,7 +14,11 @@ if sys.version_info >= (3, 10):
         allow_module_level=True,
     )
 
-from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+from sacred.metrics_logger import (
+    MetricLogEntry,
+    ScalarMetricLogEntry,
+    linearize_metrics,
+)
 
 pymongo = pytest.importorskip("pymongo")
 mongomock = pytest.importorskip("mongomock")
@@ -312,15 +316,24 @@ def test_force_bson_encodable_substitutes_illegal_value_with_strings():
 @pytest.fixture
 def logged_metrics():
     return [
-        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
-        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
-        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
-        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
-        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
-        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
-        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
-        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
-        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30),
+        MetricLogEntry(
+            "training.loss",
+            {},
+            [
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 1),
+                ScalarMetricLogEntry(20, datetime.datetime.utcnow(), 2),
+                ScalarMetricLogEntry(30, datetime.datetime.utcnow(), 3),
+            ],
+        ),
+        MetricLogEntry(
+            "training.accuracy",
+            {},
+            [
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 100),
+                ScalarMetricLogEntry(20, datetime.datetime.utcnow(), 200),
+                ScalarMetricLogEntry(30, datetime.datetime.utcnow(), 300),
+            ],
+        ),
     ]
 
 
@@ -349,7 +362,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     # Take first 6 measured events, group them by metric name
     # and store the measured series to the 'metrics' collection
     # and reference the newly created records in the 'info' dictionary.
-    mongo_obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics), info)
     # Call standard heartbeat event (store the info dictionary to the database)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
 
@@ -388,7 +401,22 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
 
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
-    mongo_obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
+    mongo_obs.log_metrics(
+        linearize_metrics(
+            [
+                MetricLogEntry(
+                    "training.loss",
+                    {},
+                    [
+                        ScalarMetricLogEntry(40, datetime.datetime.utcnow(), 10),
+                        ScalarMetricLogEntry(50, datetime.datetime.utcnow(), 20),
+                        ScalarMetricLogEntry(60, datetime.datetime.utcnow(), 30),
+                    ],
+                )
+            ]
+        ),
+        info,
+    )
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=0)
 
     assert mongo_obs.runs.count_documents({}) == 1
@@ -424,7 +452,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     sample_run["_id"] = "NEWID"
     # Start the experiment
     mongo_obs.started_event(**sample_run)
-    mongo_obs.log_metrics(linearize_metrics(logged_metrics[:4]), info)
+    mongo_obs.log_metrics(linearize_metrics(logged_metrics), info)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
     # A new run has been created
     assert mongo_obs.runs.count_documents({}) == 2
@@ -436,11 +464,16 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     mongo_obs.log_metrics(
         linearize_metrics(
             [
-                ScalarMetricLogEntry(
+                MetricLogEntry(
                     "training.units",
-                    1,
-                    datetime.datetime.utcnow(),
-                    pint.Quantity(1, "meter"),
+                    {"units": "meter"},
+                    [
+                        ScalarMetricLogEntry(
+                            1,
+                            datetime.datetime.utcnow(),
+                            1,
+                        )
+                    ],
                 )
             ]
         ),
@@ -451,7 +484,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
         {"name": "training.units", "run_id": db_run["_id"]}
     )
     assert units["values"][0] == 1
-    assert units["units"] == "meter"
+    assert units["meta"]["units"] == "meter"
 
 
 def test_mongo_observer_artifact_event_content_type_added(mongo_obs, sample_run):

@@ -344,8 +344,7 @@ class S3Observer(RunObserver):
                 self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
                 timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
                 self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
-                self.saved_metrics[metric_name]["units"] = metric_ptr["units"]
-                self.saved_metrics[metric_name]["depends_on"] = metric_ptr["depends_on"]
+                self.saved_metrics[metric_name]["meta"] = metric_ptr["meta"]
 
         self.save_json(self.saved_metrics, "metrics.json")
 

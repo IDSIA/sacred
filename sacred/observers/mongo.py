@@ -348,8 +348,7 @@ class MongoObserver(RunObserver):
             update = {
                 "$push": push,
                 "$set": {
-                    "units": metrics_by_name[key]["units"],
-                    "depends_on": metrics_by_name[key]["depends_on"],
+                    "meta": metrics_by_name[key]["meta"],
                 },
             }
             result = self.metrics.update_one(query, update, upsert=True)
