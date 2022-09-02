@@ -31,3 +31,4 @@ moto
 google-compute-engine
 google-cloud-storage
 pre-commit
+pint>=0.10
