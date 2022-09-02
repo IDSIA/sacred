@@ -252,7 +252,7 @@ the step number can be found in ``metric["steps"][i]`` and the time of the measu
     ``steps``           Array of steps (e.g. ``[0, 1, 2, 3, 4]``)
     ``values``          Array of measured values
     ``timestamps``      Array of times of capturing the individual measurements
-    ``units``           Units of the measurement (or None)
+    ``meta``            Dictionary of metadata. (e.g. ``{"units": "meter"}``)
     ==================  =======================================================
 
 
