@@ -112,7 +112,7 @@ class Metric:
 class MetricLogEntry(Metric):
     """Metric with entries frozen."""
 
-    entries: tuple[ScalarMetricLogEntry]
+    entries: tuple[ScalarMetricLogEntry] = tuple()
 
 
 def linearize_metrics(
