@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import annotations
 
 import os
 from collections import OrderedDict, defaultdict
 from copy import copy, deepcopy
-from typing import TYPE_CHECKING, Any, Callable
 
 from sacred.config import (
     ConfigDict,
@@ -14,8 +12,6 @@ from sacred.config import (
     load_config_file,
     undogmatize,
 )
-from sacred.config.captured_function import CapturedFunction
-from sacred.config.config_scope import ConfigScope
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.custom_containers import make_read_only
 from sacred.host_info import get_host_info
@@ -37,19 +33,15 @@ from sacred.utils import (
 )
 from sacred.settings import SETTINGS
 
-if TYPE_CHECKING:
-    from sacred.experiment import Experiment
-    from sacred.ingredient import Ingredient
-
 
 class Scaffold:
     def __init__(
         self,
-        config_scopes: list[ConfigScope],
+        config_scopes,
         subrunners,
         path,
         captured_functions,
-        commands: OrderedDict[str, Callable[..., Any]],
+        commands,
         named_configs,
         config_hooks,
         generate_seed,
@@ -291,10 +283,8 @@ def initialize_logging(experiment, scaffolding, log_level=None):
     return root_logger, root_logger.getChild(experiment.path)
 
 
-def create_scaffolding(
-    experiment: Experiment, sorted_ingredients: list[Ingredient]
-) -> OrderedDict[Ingredient, Scaffold]:
-    scaffolding: OrderedDict[Ingredient, Scaffold] = OrderedDict()
+def create_scaffolding(experiment, sorted_ingredients):
+    scaffolding = OrderedDict()
     for ingredient in sorted_ingredients[:-1]:
         scaffolding[ingredient] = Scaffold(
             config_scopes=ingredient.configurations,
@@ -346,9 +336,7 @@ def get_config_modifications(scaffolding):
     return config_modifications
 
 
-def get_command(
-    scaffolding: OrderedDict[Ingredient, Scaffold], command_path: str
-) -> CapturedFunction:
+def get_command(scaffolding, command_path):
     path, _, command_name = command_path.rpartition(".")
     if path not in scaffolding:
         raise KeyError('Ingredient for command "%s" not found.' % command_path)
@@ -404,13 +392,13 @@ def get_scaffolding_and_config_name(named_config, scaffolding):
 
 
 def create_run(
-    experiment: Experiment,
-    command_name: str,
+    experiment,
+    command_name,
     config_updates=None,
     named_configs=(),
     force=False,
     log_level=None,
-) -> Run:
+):
 
     sorted_ingredients = gather_ingredients_topological(experiment)
     scaffolding = create_scaffolding(experiment, sorted_ingredients)

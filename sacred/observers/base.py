@@ -1,16 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import annotations
-from typing import Any
-
 
 __all__ = ("RunObserver", "td_format")
-
-
-from datetime import datetime, timedelta
-from sacred.config.captured_function import CapturedFunction
-
-from sacred.config.config_dict import ConfigDict
 
 
 class RunObserver:
@@ -19,52 +10,34 @@ class RunObserver:
     priority = 0
 
     def queued_event(
-        self,
-        ex_info: dict,
-        command: CapturedFunction,
-        host_info: dict,
-        queue_time: datetime,
-        config: ConfigDict,
-        meta_info: dict,
-        _id,
+        self, ex_info, command, host_info, queue_time, config, meta_info, _id
     ):
         pass
 
     def started_event(
-        self,
-        ex_info: dict,
-        command: CapturedFunction,
-        host_info: dict,
-        start_time: datetime,
-        config: ConfigDict,
-        meta_info: dict,
-        _id,
+        self, ex_info, command, host_info, start_time, config, meta_info, _id
     ):
         pass
 
-    def heartbeat_event(
-        self, info: dict, captured_out: str, beat_time: datetime, result: Any | None
-    ):
+    def heartbeat_event(self, info, captured_out, beat_time, result):
         pass
 
-    def completed_event(self, stop_time: datetime, result: Any | None):
+    def completed_event(self, stop_time, result):
         pass
 
-    def interrupted_event(self, interrupt_time: datetime, status: str):
+    def interrupted_event(self, interrupt_time, status):
         pass
 
-    def failed_event(self, fail_time: datetime, fail_trace: str):
+    def failed_event(self, fail_time, fail_trace):
         pass
 
-    def resource_event(self, filename: str):
+    def resource_event(self, filename):
         pass
 
-    def artifact_event(
-        self, name: str, filename: str, metadata: dict = None, content_type: str = None
-    ):
+    def artifact_event(self, name, filename, metadata=None, content_type=None):
         pass
 
-    def log_metrics(self, metrics_by_name: dict[str, dict[str, list]], info: dict):
+    def log_metrics(self, metrics_by_name, info):
         pass
 
     def join(self):
@@ -72,7 +45,7 @@ class RunObserver:
 
 
 # http://stackoverflow.com/questions/538666/python-format-timedelta-to-string
-def td_format(td_object: timedelta):
+def td_format(td_object):
     seconds = int(td_object.total_seconds())
     if seconds == 0:
         return "less than a second"

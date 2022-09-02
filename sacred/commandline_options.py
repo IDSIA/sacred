@@ -4,20 +4,17 @@ Provides the basis for all command-line options (flags) in sacred.
 It defines the base class CommandLineOption and the standard supported flags.
 Some further options that add observers to the run are defined alongside those.
 """
-from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 import inspect
 import re
 
+from sacred.run import Run
 from sacred.commands import print_config
 from sacred.utils import convert_camel_case_to_snake_case
 
 
-if TYPE_CHECKING:
-    from sacred.run import Run
-
-    CLIFunction = Callable[[str, Run], None]
+CLIFunction = Callable[[str, Run], None]
 
 
 class CLIOption:
