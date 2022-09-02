@@ -48,6 +48,7 @@ else:
 has_numpy, np = optional_import("numpy")
 has_yaml, yaml = optional_import("yaml")
 has_pandas, pandas = optional_import("pandas")
+has_pint, pint = optional_import("pint")
 
 has_sqlalchemy = modules_exist("sqlalchemy")
 has_mako = modules_exist("mako")

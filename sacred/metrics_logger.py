@@ -7,8 +7,7 @@ import datetime
 from typing import Any
 import sacred.optional as opt
 
-from queue import Queue, Empty
-import pint
+from queue import Queue
 
 
 class MetricsLogger:
@@ -21,27 +20,21 @@ class MetricsLogger:
     """
 
     def __init__(self):
-        # Create a message queue that remembers
-        # calls of the log_scalar_metric
-        self._logged_metrics = Queue()
-        self._metric_step_counter = {}
+        self.metrics: dict[str, Metric] = {}
+        self._metric_step_counter: dict[str, int | float] = {}
         """Remembers the last number of each metric."""
-        self._initial_metrics: dict[str, ScalarMetricLogEntry] = {}
-        """Stores information about the first log entry of each metric."""
+        self.plugins: list[MetricPlugin] = [PintMetricPlugin(), NumpyMetricPlugin()]
 
     def log_scalar_metric(
         self,
         metric_name: str,
         value: Any,
-        step: Any = None,
-        depends_on: list[str] = None,
+        step: int | float = None,
     ):
         """Add a new measurement.
 
-        The measurement will be processed by the MongoDB observer
-        during a heartbeat event.
-
-        Other observers are not yet supported.
+        The measurement will be processed by supported observers
+        during the heartbeat event.
 
         Parameters
         ----------
@@ -50,55 +43,32 @@ class MetricsLogger:
         value : Any
             The measured value. If the value is a `pint.Quantity` then units
             information will be sent to the observer.
-        step : Any, optional
-            The step number (integer), e.g. the iteration number
+        step : int | float, optional
+            The step number, e.g. the iteration number
             If not specified, an internal counter for each metric
             is used, incremented by one. By default None
-        depends_on : list[str], optional
-            Metrics that this metric depends on, by default None.
-            Use this metadata to indicate what your indepenedant variables depend on.
         """
-        if opt.has_numpy:
-            np = opt.np
-            if isinstance(value, np.generic):
-                value = value.item()
-            if isinstance(step, np.generic):
-                step = step.item()
-        if depends_on is None:
-            depends_on = set()
-        else:
-            depends_on = set(depends_on)
         if step is None:
             step = self._metric_step_counter.get(metric_name, -1) + 1
-        metric_log_entry = ScalarMetricLogEntry(
-            metric_name, step, datetime.datetime.utcnow(), value, depends_on
-        )
-        if metric_name not in self._initial_metrics:
-            self._initial_metrics[metric_name] = metric_log_entry
-        elif self._initial_metrics[metric_name].depends_on != depends_on:
-            raise MetricDependencyError(
-                metric_log_entry, self._initial_metrics[metric_name].depends_on
-            )
-        if any(dependency not in self._initial_metrics for dependency in depends_on):
-            raise MetricDependencyError(
-                metric_log_entry, self._initial_metrics[metric_name].depends_on
-            )
-        self._logged_metrics.put(metric_log_entry)
         self._metric_step_counter[metric_name] = step
+        metric_log_entry = ScalarMetricLogEntry(step, datetime.datetime.utcnow(), value)
+        if metric_name not in self.metrics:
+            self.metrics[metric_name] = Metric(metric_name)
+        for plugin in self.plugins:
+            plugin.process_metric(metric_log_entry, self.metrics[metric_name])
+        self.metrics[metric_name].entries.put(metric_log_entry)
 
-    def get_last_metrics(self) -> list[ScalarMetricLogEntry]:
+    def get_last_metrics(self) -> list[MetricLogEntry]:
         """Read all measurement events since last call of the method.
 
-        :return List[ScalarMetricLogEntry]
+        Returns
+        -------
+        list[MetricLogEntry]
         """
-        read_up_to = self._logged_metrics.qsize()
-        messages = []
-        for _ in range(read_up_to):
-            try:
-                messages.append(self._logged_metrics.get_nowait())
-            except Empty:
-                pass
-        return messages
+        last_metrics = [
+            metric.prepare_for_observers() for metric in self.metrics.values()
+        ]
+        return [metric for metric in last_metrics if len(metric.entries) > 0]
 
 
 @dataclass
@@ -108,16 +78,46 @@ class ScalarMetricLogEntry:
     There is exactly one ScalarMetricLogEntry per logged scalar metric value.
     """
 
-    name: str
     step: Any
     timestamp: datetime.datetime
     value: Any
-    depends_on: set[str] = field(default_factory=set)
+
+
+@dataclass
+class Metric:
+    """Container for metric metadat and log entries."""
+
+    name: str
+    meta: dict = field(default_factory=dict)
+    entries: Queue[ScalarMetricLogEntry] = field(default_factory=Queue)
+
+    def prepare_for_observers(self) -> MetricLogEntry:
+        """Captures the current state of the queue for injestion by observers.
+
+        Note that this will clear the entries queue.
+
+        Returns
+        -------
+        MetricLogEntry
+            Same as metric, but with the current state of the queue rendered as a tuple.
+        """
+        return MetricLogEntry(
+            self.name,
+            self.meta,
+            (self.entries.get_nowait() for _ in self.entries.qsize()),
+        )
+
+
+@dataclass
+class MetricLogEntry(Metric):
+    """Metric with entries frozen."""
+
+    entries: tuple[ScalarMetricLogEntry]
 
 
 def linearize_metrics(
-    logged_metrics: list[ScalarMetricLogEntry],
-) -> dict[str, dict[str, list]]:
+    logged_metrics: list[MetricLogEntry],
+) -> dict[str, dict[str, list | dict]]:
     """Group metrics by name.
 
     Takes a list of individual measurements, possibly belonging
@@ -129,102 +129,71 @@ def linearize_metrics(
 
     Returns
     -------
-    dict[str, dict[str, list]]
+    dict[str, dict[str, list | dict]]
         Measured values grouped by the metric name:
         {
             "metric_name1": {
                 "steps": [0,1,2],
                 "values": [4, 5, 6],
                 "timestamps": [datetime, datetime, datetime],
-                units: "meter"
+                "meta": {}
             },
             "metric_name2": {...}
         }
-
-    Raises
-    ------
-    MetricLinearizationError
-        A metric has been logged with incompatible units.
     """
-    metrics_by_name: dict[str, dict[str, list]] = {}
-    for metric_entry in logged_metrics:
-        if metric_entry.name not in metrics_by_name:
-            metrics_by_name[metric_entry.name] = {
-                "steps": [],
-                "values": [],
-                "timestamps": [],
-                "name": metric_entry.name,
-                "units": None,
-                "depends_on": list(metric_entry.depends_on),
-            }
-        metrics_by_name[metric_entry.name]["steps"].append(metric_entry.step)
-        try:
-            magnitude, units = linearize_value(
-                metric_entry.value, metrics_by_name[metric_entry.name]["units"]
-            )
-        except pint.DimensionalityError as exc:
-            raise MetricLinearizationError(metric_entry) from exc
-        metrics_by_name[metric_entry.name]["values"].append(magnitude)
-        metrics_by_name[metric_entry.name]["units"] = units
-        metrics_by_name[metric_entry.name]["timestamps"].append(metric_entry.timestamp)
-    return metrics_by_name
+    return {
+        metric.name: {
+            "meta": metric.meta,
+            "steps": [m.step for m in metric.entries],
+            "values": [m.value for m in metric.entries],
+            "timestamps": [m.timestamp for m in metric.entries],
+        }
+        for metric in logged_metrics
+    }
 
 
-def linearize_value(
-    value: Any | pint.Quantity, expected_units: str | None
-) -> tuple[Any, str | None]:
-    """Converts `value` to `expected_units` and breaks it into tuple of `(magnitude, units_str)`.
+class MetricPlugin:
+    @staticmethod
+    def process_metric(metric_entry: ScalarMetricLogEntry, metric: Metric):
+        """Transforms `metric_entry` and `metric`.
 
-    Parameters
-    ----------
-    value : Any | pint.Quantity
-        Value to linearize
-    expected_units : str | None
-        Units to convert to (if any)
-
-    Returns
-    -------
-    tuple[Any, str | None]
-        (magnitude, units_str)
-    """
-    if not isinstance(value, pint.Quantity):
-        return value, None
-    if expected_units is not None:
-        value = value.to(expected_units)
-    if opt.has_numpy:
-        np = opt.np
-        if isinstance(value.magnitude, np.generic):
-            return value.magnitude.item(), str(value.units)
-    return value.magnitude, str(value.units)
+        Parameters
+        ----------
+        metric_entry : ScalarMetricLogEntry
+        metric : Metric
+        """
 
 
-class MetricLinearizationError(Exception):
-    """Error raised when a metric cannot be linearized."""
+class NumpyMetricPlugin(MetricPlugin):
+    """Convert numpy types to plain python types."""
 
-    def __init__(self, metric: ScalarMetricLogEntry, *args: object):
-        super().__init__(*args)
-        self.metric = metric
+    @staticmethod
+    def process_metric(metric_entry: ScalarMetricLogEntry, metric: Metric):
+        if not opt.has_numpy:
+            return metric_entry, metric
+        import numpy as np
 
-    def __str__(self) -> str:
-        return f"Error while linearizing {self.metric}"
+        if isinstance(metric_entry.value, np.generic):
+            metric_entry.value = metric_entry.value.item()
+        if isinstance(metric_entry.step, np.generic):
+            metric_entry.step = metric_entry.step.item()
 
 
-class MetricDependencyError(Exception):
-    """Error raised when a metric declares a different depenedency than previously."""
+class PintMetricPlugin(MetricPlugin):
+    """Convert pint types to python types, track units, and convert between units."""
 
-    def __init__(
-        self,
-        metric: ScalarMetricLogEntry,
-        expected_depends_on: list[str],
-        *args: object,
-    ) -> None:
-        super().__init__(*args)
-        self.metric = metric
-        self.expected_depends_on = expected_depends_on
+    @staticmethod
+    def process_metric(
+        metric_entry: ScalarMetricLogEntry, metric: Metric
+    ) -> tuple[ScalarMetricLogEntry, Metric]:
+        if not opt.has_pint:
+            return metric_entry, metric
+        import pint
 
-    def __str__(self) -> str:
-        return (
-            f"Error while linearizing {self.metric}."
-            + f" Expected: {self.expected_depends_on},"
-            + f" Actual: {self.metric.depends_on}"
-        )
+        units = metric.meta["units"] if "units" in metric.meta else None
+        if isinstance(metric_entry.value, pint.Quantity):
+            if units is not None:
+                metric_entry.value.to(units)
+            else:
+                metric.meta["units"] = str(metric_entry.value.units)
+            metric_entry.value = metric_entry.value.magnitude
