@@ -359,9 +359,7 @@ def test_log_metrics(mongo_obs, sample_run, logged_metrics):
     info = {"my_info": [1, 2, 3], "nr": 7}
     outp = "some output"
 
-    # Take first 6 measured events, group them by metric name
-    # and store the measured series to the 'metrics' collection
-    # and reference the newly created records in the 'info' dictionary.
+    # Create new records in the 'info' dictionary.
     mongo_obs.log_metrics(linearize_metrics(logged_metrics), info)
     # Call standard heartbeat event (store the info dictionary to the database)
     mongo_obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
