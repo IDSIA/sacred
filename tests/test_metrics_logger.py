@@ -3,9 +3,8 @@
 
 import datetime
 
-import numpy as np
-import pint
 import pytest
+import sacred.optional as opt
 from sacred import Experiment
 from sacred.metrics_logger import (
     MetricLogEntry,
@@ -122,7 +121,10 @@ def test_log_scalar_metrics_with_implicit_step(ex):
         assert tr_acc_messages[i].timestamp <= tr_acc_messages[i + 1].timestamp
 
 
+@pytest.mark.skipif(not opt.has_numpy, reason="requires numpy")
 def test_log_scalar_metric_numpy():
+    import numpy as np
+
     mlogger = MetricsLogger()
     mlogger.log_scalar_metric("test.numpy", np.int32(1), 1)
     entry = mlogger.metrics["test.numpy"].entries.get_nowait()
@@ -130,7 +132,10 @@ def test_log_scalar_metric_numpy():
     assert entry.value is 1
 
 
+@pytest.mark.skipif(not opt.has_pint, reason="requires pint")
 def test_log_scalar_metric_pint():
+    import pint
+
     mlogger = MetricsLogger()
     mlogger.log_scalar_metric("test.pint", pint.Quantity(1, "meter"), 1)
     entry = mlogger.metrics["test.pint"].entries.get_nowait()
@@ -138,7 +143,10 @@ def test_log_scalar_metric_pint():
     assert mlogger.metrics["test.pint"].meta["units"] == "meter"
 
 
+@pytest.mark.skipif(not opt.has_pint, reason="requires pint")
 def test_log_scalar_metric_pint_bad_units():
+    import pint
+
     mlogger = MetricsLogger()
     mlogger.log_scalar_metric("test.pint", pint.Quantity(1, "meter"), 1)
     with pytest.raises(pint.DimensionalityError):

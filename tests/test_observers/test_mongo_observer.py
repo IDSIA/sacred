@@ -4,7 +4,6 @@ import sys
 from glob import glob
 
 import mock
-import pint
 import pytest
 
 if sys.version_info >= (3, 10):
