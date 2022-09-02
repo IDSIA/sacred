@@ -104,7 +104,7 @@ class Metric:
         return MetricLogEntry(
             self.name,
             self.meta,
-            (self.entries.get_nowait() for _ in self.entries.qsize()),
+            tuple(self.entries.get_nowait() for _ in range(self.entries.qsize())),
         )
 
 

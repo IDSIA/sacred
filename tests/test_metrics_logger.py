@@ -2,12 +2,13 @@
 # coding=utf-8
 
 import datetime
+
+import numpy as np
 import pint
 import pytest
 from sacred import Experiment
 from sacred.metrics_logger import (
-    MetricDependencyError,
-    MetricLinearizationError,
+    MetricLogEntry,
     MetricsLogger,
     ScalarMetricLogEntry,
     linearize_metrics,
@@ -40,7 +41,7 @@ def test_log_scalar_metric_with_run(ex):
 
     ex.run()
     assert ex.current_run is not None
-    messages = messages["messages"]
+    messages = messages["messages"][0].entries
     assert len(messages) == (END - START) / STEP_SIZE
     for i in range(len(messages) - 1):
         assert messages[i].step < messages[i + 1].step
@@ -63,7 +64,7 @@ def test_log_scalar_metric_with_ex(ex):
 
     ex.run()
     assert ex.current_run is not None
-    messages = messages["messages"]
+    messages = messages["messages"][0].entries
     assert len(messages) == (END - START) / STEP_SIZE
     for i in range(len(messages) - 1):
         assert messages[i].step < messages[i + 1].step
@@ -83,7 +84,7 @@ def test_log_scalar_metric_with_implicit_step(ex):
 
     ex.run()
     assert ex.current_run is not None
-    messages = messages["messages"]
+    messages = messages["messages"][0].entries
     assert len(messages) == 10
     for i in range(len(messages) - 1):
         assert messages[i].step < messages[i + 1].step
@@ -105,8 +106,8 @@ def test_log_scalar_metrics_with_implicit_step(ex):
     ex.run()
     assert ex.current_run is not None
     messages = messages["messages"]
-    tr_loss_messages = [m for m in messages if m.name == "training.loss"]
-    tr_acc_messages = [m for m in messages if m.name == "training.accuracy"]
+    tr_loss_messages = messages[0].entries
+    tr_acc_messages = messages[1].entries
 
     assert len(tr_loss_messages) == 10
     # both should have 10 records
@@ -121,81 +122,59 @@ def test_log_scalar_metrics_with_implicit_step(ex):
         assert tr_acc_messages[i].timestamp <= tr_acc_messages[i + 1].timestamp
 
 
-def test_log_scalar_metric_with_depends_on():
+def test_log_scalar_metric_numpy():
     mlogger = MetricsLogger()
-    mlogger.log_scalar_metric("training.independent", 1)
-    mlogger.log_scalar_metric(
-        "training.dependent", 1, depends_on=["training.independent"]
-    )
-    metrics = mlogger.get_last_metrics()
-    assert metrics[0].depends_on == set()
-    assert metrics[1].depends_on == {"training.independent"}
+    mlogger.log_scalar_metric("test.numpy", np.int32(1), 1)
+    entry = mlogger.metrics["test.numpy"].entries.get_nowait()
+    # Use `is` to check type and value as `np.int32(1) == 1` will return True.
+    assert entry.value is 1
 
-    mlogger.log_scalar_metric("training.independent2", 1)
-    with pytest.raises(MetricDependencyError):
-        mlogger.log_scalar_metric(
-            "training.dependent",
-            1,
-            depends_on=["training.independent", "training.independent2"],
-        )
 
+def test_log_scalar_metric_pint():
     mlogger = MetricsLogger()
-    with pytest.raises(MetricDependencyError):
-        mlogger.log_scalar_metric(
-            "training.dependent", 1, depends_on=["training.does_not_exist"]
-        )
+    mlogger.log_scalar_metric("test.pint", pint.Quantity(1, "meter"), 1)
+    entry = mlogger.metrics["test.pint"].entries.get_nowait()
+    assert entry.value == 1
+    assert mlogger.metrics["test.pint"].meta["units"] == "meter"
+
+
+def test_log_scalar_metric_pint_bad_units():
+    mlogger = MetricsLogger()
+    mlogger.log_scalar_metric("test.pint", pint.Quantity(1, "meter"), 1)
+    with pytest.raises(pint.DimensionalityError):
+        mlogger.log_scalar_metric("test.pint", pint.Quantity(1, "hertz"), 2)
 
 
 def test_linearize_metrics():
     entries = [
-        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 100),
-        ScalarMetricLogEntry("training.accuracy", 5, datetime.datetime.utcnow(), 50),
-        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 200),
-        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
-        ScalarMetricLogEntry("training.accuracy", 15, datetime.datetime.utcnow(), 150),
-        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
-        ScalarMetricLogEntry(
-            "training.units", 1, datetime.datetime.utcnow(), pint.Quantity(1, "meter")
+        MetricLogEntry(
+            "training.loss",
+            {},
+            [
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 100),
+                ScalarMetricLogEntry(20, datetime.datetime.utcnow(), 200),
+            ],
         ),
-        ScalarMetricLogEntry(
-            "training.units",
-            2,
-            datetime.datetime.utcnow(),
-            pint.Quantity(2, "centimeter"),
+        MetricLogEntry(
+            "training.accuracy",
+            {},
+            [
+                ScalarMetricLogEntry(5, datetime.datetime.utcnow(), 50),
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 100),
+                ScalarMetricLogEntry(15, datetime.datetime.utcnow(), 150),
+                ScalarMetricLogEntry(30, datetime.datetime.utcnow(), 300),
+            ],
         ),
     ]
     linearized = linearize_metrics(entries)
     assert type(linearized) == dict
-    assert len(linearized.keys()) == 3
-    assert "training.loss" in linearized
-    assert "training.accuracy" in linearized
-    assert "training.units" in linearized
-    assert len(linearized["training.loss"]["steps"]) == 2
-    assert len(linearized["training.loss"]["values"]) == 2
-    assert len(linearized["training.loss"]["timestamps"]) == 2
-    assert len(linearized["training.accuracy"]["steps"]) == 4
-    assert len(linearized["training.accuracy"]["values"]) == 4
-    assert len(linearized["training.accuracy"]["timestamps"]) == 4
+    assert len(linearized.keys()) == len(entries)
+    for entry in entries:
+        assert entry.name in linearized
+        assert len(linearized[entry.name]["steps"]) == len(entry.entries)
+        assert len(linearized[entry.name]["values"]) == len(entry.entries)
+        assert len(linearized[entry.name]["timestamps"]) == len(entry.entries)
     assert linearized["training.accuracy"]["steps"] == [5, 10, 15, 30]
     assert linearized["training.accuracy"]["values"] == [50, 100, 150, 300]
     assert linearized["training.loss"]["steps"] == [10, 20]
     assert linearized["training.loss"]["values"] == [100, 200]
-    assert linearized["training.units"]["steps"] == [1, 2]
-    assert linearized["training.units"]["values"] == [1, 0.02]
-
-    entries = [
-        ScalarMetricLogEntry(
-            "training.units_mismatch",
-            1,
-            datetime.datetime.utcnow(),
-            pint.Quantity(1, "meter"),
-        ),
-        ScalarMetricLogEntry(
-            "training.units_mismatch",
-            2,
-            datetime.datetime.utcnow(),
-            pint.Quantity(1, "hertz"),
-        ),
-    ]
-    with pytest.raises(MetricLinearizationError):
-        linearize_metrics(entries)
