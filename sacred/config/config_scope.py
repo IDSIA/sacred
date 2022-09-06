@@ -96,9 +96,13 @@ class ConfigScope:
 
 def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
-    func_code = "".join(func_code_lines)
-    func_ast = ast.parse(textwrap.dedent(func_code))
-    line_offset = func_ast.body[0].body[0].lineno - 1
+    func_code = textwrap.dedent("".join(func_code_lines))
+    # Lines are now dedented
+    func_code_lines = func_code.splitlines(True)
+    func_ast = ast.parse(func_code)
+    first_code = func_ast.body[0].body[0]
+    line_offset = first_code.lineno
+    col_offset = first_code.col_offset
 
     # Add also previous empty / comment lines
     acceptable_tokens = {
@@ -109,20 +113,34 @@ def get_function_body(func):
         token.ENDMARKER,
     }
     last_token_type_acceptable = True
-    line_offset_fixed = 0
-    iterator = iter(func_code_lines[:line_offset])
+    line_offset_fixed = line_offset
+    col_offset_fixed = col_offset
+    iterator = iter(func_code_lines)
     for parsed_token in generate_tokens(lambda: next(iterator)):
 
         token_acceptable = parsed_token.type in acceptable_tokens or (
             parsed_token.type == token.NL and last_token_type_acceptable
         )
 
+        # If the token ends after the start of the first code,
+        # we have finished
+        if parsed_token.end[0] > line_offset or (
+            parsed_token.end[0] == line_offset and parsed_token.end[1] >= col_offset
+        ):
+            break
+
         if not token_acceptable:
             line_offset_fixed = parsed_token.end[0]
+            col_offset_fixed = parsed_token.end[1]
 
         last_token_type_acceptable = token_acceptable
 
-    func_body = "".join(func_code_lines[line_offset_fixed:])
+    func_body = (
+        # First line, without first part if needed
+        func_code_lines[line_offset_fixed - 1][col_offset_fixed:]
+        # Rest of the lines
+        + "".join(func_code_lines[line_offset_fixed:])
+    )
 
     return func_body, start_idx + line_offset_fixed
 

@@ -318,7 +318,8 @@ strings
         def subfunc():
             return 23
 
-body = '''# Lets do the most evil things with indentation
+body = '''  # test comment
+# Lets do the most evil things with indentation
   # 1
     # 2
      # ran
@@ -343,7 +344,8 @@ strings
             return 23
 '''
 
-dedented_body = '''# Lets do the most evil things with indentation
+dedented_body = '''# test comment
+# Lets do the most evil things with indentation
 # 1
 # 2
 # ran
@@ -388,6 +390,16 @@ def test_conf_scope_with_type_info():
     @ConfigScope
     def conf_scope(a: int) -> None:
         answer = 2 * a
+
+    cfg = conf_scope(preset={"a": 21})
+    assert cfg["answer"] == 42
+
+
+def test_conf_scope_in_same_line():
+    # fmt: off
+    @ConfigScope
+    def conf_scope(a: int) -> None: answer = 2 * a
+    # fmt: on
 
     cfg = conf_scope(preset={"a": 21})
     assert cfg["answer"] == 42
