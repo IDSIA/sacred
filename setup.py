@@ -8,7 +8,6 @@ Development Status :: 5 - Production/Stable
 Intended Audience :: Science/Research
 Natural Language :: English
 Operating System :: OS Independent
-Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
@@ -39,6 +38,7 @@ setup(
     packages=find_packages(include=["sacred", "sacred.*"]),
     package_data={"sacred": [os.path.join("data", "*"), "py.typed"]},
     scripts=[],
+    python_requires=">=3.8",
     install_requires=Path("requirements.txt").read_text().splitlines(),
     tests_require=["mock>=3.0, <5.0", "pytest==7.1.2"],
     classifiers=list(filter(None, classifiers.split("\n"))),
