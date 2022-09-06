@@ -5,7 +5,6 @@ import ast
 import inspect
 import io
 import re
-import sys
 import textwrap
 import token
 
@@ -100,7 +99,7 @@ def get_function_body(func):
     func_code = "".join(func_code_lines)
     func_ast = ast.parse(textwrap.dedent(func_code))
     line_offset = func_ast.body[0].body[0].lineno - 1
-    
+
     # Add also previous empty / comment lines
     acceptable_tokens = {
         token.NEWLINE,
@@ -113,18 +112,17 @@ def get_function_body(func):
     line_offset_fixed = 0
     iterator = iter(func_code_lines[:line_offset])
     for parsed_token in generate_tokens(lambda: next(iterator)):
-        
+
         token_acceptable = (
             parsed_token.type in acceptable_tokens
             or (parsed_token.type == token.NL and last_token_type_acceptable)
         )
-        
+
         if not token_acceptable:
             line_offset_fixed = parsed_token.end[0]
-        
+
         last_token_type_acceptable = token_acceptable
-    
-    
+
     func_body = ''.join(func_code_lines[line_offset_fixed:])
 
     return func_body, start_idx + line_offset_fixed
