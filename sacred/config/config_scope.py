@@ -113,9 +113,8 @@ def get_function_body(func):
     iterator = iter(func_code_lines[:line_offset])
     for parsed_token in generate_tokens(lambda: next(iterator)):
 
-        token_acceptable = (
-            parsed_token.type in acceptable_tokens
-            or (parsed_token.type == token.NL and last_token_type_acceptable)
+        token_acceptable = parsed_token.type in acceptable_tokens or (
+            parsed_token.type == token.NL and last_token_type_acceptable
         )
 
         if not token_acceptable:
@@ -123,7 +122,7 @@ def get_function_body(func):
 
         last_token_type_acceptable = token_acceptable
 
-    func_body = ''.join(func_code_lines[line_offset_fixed:])
+    func_body = "".join(func_code_lines[line_offset_fixed:])
 
     return func_body, start_idx + line_offset_fixed
 
