@@ -126,6 +126,7 @@ class MongoObserver(RunObserver):
         else:
             client = pymongo.MongoClient(url, **kwargs)
 
+        self._client = client
         database = client[db_name]
         if collection != "runs":
             # the 'old' way of setting a custom collection name
