@@ -93,4 +93,5 @@ com_crashlytics_export_strings.xml
 # GEdit temporary files
 *~
 
+/.pytest_cache/
 pip-wheel-metadata/

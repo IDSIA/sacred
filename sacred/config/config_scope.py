@@ -5,14 +5,16 @@ import ast
 import inspect
 import io
 import re
-from tokenize import tokenize, TokenError, COMMENT
-from copy import copy
+import textwrap
+import token
 
+from copy import copy
 from sacred import SETTINGS
 from sacred.config.config_summary import ConfigSummary
 from sacred.config.utils import dogmatize, normalize_or_die, recursive_fill_in
 from sacred.config.signature import get_argspec
 from sacred.utils import ConfigError
+from tokenize import generate_tokens, tokenize, TokenError, COMMENT
 
 
 class ConfigScope:
@@ -94,20 +96,53 @@ class ConfigScope:
 
 def get_function_body(func):
     func_code_lines, start_idx = inspect.getsourcelines(func)
-    func_code = "".join(func_code_lines)
-    arg = "(?:[a-zA-Z_][a-zA-Z0-9_]*)"
-    arguments = r"{0}(?:\s*,\s*{0})*,?".format(arg)
-    func_def = re.compile(
-        r"^[ \t]*def[ \t]*{}[ \t]*\(\s*({})?\s*\)[ \t]*:[ \t]*(?:#[^\n]*)?\n".format(
-            func.__name__, arguments
-        ),
-        flags=re.MULTILINE,
+    func_code = textwrap.dedent("".join(func_code_lines))
+    # Lines are now dedented
+    func_code_lines = func_code.splitlines(True)
+    func_ast = ast.parse(func_code)
+    first_code = func_ast.body[0].body[0]
+    line_offset = first_code.lineno
+    col_offset = first_code.col_offset
+
+    # Add also previous empty / comment lines
+    acceptable_tokens = {
+        token.NEWLINE,
+        token.INDENT,
+        token.DEDENT,
+        token.COMMENT,
+        token.ENDMARKER,
+    }
+    last_token_type_acceptable = True
+    line_offset_fixed = line_offset
+    col_offset_fixed = col_offset
+    iterator = iter(func_code_lines)
+    for parsed_token in generate_tokens(lambda: next(iterator)):
+
+        token_acceptable = parsed_token.type in acceptable_tokens or (
+            parsed_token.type == token.NL and last_token_type_acceptable
+        )
+
+        # If the token ends after the start of the first code,
+        # we have finished
+        if parsed_token.end[0] > line_offset or (
+            parsed_token.end[0] == line_offset and parsed_token.end[1] >= col_offset
+        ):
+            break
+
+        if not token_acceptable:
+            line_offset_fixed = parsed_token.end[0]
+            col_offset_fixed = parsed_token.end[1]
+
+        last_token_type_acceptable = token_acceptable
+
+    func_body = (
+        # First line, without first part if needed
+        func_code_lines[line_offset_fixed - 1][col_offset_fixed:]
+        # Rest of the lines
+        + "".join(func_code_lines[line_offset_fixed:])
     )
-    defs = list(re.finditer(func_def, func_code))
-    assert defs
-    line_offset = start_idx + func_code[: defs[0].end()].count("\n") - 1
-    func_body = func_code[defs[0].end() :]
-    return func_body, line_offset
+
+    return func_body, start_idx + line_offset_fixed
 
 
 def is_empty_or_comment(line):
