@@ -105,5 +105,6 @@ def tmpfile():
     os.remove(f.name)
 
 
-# Deactivate GPU info to speed up tests
+# Deactivate GPU and CPU info to speed up tests
 SETTINGS.HOST_INFO.INCLUDE_GPU_INFO = False
+SETTINGS.HOST_INFO.INCLUDE_CPU_INFO = False

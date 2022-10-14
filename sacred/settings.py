@@ -93,6 +93,8 @@ SETTINGS = FrozenKeyMunch.fromDict(
         "HOST_INFO": {
             # Collect information about GPUs using the nvidia-smi tool
             "INCLUDE_GPU_INFO": True,
+            # Collect information about CPUs using py-cpuinfo
+            "INCLUDE_CPU_INFO": True,
             # List of ENVIRONMENT variables to store in host-info
             "CAPTURED_ENV": [],
         },

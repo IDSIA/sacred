@@ -135,6 +135,9 @@ def _python_version():
 
 @host_info_gatherer(name="cpu")
 def _cpu():
+    if not SETTINGS.HOST_INFO.INCLUDE_CPU_INFO:
+        return
+
     if platform.system() == "Windows":
         return _get_cpu_by_pycpuinfo()
     try:
