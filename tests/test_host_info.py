@@ -6,10 +6,13 @@ import pytest
 from sacred.host_info import get_host_info, host_info_getter, host_info_gatherers
 
 
-def test_get_host_info():
-    host_info = get_host_info()
+def test_get_host_info(monkeypatch: pytest.MonkeyPatch):
+    with monkeypatch.context() as cntx:
+        cntx.setattr("sacred.settings.SETTINGS.HOST_INFO.INCLUDE_CPU_INFO", True)
+        host_info = get_host_info()
     assert isinstance(host_info["hostname"], str)
     assert isinstance(host_info["cpu"], str)
+    assert host_info["cpu"] != "Unknown"
     assert isinstance(host_info["os"], (tuple, list))
     assert isinstance(host_info["python_version"], str)
 

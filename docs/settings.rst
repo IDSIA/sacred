@@ -46,6 +46,9 @@ Here is a brief list of all currently available options.
   * ``INCLUDE_GPU_INFO`` *(default: True)*
     Try to collect information about GPUs using the nvidia-smi tool.
     Deactivating this can cut the start-up time of a Sacred run by about 1 sec.
+  * ``INCLUDE_CPU_INFO`` *(default: True)*
+    Try to collect information about the CPU using py-cpuinfo.
+    Deactivating this can cut the start-up time of a Sacred run by about 3 sec.
   * ``CAPTURED_ENV`` *(default: [])*
     List of ENVIRONMENT variable names to store in the host-info.
 
