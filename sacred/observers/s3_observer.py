@@ -336,17 +336,15 @@ class S3Observer(RunObserver):
         for metric_name, metric_ptr in metrics_by_name.items():
 
             if metric_name not in self.saved_metrics:
-                self.saved_metrics[metric_name] = {
-                    "values": [],
-                    "steps": [],
-                    "timestamps": [],
-                }
-
-            self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
-            self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
-
-            timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
-            self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
+                self.saved_metrics[metric_name] = metric_ptr.copy()
+                timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
+                self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
+            else:
+                self.saved_metrics[metric_name]["values"] += metric_ptr["values"]
+                self.saved_metrics[metric_name]["steps"] += metric_ptr["steps"]
+                timestamps_norm = [ts.isoformat() for ts in metric_ptr["timestamps"]]
+                self.saved_metrics[metric_name]["timestamps"] += timestamps_norm
+                self.saved_metrics[metric_name]["meta"] = metric_ptr["meta"]
 
         self.save_json(self.saved_metrics, "metrics.json")
 

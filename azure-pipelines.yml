@@ -67,6 +67,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'tensorflow-29'
+      Linux pint_0191:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'pint-0191'
       Linux setup:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'

@@ -651,6 +651,8 @@ created in ascending order, and each run directory will contain the files specif
 FileStorageObserver Directory Structure documentation above.
 
 
+.. _google_cloud_storage_observer:
+
 Google Cloud Storage Observer
 ============
 

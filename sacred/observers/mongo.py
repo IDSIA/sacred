@@ -345,7 +345,12 @@ class MongoObserver(RunObserver):
                 "values": {"$each": metrics_by_name[key]["values"]},
                 "timestamps": {"$each": metrics_by_name[key]["timestamps"]},
             }
-            update = {"$push": push}
+            update = {
+                "$push": push,
+                "$set": {
+                    "meta": metrics_by_name[key]["meta"],
+                },
+            }
             result = self.metrics.update_one(query, update, upsert=True)
             if result.upserted_id is not None:
                 # This is the first time we are storing this metric
@@ -550,7 +555,7 @@ class QueueCompatibleMongoObserver(MongoObserver):
             "values": {"$each": metrics_values["values"]},
             "timestamps": {"$each": metrics_values["timestamps"]},
         }
-        update = {"$push": push}
+        update = {"$push": push, "$set": {"meta": metrics_values["meta"]}}
         result = self.metrics.update_one(query, update, upsert=True)
         if result.upserted_id is not None:
             # This is the first time we are storing this metric

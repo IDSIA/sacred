@@ -9,7 +9,11 @@ import json
 from pathlib import Path
 
 from sacred.observers.file_storage import FileStorageObserver
-from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
+from sacred.metrics_logger import (
+    MetricLogEntry,
+    ScalarMetricLogEntry,
+    linearize_metrics,
+)
 
 
 T1 = datetime.datetime(1999, 5, 4, 3, 2, 1, 0)
@@ -311,15 +315,24 @@ def test_fs_observer_equality(dir_obs):
 @pytest.fixture
 def logged_metrics():
     return [
-        ScalarMetricLogEntry("training.loss", 10, datetime.datetime.utcnow(), 1),
-        ScalarMetricLogEntry("training.loss", 20, datetime.datetime.utcnow(), 2),
-        ScalarMetricLogEntry("training.loss", 30, datetime.datetime.utcnow(), 3),
-        ScalarMetricLogEntry("training.accuracy", 10, datetime.datetime.utcnow(), 100),
-        ScalarMetricLogEntry("training.accuracy", 20, datetime.datetime.utcnow(), 200),
-        ScalarMetricLogEntry("training.accuracy", 30, datetime.datetime.utcnow(), 300),
-        ScalarMetricLogEntry("training.loss", 40, datetime.datetime.utcnow(), 10),
-        ScalarMetricLogEntry("training.loss", 50, datetime.datetime.utcnow(), 20),
-        ScalarMetricLogEntry("training.loss", 60, datetime.datetime.utcnow(), 30),
+        MetricLogEntry(
+            "training.loss",
+            {},
+            [
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 1),
+                ScalarMetricLogEntry(20, datetime.datetime.utcnow(), 2),
+                ScalarMetricLogEntry(30, datetime.datetime.utcnow(), 3),
+            ],
+        ),
+        MetricLogEntry(
+            "training.accuracy",
+            {},
+            [
+                ScalarMetricLogEntry(10, datetime.datetime.utcnow(), 100),
+                ScalarMetricLogEntry(20, datetime.datetime.utcnow(), 200),
+                ScalarMetricLogEntry(30, datetime.datetime.utcnow(), 300),
+            ],
+        ),
     ]
 
 
@@ -345,7 +358,7 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     info = {"my_info": [1, 2, 3], "nr": 7}
     outp = "some output"
 
-    obs.log_metrics(linearize_metrics(logged_metrics[:6]), info)
+    obs.log_metrics(linearize_metrics(logged_metrics), info)
     obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
 
     assert run_dir.join("metrics.json").exists()
@@ -374,7 +387,22 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
 
     # Now, process the remaining events
     # The metrics shouldn't be overwritten, but appended instead.
-    obs.log_metrics(linearize_metrics(logged_metrics[6:]), info)
+    obs.log_metrics(
+        linearize_metrics(
+            [
+                MetricLogEntry(
+                    "training.loss",
+                    {},
+                    [
+                        ScalarMetricLogEntry(40, datetime.datetime.utcnow(), 10),
+                        ScalarMetricLogEntry(50, datetime.datetime.utcnow(), 20),
+                        ScalarMetricLogEntry(60, datetime.datetime.utcnow(), 30),
+                    ],
+                )
+            ]
+        ),
+        info,
+    )
     obs.heartbeat_event(info=info, captured_out=outp, beat_time=T2, result=0)
 
     # Reload the new metrics
@@ -396,6 +424,31 @@ def test_log_metrics(dir_obs, sample_run, logged_metrics):
     accuracy = metrics["training.accuracy"]
     assert accuracy["steps"] == [10, 20, 30]
     assert accuracy["values"] == [100, 200, 300]
+
+    # Attempt to insert a metric with units
+    obs.log_metrics(
+        linearize_metrics(
+            [
+                MetricLogEntry(
+                    "training.units",
+                    {"units": "meter"},
+                    [
+                        ScalarMetricLogEntry(
+                            1,
+                            datetime.datetime.utcnow(),
+                            1,
+                        )
+                    ],
+                )
+            ]
+        ),
+        info,
+    )
+    obs.heartbeat_event(info=info, captured_out=outp, beat_time=T1, result=0)
+    # Reload the new metrics
+    metrics = json.loads(run_dir.join("metrics.json").read())
+    assert metrics["training.units"]["values"][0] == 1
+    assert metrics["training.units"]["meta"]["units"] == "meter"
 
 
 def test_observer_equality(tmpdir):
