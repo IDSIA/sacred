@@ -1,0 +1,90 @@
+name: Tests
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  pytest:
+    strategy:
+      matrix:
+        # These tests run on all os versions
+        env: [
+          {python: '3.8', tox: 'py38'},
+          {python: '3.9', tox: 'py39'},
+          {python: '3.10', tox: 'py310'},
+          {python: '3.11', tox: 'py311'},
+        ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+        # These tests only run on ubuntu
+        include:
+          - os: ubuntu-latest
+            env:
+              python: 3.8
+              tox: tensorflow-27
+          - os: ubuntu-latest
+            env:
+              python: 3.9
+              tox: tensorflow-28
+          - os: ubuntu-latest
+            env:
+              python: 3.10
+              tox: tensorflow-29
+          - os: ubuntu-latest
+            env:
+              python: 3.10
+              tox: tensorflow-210
+          - os: ubuntu-latest
+            env:
+              python: 3.10
+              tox: tensorflow-211
+          - os: ubuntu-latest
+            env:
+              python: 3.9
+              tox: numpy-120
+          - os: ubuntu-latest
+            env:
+              python: 3.10
+              tox: numpy-121
+          - os: ubuntu-latest
+            env:
+              python: 3.10
+              tox: numpy-123
+          - os: ubuntu-latest
+            env:
+              python: 3.11
+              tox: numpy-124
+          - os: ubuntu-latest
+            env:
+              python: 3.11
+              tox: setup
+          - os: ubuntu-latest
+            env:
+              python: 3.11
+              tox: coverage
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.env.python }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.env.python }}
+    - name: Install tox
+      run: |
+        python -m pip install tox
+    - name: Test with tox against environments ${{ matrix.env.tox }}
+      run: python -m tox -e ${{ matrix.env.tox }}
+  test_pre_commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.env.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Test pre-commit
+        run: |
+          bash ./tests/check_pre_commit.sh
