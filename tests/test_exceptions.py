@@ -153,7 +153,7 @@ def test_chained_error():
         assert re.match(
             r"Traceback \(most recent calls WITHOUT Sacred internals\):\s+File "
             + r"\"[^\"]+?test_exceptions.py\", line \d+, in test_chained_error\s+"
-            + r"print\(1 / 0\)\n(\s+~~^~~\s+)?ZeroDivisionError: division by zero\n\n"
+            + r"print\(1 / 0\)\n(\s+~~\^~~\s+)?ZeroDivisionError: division by zero\n\n"
             + r"The above exception was the direct cause of the following exception:\n"
             + r"\nTraceback \(most recent calls WITHOUT Sacred internals\):\s+File "
             + r"\"[^\"]+?test_exceptions.py\", line \d+, in test_chained_error\s+raise "
