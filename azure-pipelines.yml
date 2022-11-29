@@ -67,7 +67,7 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'numpy-123'
-      Linux numpy_124RC:
+      Linux numpy_124:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.11'
         TOX_CMD: 'numpy-124'
@@ -89,23 +89,55 @@ jobs:
         TOX_CMD: 'tensorflow-210'
       Linux tensorflow_211:
         IMAGE_NAME: 'ubuntu-latest'
-        PYTHON_VERSION: '3.11'
+        PYTHON_VERSION: '3.10'
         TOX_CMD: 'tensorflow-211'
-      Linux setup:
+      Linux setup 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'setup'
-      Linux flake8:
+      Linux setup 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'setup'
+      Linux setup 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'setup'
+      Linux flake8 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'flake8'
-      Linux black:
+      Linux flake8 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'flake8'
+      Linux flake8 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'flake8'
+      Linux black 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'black'
-      Linux coverage:
+      Linux black 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'black'
+      Linux black 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'black'
+      Linux coverage 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
+        TOX_CMD: 'coverage'
+      Linux coverage 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'coverage'
+      Linux coverage 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
         TOX_CMD: 'coverage'
   pool:
     vmImage: $(IMAGE_NAME)
