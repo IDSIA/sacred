@@ -15,6 +15,10 @@ jobs:
         IMAGE_NAME: 'windows-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'py310'
+      Windows py311:
+        IMAGE_NAME: 'windows-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'py311'
       OSX py38:
         IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.8'
@@ -27,6 +31,10 @@ jobs:
         IMAGE_NAME: 'macOS-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'py310'
+      OSX py311:
+        IMAGE_NAME: 'macOS-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'py311'
       Linux py38:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.8'
@@ -39,6 +47,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'py310'
+      Linux py311:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'py311'
       Linux numpy_120:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
@@ -55,6 +67,10 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'numpy-123'
+      Linux numpy_124:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'numpy-124'
       Linux tensorflow_27:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.8'
@@ -67,21 +83,61 @@ jobs:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.10'
         TOX_CMD: 'tensorflow-29'
-      Linux setup:
+      Linux tensorflow_210:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'tensorflow-210'
+      Linux tensorflow_211:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'tensorflow-211'
+      Linux setup 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'setup'
-      Linux flake8:
+      Linux setup 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'setup'
+      Linux setup 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'setup'
+      Linux flake8 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'flake8'
-      Linux black:
+      Linux flake8 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'flake8'
+      Linux flake8 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'flake8'
+      Linux black 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
         TOX_CMD: 'black'
-      Linux coverage:
+      Linux black 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'black'
+      Linux black 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
+        TOX_CMD: 'black'
+      Linux coverage 3.9:
         IMAGE_NAME: 'ubuntu-latest'
         PYTHON_VERSION: '3.9'
+        TOX_CMD: 'coverage'
+      Linux coverage 3.10:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.10'
+        TOX_CMD: 'coverage'
+      Linux coverage 3.11:
+        IMAGE_NAME: 'ubuntu-latest'
+        PYTHON_VERSION: '3.11'
         TOX_CMD: 'coverage'
   pool:
     vmImage: $(IMAGE_NAME)
@@ -106,4 +162,12 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.10'
+    - bash: bash ./tests/check_pre_commit.sh
+- job: test_pre_commit_311
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
     - bash: bash ./tests/check_pre_commit.sh
