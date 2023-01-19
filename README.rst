@@ -87,7 +87,7 @@ and install it yourself:
 You might want to also install the ``numpy`` and the ``pymongo`` packages. They are
 optional dependencies but they offer some cool features:
 
-    pip install numpy, pymongo
+    pip install numpy pymongo
 
 Tests
 -----
@@ -101,8 +101,8 @@ can automatically run the tests for various python versions like this:
 
     tox
 
-Update pyptest version
-++++++++++++++++++++++
+Update pytest version
++++++++++++++++++++++
 
 If you update or change the pytest version, the following files need to be changed:
 
