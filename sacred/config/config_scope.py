@@ -195,7 +195,7 @@ def get_function_body_code(func):
                 "('{}' in File \"{}\", line {})".format(
                     statement.strip(), filename, lineno
                 )
-            )
+            ) from e
         elif e.args[0] == "'yield' outside function":
             filename, lineno, _, statement = e.args[1]
             raise SyntaxError(
@@ -203,7 +203,7 @@ def get_function_body_code(func):
                 "('{}' in File \"{}\", line {})".format(
                     statement.strip(), filename, lineno
                 )
-            )
+            ) from e
         else:
             raise
     return body_code
