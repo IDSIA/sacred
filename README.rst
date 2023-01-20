@@ -263,9 +263,9 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
     :target: http://dx.doi.org/10.5281/zenodo.16386
     :alt: DOI for this release
 
-.. |build| image:: https://dev.azure.com/qwlouse/Sacred%20CI/_apis/build/status/IDSIA.sacred?branchName=master
-    :target: https://dev.azure.com/qwlouse/Sacred%20CI/_build/latest?definitionId=1&branchName=master
-    :alt: Azure CI status
+.. |build| image:: https://github.com/IDSIA/sacred/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/IDSIA/sacred/actions/workflows/test.yml/badge.svg
+    :alt: Github Actions PyTest
 
 .. |coverage| image:: https://coveralls.io/repos/IDSIA/sacred/badge.svg
     :target: https://coveralls.io/r/IDSIA/sacred
