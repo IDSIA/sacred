@@ -7,6 +7,7 @@ on:
 jobs:
   pytest:
     strategy:
+      fail-fast: false
       matrix:
         # These tests run on all os versions
         env: [
