@@ -1,6 +1,16 @@
 Release History
 ---------------
 
+0.8.4 ()
+++++++++
+
+Minor release with a few small fixes.
+
+* Update tests an supported python versions: sacred now officially supports Python 3.8-3.11 (#872, #892, thanks @jnphilipp)
+* Feature: Allow type annotations in config scopes and future-proofing config scopes by using `ast` instead of a complex regex (thanks @vnmabus)
+* Feature: Expose `MongoClient` in the `MongoObserver` (thanks @Gracecr)
+* Bugfix: Support new numpy versions by removing using Python builtin types instead of the `np.*` aliases (#870, thanks @Kaushalya)
+
 0.8.3 (2022-03-25)
 ++++++++++++++++++
 
