@@ -49,11 +49,11 @@ def get_handler(filename):
         )
     try:
         return HANDLER_BY_EXT[extension]
-    except KeyError:
+    except KeyError as e:
         raise ValueError(
             'Configuration file "{}" has invalid or unsupported extension '
             '"{}".'.format(filename, extension)
-        )
+        ) from e
 
 
 def load_config_file(filename):

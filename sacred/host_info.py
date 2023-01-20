@@ -159,8 +159,8 @@ def _gpus():
         xml = subprocess.check_output(["nvidia-smi", "-q", "-x"]).decode(
             "utf-8", "replace"
         )
-    except (FileNotFoundError, OSError, subprocess.CalledProcessError):
-        raise IgnoreHostInfo()
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as e:
+        raise IgnoreHostInfo() from e
 
     gpu_info = {"gpus": []}
     for child in ElementTree.fromstring(xml):

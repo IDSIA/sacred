@@ -254,10 +254,10 @@ def priority_option(args, run):
     """
     try:
         priority = float(args)
-    except ValueError:
+    except ValueError as e:
         raise ValueError(
             "The PRIORITY argument must be a number! (but was '{}')".format(args)
-        )
+        ) from e
     run.meta_info["priority"] = priority
 
 
