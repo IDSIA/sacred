@@ -1,7 +1,6 @@
 name: Tests
 
 on:
-  - push
   - pull_request
 
 jobs:
@@ -56,14 +55,6 @@ jobs:
             env:
               python: '3.11'
               tox: 'numpy-124'
-          - os: ubuntu-latest
-            env:
-              python: '3.11'
-              tox: 'setup'
-          - os: ubuntu-latest
-            env:
-              python: '3.11'
-              tox: 'coverage'
 
     runs-on: ${{ matrix.os }}
 
@@ -82,10 +73,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.env.python }}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
       - name: Test pre-commit
         run: |
           bash ./tests/check_pre_commit.sh
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install tox
+        run: |
+          python -m pip install tox
+      - name: Run coverage tox job
+        run: python -m tox -e coverage
+  setup:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install tox
+        run: |
+          python -m pip install tox
+      - name: Run setup tox job
+        run: python -m tox -e setup
+
