@@ -22,48 +22,48 @@ jobs:
         include:
           - os: ubuntu-latest
             env:
-              python: 3.8
-              tox: tensorflow-27
+              python: '3.8'
+              tox: 'tensorflow-27'
           - os: ubuntu-latest
             env:
-              python: 3.9
-              tox: tensorflow-28
+              python: '3.9'
+              tox: 'tensorflow-28'
           - os: ubuntu-latest
             env:
-              python: 3.10
-              tox: tensorflow-29
+              python: '3.10'
+              tox: 'tensorflow-29'
           - os: ubuntu-latest
             env:
-              python: 3.10
-              tox: tensorflow-210
+              python: '3.10'
+              tox: 'tensorflow-210'
           - os: ubuntu-latest
             env:
-              python: 3.10
-              tox: tensorflow-211
+              python: '3.10'
+              tox: 'tensorflow-211'
           - os: ubuntu-latest
             env:
-              python: 3.9
-              tox: numpy-120
+              python: '3.9'
+              tox: 'numpy-120'
           - os: ubuntu-latest
             env:
-              python: 3.10
-              tox: numpy-121
+              python: '3.10'
+              tox: 'numpy-121'
           - os: ubuntu-latest
             env:
-              python: 3.10
-              tox: numpy-123
+              python: '3.10'
+              tox: 'numpy-123'
           - os: ubuntu-latest
             env:
-              python: 3.11
-              tox: numpy-124
+              python: '3.11'
+              tox: 'numpy-124'
           - os: ubuntu-latest
             env:
-              python: 3.11
-              tox: setup
+              python: '3.11'
+              tox: 'setup'
           - os: ubuntu-latest
             env:
-              python: 3.11
-              tox: coverage
+              python: '3.11'
+              tox: 'coverage'
 
     runs-on: ${{ matrix.os }}
 
