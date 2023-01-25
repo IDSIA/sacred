@@ -30,4 +30,4 @@ def flatten(obj):
 
 
 def restore(flat):
-    return json.decode(_json.dumps(flat), keys=True)
+    return json.decode(_json.dumps(flat), keys=True, on_missing="error")
