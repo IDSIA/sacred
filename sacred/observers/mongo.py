@@ -374,7 +374,7 @@ class MongoObserver(RunObserver):
                 raise ObserverError(
                     "Run contained an unserializable entry."
                     "(most likely in the info)\n{}".format(e)
-                )
+                ) from e
             except pymongo.errors.DuplicateKeyError:
                 if not autoinc_key:
                     raise
@@ -388,10 +388,10 @@ class MongoObserver(RunObserver):
             )
         except pymongo.errors.AutoReconnect:
             pass  # just wait for the next save
-        except pymongo.errors.InvalidDocument:
+        except pymongo.errors.InvalidDocument as e:
             raise ObserverError(
                 "Run contained an unserializable entry." "(most likely in the info)"
-            )
+            ) from e
 
     def final_save(self, attempts):
         import pymongo.errors
