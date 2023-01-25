@@ -23,8 +23,6 @@ jobs:
     - name: Build
       run: >-
         python -m build --sdist --wheel --outdir dist/ .
-    - uses: etils-actions/pypi-auto-publish@v1
+    - uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        pypi-token: ${{ secrets.PYPI_API_TOKEN }}
-        gh-token: ${{ secrets.GITHUB_TOKEN }}
-        parse-changelog: false   # requires CHANGELOG.md in appropriate format
+        password: ${{ secrets.PYPI_API_TOKEN }}
