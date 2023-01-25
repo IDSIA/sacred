@@ -1,0 +1,30 @@
+# https://github.com/marketplace/actions/pypi-github-auto-release
+
+name: Auto-publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  # Auto-publish when version is increased
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.x"
+    - name: Install dependencies
+      run: >-
+        python -m pip install build --user
+    - name: Build
+      run: >-
+        python -m build --sdist --wheel --outdir dist/ .
+    - uses: etils-actions/pypi-auto-publish@v1
+      with:
+        pypi-token: ${{ secrets.PYPI_API_TOKEN }}
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
+        parse-changelog: false   # requires CHANGELOG.md in appropriate format
