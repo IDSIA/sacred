@@ -10,6 +10,8 @@ Minor release with a few small fixes.
 * Feature: Allow type annotations in config scopes and future-proofing config scopes by using `ast` instead of a complex regex (thanks @vnmabus)
 * Feature: Expose `MongoClient` in the `MongoObserver` (thanks @Gracecr)
 * Bugfix: Support new numpy versions by removing using Python builtin types instead of the `np.*` aliases (#870, thanks @Kaushalya)
+* Internal: Add error causes for many errors in the codebase (#894, #898, thanks @cool-RR)
+* Internal: Use GitHub Actions for tests instead of azure pipelines to gain more control (#896)
 
 0.8.3 (2022-03-25)
 ++++++++++++++++++
