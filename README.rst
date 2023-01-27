@@ -60,7 +60,8 @@ Example
 |  perm = permutation(iris.target.size)          |     per = permutation(iris.target.size)    |
 |  iris.data = iris.data[perm]                   |     iris.data = iris.data[per]             |
 |  iris.target = iris.target[perm]               |     iris.target = iris.target[per]         |
-|  clf = svm.SVC(C, 'rbf', gamma=gamma)          |     clf = svm.SVC(C, 'rbf', gamma=gamma)   |
+|  clf = svm.SVC(C=C, kernel='rbf',              |     clf = svm.SVC(C=C, kernel='rbf',       |
+|          gamma=gamma)                          |             gamma=gamma)                   |
 |  clf.fit(iris.data[:90],                       |     clf.fit(iris.data[:90],                |
 |          iris.target[:90])                     |             iris.target[:90])              |
 |  print(clf.score(iris.data[90:],               |     return clf.score(iris.data[90:],       |
