@@ -224,13 +224,6 @@ FGLab also takes the role of a basic scheduler by distributing runs over several
 machines.
 
 
-`CDE <https://github.com/pgbovine/CDE/>`_
-+++++++++++++++++++++++++++++++++++++++++
-By tracing system calls during program execution CDE creates a snapshot of
-**all** used files and libraries to guarantee the ability to reproduce any unix
-program execution. It *only* solves reproducibility, but it does so thoroughly.
-
-
 License
 -------
 This project is released under the terms of the `MIT license <http://opensource.org/licenses/MIT>`_.
