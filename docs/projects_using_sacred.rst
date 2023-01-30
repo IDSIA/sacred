@@ -9,3 +9,7 @@ code from research projects or show how to integrate sacred with another library
 ======================================================================
 An example for integrating a general machine learning training script with Sacred
 and `HyperOpt <https://github.com/hyperopt/hyperopt>`_ (Distributed Asynchronous Hyperparameter Optimization).
+
+`neptune.ai + Sacred <https://docs.neptune.ai/integrations/sacred/>`_
+======================================================================
+`Neptune <https://neptune.ai/>`_ is a tool used for experiment tracking, model registry, data versioning, and live model monitoring. This integration lets you use it as a UI (frontend) for the experiments you track in Sacred.
