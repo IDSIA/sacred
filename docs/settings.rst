@@ -19,7 +19,7 @@ Here is a brief list of all currently available options.
 
 * ``CAPTURE_MODE`` *(default: 'fd' (linux/osx) or 'sys' (windows))*
   configure how stdout/stderr are captured. ['no', 'sys', 'fd']
-
+* ``DEFAULT_BEAT_INTERVAL`` *(default: 10.0)* Configures the default beat interval
 * ``CONFIG``
 
   * ``ENFORCE_KEYS_MONGO_COMPATIBLE`` *(default: True)*

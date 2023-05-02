@@ -6,7 +6,7 @@ import os.path
 import sys
 import traceback as tb
 
-from sacred import metrics_logger
+from sacred import metrics_logger, SETTINGS
 from sacred.metrics_logger import linearize_metrics
 from sacred.randomness import set_global_seed
 from sacred.utils import SacredInterrupt, join_paths, IntervalTimer
@@ -91,7 +91,7 @@ class Run:
         self.meta_info = {}
         """A custom comment for this run"""
 
-        self.beat_interval = 10.0  # sec
+        self.beat_interval = SETTINGS.DEFAULT_BEAT_INTERVAL  # sec
         """The time between two heartbeat events measured in seconds"""
 
         self.unobserved = False

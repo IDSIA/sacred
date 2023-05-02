@@ -112,6 +112,8 @@ SETTINGS = FrozenKeyMunch.fromDict(
         "DISCOVER_DEPENDENCIES": "imported",
         # configure how source-files are discovered. [none, imported, sys, dir]
         "DISCOVER_SOURCES": "imported",
+        # Configure the default beat interval, in seconds
+        "DEFAULT_BEAT_INTERVAL": 10.0,
     },
 )
 SETTINGS.freeze_keys()
