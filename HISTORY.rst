@@ -1,8 +1,18 @@
 Release History
 ---------------
 
+0.8.5 (2023-11-13)
+++++++++++++++++++
+
+Minor release with a few small fixes.
+
+* Feature: Add setting for the default heartbeat interval
+* Bugfix: Don't ignore non-loadable classes in config files (#902, thanks @ernestum)
+* Bugfix: Fix an import error that made conda-forge build fail (#921, thanks @n-gao)
+* Doc: Update CDE tool that doesn't exist anymore and fix starter example (#905, #906, thanks @zhimin-z)
+
 0.8.4 (2023-01-25)
-++++++++
+++++++++++++++++++
 
 Minor release with a few small fixes.
 
