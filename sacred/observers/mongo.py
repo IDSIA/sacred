@@ -299,6 +299,14 @@ class MongoObserver(RunObserver):
         self.save()
 
     def artifact_event(self, name, filename, metadata=None, content_type=None):
+        # Delete artifacts with the same name, collect the rest
+        artifacts = []
+        for entry in self.run_entry["artifacts"]:
+            if entry['name'] == name:
+                self.fs.delete(entry['file_id'])
+            else:
+                artifacts.append(entry)
+        # Create artifact
         with open(filename, "rb") as f:
             run_id = self.run_entry["_id"]
             db_filename = "artifact://{}/{}/{}".format(self.runs.name, run_id, name)
@@ -308,8 +316,9 @@ class MongoObserver(RunObserver):
             file_id = self.fs.put(
                 f, filename=db_filename, metadata=metadata, content_type=content_type
             )
-
-        self.run_entry["artifacts"].append({"name": name, "file_id": file_id})
+        # Update artifacts list
+        artifacts.append({"name": name, "file_id": file_id})
+        self.run_entry["artifacts"] = artifacts
         self.save()
 
     @staticmethod
