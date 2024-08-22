@@ -1,6 +1,6 @@
 pytest==7.1.2 # tests/test_utils.py depends on that pytest version is exactly 7.1.2
 colorama
-docopt
+docopt-ng
 gitdb2
 GitPython
 hashfs

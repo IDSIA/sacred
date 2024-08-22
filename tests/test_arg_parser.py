@@ -51,8 +51,8 @@ def test_parse_individual_arguments(argv, expected):
     options = gather_command_line_options()
     usage = format_usage("test.py", "", {}, options)
     argv = shlex.split(argv)
-    plain = docopt(usage, [], help=False)
-    args = docopt(usage, argv, help=False)
+    plain = docopt(usage, [], default_help=False)
+    args = docopt(usage, argv, default_help=False)
     plain.update(expected)
     assert args == plain
 

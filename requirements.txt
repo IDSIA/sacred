@@ -1,4 +1,4 @@
-docopt>=0.3, <1.0
+docopt-ng>=0.9, <1.0
 jsonpickle>=2.2.0
 munch>=2.5, <5.0
 wrapt>=1.0, <2.0
