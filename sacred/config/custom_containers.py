@@ -100,7 +100,7 @@ class DogmaticDict(dict):
                 for key in iterable:
                     self[key] = iterable[key]
             else:
-                for (key, value) in iterable:
+                for key, value in iterable:
                     self[key] = value
         for key in kwargs:
             self[key] = kwargs[key]
