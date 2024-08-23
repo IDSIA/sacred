@@ -77,7 +77,7 @@ def _get_file_data(bucket_name, key):
     return s3.Object(bucket_name, key).get()["Body"].read()
 
 
-@moto.aws
+@moto.s3control
 def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     _id = observer.started_event(**sample_run)
     run_dir = s3_join(BASEDIR, str(_id))
@@ -102,7 +102,7 @@ def test_fs_observer_started_event_creates_bucket(observer, sample_run):
     }
 
 
-@moto.aws
+@moto.s3control
 def test_fs_observer_started_event_increments_run_id(observer, sample_run):
     _id = observer.started_event(**sample_run)
     _id2 = observer.started_event(**sample_run)
@@ -119,7 +119,7 @@ def test_s3_observer_equality():
     assert obs_one != different_bucket
 
 
-@moto.aws
+@moto.s3control
 def test_raises_error_on_duplicate_id_directory(observer, sample_run):
     observer.started_event(**sample_run)
     sample_run["_id"] = 1
@@ -127,7 +127,7 @@ def test_raises_error_on_duplicate_id_directory(observer, sample_run):
         observer.started_event(**sample_run)
 
 
-@moto.aws
+@moto.s3control
 def test_completed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -145,7 +145,7 @@ def test_completed_event_updates_run_json(observer, sample_run):
     assert run["status"] == "COMPLETED"
 
 
-@moto.aws
+@moto.s3control
 def test_interrupted_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -163,7 +163,7 @@ def test_interrupted_event_updates_run_json(observer, sample_run):
     assert run["status"] == "SERVER_EXPLODED"
 
 
-@moto.aws
+@moto.s3control
 def test_failed_event_updates_run_json(observer, sample_run):
     observer.started_event(**sample_run)
     run = json.loads(
@@ -181,7 +181,7 @@ def test_failed_event_updates_run_json(observer, sample_run):
     assert run["status"] == "FAILED"
 
 
-@moto.aws
+@moto.s3control
 def test_queued_event_updates_run_json(observer, sample_run):
     del sample_run["start_time"]
     sample_run["queue_time"] = T2
@@ -194,7 +194,7 @@ def test_queued_event_updates_run_json(observer, sample_run):
     assert run["status"] == "QUEUED"
 
 
-@moto.aws
+@moto.s3control
 def test_artifact_event_works(observer, sample_run, tmpfile):
     observer.started_event(**sample_run)
     observer.artifact_event("test_artifact.py", tmpfile.name)
