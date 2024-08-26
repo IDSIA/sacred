@@ -9,6 +9,7 @@ first programmatically generate a usage text and then parse it with ``docopt``.
 import ast
 import textwrap
 import inspect
+import re
 from shlex import quote
 
 from sacred.serializer import restore
@@ -197,6 +198,12 @@ def format_usage(program_name, description, commands=None, options=()):
         commands=_format_command_usage(commands),
     )
     return usage
+
+
+def printable_usage(doc):
+    # in python < 2.7 you can't pass flags=re.IGNORECASE
+    usage_split = re.split(r"([Uu][Ss][Aa][Gg][Ee]:)", doc)
+    return re.split(r"\n\s*\n", "".join(usage_split[1:]))[0].strip()
 
 
 def _get_first_line_of_docstring(func):

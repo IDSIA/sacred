@@ -1,4 +1,5 @@
 """The Experiment class, which is central to sacred."""
+
 import inspect
 import os.path
 import sys
@@ -6,10 +7,10 @@ import warnings
 from collections import OrderedDict
 from typing import Sequence, Optional, List
 
-from docopt import docopt, printable_usage
+from docopt import docopt
 
 from sacred import SETTINGS
-from sacred.arg_parser import format_usage, get_config_updates
+from sacred.arg_parser import get_config_updates, format_usage, printable_usage
 from sacred import commandline_options
 from sacred.commandline_options import CLIOption
 from sacred.commands import (
@@ -294,7 +295,7 @@ class Experiment(Ingredient):
         """
         argv = ensure_wellformed_argv(argv)
         short_usage, usage, internal_usage = self.get_usage()
-        args = docopt(internal_usage, [str(a) for a in argv[1:]], help=False)
+        args = docopt(internal_usage, [str(a) for a in argv[1:]], default_help=False)
 
         cmd_name = args.get("COMMAND") or self.default_command
         config_updates, named_configs = get_config_updates(args["UPDATE"])
