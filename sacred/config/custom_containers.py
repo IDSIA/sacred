@@ -307,9 +307,9 @@ def is_different(old_value, new_value):
             old_value = opt.np.asarray(old_value)
             new_value = opt.np.asarray(new_value)
         except:
-            return False
+            return True
         else:
-            result = old_value == new_value
+            result = old_value != new_value
             if isinstance(result, bool):
                 return result
             else:
