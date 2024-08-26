@@ -300,6 +300,19 @@ def type_changed(old_value, new_value):
 def is_different(old_value, new_value):
     """Numpy aware comparison between two values."""
     if opt.has_numpy:
-        return not opt.np.array_equal(old_value, new_value)
-    else:
-        return old_value != new_value
+        # Reproduces np.array_equal from numpy<2
+        # np.array_equal raises an exception when the arguments are scalar and
+        # differ in type (e.g. int and str) in numpy>=2.0
+        try:
+            old_value = opt.np.asarray(old_value)
+            new_value = opt.np.asarray(new_value)
+        except:
+            return False
+        else:
+            result = old_value == new_value
+            if isinstance(result, bool):
+                return result
+            else:
+                return result.all()
+
+    return old_value != new_value
