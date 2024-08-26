@@ -1,6 +1,15 @@
 Release History
 ---------------
 
+0.8.6 (2024-08-26)
+++++++++++++++++++
+
+Minor release for compatibility with Numpy>=2.0
+
+* Add support for Numpy>=2.0 (#928)
+* Switch from dopcopt (unmaintained) to docopt-ng (maintained fork) (#927, thanks @n-gao)
+
+
 0.8.5 (2023-11-13)
 ++++++++++++++++++
 
