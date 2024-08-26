@@ -26,7 +26,7 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 try:
     moto_aws = moto.aws
 except AttributeError:
-    moto_aws = moto.mock_s3
+    moto_aws = moto.mock_aws
 
 
 def s3_join(*args):
