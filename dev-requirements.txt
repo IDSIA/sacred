@@ -24,7 +24,7 @@ tinydb
 tinydb-serialization
 wrapt
 scikit-learn
-pymongo
+pymongo<4.9 # mongomock.gridfs.enable_gridfs_integration() is not compatible with pymongo>=4.9. https://github.com/mongomock/mongomock/issues/903
 py-cpuinfo
 boto3
 moto
