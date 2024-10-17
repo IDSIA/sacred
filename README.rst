@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|build| |coverage| |code_quality| |black|
+|build| |coverage| |code_quality| |black| |gurubase|
 
 
 
@@ -272,3 +272,7 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
     :alt: Code style: black
+
+.. |gurubase| image:: https://img.shields.io/badge/Gurubase-Ask%20Sacred%20Guru-006BFF
+    :target: https://gurubase.io/g/sacred
+    :alt: Sacred Guru on Gurubase
