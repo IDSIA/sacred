@@ -306,13 +306,14 @@ def is_different(old_value, new_value):
         try:
             old_value = opt.np.asarray(old_value)
             new_value = opt.np.asarray(new_value)
-        except:
-            return True
-        else:
+            if old_value.shape != new_value.shape:
+                return True
             result = old_value != new_value
             if isinstance(result, bool):
                 return result
             else:
                 return result.all()
+        except:  # if anything goes wrong, it is not equal
+            return True
 
     return old_value != new_value
