@@ -1,15 +1,6 @@
 import datetime
-from sacred.observers.queue import QueueObserver
 import mock
 import pytest
-import sys
-
-if sys.version_info >= (3, 10):
-    pytest.skip(
-        "Skip pymongo tests for Python 3.10 because mongomock doesn't "
-        "support Python 3.10",
-        allow_module_level=True,
-    )
 
 from sacred.metrics_logger import ScalarMetricLogEntry, linearize_metrics
 
@@ -25,7 +16,6 @@ from sacred.dependencies import get_digest
 from sacred.observers.mongo import (
     QueuedMongoObserver,
     MongoObserver,
-    QueueCompatibleMongoObserver,
 )
 from .failing_mongo_mock import ReconnectingMongoClient
 
