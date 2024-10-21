@@ -8,7 +8,7 @@ Sacred
 
 |pypi| |py_versions| |license| |rtfd| |doi|
 
-|build| |coverage| |code_quality| |black| |gurubase|
+|build| |coverage| |code_quality| |black|
 
 
 
@@ -70,7 +70,7 @@ Example
 
 Documentation
 -------------
-The documentation is hosted at `ReadTheDocs <http://sacred.readthedocs.org/>`_.
+The documentation is hosted at `ReadTheDocs <http://sacred.readthedocs.org/>`_. You can also [Ask Sacred Guru](https://gurubase.io/g/sacred), it is an Sacred-focused AI to answer your questions.
 
 Installing
 ----------
@@ -272,7 +272,3 @@ in Proceedings of the 15th Python in Science Conference (SciPy 2017), Austin, Te
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
     :alt: Code style: black
-
-.. |gurubase| image:: https://img.shields.io/badge/Gurubase-Ask%20Sacred%20Guru-006BFF
-    :target: https://gurubase.io/g/sacred
-    :alt: Sacred Guru on Gurubase
