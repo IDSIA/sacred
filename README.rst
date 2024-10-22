@@ -70,7 +70,7 @@ Example
 
 Documentation
 -------------
-The documentation is hosted at `ReadTheDocs <http://sacred.readthedocs.org/>`_.
+The documentation is hosted at `ReadTheDocs <http://sacred.readthedocs.org/>`_. You can also `Ask Sacred Guru <https://gurubase.io/g/sacred>`_, it is a Sacred-focused AI to answer your questions.
 
 Installing
 ----------
