@@ -1,6 +1,14 @@
 Release History
 ---------------
 
+0.8.7 (2024-11-26)
+++++++++++++++++++
+
+Minor bugfix release, fixing an issue with the numpy 2.0 compatible changes from last release.
+
+* Fix: Restore old behavior of is_different (#933, thanks @n-gao)
+* Doc: Add Sacred to Gurubase (#935, @kursataktas )
+
 0.8.6 (2024-08-26)
 ++++++++++++++++++
 
