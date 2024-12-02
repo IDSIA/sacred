@@ -529,7 +529,7 @@ Beat Interval
 +-----------------------------------------+-----------------------------------------------+
 | ``-b BEAT_INTERVAL``                    |  set the interval between heartbeat events    |
 +-----------------------------------------+                                               |
-| ``--beat_interval=BEAT_INTERVAL``       |                                               |
+| ``--beat-interval=BEAT_INTERVAL``       |                                               |
 +-----------------------------------------+-----------------------------------------------+
 
 A running experiment regularly fires a :ref:`heartbeat` event to synchronize
