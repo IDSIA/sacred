@@ -281,6 +281,7 @@ class Run(Base):
             "INTERRUPTED",
             "TIMEOUT",
             "FAILED",
+            "QUEUED",
             name="status_enum",
         )
     )

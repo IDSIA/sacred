@@ -143,6 +143,15 @@ def test_sql_observer_heartbeat_event_updates_run(sql_obs, sample_run, session):
     assert db_run.captured_out == outp
 
 
+def test_sql_observer_queued_event(sql_obs, sample_run, session):
+    sample_run["queue_time"] = sample_run.pop("start_time")
+    sql_obs.queued_event(**sample_run)
+
+    assert session.query(Run).count() == 1
+    db_run = session.query(Run).first()
+    assert db_run.status == "QUEUED"
+
+
 def test_sql_observer_completed_event_updates_run(sql_obs, sample_run, session):
     sql_obs.started_event(**sample_run)
     sql_obs.completed_event(stop_time=T2, result=42)
