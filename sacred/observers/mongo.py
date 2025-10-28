@@ -15,14 +15,28 @@ from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError, PathType
-import pkg_resources
 
-DEFAULT_MONGO_PRIORITY = 30
+# Prefer stdlib importlib.resources for accessing package data files.
+# Fall back to pkg_resources only if importlib.resources isn't available
+try:
+    # Python 3.9+: importlib.resources.files is available
+    import importlib.resources as importlib_resources  # type: ignore
+except Exception:
+    import importlib_resources  # type: ignore  # backport if installed, otherwise fallback later
 
 # This ensures consistent mimetype detection across platforms.
-mimetype_detector = mimetypes.MimeTypes(
-    filenames=[pkg_resources.resource_filename("sacred", "data/mime.types")]
-)
+# Use importlib.resources to locate the bundled data/mime.types file; if that fails
+# fall back to pkg_resources.resource_filename for older environments.
+try:
+    # The files() API returns a Traversable; convert to str to get a filesystem path.
+    mime_types_path = str(importlib_resources.files("sacred").joinpath("data", "mime.types"))
+except Exception:
+    # final fallback
+    import pkg_resources
+
+    mime_types_path = pkg_resources.resource_filename("sacred", "data/mime.types")
+
+mimetype_detector = mimetypes.MimeTypes(filenames=[mime_types_path])
 
 
 def force_valid_bson_key(key):
