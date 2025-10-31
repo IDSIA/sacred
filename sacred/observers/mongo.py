@@ -24,6 +24,8 @@ try:
 except Exception:
     import importlib_resources  # type: ignore  # backport if installed, otherwise fallback later
 
+DEFAULT_MONGO_PRIORITY = 30
+
 # This ensures consistent mimetype detection across platforms.
 # Use importlib.resources to locate the bundled data/mime.types file; if that fails
 # fall back to pkg_resources.resource_filename for older environments.
