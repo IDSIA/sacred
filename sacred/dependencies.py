@@ -8,7 +8,7 @@ import re
 import sys
 from pathlib import Path
 
-import pkg_resources
+from importlib.metadata import distribution, distributions
 
 import sacred.optional as opt
 from sacred import SETTINGS
@@ -226,7 +226,7 @@ MODULE_BLACKLIST |= {
     "pickletools",
     "pip",
     "pipes",
-    "pkg_resources",
+    "importlib",
     "pkgutil",
     "platform",
     "plistlib",
@@ -498,8 +498,11 @@ class PackageDependency:
     def fill_missing_version(self):
         if self.version is not None:
             return
-        dist = pkg_resources.working_set.by_key.get(self.name)
-        self.version = dist.version if dist else None
+        try:
+            dist = distribution(self.name)
+            self.version = dist.version
+        except Exception:
+            self.version = None
 
     def to_json(self):
         return "{}=={}".format(self.name, self.version or "<unknown>")
@@ -524,11 +527,17 @@ class PackageDependency:
         if not cls.modname_to_dist:
             # some packagenames don't match the module names (e.g. PyYAML)
             # so we set up a dict to map from module name to package name
-            for dist in pkg_resources.working_set:
+            for dist in distributions():
                 try:
-                    toplevel_names = dist._get_metadata("top_level.txt")
-                    for tln in toplevel_names:
-                        cls.modname_to_dist[tln] = dist.project_name, dist.version
+                    # Use read_text to get top_level.txt content
+                    if dist.files:
+                        for file in dist.files:
+                            if str(file).endswith("top_level.txt"):
+                                top_level_txt = file.read_text()
+                                for tln in top_level_txt.strip().split("\n"):
+                                    if tln:
+                                        cls.modname_to_dist[tln] = (dist.name, dist.version)
+                                break
                 except Exception:
                     pass
 
@@ -701,7 +710,7 @@ def get_dependencies_from_imported_modules(globs, base_path):
 
 def get_dependencies_from_pkg(globs, base_path):
     dependencies = set()
-    for dist in pkg_resources.working_set:
+    for dist in distributions():
         if dist.version == "0.0.0":
             continue  # ugly hack to deal with pkg-resource version bug
         dependencies.add(PackageDependency(dist.project_name, dist.version))
