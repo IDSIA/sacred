@@ -8,7 +8,7 @@ import re
 import sys
 from pathlib import Path
 
-import pkg_resources
+from importlib.metadata import distribution, distributions
 
 import sacred.optional as opt
 from sacred import SETTINGS
@@ -226,7 +226,7 @@ MODULE_BLACKLIST |= {
     "pickletools",
     "pip",
     "pipes",
-    "pkg_resources",
+    "importlib",
     "pkgutil",
     "platform",
     "plistlib",
@@ -498,8 +498,11 @@ class PackageDependency:
     def fill_missing_version(self):
         if self.version is not None:
             return
-        dist = pkg_resources.working_set.by_key.get(self.name)
-        self.version = dist.version if dist else None
+        try:
+            dist = distribution(self.name)
+            self.version = dist.version
+        except Exception:
+            self.version = None
 
     def to_json(self):
         return "{}=={}".format(self.name, self.version or "<unknown>")
@@ -701,7 +704,7 @@ def get_dependencies_from_imported_modules(globs, base_path):
 
 def get_dependencies_from_pkg(globs, base_path):
     dependencies = set()
-    for dist in pkg_resources.working_set:
+    for dist in distributions():
         if dist.version == "0.0.0":
             continue  # ugly hack to deal with pkg-resource version bug
         dependencies.add(PackageDependency(dist.project_name, dist.version))
