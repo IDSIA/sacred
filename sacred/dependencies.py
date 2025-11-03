@@ -527,11 +527,17 @@ class PackageDependency:
         if not cls.modname_to_dist:
             # some packagenames don't match the module names (e.g. PyYAML)
             # so we set up a dict to map from module name to package name
-            for dist in pkg_resources.working_set:
+            for dist in distributions():
                 try:
-                    toplevel_names = dist._get_metadata("top_level.txt")
-                    for tln in toplevel_names:
-                        cls.modname_to_dist[tln] = dist.project_name, dist.version
+                    # Use read_text to get top_level.txt content
+                    if dist.files:
+                        for file in dist.files:
+                            if str(file).endswith("top_level.txt"):
+                                top_level_txt = file.read_text()
+                                for tln in top_level_txt.strip().split("\n"):
+                                    if tln:
+                                        cls.modname_to_dist[tln] = (dist.name, dist.version)
+                                break
                 except Exception:
                     pass
 
