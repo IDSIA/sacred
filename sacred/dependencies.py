@@ -8,7 +8,15 @@ import re
 import sys
 from pathlib import Path
 
-import pkg_resources
+if sys.version_info < (3, 10):
+    import importlib_resources
+else:
+    import importlib.resources as importlib_resources
+
+if sys.version_info < (3, 8):
+    import importlib_metadata
+else:
+    import importlib.metadata as importlib_metadata
 
 import sacred.optional as opt
 from sacred import SETTINGS
@@ -226,7 +234,6 @@ MODULE_BLACKLIST |= {
     "pickletools",
     "pip",
     "pipes",
-    "pkg_resources",
     "pkgutil",
     "platform",
     "plistlib",
@@ -261,7 +268,6 @@ MODULE_BLACKLIST |= {
     "ScrolledText",
     "selectors",
     "sets",
-    "setuptools",
     "sgmllib",
     "sha",
     "shelve",
@@ -498,8 +504,10 @@ class PackageDependency:
     def fill_missing_version(self):
         if self.version is not None:
             return
-        dist = pkg_resources.working_set.by_key.get(self.name)
-        self.version = dist.version if dist else None
+        try:
+            self.version = importlib_metadata.distribution(self.name).version
+        except importlib_metadata.PackageNotFoundError:
+            self.version = None
 
     def to_json(self):
         return "{}=={}".format(self.name, self.version or "<unknown>")
@@ -523,14 +531,12 @@ class PackageDependency:
     def create(cls, mod):
         if not cls.modname_to_dist:
             # some packagenames don't match the module names (e.g. PyYAML)
-            # so we set up a dict to map from module name to package name
-            for dist in pkg_resources.working_set:
-                try:
-                    toplevel_names = dist._get_metadata("top_level.txt")
-                    for tln in toplevel_names:
-                        cls.modname_to_dist[tln] = dist.project_name, dist.version
-                except Exception:
-                    pass
+            # so we use the packages_distributions() mapping provided by importlib_metadata
+            cls.modname_to_dist = {
+                m: (dist, importlib_metadata.distribution(dist).version)
+                for m, dists in importlib_metadata.packages_distributions().items()
+                for dist in  dists
+            }
 
         name, version = cls.modname_to_dist.get(mod.__name__, (mod.__name__, None))
 
@@ -701,10 +707,8 @@ def get_dependencies_from_imported_modules(globs, base_path):
 
 def get_dependencies_from_pkg(globs, base_path):
     dependencies = set()
-    for dist in pkg_resources.working_set:
-        if dist.version == "0.0.0":
-            continue  # ugly hack to deal with pkg-resource version bug
-        dependencies.add(PackageDependency(dist.project_name, dist.version))
+    for dist in importlib_metadata.distributions():
+        dependencies.add(PackageDependency(dist.name, dist.version))
     return dependencies
 
 
