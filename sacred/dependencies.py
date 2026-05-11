@@ -13,7 +13,7 @@ if sys.version_info < (3, 10):
 else:
     import importlib.resources as importlib_resources
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 11):
     import importlib_metadata
 else:
     import importlib.metadata as importlib_metadata
