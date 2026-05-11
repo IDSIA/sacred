@@ -6,3 +6,5 @@ py-cpuinfo>=4.0
 colorama>=0.4
 packaging>=18.0
 GitPython
+importlib_metadata ; python_version < '3.11'
+importlib_resources ; python_version < '3.10'

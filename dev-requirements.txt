@@ -1,4 +1,5 @@
 pytest==7.1.2 # tests/test_utils.py depends on that pytest version is exactly 7.1.2
+pytest-cov
 colorama
 docopt-ng
 gitdb2

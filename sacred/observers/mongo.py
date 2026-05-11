@@ -7,6 +7,10 @@ import sys
 import time
 from tempfile import NamedTemporaryFile
 import warnings
+if sys.version_info < (3, 10):
+    import importlib_resources
+else:
+    import importlib.resources as importlib_resources
 
 import sacred.optional as opt
 from sacred.commandline_options import cli_option
@@ -15,13 +19,12 @@ from sacred.observers.base import RunObserver
 from sacred.observers.queue import QueueObserver
 from sacred.serializer import flatten
 from sacred.utils import ObserverError, PathType
-import pkg_resources
 
 DEFAULT_MONGO_PRIORITY = 30
 
 # This ensures consistent mimetype detection across platforms.
 mimetype_detector = mimetypes.MimeTypes(
-    filenames=[pkg_resources.resource_filename("sacred", "data/mime.types")]
+    filenames=[str(importlib_resources.files("sacred") / "data/mime.types")]
 )
 
 
