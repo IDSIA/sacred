@@ -88,6 +88,33 @@ def test_fails_on_unused_config_updates(ex):
         ex.run(config_updates={"d": 3})
 
 
+@pytest.mark.parametrize("num_scopes", [1, 2, 3])
+def test_added_updates_after_config_dicts(ex, num_scopes):
+    for i in range(num_scopes):
+        ex.add_config({"base_{}".format(i): i})
+
+    @ex.main
+    def main(extra):
+        return extra
+
+    run = ex.run(config_updates={"extra": 42})
+    assert run.result == 42
+    assert run.config_modifications.added == {"extra"}
+
+
+@pytest.mark.parametrize("num_scopes", [1, 2, 3])
+def test_unused_updates_after_config_dicts(ex, num_scopes):
+    for i in range(num_scopes):
+        ex.add_config({"base_{}".format(i): i})
+
+    @ex.main
+    def main():
+        pass
+
+    with pytest.raises(ConfigAddedError):
+        ex.run(config_updates={"extra": 42})
+
+
 def test_fails_on_nested_unused_config_updates(ex):
     @ex.config
     def cfg():

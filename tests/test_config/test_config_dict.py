@@ -66,6 +66,12 @@ def test_adding_values(conf_dict):
     assert cfg.added == {"g", "h", "h.i"}
 
 
+def test_adding_values_already_in_preset():
+    cfg = ConfigDict({"a": 1})(fixed={"extra": 2}, preset={"extra": 2, "b": 3})
+    assert cfg == {"a": 1, "extra": 2, "b": 3}
+    assert cfg.added == {"extra"}
+
+
 def test_typechange(conf_dict):
     cfg = conf_dict({"a": "bar", "b": "foo", "c": 1})
     assert cfg.typechanged == {
