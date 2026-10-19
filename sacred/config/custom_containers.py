@@ -312,7 +312,7 @@ def is_different(old_value, new_value):
             if isinstance(result, bool):
                 return result
             else:
-                return result.all()
+                return result.any()
         except:  # if anything goes wrong, it is not equal
             return True
 

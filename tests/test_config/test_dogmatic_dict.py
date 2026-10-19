@@ -150,3 +150,23 @@ def test_nested_fixed_with_fallback_madness():
     assert d["foo"]["bar"] == 20
     assert d["foo"]["a"] == 1
     assert d["foo"]["c"] == 5
+
+
+@pytest.mark.parametrize("as_array", [False, True])
+@pytest.mark.parametrize(
+    "default, fixed, modified",
+    [
+        ([1, 2], [1, 3], {"a"}),
+        ([1, 2], [3, 4], {"a"}),
+        ([1, 2], [1, 2], set()),
+        ([], [], set()),
+        ([1], [1, 1], {"a"}),
+    ],
+)
+def test_modified_sequence_values(default, fixed, modified, as_array):
+    np = pytest.importorskip("numpy")
+    if as_array:
+        default, fixed = np.asarray(default), np.asarray(fixed)
+    d = DogmaticDict({"a": fixed})
+    d["a"] = default
+    assert d.modified == modified
