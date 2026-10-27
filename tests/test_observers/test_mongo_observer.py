@@ -273,6 +273,37 @@ def test_mongo_observer_resource_event(mongo_obs, sample_run):
     assert db_run["resources"] == [[filename, md5]]
 
 
+def test_mongo_observer_save_sources_reuses_unchanged_file(mongo_obs, tmpdir):
+    source = tmpdir.join("train.py")
+    source.write("print('hello')\n")
+    md5 = get_digest(str(source))
+    ex_info = {"base_dir": str(tmpdir), "sources": [("train.py", md5)]}
+
+    [[_, first_id]] = mongo_obs.save_sources(ex_info)
+    [[_, second_id]] = mongo_obs.save_sources(ex_info)
+
+    assert first_id == second_id
+    [file] = list(mongo_obs.fs.find({"filename": str(source)}))
+    assert file.md5 == md5
+
+
+def test_mongo_observer_save_sources_uploads_changed_file(mongo_obs, tmpdir):
+    source = tmpdir.join("train.py")
+    source.write("print('hello')\n")
+    ex_info = {
+        "base_dir": str(tmpdir),
+        "sources": [("train.py", get_digest(str(source)))],
+    }
+    [[_, first_id]] = mongo_obs.save_sources(ex_info)
+
+    source.write("print('goodbye')\n")
+    ex_info["sources"] = [("train.py", get_digest(str(source)))]
+    [[_, second_id]] = mongo_obs.save_sources(ex_info)
+
+    assert first_id != second_id
+    assert len(list(mongo_obs.fs.find({"filename": str(source)}))) == 2
+
+
 def test_force_bson_encodable_doesnt_change_valid_document():
     d = {
         "int": 1,

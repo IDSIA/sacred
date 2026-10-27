@@ -443,7 +443,7 @@ class MongoObserver(RunObserver):
                 _id = file._id
             else:
                 with open(abs_path, "rb") as f:
-                    _id = self.fs.put(f, filename=abs_path)
+                    _id = self.fs.put(f, filename=abs_path, md5=md5)
             source_info.append([source_name, _id])
         return source_info
 
