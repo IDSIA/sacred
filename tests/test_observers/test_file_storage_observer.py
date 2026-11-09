@@ -406,13 +406,78 @@ def test_observer_equality(tmpdir):
     assert observer_1 != observer_2
 
 
-def test_blacklist_paths(tmpdir, dir_obs, sample_run):
-    basedir, obs = dir_obs
+@pytest.mark.parametrize(
+    "reserved_name", ["run.json", "config.json", "cout.txt", "metrics.json"]
+)
+@pytest.mark.parametrize(
+    "spelling",
+    [
+        "plain",
+        "dot",
+        "parent",
+        "absolute",
+        pytest.param(
+            "case",
+            marks=pytest.mark.skipif(
+                os.path.normcase("A") != os.path.normcase("a"),
+                reason="The platform's path comparison is case-sensitive",
+            ),
+        ),
+    ],
+)
+@pytest.mark.parametrize("relative_basedir", [False, True])
+def test_blacklist_paths(
+    tmpdir, sample_run, monkeypatch, reserved_name, spelling, relative_basedir
+):
+    monkeypatch.chdir(str(tmpdir))
+    basedir = "file_storage" if relative_basedir else str(tmpdir / "file_storage")
+    obs = FileStorageObserver(basedir)
     obs.started_event(**sample_run)
-    other_file = Path(str(tmpdir / "dodo.txt"))
-    other_file.touch()
+    run_dir = Path(obs.dir)
+    (run_dir / "nested").mkdir()
+    (run_dir / "metrics.json").write_text("{}")
+    reserved = ["run.json", "config.json", "cout.txt", "metrics.json"]
+    before = {name: (run_dir / name).read_bytes() for name in reserved}
+    target_name = {
+        "plain": reserved_name,
+        "dot": "./" + reserved_name,
+        "parent": "nested/../" + reserved_name,
+        "absolute": str((run_dir / reserved_name).absolute()),
+        "case": reserved_name.upper(),
+    }[spelling]
+    other_file = Path(str(tmpdir / "artifact.txt"))
+    other_file.write_text("artifact contents")
     with pytest.raises(FileExistsError):
-        obs.save_file(str(other_file), "cout.txt")
+        obs.artifact_event(target_name, str(other_file))
+    assert {name: (run_dir / name).read_bytes() for name in reserved} == before
+    assert obs.run_entry["artifacts"] == []
+
+
+@pytest.mark.parametrize(
+    "target_name",
+    [
+        "result.json",
+        "./result.json",
+        "nested/result.json",
+        "nested/config.json",
+        "nested/../result.json",
+    ],
+)
+def test_artifact_paths_allow_copy_and_replacement(
+    tmpdir, dir_obs, sample_run, target_name
+):
+    _, obs = dir_obs
+    obs.started_event(**sample_run)
+    run_dir = Path(obs.dir)
+    (run_dir / "nested").mkdir()
+    before = (run_dir / "config.json").read_bytes()
+    other_file = Path(str(tmpdir / "artifact.txt"))
+    for contents in ["first artifact", "replacement artifact"]:
+        other_file.write_text(contents)
+        obs.artifact_event(target_name, str(other_file))
+        assert (run_dir / target_name).read_text() == contents
+        assert (run_dir / "config.json").read_bytes() == before
+    assert obs.run_entry["artifacts"] == [target_name, target_name]
 
 
 def test_no_duplicate(tmpdir, sample_run):
