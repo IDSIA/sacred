@@ -225,7 +225,9 @@ class FileStorageObserver(RunObserver):
         blacklist = ["run.json", "config.json", "cout.txt", "metrics.json"]
         blacklist = [os.path.join(self.dir, x) for x in blacklist]
         dest_file = os.path.join(self.dir, target_name)
-        if dest_file in blacklist:
+        if os.path.normcase(os.path.abspath(dest_file)) in {
+            os.path.normcase(os.path.abspath(path)) for path in blacklist
+        }:
             raise FileExistsError(
                 "You are trying to overwrite a file necessary for the "
                 "FileStorageObserver. "
